@@ -1,0 +1,15 @@
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/bin/Debug/net9.0/Engine.deps.json
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/bin/Debug/net9.0/Engine.dll
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/bin/Debug/net9.0/Engine.pdb
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/bin/Debug/net9.0/MonoGame.Framework.dll
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/bin/Debug/net9.0/MonoGame.Framework.xml
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/Engine.csproj.AssemblyReference.cache
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/Engine.GeneratedMSBuildEditorConfig.editorconfig
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/Engine.AssemblyInfoInputs.cache
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/Engine.AssemblyInfo.cs
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/Engine.csproj.CoreCompileInputs.cache
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/Engine.csproj.Up2Date
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/Engine.dll
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/refint/Engine.dll
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/Engine.pdb
+/home/oliver-vea/RiderProjects/Olve.Trains/Engine/obj/Debug/net9.0/ref/Engine.dll

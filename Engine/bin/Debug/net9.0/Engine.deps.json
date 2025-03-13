@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "Engine/1.0.0": {
+        "dependencies": {
+          "MonoGame.Framework": "3.8.2.1105"
+        },
+        "runtime": {
+          "Engine.dll": {}
+        }
+      },
+      "MonoGame.Framework/3.8.2.1105": {
+        "runtime": {
+          "MonoGame.Framework.dll": {
+            "assemblyVersion": "3.8.2.1105",
+            "fileVersion": "3.8.2.1105"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Engine/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "MonoGame.Framework/3.8.2.1105": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
