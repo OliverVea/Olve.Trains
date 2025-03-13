@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Engine;
 using Engine.Camera.Cameras;
 using Engine.Camera.Controllers;
 using Engine.Camera.Projections;
@@ -14,7 +16,13 @@ public class TrainGame : Game
 {
     private GraphicsDeviceManager _graphicsDeviceManager;
 
-    private ICameraController _cameraController;
+    private readonly List<(string Label, ICameraController CameraController)> _cameraControllers = [];
+    private int _currentCameraControllerIndex = 0;
+
+    private ICameraController? CameraController => _currentCameraControllerIndex < _cameraControllers.Count
+        ? _cameraControllers[_currentCameraControllerIndex].CameraController
+        : null;
+
     private List<GameObject> _gameObjects = [];
 
     public TrainGame()
@@ -26,6 +34,10 @@ public class TrainGame : Game
 
     protected override void Initialize()
     {
+        _graphicsDeviceManager.PreferredBackBufferWidth = 1920;
+        _graphicsDeviceManager.PreferredBackBufferHeight = 1080;
+        _graphicsDeviceManager.ApplyChanges();
+
         // Perspective Camera
         var perspectiveCamera = new PerspectiveCamera(
             new FirstPersonView(),
@@ -34,45 +46,66 @@ public class TrainGame : Game
         perspectiveCamera.View.Position = new Vector3(0, 0, 100f);
 
         perspectiveCamera.Projection.AspectRatio = GraphicsDevice.DisplayMode.AspectRatio;
-        perspectiveCamera.Projection.NearPlane = 1f;
-        perspectiveCamera.Projection.FarPlane = 1000f;
+        perspectiveCamera.Projection.NearPlane = 0.1f;
+        perspectiveCamera.Projection.FarPlane = 10000f;
 
-        _cameraController = new PerspectiveCameraController(perspectiveCamera);
 
         // Isometric Camera
-        /*
-        var isometricCamera = new IsometricCamera(
+        var isometricCamera = new IsometricOrthographicCamera(
             new IsometricView(),
             new OrthographicProjection());
 
-        var direction = Vector3.Normalize(Vector3.Forward + Vector3.Down + Vector3.Left);
         var target = Vector3.Zero;
+        var viewingDirection = Vector3.Normalize(new Vector3(-1, -1, 1));
+        const float distance = 1;
 
-        isometricCamera.View.Position = target + direction * 100f;
-        isometricCamera.View.Rotation = Quaternion.CreateFromRotationMatrix(Matrix.CreateLookAt(Vector3.Zero, direction, Vector3.Up));
+        var cameraPosition = target - viewingDirection * distance;
+
+        isometricCamera.View.Position = cameraPosition;
+
+        var cameraRotation = Matrix.CreateLookAt(cameraPosition, target, Vector3.Up);
+        isometricCamera.View.Rotation = Quaternion.CreateFromRotationMatrix(cameraRotation);
 
         isometricCamera.Projection.AspectRatio = GraphicsDevice.DisplayMode.AspectRatio;
-        isometricCamera.Projection.NearPlane = 1f;
+        isometricCamera.Projection.NearPlane = -1000f;
         isometricCamera.Projection.FarPlane = 1000f;
 
-        _cameraController = new IsometricCameraController(isometricCamera);
-        */
-
+        _cameraControllers.Add(("isometric", new IsometricCameraController(isometricCamera)));
+        _cameraControllers.Add(("perspective", new PerspectiveCameraController(perspectiveCamera)));
 
         base.Initialize();
     }
 
     protected override void LoadContent()
     {
-        var model = Content.Load<Model>("Models/Train");
+        var model = Content.Load<Model>("models/SM_Veh_Bullet_Carriage_01");
+
+        var texture = Content.Load<Texture2D>("models/SimpleTrains_Texture_01");
+
+        var effect = model.Meshes[0].MeshParts[0].Effect;
+
+        if (effect is not BasicEffect basicEffect)
+        {
+            throw new Exception("Effect is not BasicEffect");
+        }
+
+        basicEffect.TextureEnabled = true;
+        basicEffect.Texture = texture;
+        basicEffect.LightingEnabled = false;
 
         var gameObject = new GameObject
         {
-            Model = model
+            Model = model,
+            Transform = new Transform
+            {
+                Position = new Vector3(0, -4, 0)
+            }
         };
 
         _gameObjects.Add(gameObject);
     }
+
+    private bool _isCameraSwitched = false;
 
 
     protected override void Update(GameTime gameTime)
@@ -84,7 +117,17 @@ public class TrainGame : Game
             Exit();
         }
 
-        _cameraController.Update(gameTime);
+        if (keyboardState.IsKeyDown(Keys.P))
+        {
+            _isCameraSwitched = true;
+        }
+        else if (_isCameraSwitched)
+        {
+            _currentCameraControllerIndex = (_currentCameraControllerIndex + 1) % _cameraControllers.Count;
+            _isCameraSwitched = false;
+        }
+
+        CameraController?.Update(gameTime);
 
         base.Update(gameTime);
     }
@@ -93,18 +136,47 @@ public class TrainGame : Game
     {
         GraphicsDevice.Clear(Color.Black);
 
-        foreach (var gameObject in _gameObjects)
+        if (CameraController is {} cameraController)
         {
-            var world = gameObject.Transform.GetWorldMatrix();
-            var view = _cameraController.Camera.GetViewMatrix();
-            var projection = _cameraController.Camera.GetProjectionMatrix();
+            foreach (var gameObject in _gameObjects)
+            {
+                var world = gameObject.Transform.GetWorldMatrix();
+                var view = cameraController.Camera.GetViewMatrix();
+                var projection = cameraController.Camera.GetProjectionMatrix();
 
-            gameObject.Model.Draw(world, view, projection);
+                gameObject.Model.Draw(world, view, projection);
+            }
+        }
+
+        // Draw axes
+        var axes = new[]
+        {
+            new VertexPositionColor(new Vector3(0, 0, 0), Color.Red),
+            new VertexPositionColor(new Vector3(10, 0, 0), Color.Red),
+            new VertexPositionColor(new Vector3(0, 0, 0), Color.Green),
+            new VertexPositionColor(new Vector3(0, 10, 0), Color.Green),
+            new VertexPositionColor(new Vector3(0, 0, 0), Color.Blue),
+            new VertexPositionColor(new Vector3(0, 0, 10), Color.Blue),
+        };
+
+        var basicEffect = new BasicEffect(GraphicsDevice)
+        {
+            VertexColorEnabled = true,
+            World = Matrix.Identity,
+            View = CameraController?.Camera.GetViewMatrix() ?? Matrix.Identity,
+            Projection = CameraController?.Camera.GetProjectionMatrix() ?? Matrix.Identity
+        };
+
+        foreach (var pass in basicEffect.CurrentTechnique.Passes)
+        {
+            pass.Apply();
+            GraphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, axes, 0, axes.Length / 2);
         }
 
         base.Draw(gameTime);
     }
 }
+
 
 
 
