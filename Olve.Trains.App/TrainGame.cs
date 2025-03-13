@@ -1,4 +1,5 @@
-﻿using Engine.Camera.Cameras;
+﻿using System.Collections.Generic;
+using Engine.Camera.Cameras;
 using Engine.Camera.Controllers;
 using Engine.Camera.Projections;
 using Engine.Camera.Views;
@@ -14,13 +15,7 @@ public class TrainGame : Game
     private GraphicsDeviceManager _graphicsDeviceManager;
 
     private ICameraController _cameraController;
-    private GameObject _gameObject;
-
-    private BasicEffect _basicEffect;
-
-    private VertexPositionColor[] _vertexPositionColors;
-    private VertexBuffer _vertexBuffer;
-
+    private List<GameObject> _gameObjects = [];
 
     public TrainGame()
     {
@@ -63,31 +58,20 @@ public class TrainGame : Game
         _cameraController = new IsometricCameraController(isometricCamera);
         */
 
-        // Basic Effect
-        _basicEffect = new BasicEffect(GraphicsDevice);
-        _basicEffect.Alpha = 1f;
-        _basicEffect.VertexColorEnabled = true;
-        _basicEffect.LightingEnabled = false;
-
-        // Vertices
-        _vertexPositionColors =
-        [
-            new VertexPositionColor(new (0, 20, 0), Color.Red),
-            new VertexPositionColor(new (-20, -20, 0), Color.Green),
-            new VertexPositionColor(new (20, -20, 0), Color.Blue),
-        ];
-
-        _vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColor), 3, BufferUsage.WriteOnly);
-        _vertexBuffer.SetData(_vertexPositionColors);
-
-        _gameObject = new GameObject();
 
         base.Initialize();
     }
 
     protected override void LoadContent()
     {
+        var model = Content.Load<Model>("Models/Train");
 
+        var gameObject = new GameObject
+        {
+            Model = model
+        };
+
+        _gameObjects.Add(gameObject);
     }
 
 
@@ -107,25 +91,15 @@ public class TrainGame : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        _basicEffect.Projection = _cameraController.Camera.GetProjectionMatrix();
-        _basicEffect.View = _cameraController.Camera.GetViewMatrix();
-        _basicEffect.World = _gameObject.Transform.GetWorldMatrix();
-
         GraphicsDevice.Clear(Color.Black);
-        GraphicsDevice.SetVertexBuffer(_vertexBuffer);
 
-        RasterizerState rasterizerState = new()
+        foreach (var gameObject in _gameObjects)
         {
-            CullMode = CullMode.None
-        };
+            var world = gameObject.Transform.GetWorldMatrix();
+            var view = _cameraController.Camera.GetViewMatrix();
+            var projection = _cameraController.Camera.GetProjectionMatrix();
 
-        GraphicsDevice.RasterizerState = rasterizerState;
-
-        foreach (var effectPass in _basicEffect.CurrentTechnique.Passes)
-        {
-            effectPass.Apply();
-
-            GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, 3);
+            gameObject.Model.Draw(world, view, projection);
         }
 
         base.Draw(gameTime);
