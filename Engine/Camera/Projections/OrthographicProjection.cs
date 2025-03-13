@@ -10,6 +10,7 @@ public class OrthographicProjection : ProjectionBase
     {
         var halfWidth = OrthographicSize * AspectRatio;
         var halfHeight = OrthographicSize;
+
         return Matrix.CreateOrthographic(halfWidth * 2, halfHeight * 2, NearPlane, FarPlane);
     }
 }
