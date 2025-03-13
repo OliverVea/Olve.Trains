@@ -9,21 +9,24 @@ using Engine.Objects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using PrimitiveType = Microsoft.Xna.Framework.Graphics.PrimitiveType;
+using Vector3 = Microsoft.Xna.Framework.Vector3;
 
 namespace Olve.Trains.App;
 
 public class TrainGame : Game
 {
-    private GraphicsDeviceManager _graphicsDeviceManager;
+    private readonly GraphicsDeviceManager _graphicsDeviceManager;
 
     private readonly List<(string Label, ICameraController CameraController)> _cameraControllers = [];
-    private int _currentCameraControllerIndex = 0;
+    private int _currentCameraControllerIndex;
 
     private ICameraController? CameraController => _currentCameraControllerIndex < _cameraControllers.Count
         ? _cameraControllers[_currentCameraControllerIndex].CameraController
         : null;
 
-    private List<GameObject> _gameObjects = [];
+    private readonly List<GameObject> _gameObjects = [];
+    private readonly List<IDrawable> _drawables = [];
 
     public TrainGame()
     {
@@ -51,27 +54,20 @@ public class TrainGame : Game
 
 
         // Isometric Camera
-        var isometricCamera = new IsometricOrthographicCamera(
-            new IsometricView(),
-            new OrthographicProjection());
-
         var target = Vector3.Zero;
-        var viewingDirection = Vector3.Normalize(new Vector3(-1, -1, 1));
-        const float distance = 1;
+        var viewingDirection = Vector3.Left + Vector3.Down + Vector3.Backward;
+        var aspectRatio = GraphicsDevice.DisplayMode.AspectRatio;
+        const float orthographicSize = 50f;
+        const float nearPlane = -1000f;
+        const float farPlane = 1000f;
 
-        var cameraPosition = target - viewingDirection * distance;
+        var isometricCameraController = IsometricCameraController.Create(target, viewingDirection, orthographicSize,
+            aspectRatio, nearPlane, farPlane);
 
-        isometricCamera.View.Position = cameraPosition;
-
-        var cameraRotation = Matrix.CreateLookAt(cameraPosition, target, Vector3.Up);
-        isometricCamera.View.Rotation = Quaternion.CreateFromRotationMatrix(cameraRotation);
-
-        isometricCamera.Projection.AspectRatio = GraphicsDevice.DisplayMode.AspectRatio;
-        isometricCamera.Projection.NearPlane = -1000f;
-        isometricCamera.Projection.FarPlane = 1000f;
-
-        _cameraControllers.Add(("isometric", new IsometricCameraController(isometricCamera)));
+        _cameraControllers.Add(("isometric", isometricCameraController));
         _cameraControllers.Add(("perspective", new PerspectiveCameraController(perspectiveCamera)));
+
+        _drawables.Add(new WorldAxes(GraphicsDevice));
 
         base.Initialize();
     }
@@ -105,8 +101,7 @@ public class TrainGame : Game
         _gameObjects.Add(gameObject);
     }
 
-    private bool _isCameraSwitched = false;
-
+    private bool _isCameraSwitched;
 
     protected override void Update(GameTime gameTime)
     {
@@ -148,29 +143,10 @@ public class TrainGame : Game
             }
         }
 
-        // Draw axes
-        var axes = new[]
+        foreach (var drawable in _drawables)
         {
-            new VertexPositionColor(new Vector3(0, 0, 0), Color.Red),
-            new VertexPositionColor(new Vector3(10, 0, 0), Color.Red),
-            new VertexPositionColor(new Vector3(0, 0, 0), Color.Green),
-            new VertexPositionColor(new Vector3(0, 10, 0), Color.Green),
-            new VertexPositionColor(new Vector3(0, 0, 0), Color.Blue),
-            new VertexPositionColor(new Vector3(0, 0, 10), Color.Blue),
-        };
-
-        var basicEffect = new BasicEffect(GraphicsDevice)
-        {
-            VertexColorEnabled = true,
-            World = Matrix.Identity,
-            View = CameraController?.Camera.GetViewMatrix() ?? Matrix.Identity,
-            Projection = CameraController?.Camera.GetProjectionMatrix() ?? Matrix.Identity
-        };
-
-        foreach (var pass in basicEffect.CurrentTechnique.Passes)
-        {
-            pass.Apply();
-            GraphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, axes, 0, axes.Length / 2);
+            drawable.Draw(Matrix.Identity, CameraController?.Camera.GetViewMatrix() ?? Matrix.Identity,
+                CameraController?.Camera.GetProjectionMatrix() ?? Matrix.Identity);
         }
 
         base.Draw(gameTime);
@@ -178,5 +154,39 @@ public class TrainGame : Game
 }
 
 
+public interface IDrawable
+{
+    void Draw(Matrix world, Matrix view, Matrix projection);
+}
 
+public class WorldAxes(GraphicsDevice graphicsDevice, int axisLength = 10) : IDrawable
+{
+    private readonly VertexPositionColor[] _vertices =
+    [
+        new(new Vector3(0, 0, 0), Color.Red),
+        new(Vector3.Right * axisLength, Color.Red),
+        new(new Vector3(0, 0, 0), Color.Green),
+        new(Vector3.Up * axisLength, Color.Green),
+        new(new Vector3(0, 0, 0), Color.Blue),
+        new(Vector3.Forward * axisLength, Color.Blue)
+    ];
+
+    private readonly BasicEffect _basicEffect = new(graphicsDevice)
+    {
+        VertexColorEnabled = true
+    };
+
+    public void Draw(Matrix world, Matrix view, Matrix projection)
+    {
+        _basicEffect.World = world;
+        _basicEffect.View = view;
+        _basicEffect.Projection = projection;
+
+        foreach (var pass in _basicEffect.CurrentTechnique.Passes)
+        {
+            pass.Apply();
+            graphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, _vertices, 0, _vertices.Length / 2);
+        }
+    }
+}
 
