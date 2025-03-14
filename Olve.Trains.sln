@@ -1,16 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains", "Olve.Trains\Olve.Trains.csproj", "{E9AF23D0-A530-4349-8482-2B144EC672DC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains", "src\Olve.Trains\Olve.Trains.csproj", "{E9AF23D0-A530-4349-8482-2B144EC672DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.App", "Olve.Trains.App\Olve.Trains.App.csproj", "{7268176F-6D81-44C3-AF59-2AC7E7A1D8BC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.App", "src\Olve.Trains.App\Olve.Trains.App.csproj", "{7268176F-6D81-44C3-AF59-2AC7E7A1D8BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine", "Engine\Engine.csproj", "{FE1C07E7-5E2E-416B-B698-0E1081DE1C7C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Engine3D", "src\Olve.Engine3D\Olve.Engine3D.csproj", "{FE1C07E7-5E2E-416B-B698-0E1081DE1C7C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "repo", "repo", "{E216E70C-02BA-4B7C-B89C-E8251BA62DF9}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		.config\dotnet-tools.json = .config\dotnet-tools.json
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{30C9617F-3614-47A3-84F7-8798D3630D78}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
