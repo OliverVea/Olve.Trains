@@ -1,108 +1,41 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace Olve.Trains;
-
-public readonly record struct GridCoordinate(int X, int Z);
-public readonly record struct TileCoordinate(int X, int Z);
-
-public class Terrain(int width, int length)
-{
-    private readonly int[] _heights = new int[(width + 1) * (length + 1)];
-
-    public IReadOnlyCollection<int> Heights => _heights;
-
-    public int Width => width;
-    public int Length => length;
-
-    public int GridPointCount => (Width + 1) * (Length + 1);
-    public int TileCount => Width * Length;
-
-    public int this[GridCoordinate coordinate]
-    {
-        get => _heights[GetIndex(coordinate)];
-        set => _heights[GetIndex(coordinate)] = value;
-    }
-
-    private int GetIndex(GridCoordinate coordinate) => coordinate.Z * length + coordinate.X;
-}
-
-public interface ITerrainGenerator
-{
-    Terrain Generate(int width, int length, int? seed = null);
-}
-
-public class TerrainGenerator : ITerrainGenerator
-{
-    public Terrain Generate(int width, int length, int? seed = null)
-    {
-        var random = seed.HasValue ? new Random(seed.Value) : new Random();
-        var terrain = new Terrain(width, length);
-
-        for (var z = 0; z <= length; z++)
-        {
-            for (var x = 0; x <= width; x++)
-            {
-                GridCoordinate coordinate = new(x, z), behind = new(x, z - 1), left = new(x - 1, z);
-
-                if (x == 0 && z == 0)
-                {
-                    terrain[coordinate] = 0;
-                    continue;
-                }
-
-                if (x == 0)
-                {
-                    terrain[coordinate] = terrain[behind] + random.Next(-1, 2);
-                    continue;
-                }
-
-                if (z == 0)
-                {
-                    terrain[coordinate] = terrain[left] + random.Next(-1, 2);
-                    continue;
-                }
-
-                var leftHeight = terrain[left];
-                var behindHeight = terrain[behind];
-
-                if (leftHeight == behindHeight)
-                {
-                    terrain[coordinate] = leftHeight + random.Next(-1, 2);
-                    continue;
-                }
-
-                terrain[coordinate] = Math.Min(leftHeight, behindHeight) + random.Next(0, Math.Abs(leftHeight - behindHeight) + 1);
-            }
-        }
-
-        return terrain;
-    }
-}
+namespace Olve.Trains.Terrain;
 
 public class TerrainDrawable(GraphicsDevice graphicsDevice, Terrain terrain) : Olve.Engine3D.Graphics.IDrawable
 {
-    private readonly BasicEffect _basicEffect = new(graphicsDevice)
+    private readonly BasicEffect _terrainEffect = new(graphicsDevice)
     {
         LightingEnabled = false,
         VertexColorEnabled = true
+    };
+    
+    private readonly BasicEffect _gridEffect = new(graphicsDevice)
+    {
+        LightingEnabled = false,
+        VertexColorEnabled = false,
+        AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f),
     };
 
     private readonly float _hMax = terrain.Heights.Max(), _hMin = terrain.Heights.Min();
 
     private readonly VertexBuffer _vertexBuffer = new(graphicsDevice, typeof(VertexPositionColor), terrain.GridPointCount, BufferUsage.WriteOnly);
 
-    private readonly IndexBuffer _indexBuffer = new(graphicsDevice, IndexElementSize.ThirtyTwoBits,
+    private readonly IndexBuffer _terrainIndexBuffer = new(graphicsDevice, IndexElementSize.ThirtyTwoBits,
         terrain.TileCount * 6, BufferUsage.WriteOnly);
 
-    public void Draw(Matrix world, Matrix view, Matrix projection)
+    private readonly IndexBuffer _gridIndexBuffer = new(graphicsDevice, IndexElementSize.ThirtyTwoBits,
+        terrain.TileCount * 6, BufferUsage.WriteOnly);
+
+    public void Initialize()
     {
         var vertices = new VertexPositionColor[terrain.GridPointCount];
         var index = 0;
 
-        for (var z = 0; z < terrain.Length + 1; z++)
+        for (var z = 0; z <= terrain.Length; z++)
         {
-            for (var x = 0; x < terrain.Width + 1; x++)
+            for (var x = 0; x <= terrain.Width; x++)
             {
                 GridCoordinate coordinate = new(x, z);
 
@@ -154,29 +87,77 @@ public class TerrainDrawable(GraphicsDevice graphicsDevice, Terrain terrain) : O
             }
         }
 
-        _indexBuffer.SetData(indices);
+        _terrainIndexBuffer.SetData(indices);
 
-        _basicEffect.World = world;
-        _basicEffect.View = view;
-        _basicEffect.Projection = projection;
+        var gridIndices = new int[terrain.GridLineCount * 2];
+        index = 0;
 
-        foreach (var pass in _basicEffect.CurrentTechnique.Passes)
+        for (var z = 0; z <= terrain.Length; z++)
+        {
+            for (var x = 0; x < terrain.Width; x++)
+            {
+                GridCoordinate from = new(x, z);
+                GridCoordinate to = new(x + 1, z);
+
+                gridIndices[index++] = GetIndex(from);
+                gridIndices[index++] = GetIndex(to);
+            }
+        }
+
+        for (var z = 0; z < terrain.Length; z++)
+        {
+            for (var x = 0; x <= terrain.Width; x++)
+            {
+                GridCoordinate from = new(x, z);
+                GridCoordinate to = new(x, z + 1);
+
+                gridIndices[index++] = GetIndex(from);
+                gridIndices[index++] = GetIndex(to);
+            }
+        }
+
+        _gridIndexBuffer.SetData(gridIndices);
+    }
+
+    public void Draw(Matrix world, Matrix view, Matrix projection)
+    {
+        _terrainEffect.World = world;
+        _terrainEffect.View = view;
+        _terrainEffect.Projection = projection;
+
+        _gridEffect.World = world;
+        _gridEffect.View = view;
+        _gridEffect.Projection = projection;
+
+        foreach (var pass in _terrainEffect.CurrentTechnique.Passes)
         {
             pass.Apply();
             graphicsDevice.SetVertexBuffer(_vertexBuffer);
-            graphicsDevice.Indices = _indexBuffer;
+            graphicsDevice.Indices = _terrainIndexBuffer;
             graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, terrain.TileCount * 2);
+        }
+
+        foreach (var pass in _gridEffect.CurrentTechnique.Passes)
+        {
+            pass.Apply();
+            graphicsDevice.SetVertexBuffer(_vertexBuffer);
+            graphicsDevice.Indices = _gridIndexBuffer;
+            graphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, terrain.GridLineCount);
         }
     }
 
     private Color GetColor(int x, float y, int z)
     {
-        var r = (float)x / terrain.Width;
-        var g = (float)z / terrain.Length;
+        var baseColor = new Color(203, 234, 105, 255); // Greenish color
 
-        var b = (y * 4 - _hMin) / (_hMax - _hMin);
+        var brightness = (y - _hMin) / (_hMax - _hMin);
+        brightness = Math.Clamp(brightness, 0f, 1f); // Ensure brightness is within range
 
-        return new Color(r, g, b);
+        int r = (int)(baseColor.R * brightness);
+        int g = (int)(baseColor.G * brightness);
+        int b = (int)(baseColor.B * brightness);
+
+        return new Color(r, g, b, 255);
     }
 
     private void InsertGridCoordinates(TileCoordinate tileCoordinate, Span<GridCoordinate> gridCoordinates)

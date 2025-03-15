@@ -9,7 +9,9 @@ using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
 using Olve.Engine3D.Debug;
+using Olve.Engine3D.IO.Images;
 using Olve.Engine3D.Objects;
+using Olve.Trains.Terrain;
 using IDrawable = Olve.Engine3D.Graphics.IDrawable;
 using Vector3 = Microsoft.Xna.Framework.Vector3;
 
@@ -47,15 +49,18 @@ public class TrainGame : Game
             new FirstPersonView(),
             new PerspectiveProjection());
 
-        perspectiveCamera.View.Position = new Vector3(0, 0, 100f);
+        perspectiveCamera.View.Position = new Vector3(500, 0, 500);
 
         perspectiveCamera.Projection.AspectRatio = GraphicsDevice.DisplayMode.AspectRatio;
         perspectiveCamera.Projection.NearPlane = 0.1f;
         perspectiveCamera.Projection.FarPlane = 10000f;
 
+        var image = GrayscaleImageReader.ReadGrayscaleImage(
+            "/home/oliver-vea/mnt/home_share/game_assets/models/synty/simple_trains/Textures/SimpleTrains_Texture_01.png");
+
 
         // Isometric Camera
-        var target = Vector3.Zero;
+        var target = perspectiveCamera.View.Position;
         var viewingDirection = Vector3.Left + Vector3.Down + Vector3.Backward;
         var aspectRatio = GraphicsDevice.DisplayMode.AspectRatio;
         const float orthographicSize = 50f;
@@ -75,10 +80,15 @@ public class TrainGame : Game
         _cameraControllers.Add(("isometric perspective", isometricPerspectiveCameraController));
         _cameraControllers.Add(("perspective", new PerspectiveCameraController(perspectiveCamera)));
 
+        var terrain = new TerrainGenerator().Generate(100, 100);
+        _drawables.Add(new TerrainDrawable(GraphicsDevice, terrain));
+
         _drawables.Add(new WorldAxes(GraphicsDevice));
 
-        var terrain = new TerrainGenerator().Generate(10, 10);
-        _drawables.Add(new TerrainDrawable(GraphicsDevice, terrain));
+        foreach (var drawable in _drawables)
+        {
+            drawable.Initialize();
+        }
 
         base.Initialize();
     }

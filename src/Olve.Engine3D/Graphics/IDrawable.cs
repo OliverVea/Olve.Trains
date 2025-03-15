@@ -4,5 +4,6 @@ namespace Olve.Engine3D.Graphics;
 
 public interface IDrawable
 {
+    void Initialize() {}
     void Draw(Matrix world, Matrix view, Matrix projection);
 }
