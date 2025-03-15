@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework.Graphics;
+using Olve.Engine3D.Core;
 
 namespace Olve.Engine3D.Objects;
 

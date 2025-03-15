@@ -1,20 +1,12 @@
-using BigGustave;
 using Olve.Engine3D.IO.Images;
 using Olve.OpenRaster;
 using Olve.Utilities.Types.Results;
 
 namespace Olve.Trains.Terrain;
 
-public interface ITerrainGenerator
-{
-    Terrain Generate(int width, int length, int? seed = null);
-}
-
-public readonly record struct MapFilePath(string FilePath);
-
 public static class TerrainLoader
 {
-    public static Result<Terrain> LoadTerrain(MapFilePath mapFilePath)
+    public static Result<TriMesh> LoadTerrain(MapFilePath mapFilePath)
     {
         ReadOpenRasterFile operation = new();
         ReadOpenRasterFile.Request request = new(mapFilePath.FilePath);
@@ -29,7 +21,7 @@ public static class TerrainLoader
         var terrainFile = openRasterFileResponse
             .StackFile
             .Layers
-            .Where(x => x.Name == "terrain")
+            .Where(x => x.Name == "heightmap")
             .ToArray();
 
         if (terrainFile.Length == 0)
@@ -44,33 +36,18 @@ public static class TerrainLoader
         
         var terrainLayerFile = terrainFile[0];
 
-        PngFileReader pngFileReader = new();
+        MeshLayerReader meshLayerReader = new();
         
-        GetLayerImage<Png> getLayerImageOperation = new();
-        GetLayerImage<Png>.Request getLayerImageRequest = new(mapFilePath.FilePath, terrainLayerFile.Source, pngFileReader);
+        GetLayerImage<TriMesh> getLayerMesh = new();
+        GetLayerImage<TriMesh>.Request getLayerMeshRequest = new(mapFilePath.FilePath, terrainLayerFile.Source, meshLayerReader);
         
-        var getLayerImageResult = getLayerImageOperation.Execute(getLayerImageRequest);
+        var getLayerImageResult = getLayerMesh.Execute(getLayerMeshRequest);
         if (getLayerImageResult.TryPickProblems(out var getLayerImageProblems, out var getLayerImageResponse))
         {
             getLayerImageProblems.Prepend(new ResultProblem("Failed to load terrain layer"));
             return getLayerImageProblems;
         }
-        
-        var png = getLayerImageResponse.Image;
 
-        var terrain = new Terrain(png.Width, png.Height);
-        
-        for (var i = 0; i < png.Width; i++)
-        for (var j = 0; j < png.Height; j++)
-        {
-            var pixel = png.GetPixel(i, j);
-            var height = (pixel.R - 128) / 8;
-
-            GridCoordinate gridCoordinate = new(i, j);
-
-            terrain[gridCoordinate] = height;
-        }
-
-        return terrain;
+        return getLayerImageResponse.Image;
     }
 }

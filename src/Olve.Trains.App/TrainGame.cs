@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Olve.Engine3D;
 using Olve.Engine3D.Camera.Cameras;
 using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
-using Olve.Engine3D.Objects;
+using Olve.Engine3D.IO.Images;
 using Olve.Trains.Terrain;
 using IDrawable = Olve.Engine3D.Graphics.IDrawable;
 using Vector3 = Microsoft.Xna.Framework.Vector3;
@@ -26,7 +25,6 @@ public class TrainGame : Game
         ? _cameraControllers[_currentCameraControllerIndex].CameraController
         : null;
 
-    private readonly List<GameObject> _gameObjects = [];
     private readonly List<IDrawable> _drawables = [];
 
     public TrainGame()
@@ -42,25 +40,25 @@ public class TrainGame : Game
         _graphicsDeviceManager.PreferredBackBufferHeight = 1080;
         _graphicsDeviceManager.ApplyChanges();
 
+
         // Perspective Camera
         var perspectiveCamera = new PerspectiveCamera(
             new FirstPersonView(),
             new PerspectiveProjection());
 
-        perspectiveCamera.View.Position = new Vector3(500, 0, 500);
+        perspectiveCamera.View.Position = new Vector3(0, 0, 0);
 
         perspectiveCamera.Projection.AspectRatio = GraphicsDevice.DisplayMode.AspectRatio;
         perspectiveCamera.Projection.NearPlane = 0.1f;
         perspectiveCamera.Projection.FarPlane = 10000f;
-
 
         // Isometric Camera
         var target = perspectiveCamera.View.Position;
         var viewingDirection = Vector3.Left + Vector3.Down + Vector3.Backward;
         var aspectRatio = GraphicsDevice.DisplayMode.AspectRatio;
         const float orthographicSize = 50f;
-        const float nearPlane = -1000f;
-        const float farPlane = 100000f;
+        const float nearPlane = -10000f;
+        const float farPlane =   10000f;
 
         var isometricOrthographicCameraController = IsometricOrthographicCameraController.Create(target, viewingDirection, orthographicSize,
             aspectRatio, nearPlane, farPlane);
@@ -75,56 +73,37 @@ public class TrainGame : Game
         _cameraControllers.Add(("isometric perspective", isometricPerspectiveCameraController));
         _cameraControllers.Add(("perspective", new PerspectiveCameraController(perspectiveCamera)));
 
-        foreach (var drawable in _drawables)
-        {
-            drawable.Initialize();
-        }
 
         base.Initialize();
     }
 
     protected override void LoadContent()
     {
-        /*
-        var model = Content.Load<Model>("models/SM_Veh_Bullet_Carriage_01");
-
-        var texture = Content.Load<Texture2D>("models/SimpleTrains_Texture_01");
-
-        var effect = model.Meshes[0].MeshParts[0].Effect;
-
-        if (effect is not BasicEffect basicEffect)
+        var basicEffect = new BasicEffect(GraphicsDevice)
         {
-            throw new Exception("Effect is not BasicEffect");
-        }
-
-        basicEffect.TextureEnabled = true;
-        basicEffect.Texture = texture;
-        basicEffect.LightingEnabled = false;
-
-        var gameObject = new GameObject
-        {
-            Model = model,
-            Transform = new Transform
-            {
-                Position = new Vector3(0, -4, 0)
-            }
+            TextureEnabled = false,
+            LightingEnabled = false,
+            VertexColorEnabled = false,
+            DiffuseColor = new Vector3(0, 0.5f, 0),
         };
-
-        _gameObjects.Add(gameObject);
-        */
         
-        var terrainResult = TerrainLoader.LoadTerrain(new MapFilePath("./Content/maps/map-01.ora"));
-        if (terrainResult.TryPickProblems(out var problems, out var terrain))
+        var terrainResult = TerrainLoader.LoadTerrain(new MapFilePath("./Content/maps/map_01.ora"));
+        if (terrainResult.TryPickProblems(out var problems, out var terrainMesh))
         {
             foreach (var problem in problems)
             {
                 Console.WriteLine(problem.ToDebugString());
             }
+            
+            throw new InvalidOperationException("Could not load terrain.");
         }
-        else
+        
+        var drawableMesh = new TriMeshDrawable(GraphicsDevice, terrainMesh, [basicEffect]);
+        _drawables.Add(drawableMesh);
+        
+        foreach (var drawable in _drawables)
         {
-            TerrainDrawable terrainDrawable = new(GraphicsDevice, terrain);
-            _drawables.Add(terrainDrawable);
+            drawable.Initialize();
         }
     }
 
@@ -158,27 +137,20 @@ public class TrainGame : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        GraphicsDevice.RasterizerState = new RasterizerState()
+        GraphicsDevice.RasterizerState = new RasterizerState
         {
-            CullMode = CullMode.None
+            CullMode = CullMode.None,
         };
 
         if (CameraController is {} cameraController)
         {
-            foreach (var gameObject in _gameObjects)
+            var view = cameraController.Camera.GetViewMatrix();
+            var projection = cameraController.Camera.GetProjectionMatrix();
+
+            foreach (var drawable in _drawables)
             {
-                var world = gameObject.Transform.GetWorldMatrix();
-                var view = cameraController.Camera.GetViewMatrix();
-                var projection = cameraController.Camera.GetProjectionMatrix();
-
-                gameObject.Model.Draw(world, view, projection);
+                drawable.Draw(view, projection);
             }
-        }
-
-        foreach (var drawable in _drawables)
-        {
-            drawable.Draw(Matrix.Identity, CameraController?.Camera.GetViewMatrix() ?? Matrix.Identity,
-                CameraController?.Camera.GetProjectionMatrix() ?? Matrix.Identity);
         }
 
         base.Draw(gameTime);
