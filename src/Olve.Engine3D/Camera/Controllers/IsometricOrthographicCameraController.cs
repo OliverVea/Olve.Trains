@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Input;
 using Olve.Engine3D.Camera.Cameras;
 using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
+using Olve.Engine3D.Core;
 
 namespace Olve.Engine3D.Camera.Controllers;
 

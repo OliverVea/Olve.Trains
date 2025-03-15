@@ -1,6 +1,6 @@
 using Microsoft.Xna.Framework;
 
-namespace Olve.Engine3D;
+namespace Olve.Engine3D.Core;
 
 public class Transform
 {
