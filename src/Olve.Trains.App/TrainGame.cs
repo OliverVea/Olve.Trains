@@ -8,8 +8,6 @@ using Olve.Engine3D.Camera.Cameras;
 using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
-using Olve.Engine3D.Debug;
-using Olve.Engine3D.IO.Images;
 using Olve.Engine3D.Objects;
 using Olve.Trains.Terrain;
 using IDrawable = Olve.Engine3D.Graphics.IDrawable;
@@ -55,9 +53,6 @@ public class TrainGame : Game
         perspectiveCamera.Projection.NearPlane = 0.1f;
         perspectiveCamera.Projection.FarPlane = 10000f;
 
-        var image = GrayscaleImageReader.ReadGrayscaleImage(
-            "/home/oliver-vea/mnt/home_share/game_assets/models/synty/simple_trains/Textures/SimpleTrains_Texture_01.png");
-
 
         // Isometric Camera
         var target = perspectiveCamera.View.Position;
@@ -80,11 +75,6 @@ public class TrainGame : Game
         _cameraControllers.Add(("isometric perspective", isometricPerspectiveCameraController));
         _cameraControllers.Add(("perspective", new PerspectiveCameraController(perspectiveCamera)));
 
-        var terrain = new TerrainGenerator().Generate(100, 100);
-        _drawables.Add(new TerrainDrawable(GraphicsDevice, terrain));
-
-        _drawables.Add(new WorldAxes(GraphicsDevice));
-
         foreach (var drawable in _drawables)
         {
             drawable.Initialize();
@@ -95,6 +85,7 @@ public class TrainGame : Game
 
     protected override void LoadContent()
     {
+        /*
         var model = Content.Load<Model>("models/SM_Veh_Bullet_Carriage_01");
 
         var texture = Content.Load<Texture2D>("models/SimpleTrains_Texture_01");
@@ -120,6 +111,21 @@ public class TrainGame : Game
         };
 
         _gameObjects.Add(gameObject);
+        */
+        
+        var terrainResult = TerrainLoader.LoadTerrain(new MapFilePath("./Content/maps/map-01.ora"));
+        if (terrainResult.TryPickProblems(out var problems, out var terrain))
+        {
+            foreach (var problem in problems)
+            {
+                Console.WriteLine(problem.ToDebugString());
+            }
+        }
+        else
+        {
+            TerrainDrawable terrainDrawable = new(GraphicsDevice, terrain);
+            _drawables.Add(terrainDrawable);
+        }
     }
 
     private bool _isCameraSwitched;
