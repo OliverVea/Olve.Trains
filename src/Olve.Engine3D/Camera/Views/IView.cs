@@ -1,11 +1,9 @@
-using Microsoft.Xna.Framework;
-
 namespace Olve.Engine3D.Camera.Views;
 
 public interface IView
 {
-    Vector3 Position { get; set; }
-    Quaternion Rotation { get; set; }
+    Vector3D<float> Position { get; set; }
+    Quaternion<float> Rotation { get; set; }
 
-    Matrix GetViewMatrix();
+    Matrix4X4<float> GetViewMatrix();
 }

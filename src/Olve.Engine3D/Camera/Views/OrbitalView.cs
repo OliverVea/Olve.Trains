@@ -1,47 +1,47 @@
-using Microsoft.Xna.Framework;
+using Silk.NET.Maths;
 
 namespace Olve.Engine3D.Camera.Views;
 
 public class OrbitalView : IView
 {
-    public Vector3 Target { get; set; }
+    public Vector3D<float> Target { get; set; }
     public float Yaw { get; set; }
     public float Pitch { get; set; }
 
-    public Vector3 Position
+    public Vector3D<float> Position
     {
         get => CalculatePosition();
         set => SetPosition(value);
     }
 
-    public Quaternion Rotation
+    public Quaternion<float> Rotation
     {
         get => CalculateRotation();
         set => SetRotation(value);
     }
 
-    private Vector3 CalculatePosition()
+    private Vector3D<float> CalculatePosition()
     {
         throw new NotImplementedException();
     }
 
-    private void SetPosition(Vector3 value)
+    private void SetPosition(Vector3D<float> value)
     {
         throw new NotImplementedException();
     }
 
-    private Quaternion CalculateRotation()
+    private Quaternion<float> CalculateRotation()
     {
         throw new NotImplementedException();
     }
 
-    private void SetRotation(Quaternion value)
+    private void SetRotation(Quaternion<float> value)
     {
         throw new NotImplementedException();
     }
 
-    public Matrix GetViewMatrix()
+    public Matrix4X4<float> GetViewMatrix()
     {
-        return Matrix.CreateLookAt(Position, Target, Vector3.Up);
+        return Matrix4X4.CreateLookAt(Position, Target, new Vector3D<float>(0, 1, 0));
     }
 }

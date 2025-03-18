@@ -1,18 +1,16 @@
-using Microsoft.Xna.Framework;
-
 namespace Olve.Engine3D.Camera.Views;
 
     public class IsometricView : ViewBase
     {
         public float Angle { get; set; } = 0;
 
-        public override Matrix GetViewMatrix()
+        public override Matrix4X4<float> GetViewMatrix()
         {
-            var rotation = Quaternion.CreateFromAxisAngle(Vector3.Up, Angle);
+            var rotation = Quaternion<float>.CreateFromAxisAngle(Vector3D<float>.UnitY, Angle);
 
-            var forward = Vector3.Transform(Vector3.Forward, Rotation);
-            var rotatedForward = Vector3.Transform(forward, rotation);
+            var forward = Vector3D.Transform(Vector3D<float>.UnitY, Rotation);
+            var rotatedForward = Vector3D.Transform(forward, rotation);
 
-            return Matrix.CreateLookAt(Position, Position + rotatedForward, Vector3.Up);
+            return Matrix4X4.CreateLookAt<float>(Position, Position + rotatedForward, Vector3D<float>.UnitY);
         }
     }
