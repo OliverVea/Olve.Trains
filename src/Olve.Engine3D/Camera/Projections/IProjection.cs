@@ -1,5 +1,3 @@
-using Microsoft.Xna.Framework;
-
 namespace Olve.Engine3D.Camera.Projections;
 
 public interface IProjection
@@ -8,5 +6,5 @@ public interface IProjection
     float NearPlane { get; set; }
     float FarPlane { get; set; }
 
-    Matrix GetProjectionMatrix();
+    Matrix4X4<float> GetProjectionMatrix();
 }

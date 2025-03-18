@@ -1,14 +1,11 @@
 using BigGustave;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Olve.OpenRaster;
-using Olve.Utilities.Types.Results;
 
 namespace Olve.Engine3D.IO.Images;
 
-public class MeshLayerReader(int zeroHeight = 128, int heightStep = 8) : IImageFileReader<TriMesh>
+public class MeshLayerParser(int zeroHeight = 128, int heightStep = 8) : ILayerParser<TriMesh>
 {
-    public Result<TriMesh> ReadImage(Stream stream)
+    public Result<TriMesh> ParseLayer(Stream stream)
     {
         var png = Png.Open(stream);
         
@@ -23,7 +20,7 @@ public class MeshLayerReader(int zeroHeight = 128, int heightStep = 8) : IImageF
             }
         }
         
-        var vertices = new VertexPosition[vertexCount];
+        var vertices = new Vector3D<float>[vertexCount];
 
         for (var z = 0; z < png.Height; z++)
         {
@@ -34,9 +31,7 @@ public class MeshLayerReader(int zeroHeight = 128, int heightStep = 8) : IImageF
                 var height = heights[i];
                 var y = (height - zeroHeight) / heightStep;
                 
-                var position =  new Vector3(x, y, z);
-                
-                vertices[i] = new VertexPosition(position);
+                vertices[i] = new Vector3D<float>(x, y, z);
             }
         }
 

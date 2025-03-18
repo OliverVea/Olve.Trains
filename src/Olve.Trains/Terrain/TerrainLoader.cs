@@ -1,6 +1,6 @@
 using Olve.Engine3D.IO.Images;
 using Olve.OpenRaster;
-using Olve.Utilities.Types.Results;
+using Olve.Results;
 
 namespace Olve.Trains.Terrain;
 
@@ -19,7 +19,6 @@ public static class TerrainLoader
         }
 
         var terrainFile = openRasterFileResponse
-            .StackFile
             .Layers
             .Where(x => x.Name == "heightmap")
             .ToArray();
@@ -36,18 +35,18 @@ public static class TerrainLoader
         
         var terrainLayerFile = terrainFile[0];
 
-        MeshLayerReader meshLayerReader = new();
-        
-        GetLayerImage<TriMesh> getLayerMesh = new();
-        GetLayerImage<TriMesh>.Request getLayerMeshRequest = new(mapFilePath.FilePath, terrainLayerFile.Source, meshLayerReader);
-        
-        var getLayerImageResult = getLayerMesh.Execute(getLayerMeshRequest);
+        MeshLayerParser meshLayerParser = new();
+
+        ReadLayerAs<TriMesh> readLayerAs = new();
+        ReadLayerAs<TriMesh>.Request getLayerMeshRequest = new(mapFilePath.FilePath, terrainLayerFile.Source, meshLayerParser);
+
+        var getLayerImageResult = readLayerAs.Execute(getLayerMeshRequest);
         if (getLayerImageResult.TryPickProblems(out var getLayerImageProblems, out var getLayerImageResponse))
         {
             getLayerImageProblems.Prepend(new ResultProblem("Failed to load terrain layer"));
             return getLayerImageProblems;
         }
 
-        return getLayerImageResponse.Image;
+        return getLayerImageResponse;
     }
 }

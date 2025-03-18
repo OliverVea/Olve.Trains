@@ -1,14 +1,12 @@
-using Microsoft.Xna.Framework;
-
 namespace Olve.Engine3D.Camera.Views;
 
 public class FirstPersonView: ViewBase
 {
-    public override Matrix GetViewMatrix()
+    public override Matrix4X4<float> GetViewMatrix()
     {
-        var forward = Vector3.Transform(Vector3.Forward, Rotation);
-        var up = Vector3.Transform(Vector3.Up, Rotation);
+        var forward = Vector3D.Transform(Vector3D<float>.UnitZ, Rotation);
+        var up = Vector3D.Transform(Vector3D<float>.UnitY, Rotation);
 
-        return Matrix.CreateLookAt(Position, Position + forward, up);
+        return Matrix4X4.CreateLookAt(Position, Position + forward, up);
     }
 }

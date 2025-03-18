@@ -1,80 +1,43 @@
-using System.Collections.Concurrent;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
+using System.Numerics;
+using Silk.NET.Input;
 
 namespace Olve.Engine3D.Input;
 
 public class KeyboardManager
 {
-    private readonly ConcurrentDictionary<Keys, HashSet<Action<KeyStateChange>>> _keyStateChangedHandlers = [];
+    private readonly HashSet<Key> _pressedKeys = [];
+    private readonly HashSet<Key> _releasedKeys = [];
 
-    private HashSet<Keys> _lastKeysDown = [];
+    public KeyboardState State { get; private set; } = new();
 
-    public void Update(GameTime gameTime)
+    public Result Initialize()
     {
-        var state = Keyboard.GetState();
-        var keysDown = state.GetPressedKeys().ToHashSet();
-
-        foreach (var key in _keyStateChangedHandlers.Keys)
+        foreach (var keyboard in GameManager.Input.Keyboards)
         {
-            var before = _lastKeysDown.Contains(key);
-            var after = keysDown.Contains(key);
-
-            var keyState = after ? KeyState.Down : KeyState.Up;
-            InvokeKeyEvent(key, keyState);
-
-            if (before == after)
-            {
-                continue;
-            }
-
-            keyState = after ? KeyState.Pressed : KeyState.Released;
-            InvokeKeyEvent(key, keyState);
+            keyboard.KeyDown += OnKeyPressed;
+            keyboard.KeyUp += OnKeyReleased;
         }
 
-        _lastKeysDown = keysDown;
+        return Result.Success();
     }
 
-    public void Subscribe(Keys key, Action<KeyStateChange> action)
+    public Result Input(TimeSpan _)
     {
-        if (!_keyStateChangedHandlers.TryGetValue(key, out var actions))
-        {
-            actions = [];
-            _keyStateChangedHandlers[key] = actions;
-        }
+        State.Set(_pressedKeys, _releasedKeys);
 
-        actions.Add(action);
+        _pressedKeys.Clear();
+        _releasedKeys.Clear();
+
+        return Result.Success();
     }
 
-    public void Unsubscribe(Keys key, Action<KeyStateChange> action)
+    private void OnKeyPressed(IKeyboard keyboard, Key key, int arg3)
     {
-        if (!_keyStateChangedHandlers.TryGetValue(key, out var actions))
-        {
-            return;
-        }
-
-        if (!actions.Remove(action))
-        {
-            return;
-        }
-
-        if (actions.Count == 0)
-        {
-            _keyStateChangedHandlers.Remove(key, out _);
-        }
+        _pressedKeys.Add(key);
     }
 
-    private void InvokeKeyEvent(Keys key, KeyState keyState)
+    private void OnKeyReleased(IKeyboard keyboard, Key key, int arg3)
     {
-        if (!_keyStateChangedHandlers.TryGetValue(key, out var actions))
-        {
-            return;
-        }
-
-        foreach (var action in actions)
-        {
-            action.Invoke(new KeyStateChange(key, keyState));
-        }
+        _releasedKeys.Add(key);
     }
-
 }
