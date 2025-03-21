@@ -1,10 +1,10 @@
-using Olve.Engine3D.Camera.Cameras;
+using ControllerCamera = Olve.Engine3D.Camera.Camera<Olve.Engine3D.Camera.Views.FirstPersonView, Olve.Engine3D.Camera.Projections.PerspectiveProjection>;
 
 namespace Olve.Engine3D.Camera.Controllers;
 
-public class PerspectiveCameraController(PerspectiveCamera camera) : CameraControllerBase<PerspectiveCamera>(camera)
+public class PerspectiveCameraController(ControllerCamera camera) : CameraControllerBase<ControllerCamera>(camera)
 {
-    private readonly PerspectiveCamera _camera = camera;
+    private readonly ControllerCamera _camera = camera;
     public float LinearSpeed { get; set; } = 10.0f;
     public float AngularSpeed { get; set; } = PiOver2;
     public float ZoomSpeed { get; set; } = 5f;
@@ -40,7 +40,10 @@ public class PerspectiveCameraController(PerspectiveCamera camera) : CameraContr
         var yawRotation = Quaternion<float>.CreateFromAxisAngle(Vector3D<float>.UnitY, yaw);
         var pitchRotation = Quaternion<float>.CreateFromAxisAngle(right, pitch);
 
-        _camera.View.Rotation = Quaternion<float>.Normalize(pitchRotation * yawRotation * _camera.View.Rotation);
+        var yawRotationMatrix = Matrix4X4.CreateFromQuaternion(yawRotation);
+        var pitchRotationMatrix = Matrix4X4.CreateFromQuaternion(pitchRotation);
+
+        _camera.View.Rotation = pitchRotationMatrix * yawRotationMatrix * _camera.View.Rotation;
     }
 
     public override void Zoom(float delta, TimeSpan deltaTime, float scale = 1f)

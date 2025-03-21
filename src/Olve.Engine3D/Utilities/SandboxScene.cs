@@ -1,34 +1,25 @@
 using System.Drawing;
-using Olve.Engine3D.Assets;
-using Olve.Engine3D.Camera.Cameras;
+using Olve.Engine3D.Camera;
 using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
 using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.Shaders;
+using Olve.Engine3D.Graphics.OpenGL;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Scenes;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
-using Shader = Olve.Engine3D.Graphics.Shader;
 
 namespace Olve.Engine3D.Utilities;
 
-public class SandboxScene : Scene
+public partial class SandboxScene : Scene
 {
-    public ShaderSource<VertexShaderAsset> VertexShader { get; set; } = new(new("direct"), VertexShaderSource);
-    public ShaderSource<FragmentShaderAsset> FragmentShader { get; set; } = new(new("direct"), FragmentShaderSource);
-
-    public ShaderSource<VertexShaderAsset> RayVertexShader { get; set; } = new(new("direct"), RayVertexShaderSource);
-    public ShaderSource<FragmentShaderAsset> RayFragmentShader { get; set; } = new(new("direct"), RayFragmentShaderSource);
-
-    private Shader _rayShader = null!;
+    private GLShader _rayGLShader = null!;
 
     public static readonly SceneId SceneId = new("SandboxScene");
     public override SceneId Id => SceneId;
 
-    private GameObjectRenderer _renderer = null!;
     private PerspectiveCameraController _perspectiveCameraController = null!;
     private readonly List<ICameraScheme> _cameraSchemes = [];
 
@@ -38,31 +29,25 @@ public class SandboxScene : Scene
 
     public override Result Load()
     {
-        if (EntityHelper.CreateQuad(VertexShader, FragmentShader).TryPickProblems(out var problems, out var quad))
+        if (GameManager.ModelRenderingManager.Register(Cube).TryPickProblems(out var modelProblems, out var cubeRenderingId))
         {
-            return problems.Prepend("Failed creating quad");
+            return modelProblems.Prepend("Failed registering cube model");
         }
 
-        _renderer = new GameObjectRenderer();
-        _renderer.Register(quad);
+        GameManager.ModelRenderingManager.RegisterInstance(cubeRenderingId, Matrix4X4<float>.Identity);
 
         FirstPersonView view = new() { Position = new Vector3D<float>(0, 0, -5) };
         PerspectiveProjection projection = new() { AspectRatio = 16f / 9f, NearPlane = 0.1f, FarPlane = 1000 };
 
-        PerspectiveCamera camera = new(view, projection);
+        var camera = Camera.Camera.Create(view, projection);
 
         _perspectiveCameraController = new PerspectiveCameraController(camera);
 
         _cameraSchemes.Add(new WasdMovement());
         _cameraSchemes.Add(new MouseLook());
 
-        if (ShaderLoader.Create(RayVertexShader, RayFragmentShader).TryPickProblems(out var rayProblems, out _rayShader!))
-        {
-            return rayProblems.Prepend("Failed creating ray shader");
-        }
-
-        _rayShader.ViewMatrixUniformName = "view";
-        _rayShader.ProjectionMatrixUniformName = "proj";
+        _rayGLShader.ViewMatrixUniformName = "view";
+        _rayGLShader.ProjectionMatrixUniformName = "proj";
 
         return Result.Success();
     }
@@ -110,17 +95,26 @@ public class SandboxScene : Scene
 
     public override Result Render(TimeSpan deltaTime)
     {
-        GameManager.Gl.ClearColor(Color.CornflowerBlue);
-        GameManager.Gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        GameManager.GL.ClearColor(Color.CornflowerBlue);
+        GameManager.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         var viewMatrix = _perspectiveCameraController.Camera.GetViewMatrix();
         var projectionMatrix = _perspectiveCameraController.Camera.GetProjectionMatrix();
 
-        _renderer.Render(viewMatrix, projectionMatrix);
+        var renderResult = GameManager.ModelRenderingManager.Render(new ModelRenderingManager.RenderingParameters
+        {
+            View = viewMatrix,
+            Projection = projectionMatrix
+        });
+
+        if (renderResult.TryPickProblems(out var problems))
+        {
+            return problems.Prepend("Failed rendering game objects");
+        }
 
         foreach (var ray in _rays)
         {
-            ray.Render(_rayShader, viewMatrix, projectionMatrix);
+            ray.Render(_rayGLShader, viewMatrix, projectionMatrix);
         }
 
         return Result.Success();
@@ -131,7 +125,7 @@ public class SandboxScene : Scene
         """
         #version 330 core
 
-        layout (location = 0) in vec3 aPosition;
+        layout (location = 0) in vec3 position;
 
         uniform mat4 world;
         uniform mat4 view;
@@ -139,7 +133,7 @@ public class SandboxScene : Scene
 
         void main()
         {
-          gl_Position = projection * view * world * vec4(aPosition, 1.0);
+          gl_Position = projection * view * world * vec4(position, 1.0);
         }
         """;
 
@@ -160,14 +154,14 @@ public class SandboxScene : Scene
         """
         #version 330 core
         
-        layout(location = 0) in vec3 aPos; // Input vertex position
+        layout(location = 0) in vec3 position;
         
         uniform mat4 view;
         uniform mat4 projection;
         
         void main()
         {
-            gl_Position = projection * view * vec4(aPos, 1.0);
+            gl_Position = projection * view * vec4(position, 1.0);
         }
         """;
 

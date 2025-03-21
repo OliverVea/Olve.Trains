@@ -10,12 +10,17 @@
         <PackageReference Include="StrictId" Version="1.2.0" />
         <PackageReference Include="BigGustave" Version="1.0.6" />
         <PackageReference Include="Olve.OpenRaster" Version="0.1.5" />
-        <PackageReference Include="Olve.Results" Version="0.13.0" />
+        <PackageReference Include="OneOf" Version="3.0.271" />
+        <PackageReference Include="Olve.Results" Version="0.14.0" />
         <PackageReference Include="Silk.NET.Maths" Version="2.22.0" />
         <PackageReference Include="Silk.NET.Input" Version="2.22.0" />
         <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
         <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Camera\Cameras\" />
     </ItemGroup>
 
 </Project>

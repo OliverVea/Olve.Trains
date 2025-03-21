@@ -1,3 +1,5 @@
+using Olve.Engine3D.Graphics;
+using Olve.Engine3D.Graphics.OpenGL;
 using Olve.Engine3D.IO.Images;
 using Olve.OpenRaster;
 using Olve.Results;
@@ -6,7 +8,7 @@ namespace Olve.Trains.Terrain;
 
 public static class TerrainLoader
 {
-    public static Result<TriMesh> LoadTerrain(MapFilePath mapFilePath)
+    public static Result<GeometryData<TriangleIndex>> LoadTerrain(MapFilePath mapFilePath)
     {
         ReadOpenRasterFile operation = new();
         ReadOpenRasterFile.Request request = new(mapFilePath.FilePath);
@@ -37,8 +39,8 @@ public static class TerrainLoader
 
         MeshLayerParser meshLayerParser = new();
 
-        ReadLayerAs<TriMesh> readLayerAs = new();
-        ReadLayerAs<TriMesh>.Request getLayerMeshRequest = new(mapFilePath.FilePath, terrainLayerFile.Source, meshLayerParser);
+        ReadLayerAs<GeometryData<TriangleIndex>> readLayerAs = new();
+        ReadLayerAs<GeometryData<TriangleIndex>>.Request getLayerMeshRequest = new(mapFilePath.FilePath, terrainLayerFile.Source, meshLayerParser);
 
         var getLayerImageResult = readLayerAs.Execute(getLayerMeshRequest);
         if (getLayerImageResult.TryPickProblems(out var getLayerImageProblems, out var getLayerImageResponse))

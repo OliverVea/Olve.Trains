@@ -1,7 +1,7 @@
 ﻿using System;
 using Olve.Engine3D;
-using Olve.Engine3D.Utilities;
 using Olve.Results;
+using Olve.Trains.Scenes;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
@@ -29,7 +29,7 @@ return 0;
 
 Result RunGame()
 {
-    if (GameManager.Initialize(window, [new SandboxScene()], SandboxScene.SceneId).TryPickProblems(out var p))
+    if (GameManager.Initialize(window, [new GameScene()], GameScene.SceneId).TryPickProblems(out var p))
     {
         return p;
     }

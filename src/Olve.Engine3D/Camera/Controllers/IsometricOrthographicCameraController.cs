@@ -1,121 +1,79 @@
-using Olve.Engine3D.Camera.Cameras;
 using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
-using Olve.Engine3D.Input;
+using ControllerCamera = Olve.Engine3D.Camera.Camera<Olve.Engine3D.Camera.Views.IsometricView, Olve.Engine3D.Camera.Projections.OrthographicProjection>;
 
 namespace Olve.Engine3D.Camera.Controllers;
 
-/*
-public class IsometricOrthographicCameraController(IsometricOrthographicCamera camera) : CameraControllerBase<IsometricOrthographicCamera>(camera)
+public class IsometricOrthographicCameraController(ControllerCamera camera) : CameraControllerBase<ControllerCamera>(camera)
 {
-    public static IsometricOrthographicCameraController Create(
-        Vector3D<float> initialTarget,
-        Vector3D<float> viewDirection,
-        float orthographicSize,
-        float aspectRatio,
-        float nearPlane,
-        float farPlane)
+    private readonly ControllerCamera _camera = camera;
+    public float MoveSpeed { get; set; } = 2.0f;
+    public float ZoomSpeed { get; set; } = 50f;
+
+    public override void Move(Vector3D<float> direction, TimeSpan deltaTime, float scale = 1f)
     {
-        viewDirection = Vector3D.Normalize(viewDirection);
-
-        var cameraPosition = initialTarget + viewDirection;
-
-        var cameraRotationMatrix = Matrix4X4.CreateLookAt(cameraPosition, initialTarget, Vector3D<float>.UnitY);
-        var cameraRotation = Quaternion<float>.CreateFromRotationMatrix(cameraRotationMatrix);
-
-        var view = new IsometricView
+        if (direction.LengthSquared < 0.1f)
         {
-            Position = cameraPosition,
-            Rotation = cameraRotation
-        };
+            return;
+        }
 
-        var projection = new OrthographicProjection
+        var cameraToWorld = Matrix4X4.Transpose(_camera.View.Rotation);
+        var worldDirection = Vector3D.Transform(direction, cameraToWorld);
+
+        worldDirection.Y = 0;
+        (worldDirection.Z, worldDirection.X) = (worldDirection.X, worldDirection.Z);
+        worldDirection = Vector3D.Normalize(worldDirection);
+
+        var movement = worldDirection * MoveSpeed * deltaTime.InSeconds() * _camera.Projection.OrthographicSize;
+        _camera.View.Position += movement;
+    }
+
+
+    public override void Rotate(Vector2D<float> rotation, TimeSpan deltaTime, float scale = 1f)
+    {
+        throw new NotSupportedException();
+    }
+
+    public override void Zoom(float delta, TimeSpan deltaTime, float scale = 1f)
+    {
+        if (MathF.Abs(delta) < 0.1f)
         {
-            OrthographicSize = orthographicSize,
-            AspectRatio = aspectRatio,
-            NearPlane = nearPlane,
-            FarPlane = farPlane
-        };
+            return;
+        }
 
-        var camera = new IsometricOrthographicCamera(view, projection);
+        delta = float.Clamp(delta, -1f, 1f);
+
+        var zoomAmount = ZoomSpeed * delta * scale * deltaTime.InSeconds();
+        _camera.Projection.OrthographicSize = Math.Max(1f, _camera.Projection.OrthographicSize - zoomAmount);
+    }
+
+    public static IsometricOrthographicCameraController Create(
+        Vector3D<float> target,
+        Vector3D<float> viewDirection,
+        float orthographicSize = 10f)
+    {
+        var cameraPosition = target + Vector3D.Normalize(viewDirection);
+
+        var forward = Vector3D.Normalize(target - cameraPosition);
+        var right = Vector3D.Normalize(Vector3D.Cross(Vector3D<float>.UnitY, forward));
+        var up = Vector3D.Cross(forward, right);
+
+        var worldRotation = new Matrix4X4<float>(
+            right.X,   up.X,   forward.X,  0,
+            right.Y,   up.Y,   forward.Y,  0,
+            right.Z,   up.Z,   forward.Z,  0,
+            0,         0,      0,          1);
+
+        IsometricView view = new() { Position = cameraPosition, Rotation = worldRotation };
+
+        var aspectRatio = GameManager.Window.Size.X / (float)GameManager.Window.Size.Y;
+        const float nearPlane = 0.01f;
+        const float farPlane = 10000f;
+
+        OrthographicProjection projection = new() { AspectRatio = aspectRatio, NearPlane = nearPlane, FarPlane = farPlane, OrthographicSize = orthographicSize};
+
+        var camera = Olve.Engine3D.Camera.Camera.Create(view, projection);
 
         return new IsometricOrthographicCameraController(camera);
     }
-
-    private readonly IsometricOrthographicCamera _camera = camera;
-    public float LinearSpeed { get; set; } = 2.0f;
-    public float LinearSpeedFactor { get; set; } = 3.0f;
-
-    public float ZoomSpeed { get; set; } = 50.0f;
-    public float ZoomSpeedFactor { get; set; } = 3.0f;
-
-    public List<KeyDirection> MovementKeys { get; init; } =
-    [
-        new(Keys.W, Vector3D<float>.UnitZ),
-        new(Keys.A, -Vector3D<float>.UnitX),
-        new(Keys.S, -Vector3D<float>.UnitZ),
-        new(Keys.D, Vector3D<float>.UnitX),
-    ];
-
-    public Keys RotateClockwise { get; set; } = Keys.Q;
-    public Keys RotateCounterClockwise { get; set; } = Keys.E;
-    public Keys ZoomOut { get; set; } = Keys.Z;
-    public Keys ZoomIn { get; set; } = Keys.X;
-
-    public override void Update(TimeSpan deltaTime)
-    {
-        var deltaSeconds = (float)deltaTime.TotalSeconds;
-        var keyboardState = Keyboard.GetState();
-
-        var linearSpeed = LinearSpeed;
-        var zoomSpeed = ZoomSpeed;
-
-        if (keyboardState.IsKeyDown(Keys.LeftShift) || keyboardState.IsKeyDown(Keys.RightShift))
-        {
-            linearSpeed *= LinearSpeedFactor;
-            zoomSpeed *= ZoomSpeedFactor;
-        }
-
-        var forward = Vector3D.Transform(Vector3D<float>.UnitZ, _camera.View.Rotation);
-        forward.Y = 0;
-        forward = Vector3D.Normalize(forward);
-
-        var angle = MathF.Atan2(forward.X, forward.Z) + _camera.View.Angle;
-
-        foreach (var (key, movementDirection) in MovementKeys)
-        {
-            if (keyboardState.IsKeyDown(key))
-            {
-                var direction = Vector3D.Transform(movementDirection, Matrix4X4.CreateRotationY(angle));
-
-                _camera.View.Position += linearSpeed * direction * deltaSeconds * _camera.Projection.OrthographicSize;
-            }
-        }
-
-        if (keyboardState.IsKeyDown(ZoomOut))
-        {
-            _camera.Projection.OrthographicSize += linearSpeed * deltaSeconds * zoomSpeed;
-        }
-
-        if (keyboardState.IsKeyDown(ZoomIn))
-        {
-            _camera.Projection.OrthographicSize -= linearSpeed * deltaSeconds * zoomSpeed;
-
-            if (_camera.Projection.OrthographicSize < 1)
-            {
-                _camera.Projection.OrthographicSize = 1;
-            }
-        }
-
-        if (keyboardState.IsKeyDown(RotateClockwise))
-        {
-            _camera.View.Angle += linearSpeed * deltaSeconds;
-        }
-
-        if (keyboardState.IsKeyDown(RotateCounterClockwise))
-        {
-            _camera.View.Angle -= linearSpeed * deltaSeconds;
-        }
-    }
 }
-*/

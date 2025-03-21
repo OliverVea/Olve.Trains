@@ -1,3 +1,4 @@
+using Olve.Engine3D.Graphics;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Silk.NET.Input;
@@ -17,15 +18,17 @@ public class GameManager(IWindow window, SceneId initialSceneId)
     private readonly SceneManager _sceneManager = new();
     private readonly KeyboardManager _keyboardManager = new();
     private readonly MouseManager _mouseManager = new();
+    private readonly ModelRenderingManager _modelRenderingManager = new();
     private GL? _gl;
     private IInputContext? _input;
 
     public static IWindow Window => Instance._window;
-    public static GL Gl => Instance._gl ?? throw new NotSupportedException("OpenGL has not been initialized");
+    public static GL GL => Instance._gl ?? throw new NotSupportedException("OpenGL has not been initialized");
     public static IInputContext Input => Instance._input ?? throw new NotSupportedException("Input has not been initialized");
     public static SceneManager SceneManager => Instance._sceneManager;
     public static KeyboardManager KeyboardManager => Instance._keyboardManager;
     public static MouseManager MouseManager => Instance._mouseManager;
+    public static ModelRenderingManager ModelRenderingManager => Instance._modelRenderingManager;
 
     private Result _result = Result.Success();
 
@@ -96,7 +99,7 @@ public class GameManager(IWindow window, SceneId initialSceneId)
     }
 
     private static Result<(GL, IInputContext)> SetupContexts() =>
-        Result.Chain(
+        Result.Concat(
             () => Result.Try<GL, Exception>(() => Window.CreateOpenGL(), "Error while creating OpenGL context"),
             () => Result.Try<IInputContext, Exception>(() => Window.CreateInput(), "Error while creating input context")
         );
