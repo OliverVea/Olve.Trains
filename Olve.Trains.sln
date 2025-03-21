@@ -7,7 +7,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "repo", "repo", "{E216E70C-02BA-4B7C-B89C-E8251BA62DF9}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		.config\dotnet-tools.json = .config\dotnet-tools.json
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Engine3D.AssetPipeline", "src\Olve.Engine3D.AssetPipeline\Olve.Engine3D.AssetPipeline.csproj", "{B87ED8C2-DA0E-4CC2-A042-6D5C56D2113C}"

@@ -1,12 +1,17 @@
 using System.Net;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Microsoft.Extensions.Logging;
 using Olve.Operations;
 using Olve.Results;
 
 namespace Olve.Engine3D.AssetPipeline.S3;
 
-public class DownloadAssetsToTemp : IAsyncOperation<DownloadAssetsToTemp.Request>
+/// <summary>
+///    Downloads assets from an S3 bucket to the temp directory
+/// </summary>
+/// <param name="logger"></param>
+public class DownloadAssetsToTemp(ILogger<DownloadAssetsToTemp> logger) : IAsyncOperation<DownloadAssetsToTemp.Request>
 {
     private const string S3Url = "S3_URL";
     private const string S3Bucket = "S3_BUCKET";
@@ -15,21 +20,31 @@ public class DownloadAssetsToTemp : IAsyncOperation<DownloadAssetsToTemp.Request
 
     public record Request;
 
-    public static Task<Result> ExecuteAsync(CancellationToken ct = default) => new DownloadAssetsToTemp().ExecuteAsync(new Request(), ct);
-
-    public Task<Result> ExecuteAsync(Request request, CancellationToken ct = default)
+    public async Task<Result> ExecuteAsync(Request request, CancellationToken ct = default)
     {
+        logger.LogInformation("Getting S3 configuration from environment variables");
+
         var environmentVariableResult = ReadS3EnvironmentVariables();
         if (environmentVariableResult.TryPickProblems(out var problems, out var envVariables))
         {
-            problems = problems.Prepend("Could not get S3 configuration");
-            return Task.FromResult<Result>(problems);
+            return problems.Prepend("Could not get S3 configuration");
         }
 
         var (url, bucket, key, secret) = envVariables;
-        Console.WriteLine($"Url: {url}, Bucket: {bucket}");
 
-        return RetrieveS3BucketAsync(url, bucket, key, secret, ct);
+        logger.LogInformation("Got configuration - Url: {Url}, Bucket: {Bucket}", url, bucket);
+
+        var retrievalResult = await RetrieveS3BucketAsync(url, bucket, key, secret, ct);
+        if (retrievalResult.TryPickProblems(out var retrievalProblems))
+        {
+            return retrievalProblems.Prepend("Failed to retrieve S3 bucket");
+        }
+
+        var itemCount = Directory.GetFiles("/app/temp", "*", SearchOption.AllDirectories).Length;
+
+        logger.LogInformation("Retrieved {ItemCount} items from S3 bucket", itemCount);
+
+        return Result.Success();
     }
 
     private Result<(string Url, string Bucket, string Key, string Secret)> ReadS3EnvironmentVariables()
@@ -62,6 +77,8 @@ public class DownloadAssetsToTemp : IAsyncOperation<DownloadAssetsToTemp.Request
 
             foreach (var s3Object in listResponse.S3Objects)
             {
+                logger.LogDebug("Retrieving object '{0}' from S3 bucket '{1}' at '{2}'", s3Object.Key, bucket, url);
+
                 var destFilePath = Path.Combine(tempDir, s3Object.Key);
                 var destDirectory = Path.GetDirectoryName(destFilePath);
 
@@ -81,8 +98,9 @@ public class DownloadAssetsToTemp : IAsyncOperation<DownloadAssetsToTemp.Request
                 await using var fileStream = File.Create(destFilePath);
 
                 await responseStream.CopyToAsync(fileStream, ct);
-            }
 
+                logger.LogDebug("Retrieved object '{0}' from S3 bucket '{1}' at '{2}'", s3Object.Key, bucket, url);
+            }
 
             return Result.Success();
         }
