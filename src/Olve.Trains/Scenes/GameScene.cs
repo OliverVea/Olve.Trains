@@ -95,8 +95,19 @@ public sealed class GameScene : Scene
         return PassInput.Pass;
     }
 
+    private float _lastTps = 0;
+
     public override Result Update(TimeSpan deltaTime)
     {
+        var dt = deltaTime.InSeconds();
+        _t += dt;
+
+        if (_t - _lastTps > 1)
+        {
+            _lastTps = _t;
+            Console.WriteLine($"TPS: {1 / dt}");
+        }
+
         _cameraController.Move(_cameraMovementInput.Direction, deltaTime);
         _cameraController.Zoom(_cameraMovementInput.Zoom, deltaTime);
         return Result.Success();
@@ -107,10 +118,17 @@ public sealed class GameScene : Scene
     private static readonly DirectionalLight DirectionalLight = new(Vector3D.Normalize(new Vector3D<float>(1, -1, 1)), new Vector3D<float>(1, 1, 0.8f), 1.0f);
     private static readonly AmbientLight AmbientLight = new(new Vector3D<float>(0.15f, 0.15f, 0.2f), 0.5f);
 
+    private float _lastFps = 0;
+
     public override Result Render(TimeSpan deltaTime)
     {
         var dt = deltaTime.InSeconds();
-        _t += dt;
+
+        if (_t - _lastFps > 1)
+        {
+            _lastFps = _t;
+            Console.WriteLine($"FPS: {1 / dt}");
+        }
 
         GameManager.GL.ClearColor(Color.CornflowerBlue);
         GameManager.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -139,8 +157,6 @@ public sealed class GameScene : Scene
         {
             return problems;
         }
-
-        Console.WriteLine($"Mouse ray: ({ray.Origin.X}, {ray.Origin.Y}, {ray.Origin.Z}) -> ({ray.Direction.X}, {ray.Direction.Y}, {ray.Direction.Z})");
 
         RenderingParameters parameters = new([
             new RenderingParameter.Matrix4X4("view", viewMatrix),
