@@ -22,7 +22,6 @@
 
     <ItemGroup>
       <Folder Include="Camera\Cameras\" />
-      <Folder Include="Graphics\RenderingParameters\" />
     </ItemGroup>
 
 </Project>

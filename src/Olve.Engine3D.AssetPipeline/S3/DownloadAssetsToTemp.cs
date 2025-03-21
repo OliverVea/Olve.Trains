@@ -1,0 +1,95 @@
+using System.Net;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Olve.Operations;
+using Olve.Results;
+
+namespace Olve.Engine3D.AssetPipeline.S3;
+
+public class DownloadAssetsToTemp : IAsyncOperation<DownloadAssetsToTemp.Request>
+{
+    private const string S3Url = "S3_URL";
+    private const string S3Bucket = "S3_BUCKET";
+    private const string S3Key = "S3_KEY";
+    private const string S3Secret = "S3_SECRET";
+
+    public record Request;
+
+    public static Task<Result> ExecuteAsync(CancellationToken ct = default) => new DownloadAssetsToTemp().ExecuteAsync(new Request(), ct);
+
+    public Task<Result> ExecuteAsync(Request request, CancellationToken ct = default)
+    {
+        var environmentVariableResult = ReadS3EnvironmentVariables();
+        if (environmentVariableResult.TryPickProblems(out var problems, out var envVariables))
+        {
+            problems = problems.Prepend("Could not get S3 configuration");
+            return Task.FromResult<Result>(problems);
+        }
+
+        var (url, bucket, key, secret) = envVariables;
+        Console.WriteLine($"Url: {url}, Bucket: {bucket}");
+
+        return RetrieveS3BucketAsync(url, bucket, key, secret, ct);
+    }
+
+    private Result<(string Url, string Bucket, string Key, string Secret)> ReadS3EnvironmentVariables()
+    {
+
+        return Result.Concat(
+            () => EnvHelper.ReadEnvVariable(S3Url),
+            () => EnvHelper.ReadEnvVariable(S3Bucket),
+            () => EnvHelper.ReadEnvVariable(S3Key),
+            () => EnvHelper.ReadEnvVariable(S3Secret)
+        );
+    }
+
+    private async Task<Result> RetrieveS3BucketAsync(string url, string bucket, string key, string secret, CancellationToken ct)
+    {
+        try
+        {
+            var config = new AmazonS3Config { ServiceURL = url, ForcePathStyle = true};
+            using var s3Client = new AmazonS3Client(key, secret, config);
+            var listRequest = new ListObjectsV2Request { BucketName = bucket };
+            var listResponse = await s3Client.ListObjectsV2Async(listRequest, ct);
+
+            if (listResponse.S3Objects.Count == 0)
+            {
+                return new ResultProblem("No objects found in the S3 bucket '{0}' at '{1}'", bucket, url);
+            }
+
+            var tempDir = "/app/temp";
+            Directory.CreateDirectory(tempDir);
+
+            foreach (var s3Object in listResponse.S3Objects)
+            {
+                var destFilePath = Path.Combine(tempDir, s3Object.Key);
+                var destDirectory = Path.GetDirectoryName(destFilePath);
+
+                if (!Directory.Exists(destDirectory))
+                {
+                    Directory.CreateDirectory(destDirectory!);
+                }
+
+                var getRequest = new GetObjectRequest { BucketName = bucket, Key = s3Object.Key };
+                using var getResponse = await s3Client.GetObjectAsync(getRequest, ct);
+                if (getResponse.HttpStatusCode > (HttpStatusCode)399)
+                {
+                    return new ResultProblem("Got status code '{0}' while retrieving object '{1}' from s3 bucket '{2}' at '{3}'", getResponse.HttpStatusCode, s3Object.Key, bucket, url);
+                }
+
+                await using var responseStream = getResponse.ResponseStream;
+                await using var fileStream = File.Create(destFilePath);
+
+                await responseStream.CopyToAsync(fileStream, ct);
+            }
+
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}' at '{1}'", bucket, url);
+        }
+    }
+}
+
