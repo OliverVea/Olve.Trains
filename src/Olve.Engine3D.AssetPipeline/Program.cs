@@ -25,6 +25,7 @@ serviceCollection.AddTransient<RunAssetPipeline>();
 serviceCollection.AddTransient<DownloadAssets>();
 serviceCollection.AddTransient<CompileShaders>();
 serviceCollection.AddTransient<ProcessAssets>();
+serviceCollection.AddTransient<WriteMetadataSourceFiles>();
 
 var serviceProvider = serviceCollection.BuildServiceProvider();
 
