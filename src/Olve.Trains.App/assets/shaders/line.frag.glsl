@@ -1,11 +1,10 @@
 #version 330 core
 
+in vec3 FragPos;
 out vec4 FragColor;
-
-uniform vec4 uLineColor;
 
 void main()
 {
-    float alpha = smoothstep(0.8, 1.0, gl_FragCoord.w); // Anti-aliasing based on fragment depth
-    FragColor = vec4(uLineColor.rgb, uLineColor.a * alpha);
+    float height = FragPos.y;
+    FragColor = vec4(1.0, 0.5, 0.2, 1.0) * (height + 0.5);
 }

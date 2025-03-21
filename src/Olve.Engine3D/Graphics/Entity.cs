@@ -6,6 +6,5 @@ public class Entity
     public Transform Transform { get; init; } = new();
     public bool Enabled { get; set; } = true;
     public bool Visible { get; set; } = true;
-
-    public required Mesh[] Meshes { get; set; }
+    public RenderingEntityId<Model>? ModelRenderingId { get; init; }
 }

@@ -1,11 +1,15 @@
 #version 330 core
 
-layout(location = 0) in vec3 aPos; // Input vertex position
+layout (location = 0) in vec3 position;
 
-uniform mat4 uView;
-uniform mat4 uProj;
+uniform mat4 world;
+uniform mat4 view;
+uniform mat4 projection;
+
+out vec3 FragPos;
 
 void main()
 {
-    gl_Position = uProj * uView * vec4(aPos, 1.0);
+    FragPos = position;
+    gl_Position = projection * view * world * vec4(position, 1.0);
 }

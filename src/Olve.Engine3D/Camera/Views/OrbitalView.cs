@@ -14,7 +14,7 @@ public class OrbitalView : IView
         set => SetPosition(value);
     }
 
-    public Quaternion<float> Rotation
+    public Matrix4X4<float> Rotation
     {
         get => CalculateRotation();
         set => SetRotation(value);
@@ -30,12 +30,12 @@ public class OrbitalView : IView
         throw new NotImplementedException();
     }
 
-    private Quaternion<float> CalculateRotation()
+    private Matrix4X4<float> CalculateRotation()
     {
         throw new NotImplementedException();
     }
 
-    private void SetRotation(Quaternion<float> value)
+    private void SetRotation(Matrix4X4<float> value)
     {
         throw new NotImplementedException();
     }

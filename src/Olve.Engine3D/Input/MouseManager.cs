@@ -12,8 +12,8 @@ public class MouseManager
 
     public Result Initialize()
     {
-        GameManager.Input.Mice[0].Cursor.IsConfined = true;
-        GameManager.Input.Mice[0].Cursor.CursorMode = CursorMode.Disabled;
+        //GameManager.Input.Mice[0].Cursor.IsConfined = true;
+        //GameManager.Input.Mice[0].Cursor.CursorMode = CursorMode.Disabled;
 
         foreach (var mouse in GameManager.Input.Mice)
         {
