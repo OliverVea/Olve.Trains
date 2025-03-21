@@ -2,9 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Olve.Engine3D.AssetPipeline;
-using Olve.Engine3D.AssetPipeline.Assets;
-using Olve.Engine3D.AssetPipeline.S3;
-using Olve.Engine3D.AssetPipeline.Shaders;
+using Olve.Engine3D.AssetPipeline.Operations;
 
 ServiceCollection serviceCollection = new();
 
@@ -24,7 +22,7 @@ serviceCollection.AddLogging(builder =>
 });
 
 serviceCollection.AddTransient<RunAssetPipeline>();
-serviceCollection.AddTransient<DownloadAssetsToTemp>();
+serviceCollection.AddTransient<DownloadAssets>();
 serviceCollection.AddTransient<CompileShaders>();
 serviceCollection.AddTransient<ProcessAssets>();
 
