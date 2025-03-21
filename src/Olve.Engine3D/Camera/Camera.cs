@@ -22,4 +22,7 @@ public class Camera<TView, TProjection>(TView view, TProjection projection) : IC
 
     public Matrix4X4<float> GetViewMatrix() => View.GetViewMatrix();
     public Matrix4X4<float> GetProjectionMatrix() => Projection.GetProjectionMatrix();
+
+
+
 }

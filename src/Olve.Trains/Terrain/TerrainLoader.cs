@@ -1,5 +1,4 @@
 using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.OpenGL;
 using Olve.Engine3D.IO.Images;
 using Olve.OpenRaster;
 using Olve.Results;

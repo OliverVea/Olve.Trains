@@ -101,11 +101,11 @@ public partial class SandboxScene : Scene
         var viewMatrix = _perspectiveCameraController.Camera.GetViewMatrix();
         var projectionMatrix = _perspectiveCameraController.Camera.GetProjectionMatrix();
 
-        var renderResult = GameManager.ModelRenderingManager.Render(new ModelRenderingManager.RenderingParameters
-        {
-            View = viewMatrix,
-            Projection = projectionMatrix
-        });
+        RenderingParameters parameters = new([
+            new RenderingParameter.Matrix4X4("view", viewMatrix),
+            new RenderingParameter.Matrix4X4("projection", projectionMatrix)
+        ]);
+        var renderResult = GameManager.ModelRenderingManager.Render(parameters);
 
         if (renderResult.TryPickProblems(out var problems))
         {

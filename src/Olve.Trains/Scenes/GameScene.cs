@@ -51,7 +51,7 @@ public sealed class GameScene : Scene
                 _random.NextFloat(-5f, 5f)   // Random Z
             );
 
-            var rotationSpeed = _random.NextFloat(0.5f, 20.0f); // Random rotation speed
+            var rotationSpeed = _random.NextFloat(0.1f, 0.6f); // Random rotation speed
 
             var scaleMatrix = Matrix4X4.CreateScale(scale);
             var translationMatrix = Matrix4X4.CreateTranslation(position);
@@ -142,7 +142,16 @@ public sealed class GameScene : Scene
 
         Console.WriteLine($"Mouse ray: ({ray.Origin.X}, {ray.Origin.Y}, {ray.Origin.Z}) -> ({ray.Direction.X}, {ray.Direction.Y}, {ray.Direction.Z})");
 
-        ModelRenderingManager.RenderingParameters parameters = new(viewMatrix, projectionMatrix, ray, DirectionalLight, AmbientLight);
+        RenderingParameters parameters = new([
+            new RenderingParameter.Matrix4X4("view", viewMatrix),
+            new RenderingParameter.Matrix4X4("projection", projectionMatrix),
+            new RenderingParameter.Vector3D("ambientLightColor", AmbientLight.Color),
+            new RenderingParameter.Float("ambientIntensity", AmbientLight.Intensity),
+            new RenderingParameter.Vector3D("directionalLightColor", DirectionalLight.Color),
+            new RenderingParameter.Vector3D("directionalLightDir", DirectionalLight.Direction),
+            new RenderingParameter.Float("directionalIntensity", DirectionalLight.Intensity)
+        ]);
+
         var renderResult = GameManager.ModelRenderingManager.Render(parameters);
         if (renderResult.TryPickProblems(out problems))
         {

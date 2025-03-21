@@ -3,15 +3,12 @@ namespace Olve.Engine3D.Graphics;
 public readonly record struct DirectionalLight(Vector3D<float> Direction, Vector3D<float> Color, float Intensity);
 public readonly record struct AmbientLight(Vector3D<float> Color, float Intensity);
 
-public class ModelRenderingManager : RenderingManager<Model, ModelRenderingManager.ModelRegistration, ModelRenderingManager.RenderingParameters>
+public class ModelRenderingManager : RenderingManager<Model, ModelRenderingManager.ModelRegistration>
 {
     public record struct ModelRegistration(GLHelper.OpenGLModelRegistration GLModelRegistration, uint VertexCount, uint IndexCount) : IHasInstanceCount
     {
         public int InstanceCount { get; set; } = 0;
     }
-
-
-    public readonly record struct RenderingParameters(Matrix4X4<float> View, Matrix4X4<float> Projection, Ray3D<float> MouseRay, DirectionalLight DirectionalLight, AmbientLight AmbientLight);
 
     protected override Result<ModelRegistration> RegisterInOpenGL(Model entity)
     {
@@ -36,7 +33,7 @@ public class ModelRenderingManager : RenderingManager<Model, ModelRenderingManag
 
     protected override Result Load(ModelRegistration registration, RenderingParameters parameters)
     {
-        var result = GLHelper.LoadModelInOpenGL(registration.GLModelRegistration, parameters.View, parameters.Projection, parameters.MouseRay, parameters.DirectionalLight, parameters.AmbientLight);
+        var result = GLHelper.LoadModelInOpenGL(registration.GLModelRegistration, parameters);
         if (result.TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed to load model in OpenGL");
@@ -47,7 +44,7 @@ public class ModelRenderingManager : RenderingManager<Model, ModelRenderingManag
 
     protected override Result Render(ModelRegistration registration, Matrix4X4<float> world, RenderingParameters parameters)
     {
-        var result = GLHelper.RenderModel(registration.GLModelRegistration, world, registration.IndexCount);
+        var result = GLHelper.RenderModel(registration.GLModelRegistration, parameters.WorldMatrixName, world, registration.IndexCount);
         if (result.TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed to render model in OpenGL");

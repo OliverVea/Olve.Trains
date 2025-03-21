@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="OneOf.SourceGenerator" Version="3.0.271" />
         <PackageReference Include="StrictId" Version="1.2.0" />
         <PackageReference Include="BigGustave" Version="1.0.6" />
         <PackageReference Include="Olve.OpenRaster" Version="0.1.5" />
@@ -21,6 +22,7 @@
 
     <ItemGroup>
       <Folder Include="Camera\Cameras\" />
+      <Folder Include="Graphics\RenderingParameters\" />
     </ItemGroup>
 
 </Project>
