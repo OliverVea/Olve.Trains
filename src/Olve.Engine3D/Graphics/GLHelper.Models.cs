@@ -167,12 +167,14 @@ public static class RenderingParameterHelper
 {
     public static Result ApplyRenderingParameter(this AnyRenderingParameter renderingParameter, ShaderProgram shaderProgram)
     {
+        // TODO: cache location
         var location = GameManager.GL.GetUniformLocation(shaderProgram.Handle, renderingParameter.Name);
         if (location == -1)
         {
             return new ResultProblem("Could not find location for rendering parameter '{0}'", renderingParameter.Name);
         }
 
+        // TODO: investigate potential performance issues - boxing?
         return renderingParameter.Match(
             x => ApplyMatrix4X4(x, location),
             x => ApplyVector3D(x, location),
