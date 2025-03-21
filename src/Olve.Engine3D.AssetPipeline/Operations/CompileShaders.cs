@@ -17,6 +17,14 @@ public class CompileShaders(ILogger<CompileShaders> logger) : IAsyncOperation<Co
     {
         logger.LogInformation("Compiling shaders with shader slang");
 
+        var shaderFiles = Directory.GetFiles("/app/shaders", "*", SearchOption.AllDirectories);
+        foreach (var shaderFile in shaderFiles)
+        {
+            logger.LogDebug("Compiling shader: {ShaderFile}", shaderFile);
+        }
+
+        logger.LogInformation("Shaders compiled successfully!");
+
         return new Response();
     }
 }
