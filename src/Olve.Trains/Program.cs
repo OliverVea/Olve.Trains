@@ -1,5 +1,4 @@
-﻿using System;
-using Olve.Engine3D;
+﻿using Olve.Engine3D;
 using Olve.Results;
 using Olve.Trains.Scenes;
 using Silk.NET.Maths;

@@ -121,8 +121,7 @@ public static partial class GLHelper
         return Result.Success();
     }
 
-    public static Result LoadModelInOpenGL(OpenGLModelRegistration registrationGLModelRegistration,
-        Matrix4X4<float> view, Matrix4X4<float> projection, Ray3D<float> parametersMouseRay,  DirectionalLight parametersDirectionalLight, AmbientLight parametersAmbientLight)
+    public static Result LoadModelInOpenGL(OpenGLModelRegistration registrationGLModelRegistration, RenderingParameters parameters)
     {
         // Bind VAO, VBO, EBO, and shader program
         GameManager.GL.BindVertexArray(registrationGLModelRegistration.VAO.Handle);
@@ -130,37 +129,13 @@ public static partial class GLHelper
         GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, registrationGLModelRegistration.EBO.Handle);
         GameManager.GL.UseProgram(registrationGLModelRegistration.ShaderProgram.Handle);
 
-        // Set view
-        var viewLocation = GameManager.GL.GetUniformLocation(registrationGLModelRegistration.ShaderProgram.Handle, "view");
-        Span<float> viewBuffer = stackalloc float[16];
-        BufferHelper.CopyTo(view, viewBuffer);
-        GameManager.GL.UniformMatrix4(viewLocation, 1, false, viewBuffer);
-
-        // Set projection
-        var projectionLocation = GameManager.GL.GetUniformLocation(registrationGLModelRegistration.ShaderProgram.Handle, "projection");
-        Span<float> projectionBuffer = stackalloc float[16];
-        BufferHelper.CopyTo(projection, projectionBuffer);
-        GameManager.GL.UniformMatrix4(projectionLocation, 1, false, projectionBuffer);
-
-        // Set mouse ray
-        var mouseRayOriginLocation = GameManager.GL.GetUniformLocation(registrationGLModelRegistration.ShaderProgram.Handle, "mouseRayOrigin");
-        GameManager.GL.Uniform3(mouseRayOriginLocation, parametersMouseRay.Origin.X, parametersMouseRay.Origin.Y, parametersMouseRay.Origin.Z);
-        var mouseRayDirectionLocation = GameManager.GL.GetUniformLocation(registrationGLModelRegistration.ShaderProgram.Handle, "mouseRayDirection");
-        GameManager.GL.Uniform3(mouseRayDirectionLocation, parametersMouseRay.Direction.X, parametersMouseRay.Direction.Y, parametersMouseRay.Direction.Z);
-
-        // Set directional light
-        var directionalLightDirection = GameManager.GL.GetUniformLocation(registrationGLModelRegistration.ShaderProgram.Handle, "directionalLightDir");
-        GameManager.GL.Uniform3(directionalLightDirection, parametersDirectionalLight.Direction.X, parametersDirectionalLight.Direction.Y, parametersDirectionalLight.Direction.Z);
-        var directionalLightColor = GameManager.GL.GetUniformLocation(registrationGLModelRegistration.ShaderProgram.Handle, "directionalLightColor");
-        GameManager.GL.Uniform3(directionalLightColor, parametersDirectionalLight.Color.X, parametersDirectionalLight.Color.Y, parametersDirectionalLight.Color.Z);
-        var directionalLightIntensity = GameManager.GL.GetUniformLocation(registrationGLModelRegistration.ShaderProgram.Handle, "directionalIntensity");
-        GameManager.GL.Uniform1(directionalLightIntensity, parametersDirectionalLight.Intensity);
-
-        // Set ambient light
-        var ambientLightColor = GameManager.GL.GetUniformLocation(registrationGLModelRegistration.ShaderProgram.Handle, "ambientLightColor");
-        GameManager.GL.Uniform3(ambientLightColor, parametersAmbientLight.Color.X, parametersAmbientLight.Color.Y, parametersAmbientLight.Color.Z);
-        var ambientLightIntensity = GameManager.GL.GetUniformLocation(registrationGLModelRegistration.ShaderProgram.Handle, "ambientIntensity");
-        GameManager.GL.Uniform1(ambientLightIntensity, parametersAmbientLight.Intensity);
+        foreach (var parameter in parameters.Parameters)
+        {
+            if (parameter.ApplyRenderingParameter(registrationGLModelRegistration.ShaderProgram).TryPickProblems(out var problems))
+            {
+                return problems.Prepend("Failed to apply rendering parameter");
+            }
+        }
 
         // Enable depth test
         GameManager.GL.Enable(EnableCap.DepthTest);
@@ -168,19 +143,59 @@ public static partial class GLHelper
         return Result.Success();
     }
 
-    public static Result RenderModel(OpenGLModelRegistration heightmapRegistration, Matrix4X4<float> world, uint indexCount)
+    public static Result RenderModel(OpenGLModelRegistration heightmapRegistration, string? worldName, Matrix4X4<float> world, uint indexCount)
     {
         // VAO, VBO, EBO, and shader program are already bound
 
         // Set world
-        var worldLocation = GameManager.GL.GetUniformLocation(heightmapRegistration.ShaderProgram.Handle, "world");
-        Span<float> worldBuffer = stackalloc float[16];
-        BufferHelper.CopyTo(world, worldBuffer);
-        GameManager.GL.UniformMatrix4(worldLocation, 1, false, worldBuffer);
+        if (worldName is not null)
+        {
+            var worldLocation = GameManager.GL.GetUniformLocation(heightmapRegistration.ShaderProgram.Handle, worldName);
+            Span<float> worldBuffer = stackalloc float[16];
+            BufferHelper.CopyTo(world, worldBuffer);
+            GameManager.GL.UniformMatrix4(worldLocation, 1, false, worldBuffer);
+        }
 
         // Draw
         GameManager.GL.DrawElements(PrimitiveType.Triangles, indexCount * 3, DrawElementsType.UnsignedInt, in Unsafe.NullRef<int>());
 
+        return Result.Success();
+    }
+}
+
+public static class RenderingParameterHelper
+{
+    public static Result ApplyRenderingParameter(this AnyRenderingParameter renderingParameter, ShaderProgram shaderProgram)
+    {
+        var location = GameManager.GL.GetUniformLocation(shaderProgram.Handle, renderingParameter.Name);
+        if (location == -1)
+        {
+            return new ResultProblem("Could not find location for rendering parameter '{0}'", renderingParameter.Name);
+        }
+
+        return renderingParameter.Match(
+            x => ApplyMatrix4X4(x, location),
+            x => ApplyVector3D(x, location),
+            x => ApplyFloat(x, location));
+    }
+
+    private static Result ApplyMatrix4X4(RenderingParameter.Matrix4X4 matrix, int location)
+    {
+        Span<float> buffer = stackalloc float[16];
+        BufferHelper.CopyTo(matrix.Value, buffer);
+        GameManager.GL.UniformMatrix4(location, 1, false, buffer);
+        return Result.Success();
+    }
+
+    private static Result ApplyVector3D(RenderingParameter.Vector3D vector, int location)
+    {
+        GameManager.GL.Uniform3(location, vector.Value.X, vector.Value.Y, vector.Value.Z);
+        return Result.Success();
+    }
+
+    private static Result ApplyFloat(RenderingParameter.Float f, int location)
+    {
+        GameManager.GL.Uniform1(location, f.Value);
         return Result.Success();
     }
 }

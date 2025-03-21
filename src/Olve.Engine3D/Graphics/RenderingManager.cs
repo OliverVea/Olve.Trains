@@ -1,9 +1,50 @@
+using OneOf;
+
 namespace Olve.Engine3D.Graphics;
 
-public abstract class RenderingManager<T, TRegistration, TRenderingParameters>
+
+
+[GenerateOneOf]
+public partial class AnyRenderingParameter : OneOfBase<RenderingParameter.Matrix4X4, RenderingParameter.Vector3D, RenderingParameter.Float>
+{
+    public AnyRenderingParameter(RenderingParameter.Matrix4X4 value) : base(value) { }
+    public AnyRenderingParameter(RenderingParameter.Vector3D value) : base(value) { }
+    public AnyRenderingParameter(RenderingParameter.Float value) : base(value) { }
+
+    public string Name => Match(
+        matrix4X4 => matrix4X4.Name,
+        vector3D => vector3D.Name,
+        f => f.Name);
+}
+
+
+public static class RenderingParameter
+{
+    public class Matrix4X4(string name, Matrix4X4<float> value) : Base<Matrix4X4<float>>(name, value);
+    public class Vector3D(string name, Vector3D<float> value) : Base<Vector3D<float>>(name, value);
+    public class Float(string name, float value) : Base<float>(name, value);
+
+    public abstract class Base<T>(string name, T value)
+    {
+        public string Name { get; } = name;
+        public T Value { get; } = value;
+    }
+}
+
+public class RenderingParameters(IReadOnlyList<AnyRenderingParameter> renderingParameters)
+{
+    public static string? DefaultWorldMatrixName { get; } = "world";
+
+    public string? WorldMatrixName { get; init; } = DefaultWorldMatrixName;
+    public IReadOnlyList<AnyRenderingParameter> Parameters { get; } = renderingParameters;
+}
+
+public abstract class RenderingManager<T, TRegistration>
     where T : RenderingTarget
     where TRegistration : IHasInstanceCount
 {
+
+
     private readonly ThreadSafeIdGenerator _entityIdGenerator = new();
     private readonly ThreadSafeIdGenerator _instanceIdGenerator = new();
 
@@ -20,8 +61,8 @@ public abstract class RenderingManager<T, TRegistration, TRenderingParameters>
 
     protected abstract Result<TRegistration> RegisterInOpenGL(T entity);
     protected abstract Result DeregisterFromOpenGL(TRegistration registration);
-    protected abstract Result Load(TRegistration registration, TRenderingParameters parameters);
-    protected abstract Result Render(TRegistration registration, Matrix4X4<float> world, TRenderingParameters parameters);
+    protected abstract Result Load(TRegistration registration, RenderingParameters parameters);
+    protected abstract Result Render(TRegistration registration, Matrix4X4<float> world, RenderingParameters parameters);
 
     public Result<RenderingEntityId<T>> Register(T entity)
     {
@@ -145,7 +186,7 @@ public abstract class RenderingManager<T, TRegistration, TRenderingParameters>
         return modelInstance.Transform;
     }
 
-    public Result Render(TRenderingParameters parameters)
+    public Result Render(RenderingParameters parameters)
     {
         RenderingEntityId<T>? currentEntityId = null;
         TRegistration? currentModelRegistration = default(TRegistration);
