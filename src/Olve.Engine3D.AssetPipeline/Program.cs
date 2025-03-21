@@ -49,4 +49,9 @@ if (result.TryPickProblems(out var mainProblems))
     return 1;
 }
 
+logger.LogInformation("--------------------------------------");
+logger.LogInformation("|     Asset Pipeline Completed!      |");
+logger.LogInformation("--------------------------------------");
+
+
 return 0;
