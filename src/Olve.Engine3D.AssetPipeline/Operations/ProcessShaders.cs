@@ -187,6 +187,8 @@ public class ProcessShaders(ILogger<ProcessShaders> logger) : IAsyncOperation<Pr
         {
             ScriptObject uniformObject = new();
             uniformObject.Add("Name", uniform.Name);
+            uniformObject.Add("VariableName", uniform.Name);
+            uniformObject.Add("PropertyName", char.ToUpper(uniform.Name[0]) + uniform.Name[1..]);
             uniformObject.Add("UniformType", uniform.Type);
             uniformObject.Add("DataType", uniform.Type.GetDataType());
             uniformObject.Add("RenderParameterType", uniform.Type.GetRenderParameterType());

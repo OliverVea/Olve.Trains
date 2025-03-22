@@ -8,6 +8,7 @@ var options = WindowOptions.Default with
 {
     Title = "My first Silk.NET program!",
     Size = new Vector2D<int>(1920, 1080),
+    Samples = 8
 };
 
 var window = Window.Create(options);

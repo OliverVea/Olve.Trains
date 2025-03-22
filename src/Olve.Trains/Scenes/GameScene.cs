@@ -1,9 +1,9 @@
 using System.Drawing;
+using Olve.CodeGen.Shaders;
 using Olve.Engine3D;
 using Olve.Engine3D.Camera;
 using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.Shaders;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Scenes;
@@ -25,24 +25,35 @@ public sealed class GameScene : Scene
 
     private readonly List<RenderingInstanceId<Model>> _rectangleInstances = [];
     private readonly List<float> _rotationSpeeds = [];
+    private readonly List<Vector3D<float>> _rotationAxes = new();
     private readonly Random _random = new();
+
+    private readonly Shaders.Default _defaultShader = new(
+            ambientLightColor: new Vector3D<float>(180, 167, 214) / 255f,
+            ambientLightIntensity: 0.2f,
+            directionalLightColor: new Vector3D<float>(249,233,164) / 255f,
+            directionalLightDir: Vector3D.Normalize(new Vector3D<float>(0.2f, -1, 0.2f)),
+            directionalIntensity: 1.0f,
+            world: Matrix4X4<float>.Identity,
+            view: Matrix4X4<float>.Identity,
+            projection: Matrix4X4<float>.Identity
+        );
 
     public override Result Load()
     {
-        if (ShaderLoader.Load(DefaultShaderData).TryPickProblems(out var shaderProblems, out var shaderData))
-        {
-            return shaderProblems.Prepend("Failed loading default shader");
-        }
-
         var cube = new Model
         {
-            Indices = CubeIndices,
-            Vertices = CubeVertices,
-            Normals = CubeNormals,
-            ShaderData = shaderData
+            Mesh = new()
+            {
+                Indices = CubeIndices,
+                Vertices = CubeVertices,
+                Normals = CubeNormals,
+            }, 
+            ShaderData = _defaultShader.ShaderData
         };
 
-        for (int i = 0; i < 10; i++)
+        const int CubeCount = 100;
+        for (int i = 0; i < CubeCount; i++)
         {
             var scale = _random.NextFloat(0.5f, 1.5f);
             var position = new Vector3D<float>(
@@ -50,6 +61,14 @@ public sealed class GameScene : Scene
                 _random.NextFloat(-2f, 2f),  // Random Y
                 _random.NextFloat(-5f, 5f)   // Random Z
             );
+            
+            var axis = new Vector3D<float>(
+                _random.NextFloat(-1f, 1f),
+                _random.NextFloat(-1f, 1f),
+                _random.NextFloat(-1f, 1f)
+            );
+            axis = Vector3D.Normalize(axis);
+            _rotationAxes.Add(axis);
 
             var rotationSpeed = _random.NextFloat(0.1f, 0.6f); // Random rotation speed
 
@@ -72,6 +91,9 @@ public sealed class GameScene : Scene
 
         _cameraController = IsometricOrthographicCameraController.Create(cameraTarget, cameraViewDirection, orthographicSize);
         _cameraSchemes.Add(new WasdMovement());
+        
+        // MSAA
+        GameManager.GL.Enable(EnableCap.Multisample);
 
         return Result.Success();
     }
@@ -96,6 +118,8 @@ public sealed class GameScene : Scene
     }
 
     private float _lastTps = 0;
+    private float _t = 0;
+    private float _lastFps = 0;
 
     public override Result Update(TimeSpan deltaTime)
     {
@@ -112,13 +136,6 @@ public sealed class GameScene : Scene
         _cameraController.Zoom(_cameraMovementInput.Zoom, deltaTime);
         return Result.Success();
     }
-
-    private float _t = 0;
-
-    private static readonly DirectionalLight DirectionalLight = new(Vector3D.Normalize(new Vector3D<float>(1, -1, 1)), new Vector3D<float>(1, 1, 0.8f), 1.0f);
-    private static readonly AmbientLight AmbientLight = new(new Vector3D<float>(0.15f, 0.15f, 0.2f), 0.5f);
-
-    private float _lastFps = 0;
 
     public override Result Render(TimeSpan deltaTime)
     {
@@ -138,7 +155,7 @@ public sealed class GameScene : Scene
 
         for (int i = 0; i < _rectangleInstances.Count; i++)
         {
-            var rotationMatrix = Matrix4X4.CreateRotationY(dt * _rotationSpeeds[i]);
+            var rotationMatrix = Matrix4X4.CreateFromAxisAngle(_rotationAxes[i], dt * _rotationSpeeds[i]);
 
             if (GameManager.ModelRenderingManager.GetInstanceWorld(_rectangleInstances[i]).TryPickProblems(out var problems1, out var worldMatrix))
             {
@@ -149,27 +166,14 @@ public sealed class GameScene : Scene
 
             GameManager.ModelRenderingManager.SetInstanceWorld(_rectangleInstances[i], worldMatrix);
         }
-
-        var rawMousePosition = GameManager.MouseManager.State.Position;
-        var mousePosition = GameManager.Window.Size.ToNdc(rawMousePosition);
-
-        if (_cameraController.Camera.GetRay(mousePosition).TryPickProblems(out var problems, out var ray))
-        {
-            return problems;
-        }
-
-        RenderingParameters parameters = new([
-            new RenderingParameter.Matrix4X4("view", viewMatrix),
-            new RenderingParameter.Matrix4X4("projection", projectionMatrix),
-            new RenderingParameter.Vector3D("ambientLightColor", AmbientLight.Color),
-            new RenderingParameter.Float("ambientIntensity", AmbientLight.Intensity),
-            new RenderingParameter.Vector3D("directionalLightColor", DirectionalLight.Color),
-            new RenderingParameter.Vector3D("directionalLightDir", DirectionalLight.Direction),
-            new RenderingParameter.Float("directionalIntensity", DirectionalLight.Intensity)
-        ]);
+        
+        _defaultShader.View = viewMatrix;
+        _defaultShader.Projection = projectionMatrix;
+        
+        RenderingParameters parameters = new (_defaultShader.MakeParameters());
 
         var renderResult = GameManager.ModelRenderingManager.Render(parameters);
-        if (renderResult.TryPickProblems(out problems))
+        if (renderResult.TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed rendering game objects");
         }
@@ -186,7 +190,6 @@ public static class RandomExtensions
         return min + (float)random.NextDouble() * (max - min);
     }
 }
-
 
 public static class ScreenSizeExtensions
 {

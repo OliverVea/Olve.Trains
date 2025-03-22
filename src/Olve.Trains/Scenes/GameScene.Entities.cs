@@ -6,19 +6,6 @@ namespace Olve.Trains.Scenes;
 
 public static class GameSceneEntities
 {
-    public static readonly ShaderAssetData DefaultShaderData = new()
-    {
-        VertexShaderPath = new("assets/shaders/default.vert.glsl"),
-        FragmentShaderPath = new("assets/shaders/default.frag.glsl"),
-        ShaderParameterNames = new ShaderParameterNames
-        {
-            PositionAttributeName = "position",
-            WorldMatrixUniformName = "world",
-            ViewMatrixUniformName = "view",
-            ProjectionMatrixUniformName = "projection"
-        }
-    };
-
     public static readonly Vector3D<float>[] CubeVertices =
     [
         // Top
