@@ -23,7 +23,7 @@ serviceCollection.AddLogging(builder =>
 
 serviceCollection.AddTransient<RunAssetPipeline>();
 serviceCollection.AddTransient<DownloadAssets>();
-serviceCollection.AddTransient<CompileShaders>();
+serviceCollection.AddTransient<ProcessShaders>();
 serviceCollection.AddTransient<ProcessAssets>();
 serviceCollection.AddTransient<WriteMetadataSourceFiles>();
 

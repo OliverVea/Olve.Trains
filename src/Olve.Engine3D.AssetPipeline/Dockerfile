@@ -10,14 +10,14 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Download and extract the Shader Slang Linux tarball.
-RUN wget -O slang.zip https://github.com/shader-slang/slang/releases/download/v2025.6.2/slang-2025.6.2-linux-x86_64.zip
+# RUN wget -O slang.zip https://github.com/shader-slang/slang/releases/download/v2025.6.2/slang-2025.6.2-linux-x86_64.zip
 
-RUN unzip slang.zip -d /usr/local/slang-2025.6.2-linux-x86_64 \
-    && ls -l /usr/local/ \
-    && ls -l /usr/local/slang-2025.6.2-linux-x86_64/
+# RUN unzip slang.zip -d /usr/local/slang-2025.6.2-linux-x86_64 \
+#     && ls -l /usr/local/ \
+#     && ls -l /usr/local/slang-2025.6.2-linux-x86_64/
 
 # Verify the Slang installation.
-RUN /usr/local/slang-2025.6.2-linux-x86_64/bin/slangc -h
+# RUN /usr/local/slang-2025.6.2-linux-x86_64/bin/slangc -h
 
 ##############################
 # Stage 2: Build the Asset Pipeline
@@ -49,10 +49,10 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 
 # Copy the Shader Slang binaries.
-COPY --from=asset-builder /usr/local/slang-2025.6.2-linux-x86_64 /usr/local/slang-2025.6.2-linux-x86_64
+# COPY --from=asset-builder /usr/local/slang-2025.6.2-linux-x86_64 /usr/local/slang-2025.6.2-linux-x86_64
 
 # Add the Shader Slang binaries to the PATH.
-ENV PATH="/usr/local/slang-2025.6.2-linux-x86_64/bin:${PATH}"
+# ENV PATH="/usr/local/slang-2025.6.2-linux-x86_64/bin:${PATH}"
 
 # Set the entrypoint to run the .NET application.
 ENTRYPOINT ["dotnet", "/app/Olve.Engine3D.AssetPipeline.dll"]
