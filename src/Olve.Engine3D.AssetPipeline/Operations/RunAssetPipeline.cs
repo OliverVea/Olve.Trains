@@ -7,7 +7,7 @@ namespace Olve.Engine3D.AssetPipeline.Operations;
 public class RunAssetPipeline(
     ILogger<RunAssetPipeline> logger,
     DownloadAssets downloadAssets,
-    CompileShaders compileShaders,
+    ProcessShaders processShaders,
     ProcessAssets processAssets,
     WriteMetadataSourceFiles writeMetadataSourceFiles) : IAsyncOperation<RunAssetPipeline.Request>
 {
@@ -24,8 +24,8 @@ public class RunAssetPipeline(
             return downloadProblems.Prepend("Failed to download assets");
         }
 
-        CompileShaders.Request compileShadersRequest = new();
-        var compileShadersResult = await compileShaders.ExecuteAsync(compileShadersRequest, ct);
+        ProcessShaders.Request compileShadersRequest = new();
+        var compileShadersResult = await processShaders.ExecuteAsync(compileShadersRequest, ct);
         if (compileShadersResult.TryPickProblems(out var shaderProblems, out var compileResponse))
         {
             return shaderProblems.Prepend("Failed to compile shaders");

@@ -10,9 +10,7 @@
         <TieredCompilation>false</TieredCompilation>
     </PropertyGroup>
     <ItemGroup>
-        <None Update="assets\**\*">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
+        <None Update="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Silk.NET.Input" Version="2.22.0" />
@@ -22,10 +20,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="assets\" />
     </ItemGroup>
 
 </Project>

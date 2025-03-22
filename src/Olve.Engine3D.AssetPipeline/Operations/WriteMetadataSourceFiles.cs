@@ -13,7 +13,7 @@ public class WriteMetadataSourceFiles(ILogger<WriteMetadataSourceFiles> logger) 
     public record Request(
         DownloadAssets.Response DownloadAssetsResponse,
         ProcessAssets.Response ProcessAssetsResponse,
-        CompileShaders.Response CompileShadersResponse);
+        ProcessShaders.Response CompileShadersResponse);
 
 
     public Task<Result> ExecuteAsync(Request request, CancellationToken ct = new())
