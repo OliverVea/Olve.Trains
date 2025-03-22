@@ -4,32 +4,39 @@
 // |                                                                                                |
 // --------------------------------------------------------------------------------------------------
 using Olve.Engine3D.Graphics;
+using Olve.Engine3D.Graphics.Shaders;
 using Silk.NET.Maths;
 
 namespace Olve.CodeGen.Shaders;
 
 
-public static class {{ Name }}
-{
-    {{  if VertexShader }}public static class Vertex
+public static partial class Shaders {
+    public class {{ Name }}
     {
-        public static string Path = "{{VertexShader.SourcePath}}";
-        public static string Source = @"{{VertexShader.SourceCode}}";
-    }{{ end }}
-
-    {{  if FragmentShader }}public static class Fragment
-    {
-        public static string Path = "{{FragmentShader.SourcePath}}";
-        public static string Source = @"{{FragmentShader.SourceCode}}";
-    }{{ end }}
-
-    public static IReadOnlyList<AnyRenderingParameter> MakeParameters(
-        {{ for x in 1..(Uniforms.size - 1) }}{{Uniforms[x].DataType}} {{Uniforms[x].Name}}{{ if x < (Uniforms.size - 1) }},{{ end }}
-{{ end }})
-    {
-        return
-        [
-            {{ for x in 1..(Uniforms.size - 1) }}new {{Uniforms[x].RenderParameterType}}("{{Uniforms[x].Name}}", {{Uniforms[x].Name}}),
-{{ end }}];
+        public {{ Name}}({{ for x in 0..(Uniforms.size - 1) }}{{Uniforms[x].DataType}} {{Uniforms[x].VariableName}}{{ if x < (Uniforms.size - 1) }},{{ end }}{{ end }})
+        {
+            {{ for x in 0..(Uniforms.size - 1) }}{{Uniforms[x].PropertyName}} = {{Uniforms[x].VariableName}};
+    {{ end }}    }
+    
+        {{ for x in 0..(Uniforms.size - 1) }}public {{Uniforms[x].DataType}} {{Uniforms[x].PropertyName}} { get; set; }
+    {{ end }}
+    
+        public ShaderData ShaderData { get; } = new ShaderData
+        {
+            Name = "{{ Name }}",
+            VertexPath = "{{ VertexShader.SourcePath }}",
+            VertexSource = @"{{ VertexShader.SourceCode }}",
+            FragmentPath = "{{ FragmentShader.SourcePath }}",
+            FragmentSource = @"{{ FragmentShader.SourceCode }}",
+        };
+    
+        public IReadOnlyList<AnyRenderingParameter> MakeParameters()
+        {
+            return
+            [
+                {{ for x in 0..(Uniforms.size - 1) }}new {{Uniforms[x].RenderParameterType}}("{{Uniforms[x].Name}}", {{Uniforms[x].PropertyName}}),
+{{ end }}
+            ];
+        }
     }
 }

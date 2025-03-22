@@ -1,8 +1,5 @@
 namespace Olve.Engine3D.Graphics;
 
-public readonly record struct DirectionalLight(Vector3D<float> Direction, Vector3D<float> Color, float Intensity);
-public readonly record struct AmbientLight(Vector3D<float> Color, float Intensity);
-
 public class ModelRenderingManager : RenderingManager<Model, ModelRenderingManager.ModelRegistration>
 {
     public record struct ModelRegistration(GLHelper.OpenGLModelRegistration GLModelRegistration, uint VertexCount, uint IndexCount) : IHasInstanceCount
@@ -17,7 +14,7 @@ public class ModelRenderingManager : RenderingManager<Model, ModelRenderingManag
             return problems.Prepend("Failed to register model in OpenGL");
         }
 
-        return new ModelRegistration(openglResult, (uint)entity.Vertices.Length, (uint)entity.Indices.Length);
+        return new ModelRegistration(openglResult, (uint)entity.Mesh.Vertices.Length, (uint)entity.Mesh.Indices.Length);
     }
 
     protected override Result DeregisterFromOpenGL(ModelRegistration registration)

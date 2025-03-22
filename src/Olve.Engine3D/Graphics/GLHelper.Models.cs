@@ -21,11 +21,11 @@ public static partial class GLHelper
         // Bind VBO
         var vbo = GameManager.GL.CreateBuffer();
         GameManager.GL.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
-        var verticesLength = model.Vertices.Length * FieldsPerVertex;
+        var verticesLength = model.Mesh.Vertices.Length * FieldsPerVertex;
         var array = verticesLength > MaxStackAllocationSize ? ArrayPool<float>.Shared.Rent(verticesLength) : null;
-        var vertices = verticesLength > MaxStackAllocationSize ? array![..verticesLength] : stackalloc float[model.Vertices.Length * FieldsPerVertex];
-        BufferHelper.CopyTo(model.Vertices, vertices, FieldsPerVertex, offset: 0);
-        BufferHelper.CopyTo(model.Normals, vertices, FieldsPerVertex, offset: 3);
+        var vertices = verticesLength > MaxStackAllocationSize ? array![..verticesLength] : stackalloc float[model.Mesh.Vertices.Length * FieldsPerVertex];
+        BufferHelper.CopyTo(model.Mesh.Vertices, vertices, FieldsPerVertex, offset: 0);
+        BufferHelper.CopyTo(model.Mesh.Normals, vertices, FieldsPerVertex, offset: 3);
         GameManager.GL.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices, BufferUsageARB.StaticDraw);
         if (array is not null)
         {
@@ -35,10 +35,10 @@ public static partial class GLHelper
         // Bind EBO
         var ebo = GameManager.GL.CreateBuffer();
         GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
-        var indicesLength = model.Indices.Length * 3;
+        var indicesLength = model.Mesh.Indices.Length * 3;
         var array2 = indicesLength > MaxStackAllocationSize ? ArrayPool<uint>.Shared.Rent(indicesLength) : null;
-        var indices = indicesLength > MaxStackAllocationSize ? array2![..indicesLength] : stackalloc uint[model.Indices.Length * 3];
-        BufferHelper.CopyTo(model.Indices, indices);
+        var indices = indicesLength > MaxStackAllocationSize ? array2![..indicesLength] : stackalloc uint[model.Mesh.Indices.Length * 3];
+        BufferHelper.CopyTo(model.Mesh.Indices, indices);
         GameManager.GL.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices, BufferUsageARB.StaticDraw);
         if (array2 is not null)
         {
@@ -54,28 +54,28 @@ public static partial class GLHelper
 
         // Load shader
         var vertexShader = GameManager.GL.CreateShader(ShaderType.VertexShader);
-        GameManager.GL.ShaderSource(vertexShader, model.ShaderData.VertexShaderSource.SourceCode);
+        GameManager.GL.ShaderSource(vertexShader, model.ShaderData.VertexSource);
         GameManager.GL.CompileShader(vertexShader);
         GameManager.GL.GetShader(vertexShader, ShaderParameterName.CompileStatus, out var vStatus);
 
         if (vStatus != (int)GLEnum.True)
         {
             return new ResultProblem(
-                "Vertex shader '{0}' failed to compile with message '{1}'",
-                model.ShaderData.VertexShaderSource.Path,
+                "Vertex shader for '{0}' failed to compile with message '{1}'",
+                model.ShaderData.Name,
                 GameManager.GL.GetShaderInfoLog(vertexShader));
         }
 
         var fragmentShader = GameManager.GL.CreateShader(ShaderType.FragmentShader);
-        GameManager.GL.ShaderSource(fragmentShader, model.ShaderData.FragmentShaderSource.SourceCode);
+        GameManager.GL.ShaderSource(fragmentShader, model.ShaderData.FragmentSource);
         GameManager.GL.CompileShader(fragmentShader);
         GameManager.GL.GetShader(fragmentShader, ShaderParameterName.CompileStatus, out var fStatus);
 
         if (fStatus != (int)GLEnum.True)
         {
             return new ResultProblem(
-                "Fragment shader '{0}' failed to compile with message '{1}'",
-                model.ShaderData.FragmentShaderSource.Path,
+                "Fragment shader for '{0}' failed to compile with message '{1}'",
+                model.ShaderData.Name,
                 GameManager.GL.GetShaderInfoLog(fragmentShader));
         }
 
@@ -107,7 +107,7 @@ public static partial class GLHelper
         GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
 
         return new OpenGLModelRegistration(
-            new VAO(vao), new VBO(vbo, (uint)model.Vertices.Length), new EBO(ebo, (uint)indicesLength), shaderProgram);
+            new VAO(vao), new VBO(vbo, (uint)model.Mesh.Vertices.Length), new EBO(ebo, (uint)indicesLength), shaderProgram);
     }
 
     public static Result RemoveModelFromOpenGL(OpenGLModelRegistration modelRegistration)

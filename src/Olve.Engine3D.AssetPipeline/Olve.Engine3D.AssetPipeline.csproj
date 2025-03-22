@@ -5,6 +5,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
@@ -16,12 +17,17 @@
       <PackageReference Include="Olve.Operations" Version="0.14.0" />
       <PackageReference Include="Olve.Results" Version="0.14.0" />
       <PackageReference Include="Scriban" Version="6.0.0" />
+      <PackageReference Include="Silk.NET.Assimp" Version="2.22.0" />
     </ItemGroup>
 
     <ItemGroup>
       <None Update="Templates\ShaderClass.scriban">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
     </ItemGroup>
 
 </Project>
