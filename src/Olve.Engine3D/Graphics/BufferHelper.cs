@@ -2,7 +2,7 @@ namespace Olve.Engine3D.Graphics;
 
 public static class BufferHelper
 {
-    public static void CopyTo(Vector3D<float>[] vertices, Span<float> buffer, int stride, int offset = 0)
+    public static void CopyTo<T>(Vector3D<T>[] vertices, Span<T> buffer, int stride = 3, int offset = 0) where T : unmanaged, IFormattable, IEquatable<T>, IComparable<T>
     {
         for (var i = 0; i < vertices.Length; i += 1)
         {
@@ -23,7 +23,7 @@ public static class BufferHelper
         }
     }
 
-    public static void CopyTo(Matrix4X4<float> matrix, Span<float> buffer)
+    public static void CopyTo<T>(Matrix4X4<T> matrix, Span<T> buffer) where T : unmanaged, IFormattable, IEquatable<T>, IComparable<T>
     {
         for (var i = 0; i < 4; i++)
         {
@@ -31,6 +31,16 @@ public static class BufferHelper
             {
                 buffer[i * 4 + j] = matrix[i, j];
             }
+        }
+    }
+
+    public static void CopyTo<T>(Vector2D<T>[] vertices, Span<T> buffer, int stride, int offset = 0) where T : unmanaged, IFormattable, IEquatable<T>, IComparable<T>
+    {
+        for (var i = 0; i < vertices.Length; i += 1)
+        {
+            var j = i * stride + offset;
+            buffer[j] = vertices[i].X;
+            buffer[j + 1] = vertices[i].Y;
         }
     }
 }

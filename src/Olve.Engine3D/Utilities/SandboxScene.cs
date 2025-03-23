@@ -4,7 +4,6 @@ using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
 using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.OpenGL;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Scenes;

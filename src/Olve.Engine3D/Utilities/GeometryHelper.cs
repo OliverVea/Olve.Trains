@@ -1,5 +1,4 @@
 using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.OpenGL;
 
 namespace Olve.Engine3D.Utilities;
 
