@@ -1,5 +1,7 @@
 using Olve.Engine3D.Graphics;
+using Olve.Engine3D.Graphics.Rendering;
 using Olve.Engine3D.Input;
+using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;

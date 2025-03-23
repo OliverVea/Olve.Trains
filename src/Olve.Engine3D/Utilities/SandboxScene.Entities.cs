@@ -1,5 +1,7 @@
 using Olve.Engine3D.Graphics;
+using Olve.Engine3D.Graphics.Rendering.Entities;
 using Olve.Engine3D.Graphics.Shaders;
+using TextureData = Olve.Engine3D.Graphics.Entities.TextureData;
 
 namespace Olve.Engine3D.Utilities;
 
@@ -15,7 +17,16 @@ public partial class SandboxScene
     // Just the Top and Left faces for now
     private static readonly Model Cube = new()
     {
-        ShaderData = DefaultShaderData,
+        Material = new Material
+        {
+            TextureData = new TextureData()
+            {
+                Height = 1,
+                Width = 1,
+                Pixels = [ new Vector3D<byte>(255, 0, 255)]
+            },
+            ShaderData = DefaultShaderData,
+        },
         Mesh = new()
         {
             Indices =

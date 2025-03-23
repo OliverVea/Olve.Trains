@@ -11,6 +11,9 @@
     </PropertyGroup>
     <ItemGroup>
         <None Update="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="assets\meshes\SM_Veh_Bullet_01.mesh">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Silk.NET.Input" Version="2.22.0" />

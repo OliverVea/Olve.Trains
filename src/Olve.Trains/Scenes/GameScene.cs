@@ -1,16 +1,17 @@
 using System.Drawing;
-using Olve.CodeGen.Shaders;
+using Olve.CodeGen;
 using Olve.Engine3D;
-using Olve.Engine3D.Camera;
 using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Graphics;
+using Olve.Engine3D.Graphics.Entities;
+using Olve.Engine3D.Graphics.Rendering.Entities;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
+using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
-using static Olve.Trains.Scenes.GameSceneEntities;
 
 namespace Olve.Trains.Scenes;
 
@@ -34,6 +35,7 @@ public sealed class GameScene : Scene
             directionalLightColor: new Vector3D<float>(249,233,164) / 255f,
             directionalLightDir: Vector3D.Normalize(new Vector3D<float>(0.2f, -1, 0.2f)),
             directionalIntensity: 1.0f,
+            textureSampler: new Texture2D(),
             world: Matrix4X4<float>.Identity,
             view: Matrix4X4<float>.Identity,
             projection: Matrix4X4<float>.Identity
@@ -41,21 +43,32 @@ public sealed class GameScene : Scene
 
     public override Result Load()
     {
+        var trainMeshResult = Models.LoadModelMesh(Models.SM_Veh_Bullet_01);
+        if (trainMeshResult.TryPickProblems(out var problems, out var trainMesh))
+        {
+            return problems;
+        }
+
         var cube = new Model
         {
-            Mesh = new()
+            Mesh = trainMesh,
+            Material = new Material
             {
-                Indices = CubeIndices,
-                Vertices = CubeVertices,
-                Normals = CubeNormals,
-            }, 
-            ShaderData = _defaultShader.ShaderData
+                Shininess = 0,
+                ShaderData = _defaultShader.ShaderData,
+                TextureData = new TextureData
+                {
+                    Height = 1,
+                    Width = 1,
+                    Pixels = [ new Vector3D<byte>(255, 0, 255) ]
+                }
+            },
         };
 
-        const int CubeCount = 100;
-        for (int i = 0; i < CubeCount; i++)
+        const int cubeCount = 1;
+        for (int i = 0; i < cubeCount; i++)
         {
-            var scale = _random.NextFloat(0.5f, 1.5f);
+            var scale = _random.NextFloat(0.05f, 0.5f);
             var position = new Vector3D<float>(
                 _random.NextFloat(-5f, 5f),  // Random X
                 _random.NextFloat(-2f, 2f),  // Random Y
