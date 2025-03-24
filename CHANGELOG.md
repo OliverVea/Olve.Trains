@@ -1,3 +1,9 @@
+## v0.1.3 (2025-03-24)
+
+### Fix
+
+- tailscale machine name
+
 ## v0.1.2 (2025-03-24)
 
 ### Fix
