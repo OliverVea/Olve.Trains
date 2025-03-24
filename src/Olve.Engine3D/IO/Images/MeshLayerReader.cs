@@ -1,7 +1,3 @@
-using BigGustave;
-using Olve.Engine3D.Graphics;
-using Olve.OpenRaster;
-
 namespace Olve.Engine3D.IO.Images;
 
 public class HeightmapParser

@@ -1,6 +1,7 @@
 using MemoryPack;
+using TriangleIndex = Olve.Engine3D.Rendering.Primitives.TriangleIndex;
 
-namespace Olve.Engine3D.Graphics.Entities;
+namespace Olve.Engine3D.Rendering.Entities;
 
 [MemoryPackable]
 public partial class MeshData

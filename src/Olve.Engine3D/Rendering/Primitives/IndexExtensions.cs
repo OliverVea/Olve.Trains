@@ -1,8 +1,8 @@
-namespace Olve.Engine3D.Graphics;
+namespace Olve.Engine3D.Rendering.Primitives;
 
 public static class IndexExtensions
 {
-    public static void CopyToSpan(this Rendering.Primitives.TriangleIndex[] indices, Span<uint> buffer)
+    public static void CopyTo(this TriangleIndex[] indices, Span<uint> buffer)
     {
         for (var i = 0; i < indices.Length; i++)
         {
@@ -12,7 +12,7 @@ public static class IndexExtensions
         }
     }
 
-    public static void CopyToSpan(this LineIndex[] indices, Span<uint> buffer)
+    public static void CopyTo(this LineIndex[] indices, Span<uint> buffer)
     {
         for (var i = 0; i < indices.Length; i++)
         {

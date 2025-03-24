@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
-using Olve.Engine3D.Graphics;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
+using Olve.Engine3D.Rendering.Parameters;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
@@ -43,8 +43,10 @@ public static class OpenGLModelRenderingManager
         {
             // TODO: Cache uniform location
             var worldLocation = GameManager.GL.GetUniformLocation(shaderProgram.Handle, worldName);
+
             Span<float> worldBuffer = stackalloc float[16];
-            BufferHelper.CopyTo(world, worldBuffer);
+            world.CopyTo(worldBuffer);
+
             GameManager.GL.UniformMatrix4(worldLocation, 1, false, worldBuffer);
         }
 

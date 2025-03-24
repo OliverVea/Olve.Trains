@@ -1,6 +1,6 @@
-using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.Entities;
+using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
+using Olve.Engine3D.Rendering.Primitives;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
@@ -51,9 +51,10 @@ public class OpenGLMeshManager : IOpenGLEntityManager<MeshData, OpenGLMeshManage
 
         BufferHelper.UsingSpan<float>(meshData.VertexCount * VertexFields, vertices =>
         {
-            BufferHelper.CopyTo(meshData.Positions, vertices, VertexFields, offset: 0);
-            BufferHelper.CopyTo(meshData.Normals, vertices, VertexFields, offset: PositionFields);
-            BufferHelper.CopyTo(meshData.TextureCoordinates, vertices, VertexFields, offset: PositionFields + NormalFields);
+            meshData.Positions.CopyTo(vertices, VertexFields, offset: 0);
+            meshData.Normals.CopyTo(vertices, VertexFields, offset: PositionFields);
+            meshData.TextureCoordinates.CopyTo(vertices, VertexFields, offset: PositionFields + NormalFields);
+
             GameManager.GL.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices, BufferUsageARB.StaticDraw);
         });
 
@@ -67,7 +68,8 @@ public class OpenGLMeshManager : IOpenGLEntityManager<MeshData, OpenGLMeshManage
 
         BufferHelper.UsingSpan<uint>(meshData.Indices.Length * 3, indices =>
         {
-            BufferHelper.CopyTo(meshData.Indices, indices);
+            meshData.Indices.CopyTo(indices);
+
             GameManager.GL.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices, BufferUsageARB.StaticDraw);
         });
 

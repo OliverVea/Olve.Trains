@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using MemoryPack;
 
-namespace Olve.Engine3D.Graphics;
+namespace Olve.Engine3D.Rendering.Primitives;
 
 [MemoryPackable]
 [DebuggerDisplay("({A},{B},{C})")]

@@ -1,6 +1,6 @@
 using MemoryPack;
 
-namespace Olve.Engine3D.Graphics.Entities;
+namespace Olve.Engine3D.Rendering.Entities;
 
 [MemoryPackable]
 public partial class TextureData

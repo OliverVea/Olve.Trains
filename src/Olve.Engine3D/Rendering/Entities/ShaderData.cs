@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Olve.Engine3D.Graphics.Shaders;
+namespace Olve.Engine3D.Rendering.Entities;
 
 public class ShaderData
 {

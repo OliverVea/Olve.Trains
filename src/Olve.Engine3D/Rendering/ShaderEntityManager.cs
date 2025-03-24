@@ -1,4 +1,4 @@
-using Olve.Engine3D.Graphics.Shaders;
+using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 

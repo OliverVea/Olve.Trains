@@ -26,7 +26,15 @@ serviceCollection.AddTransient<RunAssetPipeline>();
 serviceCollection.AddTransient<DownloadAssets>();
 serviceCollection.AddTransient<ProcessShaders>();
 serviceCollection.AddTransient<ProcessAssets>();
+serviceCollection.AddTransient<ProcessMeshAssets>();
+serviceCollection.AddTransient<ProcessTextureAssets>();
 serviceCollection.AddTransient<WriteMetadataSourceFiles>();
+
+serviceCollection.AddTransient<MeshFileReader>();
+serviceCollection.AddTransient<TextureFileReader>();
+
+serviceCollection.AddTransient<AssetWriter>();
+serviceCollection.AddTransient<TemplateWriter>();
 
 var serviceProvider = serviceCollection.BuildServiceProvider();
 

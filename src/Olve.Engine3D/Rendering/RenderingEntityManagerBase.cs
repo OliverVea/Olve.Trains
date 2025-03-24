@@ -1,5 +1,3 @@
-using Olve.Engine3D.Graphics;
-
 namespace Olve.Engine3D.Rendering;
 
 public abstract class RenderingEntityManagerBase<TId, TEntity, TRegistration>

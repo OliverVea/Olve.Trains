@@ -1,5 +1,3 @@
-using Silk.NET.Maths;
-
 namespace Olve.Engine3D.Camera.Views;
 
 public class OrbitalView : IView
