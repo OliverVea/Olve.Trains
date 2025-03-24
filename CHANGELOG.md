@@ -1,3 +1,9 @@
+## v0.1.4 (2025-03-24)
+
+### Fix
+
+- setting tailscale again
+
 ## v0.1.3 (2025-03-24)
 
 ### Fix
