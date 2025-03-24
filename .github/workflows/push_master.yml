@@ -16,7 +16,7 @@ concurrency:
 
 env:
   DOTNET_VERSION: 9.0.100
-  S3_URL: http://192.168.1.14:9000
+  S3_URL: http://minio.banjo-chameleon.ts.net:9000
   S3_BUCKET: olve.trains
   TS_EXIT_NODE: tailscale-home
 
@@ -79,12 +79,6 @@ jobs:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
-
-      - name: Set tailscale exit node
-        run: |
-          sudo tailscale down
-          sudo tailscale set --exit-node=${{ env.TS_EXIT_NODE }}
-          sudo tailscale up
 
       - name: Setup .env
         run: |
