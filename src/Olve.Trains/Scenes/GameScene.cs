@@ -1,11 +1,12 @@
 using System.Drawing;
-using Olve.CodeGen;
 using Olve.Engine3D;
+using Olve.Engine3D.Assets;
 using Olve.Engine3D.Camera.Controllers;
-using Olve.Engine3D.Graphics;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Rendering;
+using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Rendering.Parameters;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Silk.NET.Maths;
@@ -33,8 +34,14 @@ public sealed class GameScene : Scene
 
     public override Result Load()
     {
-        var trainMeshResult = Meshes.LoadModelMesh(Meshes.SM_Veh_Bullet_01);
+        var trainMeshResult = AssetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01);
         if (trainMeshResult.TryPickProblems(out var problems, out var trainMesh))
+        {
+            return problems;
+        }
+
+        var trainTextureResult = AssetLoader.LoadAsset(Textures.SimpleTrains_Texture_01);
+        if (trainTextureResult.TryPickProblems(out problems, out var trainTexture))
         {
             return problems;
         }
@@ -42,14 +49,14 @@ public sealed class GameScene : Scene
         Vector3D<float> cameraTarget = new (0, 0, 0);
         Vector3D<float> cameraViewDirection = new(1, -1, 1);
 
-        var orthographicSize = 40f;
+        const float orthographicSize = 40f;
 
         _cameraController = IsometricOrthographicCameraController.Create(cameraTarget, cameraViewDirection, orthographicSize);
         _cameraSchemes.Add(new WasdMovement());
 
         _meshRenderingId = GameManager.MeshEntityManager.Register(trainMesh).Value;
 
-        if (RegisterCubeEntities().TryPickProblems(out problems, out var renderingEntityIds))
+        if (RegisterEntities(trainMesh, trainTexture, GameSceneEntities.DefaultShader.ShaderData).TryPickProblems(out problems, out var renderingEntityIds))
         {
             return problems;
         }
@@ -73,12 +80,12 @@ public sealed class GameScene : Scene
         return Result.Success();
     }
 
-    private Result<(MeshRenderingId, TextureRenderingId, ShaderRenderingId)> RegisterCubeEntities()
+    private Result<(MeshRenderingId, TextureRenderingId, ShaderRenderingId)> RegisterEntities(MeshData meshData, TextureData textureData, ShaderData shaderData)
     {
         return Result.Concat(
-            () => GameManager.MeshEntityManager.Register(GameSceneEntities.Cube),
-            () => GameManager.TextureEntityManager.Register(GameSceneEntities.DefaultTexture),
-            () => GameManager.ShaderEntityManager.Register(GameSceneEntities.DefaultShader.ShaderData));
+            () => GameManager.MeshEntityManager.Register(meshData),
+            () => GameManager.TextureEntityManager.Register(textureData),
+            () => GameManager.ShaderEntityManager.Register(shaderData));
     }
 
     private Result<RenderingInstanceId> RegisterCubeInstance()
@@ -119,7 +126,7 @@ public sealed class GameScene : Scene
         }
 
         // Rotate cube
-        _rotationAngle += 90f * dt; // Rotates 90 degrees per second
+        _rotationAngle += 45f * dt; // Rotates 90 degrees per second
         if (_rotationAngle > 360f)
         {
             _rotationAngle -= 360f;

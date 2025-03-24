@@ -1,7 +1,7 @@
 using Olve.CodeGen;
-using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.Entities;
+using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
+using Olve.Engine3D.Rendering.Primitives;
 using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes;
