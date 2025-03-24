@@ -1,3 +1,5 @@
+using Olve.Engine3D.Rendering.OpenGL.Handles;
+
 namespace Olve.Engine3D.Graphics;
 
 public static class RenderingParameter

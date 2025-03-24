@@ -5,9 +5,10 @@ namespace Olve.Engine3D.Graphics.Entities;
 [MemoryPackable]
 public partial class TextureData
 {
-    public required Vector3D<byte>[] Pixels { get; set; }
+    public required Vector4D<byte>[] Pixels { get; set; }
     public required int Width { get; set; }
     public required int Height { get; set; }
+    public int Slot { get; set; } = 0;
 
     public Result Validate()
     {

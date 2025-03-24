@@ -1,11 +1,8 @@
-using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Rendering.OpenGL.Types;
-using Silk.NET.OpenGL;
-
 namespace Olve.Engine3D.Utilities;
 
 public static class Ray
 {
+    /*
     private static GL Gl => GameManager.GL;
 
     public static Result Render(this Ray3D<float> ray3D, GLShader glShader, Matrix4X4<float> viewMatrix, Matrix4X4<float> projectionMatrix, float distance = 1000f)
@@ -84,4 +81,5 @@ public static class Ray
         buffer[14] = matrix.M43;
         buffer[15] = matrix.M44;
     }
+    */
 }

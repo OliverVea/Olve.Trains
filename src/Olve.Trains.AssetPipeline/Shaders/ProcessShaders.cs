@@ -4,7 +4,7 @@ using Olve.Results;
 using Scriban;
 using Scriban.Runtime;
 
-namespace Olve.Engine3D.AssetPipeline.Shaders;
+namespace Olve.Trains.AssetPipeline.Shaders;
 
 /// <summary>
 ///     Compiles shader slang shaders to GLSL

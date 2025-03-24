@@ -1,6 +1,6 @@
 namespace Olve.Engine3D.Graphics;
 
-public class ThreadSafeIdGenerator
+public class ThreadSafeUintGenerator
 {
     private uint _nextId;
 

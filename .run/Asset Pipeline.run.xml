@@ -14,35 +14,4 @@
     <envs />
     <method v="2" />
   </configuration>
-  <configuration default="false" name="Olve.Trains.AssetPipeline/Dockerfile: Compose Deployment" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
-    <deployment type="dockerfile">
-      <settings>
-        <option name="imageTag" value="olve-engine3d-asset-pipeline" />
-        <option name="containerName" value="olve-engine3d-asset-pipeline" />
-        <option name="contextFolderPath" value="src" />
-        <option name="commandLineOptions" value="--env-file Olve.Engine3D.AssetPipeline/.env" />
-        <option name="showCommandPreview" value="true" />
-        <option name="sourceFilePath" value="src/Olve.Trains.AssetPipeline/Dockerfile" />
-        <option name="volumeBindings">
-          <list>
-            <DockerVolumeBindingImpl>
-              <option name="containerPath" value="/app/temp" />
-              <option name="hostPath" value="$PROJECT_DIR$/src/Olve.Trains.AssetPipeline/temp" />
-            </DockerVolumeBindingImpl>
-            <DockerVolumeBindingImpl>
-              <option name="containerPath" value="/app/output" />
-              <option name="hostPath" value="$PROJECT_DIR$/src/Olve.Trains/assets" />
-            </DockerVolumeBindingImpl>
-            <DockerVolumeBindingImpl>
-              <option name="containerPath" value="/app/shaders" />
-              <option name="hostPath" value="$PROJECT_DIR$/src/Olve.Trains/Shaders" />
-              <option name="readOnly" value="true" />
-            </DockerVolumeBindingImpl>
-          </list>
-        </option>
-      </settings>
-    </deployment>
-    <EXTENSION ID="com.jetbrains.rider.docker.debug" isFastModeEnabled="true" isSslEnabled="false" />
-    <method v="2" />
-  </configuration>
 </component>

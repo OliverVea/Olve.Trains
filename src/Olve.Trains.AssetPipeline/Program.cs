@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using Olve.Engine3D.AssetPipeline;
-using Olve.Engine3D.AssetPipeline.Assets;
-using Olve.Engine3D.AssetPipeline.Shaders;
+using Olve.Trains.AssetPipeline;
+using Olve.Trains.AssetPipeline.Assets;
+using Olve.Trains.AssetPipeline.Shaders;
 
 ServiceCollection serviceCollection = new();
 

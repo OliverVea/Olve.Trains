@@ -14,8 +14,6 @@ namespace Olve.Engine3D.Utilities;
 
 public partial class SandboxScene : Scene
 {
-    private GLShader _rayGLShader = null!;
-
     public static readonly SceneId SceneId = new("SandboxScene");
     public override SceneId Id => SceneId;
 
@@ -28,13 +26,6 @@ public partial class SandboxScene : Scene
 
     public override Result Load()
     {
-        if (GameManager.ModelRenderingManager.Register(Cube).TryPickProblems(out var modelProblems, out var cubeRenderingId))
-        {
-            return modelProblems.Prepend("Failed registering cube model");
-        }
-
-        GameManager.ModelRenderingManager.RegisterInstance(cubeRenderingId, Matrix4X4<float>.Identity);
-
         FirstPersonView view = new() { Position = new Vector3D<float>(0, 0, -5) };
         PerspectiveProjection projection = new() { AspectRatio = 16f / 9f, NearPlane = 0.1f, FarPlane = 1000 };
 
@@ -44,9 +35,6 @@ public partial class SandboxScene : Scene
 
         _cameraSchemes.Add(new WasdMovement());
         _cameraSchemes.Add(new MouseLook());
-
-        _rayGLShader.ViewMatrixUniformName = "view";
-        _rayGLShader.ProjectionMatrixUniformName = "proj";
 
         return Result.Success();
     }
@@ -104,17 +92,6 @@ public partial class SandboxScene : Scene
             new RenderingParameter.Matrix4X4("view", viewMatrix),
             new RenderingParameter.Matrix4X4("projection", projectionMatrix)
         ]);
-        var renderResult = GameManager.ModelRenderingManager.Render(parameters);
-
-        if (renderResult.TryPickProblems(out var problems))
-        {
-            return problems.Prepend("Failed rendering game objects");
-        }
-
-        foreach (var ray in _rays)
-        {
-            ray.Render(_rayGLShader, viewMatrix, projectionMatrix);
-        }
 
         return Result.Success();
     }

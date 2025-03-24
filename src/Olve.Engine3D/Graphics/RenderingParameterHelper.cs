@@ -1,4 +1,4 @@
-using Olve.Engine3D.Rendering.OpenGL.Types;
+using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Graphics;
@@ -18,7 +18,8 @@ public static class RenderingParameterHelper
         return renderingParameter.Match(
             x => ApplyMatrix4X4(x, location),
             x => ApplyVector3D(x, location),
-            x => ApplyFloat(x, location));
+            x => ApplyFloat(x, location),
+            x => ApplyTexture(x, location));
     }
 
     private static Result ApplyMatrix4X4(RenderingParameter.Matrix4X4 matrix, int location)
@@ -38,6 +39,15 @@ public static class RenderingParameterHelper
     private static Result ApplyFloat(RenderingParameter.Float f, int location)
     {
         GameManager.GL.Uniform1(location, f.Value);
+        return Result.Success();
+    }
+
+    private static Result ApplyTexture(RenderingParameter.Texture texture, int location)
+    {
+        int textureUnitIndex = 0; // Adjust based on usage
+        GameManager.GL.ActiveTexture(TextureUnit.Texture0 + textureUnitIndex);
+        GameManager.GL.BindTexture(TextureTarget.Texture2D, texture.Value.Handle);
+        GameManager.GL.Uniform1(location, textureUnitIndex);
         return Result.Success();
     }
 }

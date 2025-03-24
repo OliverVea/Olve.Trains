@@ -3,8 +3,6 @@ using Olve.CodeGen;
 using Olve.Engine3D;
 using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.Entities;
-using Olve.Engine3D.Graphics.Rendering.Entities;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Rendering;
@@ -24,98 +22,73 @@ public sealed class GameScene : Scene
     private readonly List<ICameraScheme> _cameraSchemes = [];
     private CameraMovementInput _cameraMovementInput = new();
 
-    private readonly List<RenderingInstanceId<Model>> _rectangleInstances = [];
-    private readonly List<float> _rotationSpeeds = [];
-    private readonly List<Vector3D<float>> _rotationAxes = new();
-    private readonly Random _random = new();
+    private MeshRenderingId _meshRenderingId;
+    private ShaderRenderingId _shaderRenderingId;
+    private TextureRenderingId _textureRenderingId;
 
-    private readonly Shaders.Default _defaultShader = new(
-            ambientLightColor: new Vector3D<float>(180, 167, 214) / 255f,
-            ambientLightIntensity: 0.2f,
-            directionalLightColor: new Vector3D<float>(249,233,164) / 255f,
-            directionalLightDir: Vector3D.Normalize(new Vector3D<float>(0.2f, -1, 0.2f)),
-            directionalIntensity: 1.0f,
-            textureSampler: new Texture2D(),
-            world: Matrix4X4<float>.Identity,
-            view: Matrix4X4<float>.Identity,
-            projection: Matrix4X4<float>.Identity
-        );
+    private RenderingInstanceId _cubeInstanceId;
+
+    private float _rotationAngle = 0f;
+
 
     public override Result Load()
     {
-        var trainMeshResult = Models.LoadModelMesh(Models.SM_Veh_Bullet_01);
+        var trainMeshResult = Meshes.LoadModelMesh(Meshes.SM_Veh_Bullet_01);
         if (trainMeshResult.TryPickProblems(out var problems, out var trainMesh))
         {
             return problems;
         }
 
-        var cube = new Model
-        {
-            Mesh = trainMesh,
-            Material = new Material
-            {
-                Shininess = 0,
-                ShaderData = _defaultShader.ShaderData,
-                TextureData = new TextureData
-                {
-                    Height = 1,
-                    Width = 1,
-                    Pixels = [ new Vector3D<byte>(255, 0, 255) ]
-                }
-            },
-        };
+        Vector3D<float> cameraTarget = new (0, 0, 0);
+        Vector3D<float> cameraViewDirection = new(1, -1, 1);
 
-        const int cubeCount = 1;
-        for (int i = 0; i < cubeCount; i++)
-        {
-            var scale = _random.NextFloat(0.05f, 0.5f);
-            var position = new Vector3D<float>(
-                _random.NextFloat(-5f, 5f),  // Random X
-                _random.NextFloat(-2f, 2f),  // Random Y
-                _random.NextFloat(-5f, 5f)   // Random Z
-            );
-            
-            var axis = new Vector3D<float>(
-                _random.NextFloat(-1f, 1f),
-                _random.NextFloat(-1f, 1f),
-                _random.NextFloat(-1f, 1f)
-            );
-            axis = Vector3D.Normalize(axis);
-            _rotationAxes.Add(axis);
-
-            var rotationSpeed = _random.NextFloat(0.1f, 0.6f); // Random rotation speed
-
-            var scaleMatrix = Matrix4X4.CreateScale(scale);
-            var translationMatrix = Matrix4X4.CreateTranslation(position);
-            var transform = scaleMatrix * translationMatrix;
-
-            if (RegisterModel(cube, transform).TryPickProblems(out var modelProblems, out var instanceId))
-            {
-                return modelProblems.Prepend($"Failed registering rectangle model {i}");
-            }
-
-            _rectangleInstances.Add(instanceId);
-            _rotationSpeeds.Add(rotationSpeed);
-        }
-
-        var cameraTarget = new Vector3D<float>(0, 0, 0);
-        var cameraViewDirection = new Vector3D<float>(1, -1, 1);
-        var orthographicSize = 10f;
+        var orthographicSize = 40f;
 
         _cameraController = IsometricOrthographicCameraController.Create(cameraTarget, cameraViewDirection, orthographicSize);
         _cameraSchemes.Add(new WasdMovement());
+
+        _meshRenderingId = GameManager.MeshEntityManager.Register(trainMesh).Value;
+
+        if (RegisterCubeEntities().TryPickProblems(out problems, out var renderingEntityIds))
+        {
+            return problems;
+        }
+
+        (_meshRenderingId, _textureRenderingId, _shaderRenderingId) = renderingEntityIds;
+
+        GameSceneEntities.DefaultShader.TextureSampler = _textureRenderingId.Texture;
+
+        if (RegisterCubeInstance().TryPickProblems(out problems, out _cubeInstanceId))
+        {
+            return problems;
+        }
         
         // MSAA
         GameManager.GL.Enable(EnableCap.Multisample);
+        GameManager.GL.Disable(EnableCap.CullFace);
+        GameManager.GL.Enable(EnableCap.DepthTest);
+
+        //GameManager.GL.PolygonMode(GLEnum.FrontAndBack, GLEnum.Line);
 
         return Result.Success();
     }
 
-    private Result<RenderingInstanceId<Model>> RegisterModel(Model model, Matrix4X4<float> transform)
+    private Result<(MeshRenderingId, TextureRenderingId, ShaderRenderingId)> RegisterCubeEntities()
     {
-        return Result.Chain(
-            () => GameManager.ModelRenderingManager.Register(model),
-            id => GameManager.ModelRenderingManager.RegisterInstance(id, transform));
+        return Result.Concat(
+            () => GameManager.MeshEntityManager.Register(GameSceneEntities.Cube),
+            () => GameManager.TextureEntityManager.Register(GameSceneEntities.DefaultTexture),
+            () => GameManager.ShaderEntityManager.Register(GameSceneEntities.DefaultShader.ShaderData));
+    }
+
+    private Result<RenderingInstanceId> RegisterCubeInstance()
+    {
+        var transform = Matrix4X4<float>.Identity;
+
+        transform *= 10;
+        transform.M44 = 1;
+
+        return GameManager.RenderingManager.RegisterInstance(_meshRenderingId, _shaderRenderingId, transform);
     }
 
     public override Result<PassInput> Input()
@@ -130,9 +103,9 @@ public sealed class GameScene : Scene
         return PassInput.Pass;
     }
 
-    private float _lastTps = 0;
-    private float _t = 0;
-    private float _lastFps = 0;
+    private float _lastTps;
+    private float _t;
+    private float _lastFps;
 
     public override Result Update(TimeSpan deltaTime)
     {
@@ -143,6 +116,13 @@ public sealed class GameScene : Scene
         {
             _lastTps = _t;
             Console.WriteLine($"TPS: {1 / dt}");
+        }
+
+        // Rotate cube
+        _rotationAngle += 90f * dt; // Rotates 90 degrees per second
+        if (_rotationAngle > 360f)
+        {
+            _rotationAngle -= 360f;
         }
 
         _cameraController.Move(_cameraMovementInput.Direction, deltaTime);
@@ -166,51 +146,20 @@ public sealed class GameScene : Scene
         var viewMatrix = _cameraController.Camera.GetViewMatrix();
         var projectionMatrix = _cameraController.Camera.GetProjectionMatrix();
 
-        for (int i = 0; i < _rectangleInstances.Count; i++)
-        {
-            var rotationMatrix = Matrix4X4.CreateFromAxisAngle(_rotationAxes[i], dt * _rotationSpeeds[i]);
+        GameSceneEntities.DefaultShader.View = viewMatrix;
+        GameSceneEntities.DefaultShader.Projection = projectionMatrix;
+        RenderingParameters parameters = new (GameSceneEntities.DefaultShader.MakeParameters());
 
-            if (GameManager.ModelRenderingManager.GetInstanceWorld(_rectangleInstances[i]).TryPickProblems(out var problems1, out var worldMatrix))
-            {
-                return problems1.Prepend("Could not get world matrix for rectangle instance {0}", i);
-            }
+        Matrix4X4<float> cubeWorldMatrix = Matrix4X4.CreateFromAxisAngle(Vector3D<float>.UnitY, float.DegreesToRadians(_rotationAngle));
 
-            worldMatrix = rotationMatrix * worldMatrix;
+        GameManager.RenderingManager.SetInstanceWorld(_cubeInstanceId, cubeWorldMatrix);
 
-            GameManager.ModelRenderingManager.SetInstanceWorld(_rectangleInstances[i], worldMatrix);
-        }
-        
-        _defaultShader.View = viewMatrix;
-        _defaultShader.Projection = projectionMatrix;
-        
-        RenderingParameters parameters = new (_defaultShader.MakeParameters());
-
-        var renderResult = GameManager.ModelRenderingManager.Render(parameters);
+        var renderResult = GameManager.RenderingManager.Render(parameters);
         if (renderResult.TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed rendering game objects");
         }
 
         return Result.Success();
-    }
-}
-
-// Extension method for generating random floats
-public static class RandomExtensions
-{
-    public static float NextFloat(this Random random, float min, float max)
-    {
-        return min + (float)random.NextDouble() * (max - min);
-    }
-}
-
-public static class ScreenSizeExtensions
-{
-    public static Vector2D<float> ToNdc(this Vector2D<int> screenSize, Vector2D<float> screenPosition)
-    {
-        return new Vector2D<float>(
-            (2.0f * screenPosition.X) / screenSize.X - 1.0f,
-            1.0f - (2.0f * screenPosition.Y) / screenSize.Y
-        );
     }
 }

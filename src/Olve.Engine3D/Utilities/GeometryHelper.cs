@@ -1,73 +1,47 @@
 using Olve.Engine3D.Graphics;
+using Olve.Engine3D.Graphics.Entities;
 
 namespace Olve.Engine3D.Utilities;
 
 public static class GeometryHelper
 {
-    public static GeometryData<TriangleIndex> CreateQuadGeometry(Vector3D<float>[]? vertices = null, TriangleIndex[]? indices = null)
+    public static MeshData CreateQuadGeometry()
     {
-        vertices ??= [
+        Vector3D<float>[] positions = [
             new(-0.5f, -0.5f, 0f),
             new(0.5f, -0.5f, 0f),
             new(0.5f, 0.5f, 0f),
             new(-0.5f, 0.5f, 0f)
         ];
-        indices ??= [
+
+        Vector3D<float>[] normals =
+        [
+            new(0, 0, 1),
+            new(0, 0, 1),
+            new(0, 0, 1),
+            new(0, 0, 1)
+        ];
+
+        TriangleIndex[] indices =
+        [
             new(0, 1, 2),
             new(0, 2, 3),
         ];
 
-        return new GeometryData<TriangleIndex>
-        {
-            Vertices = vertices,
-            Indices = indices
-        };
-    }
-
-    public static GeometryData<LineIndex> CreateQuadWireframe(Vector3D<float>[]? vertices = null, LineIndex[]? indices = null)
-    {
-        vertices ??= [
-            new(-0.5f, -0.5f, 0f),
-            new(0.5f, -0.5f, 0f),
-            new(0.5f, 0.5f, 0f),
-            new(-0.5f, 0.5f, 0f)
-        ];
-        indices ??=
+        Vector2D<float>[] textureCoordinates =
         [
-            new(0, 1),
-            new(1, 2),
-            new(2, 3),
-            new(3, 0),
-            new LineIndex(0, 2),
+            new(0, 0),
+            new(1, 0),
+            new(1, 1),
+            new(0, 1)
         ];
 
-        return new GeometryData<LineIndex>
+        return new MeshData
         {
-            Vertices = vertices,
-            Indices = indices
-        };
-    }
-
-    public static GeometryData<LineIndex> CreateWorldAxes(Vector3D<float>[]? vertices = null, LineIndex[]? indices = null)
-    {
-        vertices ??=
-        [
-            new(0, 0, 0),
-            new(1, 0, 0),
-            new(0, 1, 0),
-            new(0, 0, 1),
-        ];
-        indices ??=
-        [
-            new(0, 1),
-            new(0, 2),
-            new(0, 3),
-        ];
-
-        return new GeometryData<LineIndex>
-        {
-            Vertices = vertices,
-            Indices = indices
+            Positions = positions,
+            Normals = normals,
+            Indices = indices,
+            TextureCoordinates = textureCoordinates
         };
     }
 }

@@ -1,4 +1,4 @@
-namespace Olve.Engine3D.AssetPipeline;
+namespace Olve.Trains.AssetPipeline;
 
 public static class Paths
 {

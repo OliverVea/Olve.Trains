@@ -1,11 +1,11 @@
 using System.Runtime.CompilerServices;
 using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Rendering.OpenGL.Types;
+using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
-public class OpenGLModelRenderingManager
+public static class OpenGLModelRenderingManager
 {
     public readonly record struct OpenGLModelHandles(
         VAO VAO,
@@ -31,13 +31,10 @@ public class OpenGLModelRenderingManager
             }
         }
 
-        // Enable depth test
-        GameManager.GL.Enable(EnableCap.DepthTest);
-
         return Result.Success();
     }
 
-    public static Result RenderModel(OpenGLModelHandles glModelHandles, string? worldName, Matrix4X4<float> world, uint indexCount)
+    public static Result RenderModel(ShaderProgram shaderProgram, string? worldName, Matrix4X4<float> world, uint indexCount)
     {
         // VAO, VBO, EBO, and shader program are already bound
 
@@ -45,14 +42,14 @@ public class OpenGLModelRenderingManager
         if (worldName is not null)
         {
             // TODO: Cache uniform location
-            var worldLocation = GameManager.GL.GetUniformLocation(glModelHandles.ShaderProgram.Handle, worldName);
+            var worldLocation = GameManager.GL.GetUniformLocation(shaderProgram.Handle, worldName);
             Span<float> worldBuffer = stackalloc float[16];
             BufferHelper.CopyTo(world, worldBuffer);
             GameManager.GL.UniformMatrix4(worldLocation, 1, false, worldBuffer);
         }
 
         // Draw
-        GameManager.GL.DrawElements(PrimitiveType.Triangles, indexCount * 3, DrawElementsType.UnsignedInt, in Unsafe.NullRef<int>());
+        GameManager.GL.DrawElements(PrimitiveType.Triangles, indexCount, DrawElementsType.UnsignedInt, in Unsafe.NullRef<int>());
 
         return Result.Success();
     }

@@ -1,5 +1,3 @@
-using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.Rendering;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
@@ -18,9 +16,27 @@ public class GameManager(IWindow window, SceneId initialSceneId)
     private readonly SceneId _initialSceneId = initialSceneId;
 
     private readonly SceneManager _sceneManager = new();
+
+    // IO
     private readonly KeyboardManager _keyboardManager = new();
+    public static KeyboardManager KeyboardManager => Instance._keyboardManager;
     private readonly MouseManager _mouseManager = new();
-    private readonly ModelRenderingManager _modelRenderingManager = new();
+    public static MouseManager MouseManager => Instance._mouseManager;
+
+    // Rendering
+    private readonly MeshEntityManager _meshEntityManager = new();
+    public static MeshEntityManager MeshEntityManager => Instance._meshEntityManager;
+
+    private readonly ShaderEntityManager _shaderManager = new();
+    public static ShaderEntityManager ShaderEntityManager => Instance._shaderManager;
+
+    private readonly TextureEntityManager _textureManager = new();
+    public static TextureEntityManager TextureEntityManager => Instance._textureManager;
+
+    private readonly RenderingManager _renderingManager = new();
+    public static RenderingManager RenderingManager => Instance._renderingManager;
+
+    // Contexts
     private GL? _gl;
     private IInputContext? _input;
 
@@ -28,9 +44,7 @@ public class GameManager(IWindow window, SceneId initialSceneId)
     public static GL GL => Instance._gl ?? throw new NotSupportedException("OpenGL has not been initialized");
     public static IInputContext Input => Instance._input ?? throw new NotSupportedException("Input has not been initialized");
     public static SceneManager SceneManager => Instance._sceneManager;
-    public static KeyboardManager KeyboardManager => Instance._keyboardManager;
-    public static MouseManager MouseManager => Instance._mouseManager;
-    public static ModelRenderingManager ModelRenderingManager => Instance._modelRenderingManager;
+
 
     private Result _result = Result.Success();
 

@@ -35,6 +35,7 @@ void main()
 
     // Sample the texture color using texture coordinates
     vec4 textureColor = texture(textureSampler, TexCoords);
+    //vec4 textureColor = vec4(TexCoords.xy, 0, 1.0);
 
     // Combine texture with the lighting calculations
     vec3 finalColor = (ambient + diffuse) * textureColor.rgb;

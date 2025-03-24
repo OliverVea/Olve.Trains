@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Olve.Results;
 
-namespace Olve.Engine3D.AssetPipeline.Shaders;
+namespace Olve.Trains.AssetPipeline.Shaders;
 
 public static class ShaderHelper
 {
