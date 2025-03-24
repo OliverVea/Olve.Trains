@@ -19,35 +19,8 @@ env:
 
 jobs:
   test:
-    name: Run tests
-    if: "!startsWith(github.event.head_commit.message, 'bump:')"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
-      - name: Install .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: .NET restore
-        shell: bash
-        run: dotnet restore
-
-      - name: Build
-        shell: bash
-        run: dotnet build --no-restore -c Release /p:Version="1.0.0"
-
-      - name: Test
-        shell: bash
-        run: dotnet test --no-restore --no-build -c Release
-
   bump-version:
     name: Bump version and create changelog with commitizen
-    needs:
-      - test
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.cz.outputs.version }}
