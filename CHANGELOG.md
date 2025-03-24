@@ -1,3 +1,9 @@
+## v0.1.5 (2025-03-24)
+
+### Fix
+
+- tailscale exit node no longer required for cicd
+
 ## v0.1.4 (2025-03-24)
 
 ### Fix
