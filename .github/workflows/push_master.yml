@@ -81,7 +81,7 @@ jobs:
           tags: tag:ci
 
       - name: Set tailscale exit node
-        run: tailscale set --exit-node=${{ secrets.TS_EXIT_NODE }}
+        run: sudo tailscale down && sudo tailscale up --exit-node ${{ env.TS_EXIT_NODE }}
 
       - name: Setup .env
         run: |
