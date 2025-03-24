@@ -16,6 +16,9 @@ concurrency:
 
 env:
   DOTNET_VERSION: 9.0.100
+  S3_URL: http://192.168.1.14:9000
+  S3_BUCKET: olve.trains
+  TS_EXIT_NODE: n16TgT3Gj111CNTRL
 
 jobs:
   bump-version:
@@ -62,6 +65,7 @@ jobs:
     name: Build game and save in minio
     needs:
       - bump-version
+    if: "${{ needs.bump-version.outputs.changed == 'true' }}"
     runs-on: ubuntu-latest
 
     steps:
@@ -75,6 +79,18 @@ jobs:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
+
+      - name: Set tailscale exit node
+        run: tailscale set --exit-node=${{ secrets.TS_EXIT_NODE }}
+
+      - name: Setup .env
+        run: |
+          echo "S3_URL=${{ env.S3_URL }}" >> ./src/Olve.Trains.AssetPipeline/.env
+          echo "S3_BUCKET=${{ env.S3_BUCKET }}" >> ./src/Olve.Trains.AssetPipeline/.env
+          echo "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
+          echo "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
+          echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
+
 
       - name: Run asset pipeline
         shell: bash
