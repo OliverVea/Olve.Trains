@@ -7,7 +7,7 @@ using Olve.Engine3D.Rendering.Entities;
 
 namespace Olve.Engine3D.Assets;
 
-public static class Meshes
-{ {{ for meshAsset in MeshAssets }}
-    public static readonly AssetPath<MeshData> {{ meshAsset.Name }} = new("{{ meshAsset.Name }}", "{{ meshAsset.Destination }}");{{end}}
+public static class {{ ClassName }}
+{ {{ for asset in Assets }}
+    public static readonly AssetPath<{{ AssetType }}> {{ asset.Name }} = new("{{ asset.Name }}", "{{ asset.Destination }}");{{end}}
 }

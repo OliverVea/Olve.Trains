@@ -1,6 +1,6 @@
 using OneOf;
 
-namespace Olve.Engine3D.Graphics;
+namespace Olve.Engine3D.Rendering.Parameters;
 
 [GenerateOneOf]
 public partial class AnyRenderingParameter : OneOfBase<

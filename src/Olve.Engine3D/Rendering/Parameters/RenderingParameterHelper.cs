@@ -1,7 +1,7 @@
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.OpenGL;
 
-namespace Olve.Engine3D.Graphics;
+namespace Olve.Engine3D.Rendering.Parameters;
 
 public static class RenderingParameterHelper
 {
@@ -25,7 +25,7 @@ public static class RenderingParameterHelper
     private static Result ApplyMatrix4X4(RenderingParameter.Matrix4X4 matrix, int location)
     {
         Span<float> buffer = stackalloc float[16];
-        BufferHelper.CopyTo(matrix.Value, buffer);
+        matrix.Value.CopyTo(buffer);
         GameManager.GL.UniformMatrix4(location, 1, false, buffer);
         return Result.Success();
     }

@@ -1,7 +1,6 @@
-using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.Entities;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.OpenGL;
+using TextureData = Olve.Engine3D.Rendering.Entities.TextureData;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
@@ -30,7 +29,8 @@ public class OpenGLTextureManager : IOpenGLEntityManager<TextureData, Texture2D>
 
         BufferHelper.UsingSpan<byte>(textureLength, pixelData =>
         {
-            BufferHelper.CopyTo(textureData.Pixels, pixelData);
+            textureData.Pixels.CopyTo(pixelData);
+
             GameManager.GL.TexImage2D(TextureTarget.Texture2D, 0, (int)InternalFormat.Rgba, (uint)textureData.Width, (uint)textureData.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, (ReadOnlySpan<byte>)pixelData);
         });
 

@@ -1,4 +1,4 @@
-namespace Olve.Engine3D.Graphics;
+namespace Olve.Engine3D.Rendering.Parameters;
 
 public class RenderingParameters(IReadOnlyList<AnyRenderingParameter> renderingParameters)
 {

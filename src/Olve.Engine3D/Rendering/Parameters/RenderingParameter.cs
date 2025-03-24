@@ -1,6 +1,6 @@
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 
-namespace Olve.Engine3D.Graphics;
+namespace Olve.Engine3D.Rendering.Parameters;
 
 public static class RenderingParameter
 {

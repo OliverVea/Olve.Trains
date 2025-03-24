@@ -1,4 +1,3 @@
-using System.Numerics;
 using Silk.NET.Input;
 
 namespace Olve.Engine3D.Input;

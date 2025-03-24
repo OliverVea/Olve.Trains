@@ -10,5 +10,6 @@ public static class Paths
 
     public const string OutputFolder = "/app/output";
     public const string MeshOutputFolder = "/app/output/meshes";
+    public const string TextureOutputFolder = "/app/output/textures";
     public const string ShaderOutputFolder = "/app/output/shaders";
 }

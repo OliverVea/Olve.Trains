@@ -3,8 +3,8 @@
 // |               WARNING: This is a generated file. Do not modify it manually.                    |
 // |                                                                                                |
 // --------------------------------------------------------------------------------------------------
-using Olve.Engine3D.Graphics;
-using Olve.Engine3D.Graphics.Shaders;
+using Olve.Engine3D.Rendering.Parameters;
+using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.Maths;
 

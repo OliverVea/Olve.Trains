@@ -1,4 +1,4 @@
-using Olve.Engine3D.Graphics.Entities;
+using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
 
 namespace Olve.Engine3D.Rendering;
