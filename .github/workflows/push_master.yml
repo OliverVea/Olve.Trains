@@ -16,7 +16,7 @@ concurrency:
 
 env:
   DOTNET_VERSION: 9.0.100
-  S3_URL: http://minio:9000
+  S3_URL: http://100.124.27.29:9000
   S3_BUCKET: olve.trains
   TS_EXIT_NODE: tailscale-home
 
