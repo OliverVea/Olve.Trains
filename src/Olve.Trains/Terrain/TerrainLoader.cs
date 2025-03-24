@@ -7,6 +7,7 @@ namespace Olve.Trains.Terrain;
 
 public static class TerrainLoader
 {
+    /*
     public static Result<GeometryData<TriangleIndex>> LoadTerrain(MapFilePath mapFilePath)
     {
         ReadOpenRasterFile operation = new();
@@ -50,4 +51,5 @@ public static class TerrainLoader
 
         return getLayerImageResponse;
     }
+    */
 }

@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 
-namespace Olve.Engine3D.AssetPipeline;
+namespace Olve.Trains.AssetPipeline;
 
 public class CustomFormatter() : ConsoleFormatter(FormatterName)
 {

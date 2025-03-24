@@ -5,6 +5,8 @@ namespace Olve.Engine3D.Graphics.Entities;
 [MemoryPackable]
 public partial class MeshData
 {
+    public int VertexCount => Positions.Length;
+
     /// <summary>
     /// Vertices for each triangle.
     /// </summary>
@@ -29,8 +31,9 @@ public partial class MeshData
     {
         Result[] results =
         [
-            Normals.Length != Positions.Length ? new ResultProblem("Vertex normal count '{0}' does not match position count '{1}'.", Normals.Length, Positions.Length) : Result.Success(),
-            TextureCoordinates.Length != Positions.Length ? new ResultProblem("Vertex texture coordinate count '{0}' does not match position count '{1}'.", Normals.Length, Positions.Length) : Result.Success(),
+            Positions.Length != VertexCount ? new ResultProblem("Vertex position count '{0}' does not match vertex count '{1}'.", Normals.Length, Positions.Length) : Result.Success(),
+            Normals.Length != VertexCount ? new ResultProblem("Vertex normal count '{0}' does not match vertex count '{1}'.", Normals.Length, Positions.Length) : Result.Success(),
+            TextureCoordinates.Length != VertexCount ? new ResultProblem("Vertex texture coordinate count '{0}' does not match vertex count '{1}'.", Normals.Length, Positions.Length) : Result.Success(),
             Indices.SelectMany(x => new [] {x.A, x.B, x.C}).Any(x => x >= Positions.Length) ? new ResultProblem("Triangle indices exceed vertex indices") : Result.Success()
         ];
 

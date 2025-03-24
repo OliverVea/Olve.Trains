@@ -1,15 +1,12 @@
-using System.Buffers;
 using Olve.Engine3D.Graphics;
 using Olve.Engine3D.Graphics.Entities;
-using Olve.Engine3D.Rendering.OpenGL.Types;
+using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
 public class OpenGLMeshManager : IOpenGLEntityManager<MeshData, OpenGLMeshManager.Registration>
 {
-    private const int MaxStackAllocationSize = 2048;
-
     private const int PositionFields = 3;
     private const int NormalFields = 3;
     private const int TextureFields = 2;
@@ -28,70 +25,72 @@ public class OpenGLMeshManager : IOpenGLEntityManager<MeshData, OpenGLMeshManage
         {
             return problems;
         }
+        
+        var vao = BindVAO();
+        var vbo = BindVBO(meshData);
+        var ebo = BindEBO(meshData);
 
-        var vertexCount = meshData.Positions.Length;
+        SetVertexAttributes();
+        Cleanup();
 
-        // Bind VAO
+        return new Registration(vao, vbo, ebo);
+    }
+
+    private static VAO BindVAO()
+    {
         var vao = GameManager.GL.CreateVertexArray();
         GameManager.GL.BindVertexArray(vao);
 
-        // Bind VBO
-        var meshVertices = meshData.Positions;
-        var meshNormals = meshData.Normals;
-        var meshTexture = meshData.TextureCoordinates;
+        return new VAO(vao);
+    }
 
+    private static VBO BindVBO(MeshData meshData)
+    {
         var vbo = GameManager.GL.CreateBuffer();
         GameManager.GL.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
-        var verticesLength = vertexCount * VertexFields;
-        var array = verticesLength > MaxStackAllocationSize ? ArrayPool<float>.Shared.Rent(verticesLength) : null;
-        var vertices = verticesLength > MaxStackAllocationSize ? array![..verticesLength] : stackalloc float[vertexCount * VertexFields];
-        BufferHelper.CopyTo(meshVertices, vertices, VertexFields, offset: 0);
-        BufferHelper.CopyTo(meshNormals, vertices, VertexFields, offset: PositionFields);
-        BufferHelper.CopyTo(meshTexture, vertices, VertexFields, offset: PositionFields + NormalFields);
-        GameManager.GL.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices, BufferUsageARB.StaticDraw);
-        if (array is not null)
+
+        BufferHelper.UsingSpan<float>(meshData.VertexCount * VertexFields, vertices =>
         {
-            ArrayPool<float>.Shared.Return(array);
-        }
+            BufferHelper.CopyTo(meshData.Positions, vertices, VertexFields, offset: 0);
+            BufferHelper.CopyTo(meshData.Normals, vertices, VertexFields, offset: PositionFields);
+            BufferHelper.CopyTo(meshData.TextureCoordinates, vertices, VertexFields, offset: PositionFields + NormalFields);
+            GameManager.GL.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices, BufferUsageARB.StaticDraw);
+        });
 
-        // Bind EBO
-        var meshIndices = meshData.Indices;
-        var indexCount = meshIndices.Length * 3;
+        return new VBO(vbo, (uint)meshData.VertexCount);
+    }
 
+    private static EBO BindEBO(MeshData meshData)
+    {
         var ebo = GameManager.GL.CreateBuffer();
         GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
-        var array2 = indexCount > MaxStackAllocationSize ? ArrayPool<uint>.Shared.Rent(indexCount) : null;
-        var indices = indexCount > MaxStackAllocationSize ? array2![..indexCount] : stackalloc uint[indexCount];
-        BufferHelper.CopyTo(meshIndices, indices);
-        GameManager.GL.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices, BufferUsageARB.StaticDraw);
-        if (array2 is not null)
-        {
-            ArrayPool<uint>.Shared.Return(array2);
-        }
 
-        // Set vertex attributes
+        BufferHelper.UsingSpan<uint>(meshData.Indices.Length * 3, indices =>
+        {
+            BufferHelper.CopyTo(meshData.Indices, indices);
+            GameManager.GL.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices, BufferUsageARB.StaticDraw);
+        });
+
+        return new EBO(ebo, (uint)meshData.Indices.Length * 3);
+    }
+
+    private static void SetVertexAttributes()
+    {
         GameManager.GL.VertexAttribPointer(0, PositionFields, VertexAttribPointerType.Float, false, VertexSize, IntPtr.Zero);
         GameManager.GL.EnableVertexAttribArray(0);
 
-        GameManager.GL.VertexAttribPointer(1, NormalFields, VertexAttribPointerType.Float, false, VertexSize, IntPtr.Zero + PositionSize);
+        GameManager.GL.VertexAttribPointer(1, NormalFields, VertexAttribPointerType.Float, false, VertexSize, new IntPtr(PositionSize));
         GameManager.GL.EnableVertexAttribArray(1);
 
-        GameManager.GL.VertexAttribPointer(2, TextureFields, VertexAttribPointerType.Float, false, VertexSize, IntPtr.Zero + PositionSize + NormalSize);
+        GameManager.GL.VertexAttribPointer(2, TextureFields, VertexAttribPointerType.Float, false, VertexSize, new IntPtr(PositionSize + NormalSize));
         GameManager.GL.EnableVertexAttribArray(2);
+    }
 
-        // Unbind VAO
-        GameManager.GL.BindVertexArray(0);
-
-        // Unbind VBO
-        GameManager.GL.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
-
-        // Unbind EBO
-        GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
-
-        return new Registration(
-            new VAO(vao),
-            new VBO(vbo, (uint)vertexCount),
-            new EBO(ebo, (uint)indexCount));
+    private static void Cleanup()
+    {
+        GameManager.GL.BindVertexArray(0); // Unbind VAO
+        GameManager.GL.BindBuffer(BufferTargetARB.ArrayBuffer, 0); // Unbind VBO
+        GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0); // Unbind EBO
     }
 
     public Result Unregister(Registration registration)

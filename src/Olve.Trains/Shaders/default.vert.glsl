@@ -8,9 +8,6 @@ uniform mat4 world;
 uniform mat4 view;
 uniform mat4 projection;
 
-// uniform vec3 mouseRayOrigin;
-// uniform vec3 mouseRayDirection;
-
 out vec3 FragPos;
 out vec3 FragNormal;
 out vec2 TexCoords;

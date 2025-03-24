@@ -29,15 +29,15 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Olve.Engine3D.AssetPipeline/Olve.Engine3D.AssetPipeline.csproj", "Olve.Engine3D.AssetPipeline/"]
-RUN dotnet restore "Olve.Engine3D.AssetPipeline/Olve.Engine3D.AssetPipeline.csproj"
+COPY ["Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj", "Olve.Trains.AssetPipeline/"]
+RUN dotnet restore "Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj"
 COPY . .
-WORKDIR "/src/Olve.Engine3D.AssetPipeline"
-RUN dotnet build "Olve.Engine3D.AssetPipeline.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/Olve.Trains.AssetPipeline"
+RUN dotnet build "Olve.Trains.AssetPipeline.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Olve.Engine3D.AssetPipeline.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Olve.Trains.AssetPipeline.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 ##############################
 # Final Stage: Create the final image
@@ -55,5 +55,5 @@ COPY --from=publish /app/publish .
 # ENV PATH="/usr/local/slang-2025.6.2-linux-x86_64/bin:${PATH}"
 
 # Set the entrypoint to run the .NET application.
-ENTRYPOINT ["dotnet", "/app/Olve.Engine3D.AssetPipeline.dll"]
+ENTRYPOINT ["dotnet", "/app/Olve.Trains.AssetPipeline.dll"]
 

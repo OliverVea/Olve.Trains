@@ -6,6 +6,7 @@ namespace Olve.Engine3D.IO.Images;
 
 public class HeightmapParser
 {
+    /*
     public Result<GeometryData<TriangleIndex>> ParseHeightmap(Span<float> heights, uint width)
     {
         var vertices = new Vector3D<float>[heights.Length];
@@ -37,10 +38,12 @@ public class HeightmapParser
             Indices = indices
         };
     }
+    */
 }
 
-public class MeshLayerParser(float heightPerStep = 0.25f, int zeroHeight = 128, int heightStep = 8) : ILayerParser<GeometryData<TriangleIndex>>
+public class MeshLayerParser(float heightPerStep = 0.25f, int zeroHeight = 128, int heightStep = 8)
 {
+    /*
     public Result<GeometryData<TriangleIndex>> ParseLayer(Stream stream)
     {
         var png = Png.Open(stream);
@@ -60,4 +63,5 @@ public class MeshLayerParser(float heightPerStep = 0.25f, int zeroHeight = 128, 
 
         return new HeightmapParser().ParseHeightmap(heights, (uint)png.Width);
     }
+    */
 }

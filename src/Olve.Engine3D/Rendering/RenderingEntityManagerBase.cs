@@ -2,22 +2,19 @@ using Olve.Engine3D.Graphics;
 
 namespace Olve.Engine3D.Rendering;
 
-public abstract class RenderingEntityManagerBase<T, TRegistration> : IRenderingEntityManager<T>
-    where TRegistration : IHasInstanceCount
+public abstract class RenderingEntityManagerBase<TId, TEntity, TRegistration>
+    where TId : notnull
 {
-    private readonly ThreadSafeIdGenerator _entityIdGenerator = new();
+    private readonly ThreadSafeUintGenerator _uintGenerator = new();
 
-    protected readonly SortedList<RenderingEntityId<T>, TRegistration> ModelRegistrations = new();
+    protected readonly Dictionary<TId, TRegistration> ModelRegistrations = [];
 
-    private RenderingEntityId<T> NextEntityId() => new(_entityIdGenerator.Next());
-
-    protected abstract Result<TRegistration> RegisterInOpenGL(T entity);
+    protected abstract TId CreateId(uint id, TRegistration registration);
+    protected abstract Result<TRegistration> RegisterInOpenGL(TEntity entity);
     protected abstract Result DeregisterFromOpenGL(TRegistration registration);
 
-    public Result<RenderingEntityId<T>> Register(T entity)
+    public Result<TId> Register(TEntity entity)
     {
-        var entityId = NextEntityId();
-
         if (RegisterInOpenGL(entity).TryPickProblems(out var problems, out var registration))
         {
             return problems.Prepend(new ResultProblem ("Failed to register entity in OpenGL")
@@ -26,24 +23,19 @@ public abstract class RenderingEntityManagerBase<T, TRegistration> : IRenderingE
             });
         }
 
+        var id = _uintGenerator.Next();
+        var entityId = CreateId(id, registration);
+
         ModelRegistrations.Add(entityId, registration);
 
         return entityId;
     }
 
-    public Result Unregister(RenderingEntityId<T> entityId)
+    public Result Unregister(TId entityId)
     {
         if (!ModelRegistrations.TryGetValue(entityId, out var modelRegistration))
         {
-            return new ResultProblem("Entity with entity ID '{0}' is not registered", entityId);
-        }
-
-        if (modelRegistration.InstanceCount > 0)
-        {
-            return new ResultProblem(
-                "Entity with entity ID '{0}' cannot be removed as there are {1} instances depending on it",
-                entityId,
-                modelRegistration.InstanceCount);
+            return new ResultProblem("Entity with id '{0}' is not registered", entityId);
         }
 
         if (DeregisterFromOpenGL(modelRegistration).TryPickProblems(out var problems))

@@ -4,14 +4,13 @@
 // |                                                                                                |
 // --------------------------------------------------------------------------------------------------
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using MemoryPack;
 using Olve.Results;
-using Olve.Engine3D.Graphics;
+using Olve.Engine3D.Graphics.Entities;
 
 namespace Olve.CodeGen;
 
-public static class Models
+public static class Meshes
 {
     [method: SetsRequiredMembers]
     public readonly record struct ModelMeshPath(string Name, string MeshPath);
@@ -25,7 +24,7 @@ public static class Models
         return filePath;
     }
 
-    public static Result<Mesh> LoadModelMesh(ModelMeshPath modelMeshPath)
+    public static Result<MeshData> LoadModelMesh(ModelMeshPath modelMeshPath)
     {
         var meshPath = GetModelMeshPath(modelMeshPath);
 
@@ -39,7 +38,7 @@ public static class Models
 
         try
         {
-            var mesh = MemoryPackSerializer.Deserialize<Mesh>(bytes);
+            var mesh = MemoryPackSerializer.Deserialize<MeshData>(bytes);
             if (mesh is null)
             {
                 return new ResultProblem("Could not read mesh file");
