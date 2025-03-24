@@ -18,7 +18,6 @@ env:
   DOTNET_VERSION: 9.0.100
 
 jobs:
-  test:
   bump-version:
     name: Bump version and create changelog with commitizen
     runs-on: ubuntu-latest
