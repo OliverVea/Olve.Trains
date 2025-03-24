@@ -6,7 +6,7 @@
 # User-specific files
 [Oo]utput/
 [Tt]emp/
-[Aa]ssets/
+assets/
 
 # dotenv files
 .env
