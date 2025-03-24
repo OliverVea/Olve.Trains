@@ -14,6 +14,9 @@ concurrency:
   group: "deploy"
   cancel-in-progress: false
 
+env:
+  DOTNET_VERSION: 9.0.100
+
 jobs:
   test:
     name: Run tests
@@ -25,13 +28,11 @@ jobs:
       - name: Install .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.100
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: .NET restore
         shell: bash
-        run: |
-          dotnet restore
-          dotnet tool restore
+        run: dotnet restore
 
       - name: Build
         shell: bash
@@ -52,7 +53,7 @@ jobs:
 
     steps:
       - name: Check out
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: "${{ secrets.PERSONAL_ACCESS_TOKEN }}"
@@ -83,3 +84,49 @@ jobs:
         if: "${{ steps.version-changed.outputs.changed == 'true' }}"
         run: echo "::notice::id=${{ steps.release.outputs.id }}"
 
+  build:
+    name: Build game and save in minio
+    needs:
+      - bump-version
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Run asset pipeline
+        shell: bash
+        run: sh ./src/Olve.Trains.AssetPipeline/build.sh
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: .NET restore
+        shell: bash
+        run: dotnet restore
+
+      - name: Build
+        shell: bash
+        run: dotnet build --no-restore -c Release /p:Version="${{ needs.bump-version.outputs.version }}"
+
+      - name: Publish
+        shell: bash
+        run: dotnet publish --no-restore -c Release /p:Version="${{ needs.bump-version.outputs.version }}" --output ./publish
+
+      - name: Minio Deploy
+        uses: lovellfelix/minio-deploy-action@v1
+        with:
+          endpoint: ${{ secrets.MINIO_ENDPOINT }}
+          access_key: ${{ secrets.MINIO_ACCESS_KEY }}
+          secret_key: ${{ secrets.MINIO_SECRET_KEY }}
+          bucket: 'olve-trains'
+          source_dir: './publish'
+          target_dir: 'releases/${{ needs.bump-version.outputs.version }}'
