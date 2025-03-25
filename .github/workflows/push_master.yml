@@ -91,3 +91,9 @@ jobs:
           bucket: 'olve-trains'
           source_dir: './publish'
           target_dir: 'releases/1.0.0'
+
+      - name: Undo Tailscale
+        run: sudo tailscale down
+
+      - name: Exit status
+        run: echo "Done"
