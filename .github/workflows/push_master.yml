@@ -16,10 +16,9 @@ concurrency:
 
 env:
   DOTNET_VERSION: 9.0.100
-  MINIO_HOST: 100.124.27.29
-  MINIO_URL: http://${{ env.MINIO_HOST }}:9000
+  MINIO_HOST: minio
+  MINIO_URL: http://minio:9000
   MINIO_BUCKET: olve.trains
-  TS_EXIT_NODE: tailscale-home
 
 jobs:
   build:
