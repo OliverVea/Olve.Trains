@@ -63,7 +63,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
     {
         try
         {
-            var config = new AmazonS3Config { ServiceURL = url, ForcePathStyle = true};
+            var config = new AmazonS3Config { ServiceURL = url, ForcePathStyle = true };
             using var s3Client = new AmazonS3Client(key, secret, config);
             var listRequest = new ListObjectsV2Request { BucketName = bucket };
             var listResponse = await s3Client.ListObjectsV2Async(listRequest, ct);
@@ -89,8 +89,13 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
                     Directory.CreateDirectory(destDirectory!);
                 }
 
+                var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                var timeoutCt = timeoutCts.Token;
+
+                var combinedCt = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCt).Token;
+
                 var getRequest = new GetObjectRequest { BucketName = bucket, Key = s3Object.Key };
-                using var getResponse = await s3Client.GetObjectAsync(getRequest, ct);
+                using var getResponse = await s3Client.GetObjectAsync(getRequest, combinedCt);
                 if (getResponse.HttpStatusCode > (HttpStatusCode)399)
                 {
                     return new ResultProblem("Got status code '{0}' while retrieving object '{1}' from s3 bucket '{2}' at '{3}'", getResponse.HttpStatusCode, s3Object.Key, bucket, url);

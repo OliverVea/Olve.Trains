@@ -91,6 +91,9 @@ jobs:
           echo "S3_SECRET=${{ secrets.MINIO_SECRET_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
 
+      - name: Ping Minio
+        run: ping -c 5 ${{ env.S3_URL }}
+
 
       - name: Run asset pipeline
         shell: bash
