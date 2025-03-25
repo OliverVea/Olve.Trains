@@ -42,7 +42,6 @@ jobs:
           sudo tailscale netcheck
           sudo tailscale ip -4
           sudo tailscale status
-          sudo tailscale configure status
           sudo tailscale ping -c 1 ${{ env.MINIO_HOST }}
 
       - name: Setup .env
