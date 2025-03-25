@@ -47,6 +47,9 @@ jobs:
           sudo setcap cap_net_admin=eip $(which tailscaled)
           sudo setcap cap_net_admin=eip $(which tailscale)
 
+      - name: Sleep for 30 seconds
+        run: sleep 30
+
       - name: Tailscale Verification
         run: |
           sudo tailscale netcheck
