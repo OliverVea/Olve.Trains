@@ -16,9 +16,10 @@ concurrency:
 
 env:
   DOTNET_VERSION: 9.0.100
-  MINIO_HOST: minio
-  MINIO_URL: http://minio:9000
+  MINIO_HOST: minio.lan
+  MINIO_URL: http://minio.lan:9000
   MINIO_BUCKET: olve.trains
+  TS_EXIT_NODE: tailscale-home
 
 jobs:
   build:
@@ -37,18 +38,13 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
 
-      - name: Ensure TUN Device and Privileges
+      # you can't set the exit-node name at 'up' time; so instead set it after
+      # we've gotten up and running
+      # https://github.com/tailscale/github-action/issues/123
+      # https://github.com/tailscale/tailscale/issues/4152#issuecomment-1066126643
+      - name: use named exit node in tailscale
         run: |
-          sudo mkdir -p /dev/net
-          if [ ! -c /dev/net/tun ]; then
-            sudo mknod /dev/net/tun c 10 200
-          fi
-          sudo chmod 600 /dev/net/tun
-          sudo setcap cap_net_admin=eip $(which tailscaled)
-          sudo setcap cap_net_admin=eip $(which tailscale)
-
-      - name: Sleep for 30 seconds
-        run: sleep 30
+          timeout 5m sudo -E tailscale set --exit-node=${{ env.TS_EXIT_NODE }} --exit-node-allow-lan-access=true
 
       - name: Tailscale Verification
         run: |
