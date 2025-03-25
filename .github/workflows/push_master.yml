@@ -16,8 +16,9 @@ concurrency:
 
 env:
   DOTNET_VERSION: 9.0.100
-  S3_URL: http://100.124.27.29:9000
-  S3_BUCKET: olve.trains
+  MINIO_HOST: 100.124.27.29
+  MINIO_URL: http://100.124.27.29:9000
+  MINIO_BUCKET: olve.trains
   TS_EXIT_NODE: tailscale-home
 
 jobs:
@@ -42,14 +43,14 @@ jobs:
 
       - name: Setup .env
         run: |
-          echo "S3_URL=${{ env.S3_URL }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "S3_BUCKET=${{ env.S3_BUCKET }}" >> ./src/Olve.Trains.AssetPipeline/.env
+          echo "S3_URL=${{ env.MINIO_URL }}" >> ./src/Olve.Trains.AssetPipeline/.env
+          echo "S3_BUCKET=${{ env.MINIO_BUCKET }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "S3_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "S3_SECRET=${{ secrets.MINIO_SECRET_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
 
       - name: Ping Minio
-        run: ping -c 5 ${{ env.S3_URL }}
+        run: ping -c 5 ${{ env.MINIO_HOST }}
 
 
       - name: Run asset pipeline
