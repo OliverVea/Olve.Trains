@@ -37,6 +37,14 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
 
+      - name: Ensure TUN Device and Privileges
+        run: |
+          sudo mkdir -p /dev/net
+          sudo mknod /dev/net/tun c 10 200
+          sudo chmod 600 /dev/net/tun
+          sudo setcap cap_net_admin=eip $(which tailscaled)
+          sudo setcap cap_net_admin=eip $(which tailscale)
+
       - name: Tailscale Verification
         run: |
           sudo tailscale netcheck
