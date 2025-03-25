@@ -1,3 +1,9 @@
+## v0.1.9 (2025-03-25)
+
+### Fix
+
+- adding timeout to asset pipeline s3 request
+
 ## v0.1.8 (2025-03-24)
 
 ### Fix
