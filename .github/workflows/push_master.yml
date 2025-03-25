@@ -40,7 +40,9 @@ jobs:
       - name: Ensure TUN Device and Privileges
         run: |
           sudo mkdir -p /dev/net
-          sudo mknod /dev/net/tun c 10 200
+          if [ ! -c /dev/net/tun ]; then
+            sudo mknod /dev/net/tun c 10 200
+          fi
           sudo chmod 600 /dev/net/tun
           sudo setcap cap_net_admin=eip $(which tailscaled)
           sudo setcap cap_net_admin=eip $(which tailscale)
