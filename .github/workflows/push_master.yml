@@ -16,8 +16,8 @@ concurrency:
 
 env:
   DOTNET_VERSION: 9.0.100
-  MINIO_HOST: minio.lan
-  MINIO_URL: http://minio.lan:9000
+  MINIO_HOST: 192.168.1.14
+  MINIO_URL: http://192.168.1.14:9000
   MINIO_BUCKET: olve.trains
   TS_EXIT_NODE: tailscale-home
 
