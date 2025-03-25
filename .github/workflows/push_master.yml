@@ -21,51 +21,8 @@ env:
   TS_EXIT_NODE: tailscale-home
 
 jobs:
-  bump-version:
-    name: Bump version and create changelog with commitizen
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.cz.outputs.version }}
-      changed: ${{ steps.version-changed.outputs.changed }}
-
-    steps:
-      - name: Check out
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: "${{ secrets.PERSONAL_ACCESS_TOKEN }}"
-
-      - id: cz
-        name: Create bump and changelog
-        uses: commitizen-tools/commitizen-action@master
-        with:
-          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
-      - id: version-changed
-        name: Check if version changed
-        run: |
-          [[ $REVISION = $PREVIOUS_REVISION ]] && CHANGED="false" || CHANGED="true"
-          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
-          [[ $CHANGED = "true" ]] && echo "::notice::Version changed ($PREVIOUS_REVISION -> $REVISION)" || echo "::notice::Version did not change"
-
-      - name: Release
-        id: release
-        uses: softprops/action-gh-release@v2
-        if: "${{ steps.version-changed.outputs.changed == 'true' }}"
-        with:
-          body_path: ${{ github.workspace }}/CHANGELOG.md
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          tag_name: v${{ steps.cz.outputs.version }}
-
-      - name: Echo release id
-        if: "${{ steps.version-changed.outputs.changed == 'true' }}"
-        run: echo "::notice::id=${{ steps.release.outputs.id }}"
-
   build:
     name: Build game and save in minio
-    needs:
-      - bump-version
-    if: "${{ needs.bump-version.outputs.changed == 'true' }}"
     runs-on: ubuntu-latest
 
     steps:
@@ -110,11 +67,11 @@ jobs:
 
       - name: Build
         shell: bash
-        run: dotnet build --no-restore -c Release /p:Version="${{ needs.bump-version.outputs.version }}"
+        run: dotnet build --no-restore -c Release /p:Version="1.0.0"
 
       - name: Publish
         shell: bash
-        run: dotnet publish --no-restore -c Release /p:Version="${{ needs.bump-version.outputs.version }}" --output ./publish
+        run: dotnet publish --no-restore -c Release /p:Version="1.0.0" --output ./publish
 
       - name: Minio Deploy
         uses: lovellfelix/minio-deploy-action@v1
@@ -124,4 +81,4 @@ jobs:
           secret_key: ${{ secrets.MINIO_SECRET_KEY }}
           bucket: 'olve-trains'
           source_dir: './publish'
-          target_dir: 'releases/${{ needs.bump-version.outputs.version }}'
+          target_dir: 'releases/1.0.0'
