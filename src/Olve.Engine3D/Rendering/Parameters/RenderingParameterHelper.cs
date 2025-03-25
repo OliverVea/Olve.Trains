@@ -5,7 +5,7 @@ namespace Olve.Engine3D.Rendering.Parameters;
 
 public static class RenderingParameterHelper
 {
-    public static Result ApplyRenderingParameter(this AnyRenderingParameter renderingParameter, ShaderProgram shaderProgram)
+    public static Result SetUniforms(this AnyRenderingParameter renderingParameter, ShaderProgram shaderProgram)
     {
         // TODO: cache location
         var location = GameManager.GL.GetUniformLocation(shaderProgram.Handle, renderingParameter.Name);
@@ -16,13 +16,13 @@ public static class RenderingParameterHelper
 
         // TODO: investigate potential performance issues - boxing?
         return renderingParameter.Match(
-            x => ApplyMatrix4X4(x, location),
-            x => ApplyVector3D(x, location),
-            x => ApplyFloat(x, location),
-            x => ApplyTexture(x, location));
+            x => SetMatrix4X4(x, location),
+            x => SetVector3D(x, location),
+            x => SetFloat(x, location),
+            x => SetTexture(x, location));
     }
 
-    private static Result ApplyMatrix4X4(RenderingParameter.Matrix4X4 matrix, int location)
+    private static Result SetMatrix4X4(RenderingParameter.Matrix4X4 matrix, int location)
     {
         Span<float> buffer = stackalloc float[16];
         matrix.Value.CopyTo(buffer);
@@ -30,19 +30,19 @@ public static class RenderingParameterHelper
         return Result.Success();
     }
 
-    private static Result ApplyVector3D(RenderingParameter.Vector3D vector, int location)
+    private static Result SetVector3D(RenderingParameter.Vector3D vector, int location)
     {
         GameManager.GL.Uniform3(location, vector.Value.X, vector.Value.Y, vector.Value.Z);
         return Result.Success();
     }
 
-    private static Result ApplyFloat(RenderingParameter.Float f, int location)
+    private static Result SetFloat(RenderingParameter.Float f, int location)
     {
         GameManager.GL.Uniform1(location, f.Value);
         return Result.Success();
     }
 
-    private static Result ApplyTexture(RenderingParameter.Texture texture, int location)
+    private static Result SetTexture(RenderingParameter.Texture texture, int location)
     {
         int textureUnitIndex = 0; // Adjust based on usage
         GameManager.GL.ActiveTexture(TextureUnit.Texture0 + textureUnitIndex);

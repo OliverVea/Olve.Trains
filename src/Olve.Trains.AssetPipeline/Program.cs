@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+using Olve.Engine3D.Rendering.Entities;
+using Olve.OpenRaster;
 using Olve.Trains.AssetPipeline;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Shaders;
@@ -28,13 +30,21 @@ serviceCollection.AddTransient<ProcessShaders>();
 serviceCollection.AddTransient<ProcessAssets>();
 serviceCollection.AddTransient<ProcessMeshAssets>();
 serviceCollection.AddTransient<ProcessTextureAssets>();
+serviceCollection.AddTransient<ProcessTerrainAssets>();
 serviceCollection.AddTransient<WriteMetadataSourceFiles>();
 
 serviceCollection.AddTransient<MeshFileReader>();
 serviceCollection.AddTransient<TextureFileReader>();
+serviceCollection.AddTransient<TerrainFileReader>();
 
 serviceCollection.AddTransient<AssetWriter>();
 serviceCollection.AddTransient<TemplateWriter>();
+
+serviceCollection.AddTransient<ReadOpenRasterFile>();
+serviceCollection.AddTransient<ReadLayerAs<HeightmapData>>();
+serviceCollection.AddTransient<ILayerParser<HeightmapData>, HeightmapLayerParser>();
+
+
 
 var serviceProvider = serviceCollection.BuildServiceProvider();
 

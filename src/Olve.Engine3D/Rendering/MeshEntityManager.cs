@@ -1,5 +1,6 @@
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
+using Olve.Engine3D.Rendering.OpenGL.Handles;
 
 namespace Olve.Engine3D.Rendering;
 
@@ -7,7 +8,7 @@ public class MeshEntityManager : RenderingEntityManagerBase<MeshRenderingId, Mes
 {
     private readonly OpenGLMeshManager _openGLMeshManager = new();
     
-    public readonly record struct Registration(OpenGL.Handles.VAO VAO, OpenGL.Handles.VBO VBO, OpenGL.Handles.EBO EBO);
+    public readonly record struct Registration(VAO VAO, VBO VBO, EBO EBO);
 
     protected override MeshRenderingId CreateId(uint id, Registration registration)
     {

@@ -32,6 +32,8 @@ public class GameManager(IWindow window, SceneId initialSceneId)
 
     private readonly TextureEntityManager _textureManager = new();
     public static TextureEntityManager TextureEntityManager => Instance._textureManager;
+    private readonly HeightmapEntityManager _heightmapEntityManager = new();
+    public static HeightmapEntityManager HeightmapEntityManager => Instance._heightmapEntityManager;
 
     private readonly RenderingManager _renderingManager = new();
     public static RenderingManager RenderingManager => Instance._renderingManager;

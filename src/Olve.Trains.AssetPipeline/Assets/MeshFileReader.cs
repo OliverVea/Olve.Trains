@@ -12,7 +12,7 @@ public class MeshFileReader(ILogger<MeshFileReader> logger)
     public unsafe Result<IReadOnlyList<Asset<MeshData>>> LoadMeshes(IReadOnlyList<FileInfo> files)
     {
         var modelFiles = files
-            .Where(f => f.Extension is ".fbx" or ".obj")
+            .Where(f => f.Name.Contains(".mesh.") && f.Extension is ".fbx" or ".obj")
             .Select(f => f.FullName)
             .ToArray();
 
@@ -80,7 +80,7 @@ public class MeshFileReader(ILogger<MeshFileReader> logger)
                 TextureCoordinates = textureCoords
             };
 
-            var assetName = Path.GetFileNameWithoutExtension(modelFile);
+            var assetName = Path.GetFileNameWithoutExtension(modelFile).Split('.')[0];
             var assetSource = Path.GetFullPath(modelFile);
             var assetDestination = "meshes/" + assetName + ".mesh";
 

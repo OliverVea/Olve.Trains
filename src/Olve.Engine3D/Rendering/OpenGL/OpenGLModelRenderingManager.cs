@@ -25,7 +25,7 @@ public static class OpenGLModelRenderingManager
 
         foreach (var parameter in parameters.Parameters)
         {
-            if (parameter.ApplyRenderingParameter(shaderProgram).TryPickProblems(out var problems))
+            if (parameter.SetUniforms(shaderProgram).TryPickProblems(out var problems))
             {
                 return problems.Prepend("Failed to apply rendering parameter");
             }

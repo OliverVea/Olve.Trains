@@ -67,12 +67,12 @@ public class TextureFileReader(ILogger<TextureFileReader> logger)
             return problems.Prepend("Failed to validate texture data");
         }
 
-        var assetName = Path.GetFileNameWithoutExtension(assetSource);
+        var assetName = Path.GetFileNameWithoutExtension(assetSource).Split('.')[0];
         var assetDestination = $"textures/{assetName}.texture";
 
         return new Asset<TextureData>
         {
-            Name = Path.GetFileNameWithoutExtension(assetSource),
+            Name = assetName,
             Source = assetSource,
             Destination = assetDestination,
             Data = textureData
