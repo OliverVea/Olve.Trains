@@ -40,6 +40,13 @@ jobs:
           echo "CF_CLIENT_SECRET=${{ secrets.CF_CLIENT_SECRET }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
 
+      - name: Check connection to minio
+        run: |
+          curl -v ${{ env.MINIO_URL }}/minio/health/live \
+            -H "CF-Access-Client-Id: ${{ secrets.CF_CLIENT_ID }}" \
+            -H "CF-Access-Client-Secret: ${{ secrets.CF_CLIENT_SECRET }}"
+      
+
       - name: Run asset pipeline
         shell: bash
         run: sh ./src/Olve.Trains.AssetPipeline/build.sh
