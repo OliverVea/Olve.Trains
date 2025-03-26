@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
 using Olve.Results;
-using Scriban;
+using Olve.Trains.AssetPipeline.Assets;
 using Scriban.Runtime;
 
 namespace Olve.Trains.AssetPipeline.Shaders;
@@ -10,7 +10,7 @@ namespace Olve.Trains.AssetPipeline.Shaders;
 ///     Compiles shader slang shaders to GLSL
 /// </summary>
 /// <param name="logger"></param>
-public class ProcessShaders(ILogger<ProcessShaders> logger) : IAsyncOperation<ProcessShaders.Request, ProcessShaders.Response>
+public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templateWriter) : IAsyncOperation<ProcessShaders.Request, ProcessShaders.Response>
 {
     private static readonly string TemplateFilePath = Path.Combine(Paths.TemplatesSourceFolder, "ShaderClass.scriban");
     
@@ -56,6 +56,7 @@ public class ProcessShaders(ILogger<ProcessShaders> logger) : IAsyncOperation<Pr
             {
                 "frag" => ShaderType.Fragment,
                 "vert" => ShaderType.Vertex,
+                "geom" => ShaderType.Geometry,
                 _ => ShaderType.Unknown
             };
             
@@ -86,42 +87,56 @@ public class ProcessShaders(ILogger<ProcessShaders> logger) : IAsyncOperation<Pr
             var programName = shaderGroup.Key;
             
             var fragmentShaders = shaderGroup.Where(x => x.Type == ShaderType.Fragment).ToList();
-            if (fragmentShaders.Count > 1)
+            if (fragmentShaders.Count != 1)
             {
-                return new ResultProblem("Expected at most one fragment shader for program '{0}', but found {1}.", programName, fragmentShaders.Count);
+                return new ResultProblem("Expected exactly one fragment shader for program '{0}', but found {1}.", programName, fragmentShaders.Count);
             }
-            var fragmentShader = fragmentShaders.FirstOrDefault();
+            var fragmentShader = fragmentShaders.First();
             
             var vertexShaders = shaderGroup.Where(x => x.Type == ShaderType.Vertex).ToList();
-            if (vertexShaders.Count > 1)
+            if (vertexShaders.Count != 1)
             {
-                return new ResultProblem("Expected at most one vertex shader for program '{0}', but found {1}.", programName, vertexShaders.Count);
+                return new ResultProblem("Expected exactly one vertex shader for program '{0}', but found {1}.", programName, vertexShaders.Count);
             }
-            var vertexShader = vertexShaders.FirstOrDefault();
+            var vertexShader = vertexShaders.First();
+
+            var geometryShaders = shaderGroup.Where(x => x.Type == ShaderType.Geometry).ToList();
+            if (geometryShaders.Count > 1)
+            {
+                return new ResultProblem("Expected at most one geometry shader for program '{0}', but found {1}.", programName, geometryShaders.Count);
+            }
+
+            var geometryShader = geometryShaders.FirstOrDefault();
 
             Dictionary<string, Uniform> uniforms = [];
-            
-            if (fragmentShader != null)
+
+            if (AddUniforms(uniforms, fragmentShader.Uniforms).TryPickProblems(out var problems))
             {
-                if (AddUniforms(uniforms, fragmentShader.Uniforms).TryPickProblems(out var problems))
+                return problems.Prepend("Failed to add uniforms for fragment shader '{0}'", fragmentShader.SourcePath);
+            }
+
+            if (AddUniforms(uniforms, vertexShader.Uniforms).TryPickProblems(out problems))
+            {
+                return problems.Prepend("Failed to add uniforms for vertex shader '{0}'", vertexShader.SourcePath);
+            }
+
+            if (geometryShader != null)
+            {
+                if (AddUniforms(uniforms, geometryShader.Uniforms).TryPickProblems(out problems))
                 {
-                    return problems.Prepend("Failed to add uniforms for fragment shader '{0}'", fragmentShader.SourcePath);
+                    return problems.Prepend("Failed to add uniforms for geometry shader '{0}'", geometryShader.SourcePath);
                 }
             }
-            
-            if (vertexShader != null)
-            {
-                if (AddUniforms(uniforms, vertexShader.Uniforms).TryPickProblems(out var problems))
-                {
-                    return problems.Prepend("Failed to add uniforms for vertex shader '{0}'", vertexShader.SourcePath);
-                }
-            }
+
+            var destinationPath = Path.Combine(Paths.ShaderOutputFolder, programName + ".cs");
             
             var shaderProgram = new ShaderProgram
             {
                 Name = programName,
+                Destination = destinationPath,
                 FragmentShader = fragmentShader,
                 VertexShader = vertexShader,
+                GeometryShader = geometryShader,
                 Uniforms = uniforms.Values.ToArray()
             };
             
@@ -132,15 +147,13 @@ public class ProcessShaders(ILogger<ProcessShaders> logger) : IAsyncOperation<Pr
         {
             return new ResultProblem("Template file '{0}' not found", TemplateFilePath);
         }
-        
-        var templateFile = await File.ReadAllTextAsync(TemplateFilePath, ct);
 
         foreach (var shaderProgram in shaderPrograms)
         {
-            var shaderProgramResult = await WriteShaderSourceFileAsync(shaderProgram, templateFile, ct);
+            var shaderProgramResult = await WriteShaderSourceFileAsync(shaderProgram, ct);
             if (shaderProgramResult.TryPickProblems(out var problems))
             {
-                return problems.Prepend("Failed to write shader source file for shader program '{0}'", shaderProgram.FragmentShader?.Name ?? shaderProgram.VertexShader?.Name ?? "Unknown");
+                return problems.Prepend("Failed to write shader source file for shader program '{0}'", shaderProgram.Name);
             }
         }
         
@@ -149,33 +162,13 @@ public class ProcessShaders(ILogger<ProcessShaders> logger) : IAsyncOperation<Pr
         return new Response(shaderPrograms);
     }
 
-    private async Task<Result> WriteShaderSourceFileAsync(ShaderProgram shaderProgram, string templateFile, CancellationToken ct)
+    private async Task<Result> WriteShaderSourceFileAsync(ShaderProgram shaderProgram, CancellationToken ct)
     {
         logger.LogDebug("Rendering shader program: {ShaderProgramName}", shaderProgram.Name);
-        
-        var template = Template.Parse(templateFile, TemplateFilePath);
-        var scriptObject = MapToScriptObject(shaderProgram);
-        
-        try
-        {
-            var sourceCode = await template.RenderAsync(scriptObject);
-            if (sourceCode is null)
-            {
-                return new ResultProblem("Failed to write source generated shader file");
-            }
-            
-            var outputPath = Path.Combine(Paths.ShaderOutputFolder, shaderProgram.Name + ".cs");
-            
-            await File.WriteAllTextAsync(outputPath, sourceCode, ct);
-            
-            logger.LogDebug("Shader program '{ShaderProgramName}' rendered successfully to '{OutputPath}'.", shaderProgram.Name, outputPath);
 
-            return Result.Success();
-        }
-        catch (Exception e)
-        {
-            return new ResultProblem(e, "Failed to render C# shader source template '{0}'", TemplateFilePath);
-        }
+        var scriptObject = MapToScriptObject(shaderProgram);
+
+        return await templateWriter.WriteTemplateAsync(TemplateFilePath, scriptObject, shaderProgram.Destination , ct);
     }
 
     private static ScriptObject MapToScriptObject(ShaderProgram shaderProgram)
@@ -202,28 +195,34 @@ public class ProcessShaders(ILogger<ProcessShaders> logger) : IAsyncOperation<Pr
         
         programObject.Add("Uniforms", uniformObjects);
 
-        if (shaderProgram.FragmentShader != null)
+        ScriptObject fragmentShaderObject = new()
         {
-            ScriptObject fragmentShaderObject = new()
+            { "Name", shaderProgram.FragmentShader },
+            { "SourcePath", shaderProgram.FragmentShader.SourcePath },
+            { "SourceCode", shaderProgram.FragmentShader.SourceCode }
+        };
+
+        programObject.Add("FragmentShader", fragmentShaderObject);
+
+        ScriptObject vertexShaderObject = new()
+        {
+            { "Name", shaderProgram.VertexShader },
+            { "SourcePath", shaderProgram.VertexShader.SourcePath },
+            { "SourceCode", shaderProgram.VertexShader.SourceCode }
+        };
+
+        programObject.Add("VertexShader", vertexShaderObject);
+
+        if (shaderProgram.GeometryShader != null)
+        {
+            ScriptObject geometryShaderObject = new()
             {
-                { "Name", shaderProgram.FragmentShader },
-                { "SourcePath", shaderProgram.FragmentShader.SourcePath },
-                { "SourceCode", shaderProgram.FragmentShader.SourceCode }
+                { "Name", shaderProgram.GeometryShader },
+                { "SourcePath", shaderProgram.GeometryShader.SourcePath },
+                { "SourceCode", shaderProgram.GeometryShader.SourceCode }
             };
 
-            programObject.Add("FragmentShader", fragmentShaderObject);
-        }
-        
-        if (shaderProgram.VertexShader != null)
-        {
-            ScriptObject vertexShaderObject = new()
-            {
-                { "Name", shaderProgram.VertexShader },
-                { "SourcePath", shaderProgram.VertexShader.SourcePath },
-                { "SourceCode", shaderProgram.VertexShader.SourceCode }
-            };
-
-            programObject.Add("VertexShader", vertexShaderObject);
+            programObject.Add("GeometryShader", geometryShaderObject);
         }
         
         return programObject;

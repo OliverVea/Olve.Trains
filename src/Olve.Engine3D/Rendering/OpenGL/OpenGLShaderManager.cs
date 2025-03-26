@@ -4,9 +4,14 @@ using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
-public class OpenGLShaderManager : IOpenGLEntityManager<ShaderData, ShaderProgram>
+public class OpenGLShaderManager : IOpenGLEntityManager<ShaderData, OpenGLShaderManager.Registration>
 {
-    public Result<ShaderProgram> Register(ShaderData shaderData)
+    public readonly record struct Registration(
+        ShaderProgram ShaderProgram,
+        int? WorldPositionLocation,
+        int? NormalMatrixLocation);
+
+    public Result<Registration> Register(ShaderData shaderData)
     {
         if (LoadShader(shaderData.VertexSource, ShaderType.VertexShader)
             .TryPickProblems(out var problems, out var vertexShader))
@@ -20,23 +25,50 @@ public class OpenGLShaderManager : IOpenGLEntityManager<ShaderData, ShaderProgra
             return problems.Prepend("Fragment shader for shader '{0}' could not be loaded.", shaderData.Name);
         }
 
-        if (CreateShaderProgram(vertexShader, fragmentShader)
+        List<uint> shaderPrograms = [vertexShader, fragmentShader];
+
+        if (shaderData.GeometrySource is { } geometrySource)
+        {
+            if (LoadShader(geometrySource, ShaderType.GeometryShader)
+                .TryPickProblems(out problems, out var geometryShader))
+            {
+                return problems.Prepend("Geometry shader for shader '{0}' could not be loaded.", shaderData.Name);
+            }
+
+            shaderPrograms.Add(geometryShader);
+        }
+
+        if (CreateShaderProgram(shaderPrograms)
             .TryPickProblems(out problems, out var shaderProgram))
         {
             return problems.Prepend("Shader program '{0}' could not be created", shaderData.Name);
         }
 
-        Cleanup(shaderProgram, vertexShader, fragmentShader);
+        if (GetUniformLocation(shaderProgram, "world")
+            .TryPickProblems(out problems, out var worldPositionLocation))
+        {
+            return problems.Prepend("World position location for shader '{0}' could not be found", shaderData.Name);
+        }
 
-        return shaderProgram;
+        if (GetUniformLocation(shaderProgram, "normalMatrix")
+            .TryPickProblems(out problems, out var normalLocation))
+        {
+            return problems.Prepend("Normal location for shader '{0}' could not be found", shaderData.Name);
+        }
+
+        Cleanup(shaderProgram, shaderPrograms);
+
+
+        return new Registration(shaderProgram, worldPositionLocation, normalLocation);
     }
 
-    private static void Cleanup(ShaderProgram shaderProgram, uint vertexShader, uint fragmentShader)
+    private static void Cleanup(ShaderProgram shaderProgram, IReadOnlyList<uint> shaders)
     {
-        GameManager.GL.DetachShader(shaderProgram.Handle, vertexShader);
-        GameManager.GL.DetachShader(shaderProgram.Handle, fragmentShader);
-        GameManager.GL.DeleteShader(vertexShader);
-        GameManager.GL.DeleteShader(fragmentShader);
+        foreach (var shader in shaders)
+        {
+            GameManager.GL.DetachShader(shaderProgram.Handle, shader);
+            GameManager.GL.DeleteShader(shader);
+        }
     }
 
     private static Result<uint> LoadShader(string shaderSource, ShaderType shaderType)
@@ -54,9 +86,9 @@ public class OpenGLShaderManager : IOpenGLEntityManager<ShaderData, ShaderProgra
         return vertexShader;
     }
 
-    private static Result<ShaderProgram> CreateShaderProgram(params ReadOnlySpan<uint> shaders)
+    private static Result<ShaderProgram> CreateShaderProgram(IReadOnlyList<uint> shaders)
     {
-        if (shaders.Length == 0)
+        if (shaders.Count == 0)
         {
             return new ResultProblem("Attempted to create empty shader program");
         }
@@ -80,9 +112,20 @@ public class OpenGLShaderManager : IOpenGLEntityManager<ShaderData, ShaderProgra
         return new ShaderProgram(shaderProgram);
     }
 
-    public Result Unregister(ShaderProgram registration)
+    private static Result<int?> GetUniformLocation(ShaderProgram shaderProgram, string uniformName)
     {
-        GameManager.GL.DeleteProgram(registration.Handle);
+        var worldPositionLocation = GameManager.GL.GetUniformLocation(shaderProgram.Handle, uniformName);
+        if (worldPositionLocation == -1)
+        {
+            return (int?)null;
+        }
+
+        return worldPositionLocation;
+    }
+
+    public Result Unregister(Registration registration)
+    {
+        GameManager.GL.DeleteProgram(registration.ShaderProgram.Handle);
 
         return Result.Success();
     }

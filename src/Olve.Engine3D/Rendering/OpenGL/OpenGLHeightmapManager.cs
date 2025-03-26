@@ -75,7 +75,7 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
         var ebo = GameManager.GL.CreateBuffer();
         GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
 
-        var indexCount = heightmapData.Width * heightmapData.Length * 2;
+        var indexCount = heightmapData.Width * heightmapData.Length * 6;
 
         BufferHelper.UsingSpan<uint>(indexCount, indices =>
         {

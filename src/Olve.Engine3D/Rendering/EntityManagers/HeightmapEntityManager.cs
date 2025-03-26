@@ -2,18 +2,13 @@ using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 
-namespace Olve.Engine3D.Rendering;
+namespace Olve.Engine3D.Rendering.EntityManagers;
 
-public class HeightmapEntityManager : RenderingEntityManagerBase<HeightmapRenderingId, HeightmapData, HeightmapEntityManager.Registration>
+public class HeightmapEntityManager : RenderingEntityManagerBase<HeightmapData, HeightmapEntityManager.Registration>
 {
     private readonly OpenGLHeightmapManager _openGLHeightmapManager = new();
     
     public readonly record struct Registration(VAO VAO, VBO VBO, EBO EBO, Texture2D Texture);
-
-    protected override HeightmapRenderingId CreateId(uint id, Registration registration)
-    {
-        return new HeightmapRenderingId(id, registration.VAO, registration.VBO, registration.EBO, registration.Texture);
-    }
 
     protected override Result<Registration> RegisterInOpenGL(HeightmapData entity)
     {

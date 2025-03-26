@@ -19,17 +19,37 @@ public enum Direction
 
 public static class GameSceneEntities
 {
+    private static readonly Vector3D<float> AmbientLightColor = new(180 / 255f, 167 / 255f, 214 / 255f);
+    private static readonly float AmbientLightIntensity = 0.2f;
+    private static readonly Vector3D<float> DirectionalLightColor = new(1.0f, 1.0f, 0.95f);
+    private static readonly Vector3D<float> DirectionalLightDir = Vector3D.Normalize(new Vector3D<float>(0.25f, -1, 0.25f));
+    private static readonly float DirectionalIntensity = 1.0f;
+
     public static readonly Shaders.Default DefaultShader = new(
-        ambientLightColor: new Vector3D<float>(180 / 255f, 167 / 255f, 214 / 255f),
-        ambientLightIntensity: 0.2f,
-        directionalLightColor: new Vector3D<float>(1.0f, 1.0f, 1.0f),
-        directionalLightDir: Vector3D.Normalize<float>(new Vector3D<float>(0.25f, -1, 0.25f)),
-        directionalIntensity: 1.0f,
+        AmbientLightColor,
+        AmbientLightIntensity,
+        DirectionalLightColor,
+        DirectionalLightDir,
+        DirectionalIntensity,
         textureSampler: new Texture2D(0, 0, 0),
         world: Matrix4X4<float>.Identity,
         view: Matrix4X4<float>.Identity,
         projection: Matrix4X4<float>.Identity
     );
+
+    public static readonly Shaders.Terrain TerrainShader = new(
+        AmbientLightColor,
+        AmbientLightIntensity,
+        DirectionalLightColor,
+        DirectionalLightDir,
+        DirectionalIntensity,
+        heightMap: new Texture2D(0, 0, 0),
+        texelSize: new Vector2D<float>(0, 0),
+        world: Matrix4X4<float>.Identity,
+        view: Matrix4X4<float>.Identity,
+        projection: Matrix4X4<float>.Identity,
+        cameraDirection: Vector3D<float>.Zero);
+
 
     public static readonly TextureData DefaultTexture = new()
     {

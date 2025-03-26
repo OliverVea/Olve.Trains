@@ -16,10 +16,20 @@ public static class RenderingParameterHelper
 
         // TODO: investigate potential performance issues - boxing?
         return renderingParameter.Match(
+            x => SetMatrix3X3(x, location),
             x => SetMatrix4X4(x, location),
+            x => SetVector2D(x, location),
             x => SetVector3D(x, location),
             x => SetFloat(x, location),
             x => SetTexture(x, location));
+    }
+
+    private static Result SetMatrix3X3(RenderingParameter.Matrix3X3 matrix, int location)
+    {
+        Span<float> buffer = stackalloc float[9];
+        matrix.Value.CopyTo(buffer);
+        GameManager.GL.UniformMatrix3(location, 1, false, buffer);
+        return Result.Success();
     }
 
     private static Result SetMatrix4X4(RenderingParameter.Matrix4X4 matrix, int location)
@@ -27,6 +37,12 @@ public static class RenderingParameterHelper
         Span<float> buffer = stackalloc float[16];
         matrix.Value.CopyTo(buffer);
         GameManager.GL.UniformMatrix4(location, 1, false, buffer);
+        return Result.Success();
+    }
+
+    private static Result SetVector2D(RenderingParameter.Vector2D vector, int location)
+    {
+        GameManager.GL.Uniform2(location, vector.Value.X, vector.Value.Y);
         return Result.Success();
     }
 

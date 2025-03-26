@@ -64,13 +64,15 @@ public static class ShaderHelper
 
         return uniforms;
     }
-    
+
     public static bool TryParseUniformType(string uniformTypeString, [NotNullWhen(true)] out UniformType? uniformType)
     {
         uniformType = uniformTypeString switch
         {
+            "vec2" => UniformType.Vector2,
             "vec3" => UniformType.Vector3,
             "float" => UniformType.Float,
+            "mat3" => UniformType.Matrix3,
             "mat4" => UniformType.Matrix4,
             "sampler2D" => UniformType.Sampler2D,
             _ => null

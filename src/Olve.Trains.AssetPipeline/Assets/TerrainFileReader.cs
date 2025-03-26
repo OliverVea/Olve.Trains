@@ -102,7 +102,7 @@ public class TerrainFileReader(ILogger<TerrainFileReader> logger, ReadOpenRaster
         };
 
         var assetName = Path.GetFileNameWithoutExtension(assetSource).Split('.')[0];
-        var assetDestination = Path.Combine(Paths.TerrainOutputFolder, Path.GetFileNameWithoutExtension(assetSource));
+        var assetDestination = "terrains/" + assetName + ".terrain";
 
         return new Asset<TerrainData>
         {

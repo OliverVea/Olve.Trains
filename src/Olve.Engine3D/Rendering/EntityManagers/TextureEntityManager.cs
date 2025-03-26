@@ -1,18 +1,13 @@
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
 
-namespace Olve.Engine3D.Rendering;
+namespace Olve.Engine3D.Rendering.EntityManagers;
 
-public class TextureEntityManager : RenderingEntityManagerBase<TextureRenderingId, TextureData, TextureEntityManager.Registration>
+public class TextureEntityManager : RenderingEntityManagerBase<TextureData, TextureEntityManager.Registration>
 {
     private readonly OpenGLTextureManager _openGLTextureManager = new();
 
     public readonly record struct Registration(OpenGL.Handles.Texture2D Texture);
-
-    protected override TextureRenderingId CreateId(uint id, Registration registration)
-    {
-        return new TextureRenderingId(id, registration.Texture);
-    }
 
     protected override Result<Registration> RegisterInOpenGL(TextureData entity)
     {

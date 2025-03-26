@@ -1,17 +1,13 @@
-namespace Olve.Engine3D.Rendering;
+namespace Olve.Engine3D.Rendering.EntityManagers;
 
-public abstract class RenderingEntityManagerBase<TId, TEntity, TRegistration>
-    where TId : notnull
+public abstract class RenderingEntityManagerBase<TEntity, TRegistration>
 {
-    private readonly ThreadSafeUintGenerator _uintGenerator = new();
+    protected readonly Dictionary<RenderingId<TEntity>, TRegistration> ModelRegistrations = [];
 
-    protected readonly Dictionary<TId, TRegistration> ModelRegistrations = [];
-
-    protected abstract TId CreateId(uint id, TRegistration registration);
     protected abstract Result<TRegistration> RegisterInOpenGL(TEntity entity);
     protected abstract Result DeregisterFromOpenGL(TRegistration registration);
 
-    public Result<TId> Register(TEntity entity)
+    public Result<RenderingId<TEntity>> Register(TEntity entity)
     {
         if (RegisterInOpenGL(entity).TryPickProblems(out var problems, out var registration))
         {
@@ -21,15 +17,14 @@ public abstract class RenderingEntityManagerBase<TId, TEntity, TRegistration>
             });
         }
 
-        var id = _uintGenerator.Next();
-        var entityId = CreateId(id, registration);
+        var entityId = RenderingId<TEntity>.New();
 
         ModelRegistrations.Add(entityId, registration);
 
         return entityId;
     }
 
-    public Result Unregister(TId entityId)
+    public Result Unregister(RenderingId<TEntity> entityId)
     {
         if (!ModelRegistrations.TryGetValue(entityId, out var modelRegistration))
         {
@@ -47,5 +42,15 @@ public abstract class RenderingEntityManagerBase<TId, TEntity, TRegistration>
 
         ModelRegistrations.Remove(entityId);
         return Result.Success();
+    }
+
+    public Result<TRegistration> GetRegistration(RenderingId<TEntity> entityId)
+    {
+        if (!ModelRegistrations.TryGetValue(entityId, out var registration))
+        {
+            return new ResultProblem("Entity with id '{0}' is not registered", entityId);
+        }
+
+        return registration;
     }
 }
