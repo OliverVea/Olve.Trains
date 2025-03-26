@@ -89,7 +89,7 @@ int b = index + 1;
 int c = index + heightmapData.Width;
 int d = index + heightmapData.Width + 1;
 
-if (heightmapData.Heights[i, j] == heightmapData.Heights[i + 1, j]) // Compare heights at a and c
+if (heightmapData.Heights[a] == heightmapData.Heights[c]) // Compare heights at a and c
 {
     indices[index * 6] = (uint)a;
     indices[index * 6 + 1] = (uint)b;
