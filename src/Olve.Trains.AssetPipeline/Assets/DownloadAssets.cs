@@ -140,6 +140,13 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
             return files;
         }
+        catch (AmazonS3Exception ex)
+        {
+            logger.LogError(ex, "Failed to retrieve S3 bucket '{0}' at '{1}'", envs.Bucket, envs.Url);
+            logger.LogInformation("Amazon Id: {AmazonId}, Cloudfront Id: {CloudfrontId}, Response body: {ResponseBody}", ex.AmazonId2, ex.AmazonCloudFrontId ,ex.ResponseBody);
+
+            return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}' at '{1}'", envs.Bucket, envs.Url);
+        }
         catch (Exception ex)
         {
             return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}' at '{1}'", envs.Bucket, envs.Url);
