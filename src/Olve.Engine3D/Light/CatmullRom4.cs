@@ -2,15 +2,15 @@ namespace Olve.Engine3D.Light;
 
 public class CatmullRom4 : CatmullRom<Vector4D<float>>
 {
-    private readonly Vector4D<float> _min;
-    private readonly Vector4D<float> _max;
-
     private readonly Matrix4X4<float>[] _coefficients;
 
-    public CatmullRom4(IReadOnlyList<KeyFrame<Vector4D<float>>> keyFrames, float min = 0f, float max = 1f) : base(keyFrames)
+    public Vector4D<float> Min { get; set; }
+    public Vector4D<float> Max { get; set; }
+
+    public CatmullRom4(IReadOnlyList<KeyFrame<Vector4D<float>>> keyFrames, float? min = null, float? max = null) : base(keyFrames)
     {
-        _min = Vector4D<float>.One * min;
-        _max = Vector4D<float>.One * max;
+        Min = Vector4D<float>.One * (min ?? float.MinValue);
+        Max = Vector4D<float>.One * (max ?? float.MaxValue);
 
         _coefficients = new Matrix4X4<float>[KeyFrames.Length - 1];
 
@@ -30,6 +30,7 @@ public class CatmullRom4 : CatmullRom<Vector4D<float>>
     protected override Vector4D<float> Sample(int segmentIndex, in Vector4D<float> t)
     {
         var result = t * _coefficients[segmentIndex];
-        return Vector4D.Clamp(result, _min, _max);
+
+        return Vector4D.Clamp(result, Min, Max);
     }
 }
