@@ -84,12 +84,29 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
                 for (var j = 0; j < heightmapData.Width - 1; j++)
                 {
                     var index = i * heightmapData.Width + j;
-                    indices[index * 6] = (uint)index;
-                    indices[index * 6 + 1] = (uint)(index + 1);
-                    indices[index * 6 + 2] = (uint)(index + heightmapData.Width);
-                    indices[index * 6 + 3] = (uint)(index + 1);
-                    indices[index * 6 + 4] = (uint)(index + heightmapData.Width + 1);
-                    indices[index * 6 + 5] = (uint)(index + heightmapData.Width);
+int a = index;
+int b = index + 1;
+int c = index + heightmapData.Width;
+int d = index + heightmapData.Width + 1;
+
+if (heightmapData.Heights[i, j] == heightmapData.Heights[i + 1, j]) // Compare heights at a and c
+{
+    indices[index * 6] = (uint)a;
+    indices[index * 6 + 1] = (uint)b;
+    indices[index * 6 + 2] = (uint)c;
+    indices[index * 6 + 3] = (uint)a;
+    indices[index * 6 + 4] = (uint)c;
+    indices[index * 6 + 5] = (uint)d;
+}
+else
+{
+    indices[index * 6] = (uint)a;
+    indices[index * 6 + 1] = (uint)b;
+    indices[index * 6 + 2] = (uint)d;
+    indices[index * 6 + 3] = (uint)b;
+    indices[index * 6 + 4] = (uint)c;
+    indices[index * 6 + 5] = (uint)d;
+}
                 }
             }
 
