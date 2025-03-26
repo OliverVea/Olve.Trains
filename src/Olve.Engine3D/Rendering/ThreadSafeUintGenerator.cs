@@ -8,4 +8,6 @@ public class ThreadSafeUintGenerator
     {
         return Interlocked.Increment(ref _nextId);
     }
+
+    public static readonly ThreadSafeUintGenerator Shared = new();
 }

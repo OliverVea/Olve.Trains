@@ -1,5 +1,7 @@
+using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
-using Olve.Engine3D.Rendering.Parameters;
+using Olve.Engine3D.Rendering.OpenGL.Handles;
+using Olve.Engine3D.Rendering.Shaders;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering;
@@ -9,30 +11,100 @@ public class RenderingManager
     private readonly ThreadSafeUintGenerator _instanceUintGenerator = new();
     private RenderingInstanceId NextInstanceId() => new(_instanceUintGenerator.Next());
 
-    protected readonly List<Instance> Instances = new();
+    protected readonly OrderedList<Instance> Instances = new();
 
     protected readonly record struct Instance(
         RenderingInstanceId InstanceId,
-        MeshRenderingId  MeshId,
-        ShaderRenderingId ShaderId,
-        Matrix4X4<float> Transform);
+        RenderingId<ShaderData> ShaderId,
+        VAO VAO,
+        VBO VBO,
+        EBO EBO,
+        Matrix4X4<float> Transform) : IComparable<Instance>
+    {
+        public int CompareTo(Instance other)
+        {
+            // Order: shader > VAO > VBO > EBO > InstanceId
+
+            if (ShaderId.Id != other.ShaderId.Id)
+            {
+                return ShaderId.Id.CompareTo(other.ShaderId.Id);
+            }
+
+            if (VAO.Handle != other.VAO.Handle)
+            {
+                return VAO.Handle.CompareTo(other.VAO.Handle);
+            }
+
+            if (VBO.Handle != other.VBO.Handle)
+            {
+                return VBO.Handle.CompareTo(other.VBO.Handle);
+            }
+
+            if (EBO.Handle != other.EBO.Handle)
+            {
+                return EBO.Handle.CompareTo(other.EBO.Handle);
+            }
+
+            return InstanceId.Id.CompareTo(other.InstanceId.Id);
+        }
+    }
     
     public Result<RenderingInstanceId> RegisterInstance(
-        MeshRenderingId meshId,
-        ShaderRenderingId shaderId,
+        RenderingId<MeshData> meshId,
+        RenderingId<ShaderData> shaderId,
         Matrix4X4<float> worldMatrix)
     {
-        var instanceId = NextInstanceId();
-        var instance = new Instance(instanceId, meshId, shaderId, worldMatrix);
+        if (GameManager.MeshEntityManager.GetRegistration(meshId).TryPickProblems(out var problems, out var meshData))
+        {
+            return problems.Prepend("Failed to get mesh data");
+        }
 
-        Instances.Add(instance);
+        if (GameManager.ShaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
+        {
+            return problems.Prepend("Failed to get shader data");
+        }
+
+        var instanceId = NextInstanceId();
+        Instance instance = new(instanceId, shaderId, meshData.VAO, meshData.VBO, meshData.EBO, worldMatrix);
+
+        Instances.Insert(instance);
+
+        return instanceId;
+    }
+
+    public Result<RenderingInstanceId> RegisterInstance(
+        RenderingId<HeightmapData> terrainId,
+        RenderingId<ShaderData> shaderId,
+        Matrix4X4<float> worldMatrix)
+    {
+        if (GameManager.HeightmapEntityManager.GetRegistration(terrainId).TryPickProblems(out var problems, out var terrainRegistration))
+        {
+            return problems.Prepend("Failed to get mesh data");
+        }
+
+        if (GameManager.ShaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
+        {
+            return problems.Prepend("Failed to get shader data");
+        }
+
+        var instanceId = NextInstanceId();
+        Instance instance = new(instanceId, shaderId, terrainRegistration.VAO, terrainRegistration.VBO, terrainRegistration.EBO, worldMatrix);
+
+        Instances.Insert(instance);
 
         return instanceId;
     }
 
     public Result DeregisterInstance(RenderingInstanceId instanceId)
     {
-        Instances.RemoveAll(x => x.InstanceId == instanceId);
+        var instance = Instances.FirstOrDefault(x => x.InstanceId == instanceId);
+
+        if (instance == default)
+        {
+            return new ResultProblem("Entity instance with '{0}' is not registered", instanceId);
+        }
+
+        Instances.Remove(instance);
 
         return Result.Success();
     }
@@ -45,11 +117,9 @@ public class RenderingManager
             return new ResultProblem("Entity instance with '{0}' is not registered", instanceId);
         }
 
-        Instances.RemoveAll(x => x.InstanceId == instanceId);
+        var newInstance = instance with { Transform = worldMatrix };
 
-        instance = instance with { Transform = worldMatrix };
-
-        Instances.Add(instance);
+        Instances.Replace(newInstance);
 
         return Result.Success();
     }
@@ -65,31 +135,76 @@ public class RenderingManager
         return instance.Transform;
     }
 
-    public Result Render(RenderingParameters parameters)
+    public Result Render(IShader shader)
+    {
+        if (shader.RenderingId.Id == 0)
+        {
+            return new ResultProblem("Shader ID is not set");
+        }
+
+        var startIndex = Instances.GetIndex(new Instance { ShaderId = shader.RenderingId });
+        var endIndex = Instances.GetIndex(new Instance { ShaderId = new RenderingId<ShaderData>(shader.RenderingId.Id + 1) });
+
+        if (startIndex == endIndex)
+        {
+            return Result.Success();
+        }
+
+        var instanceRange = Instances.GetRange(startIndex, endIndex - startIndex);
+
+        if (GameManager.ShaderEntityManager.GetRegistration(shader.RenderingId)
+            .TryPickProblems(out var problems, out var shaderRegistration))
+        {
+            return problems.Prepend("Failed to get shader registration for shader '{0}' ('{1}').", shader.ShaderData.Name, shader.RenderingId);
+        }
+
+        var parameters = shader.MakeParameters();
+
+        if (OpenGLModelRenderingManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
+            .TryPickProblems(out problems))
+        {
+            return problems.Prepend("Failed to load shader '{0}' into OpenGL", shader.ShaderData.Name);
+        }
+
+        if (RenderInstances(instanceRange, shaderRegistration).TryPickProblems(out problems))
+        {
+            return problems.Prepend("Failed to render entity instances with shader '{0}'", shader.ShaderData.Name);
+        }
+
+        return Result.Success();
+    }
+
+    private static Result RenderInstances(IEnumerable<Instance> instanceRange, OpenGLShaderManager.Registration shaderRegistration)
     {
         try
         {
-            foreach (var instance in Instances)
+            foreach (var instance in instanceRange)
             {
-                OpenGLModelRenderingManager.OpenGLModelHandles openGLHandles = new(
-                    instance.MeshId.VAO,
-                    instance.MeshId.VBO,
-                    instance.MeshId.EBO,
-                    instance.ShaderId.Shader);
-
-                if (OpenGLModelRenderingManager.LoadModelInOpenGL(openGLHandles, parameters)
-                    .TryPickProblems(out var problems))
+                if (OpenGLModelRenderingManager.LoadModelInOpenGL(
+                        instance.VAO,
+                        instance.VBO,
+                        instance.EBO).TryPickProblems(out var problems))
                 {
                     return problems.Prepend("Failed to load model instance into OpenGL");
                 }
 
-                if (OpenGLModelRenderingManager.RenderModel(
-                        instance.ShaderId.Shader,
-                        parameters.WorldMatrixName,
-                        instance.Transform,
-                        instance.MeshId.EBO.IndexCount).TryPickProblems(out problems))
+                if (shaderRegistration.WorldPositionLocation is { } worldPositionLocation)
                 {
-                    return problems.Prepend("Failed to render model instance with OpenGL");
+                    if (OpenGLModelRenderingManager.RenderModel(
+                            worldPositionLocation,
+                            shaderRegistration.NormalMatrixLocation,
+                            instance.Transform,
+                            instance.EBO.IndexCount).TryPickProblems(out problems))
+                    {
+                        return problems.Prepend("Failed to render model instance with OpenGL");
+                    }
+                }
+                else
+                {
+                    if (OpenGLModelRenderingManager.RenderModel(instance.EBO.IndexCount).TryPickProblems(out problems))
+                    {
+                        return problems.Prepend("Failed to render model instance with OpenGL");
+                    }
                 }
             }
         }
@@ -105,5 +220,63 @@ public class RenderingManager
         }
 
         return Result.Success();
+    }
+}
+
+public class OrderedList<T> where T : IComparable<T>
+{
+    private readonly List<T> _list = new();
+
+    public int GetIndex(T item)
+    {
+        var index = _list.BinarySearch(item);
+        if (index < 0)
+        {
+            index = ~index;
+        }
+
+        return index;
+    }
+
+    public void Insert(T item)
+    {
+        var index = GetIndex(item);
+        if (index >= _list.Count)
+        {
+            _list.Add(item);
+            return;
+        }
+
+        var current = _list[index];
+        if (current.CompareTo(item) == 0)
+        {
+            _list[index] = item;
+        }
+
+        _list.Insert(index, item);
+    }
+
+    public void Remove(T item)
+    {
+        _list.RemoveAt(GetIndex(item));
+    }
+
+    public void Replace(T item)
+    {
+        var index = GetIndex(item);
+        _list[index] = item;
+    }
+
+    public T? FirstOrDefault(Func<T, bool> match)
+    {
+        return _list.FirstOrDefault(match);
+    }
+
+    public IEnumerable<T> GetRange(int startIndex, int count)
+    {
+        for (var i = startIndex; i < startIndex + count; i++)
+        {
+            yield return _list[i];
+        }
     }
 }

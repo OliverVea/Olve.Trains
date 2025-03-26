@@ -5,4 +5,5 @@ public enum ShaderType
     Unknown,
     Fragment,
     Vertex,
+    Geometry,
 }

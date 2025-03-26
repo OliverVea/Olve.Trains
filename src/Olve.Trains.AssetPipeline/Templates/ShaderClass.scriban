@@ -3,17 +3,23 @@
 // |               WARNING: This is a generated file. Do not modify it manually.                    |
 // |                                                                                                |
 // --------------------------------------------------------------------------------------------------
+using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Parameters;
 using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.Maths;
 
 namespace Olve.CodeGen;
 
 
-public static partial class Shaders {
-    public class {{ Name }}
+public static partial class Shaders
+{
+
+    public class {{ Name }} : IShader
     {
+        public RenderingId<ShaderData> RenderingId { get; set; }
+
         public {{ Name}}({{ for x in 0..(Uniforms.size - 1) }}{{Uniforms[x].DataType}} {{Uniforms[x].VariableName}}{{ if x < (Uniforms.size - 1) }},{{ end }}{{ end }})
         {
             {{ for x in 0..(Uniforms.size - 1) }}{{Uniforms[x].PropertyName}} = {{Uniforms[x].VariableName}};
@@ -29,15 +35,17 @@ public static partial class Shaders {
             VertexSource = @"{{ VertexShader.SourceCode }}",
             FragmentPath = "{{ FragmentShader.SourcePath }}",
             FragmentSource = @"{{ FragmentShader.SourceCode }}",
+            {{ if GeometryShader != null }}GeometryPath = "{{ GeometryShader.SourcePath }}",
+            GeometrySource = @"{{ GeometryShader.SourceCode }}",{{ end }}
         };
     
-        public IReadOnlyList<AnyRenderingParameter> MakeParameters()
+        public RenderingParameters MakeParameters()
         {
-            return
+            return new(
             [
                 {{ for x in 0..(Uniforms.size - 1) }}new {{Uniforms[x].RenderParameterType}}("{{Uniforms[x].Name}}", {{Uniforms[x].PropertyName}}),
 {{ end }}
-            ];
+            ]);
         }
     }
 }

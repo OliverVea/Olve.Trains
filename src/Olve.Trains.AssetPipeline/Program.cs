@@ -42,7 +42,9 @@ serviceCollection.AddTransient<TemplateWriter>();
 
 serviceCollection.AddTransient<ReadOpenRasterFile>();
 serviceCollection.AddTransient<ReadLayerAs<HeightmapData>>();
-serviceCollection.AddTransient<ILayerParser<HeightmapData>, HeightmapLayerParser>();
+
+ILayerParser<HeightmapData> heightmapLayerParser = new HeightmapLayerParser(0.25f, 128, 8);
+serviceCollection.AddSingleton(heightmapLayerParser);
 
 
 

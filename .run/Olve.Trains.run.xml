@@ -15,7 +15,7 @@
     <option name="PROJECT_TFM" value="net9.0" />
     <method v="2">
       <option name="CleanSolution" enabled="true" />
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Asset Pipeline" run_configuration_type="docker-deploy" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Olve.Trains.AssetPipeline/Dockerfile: Compose Deployment" run_configuration_type="docker-deploy" />
       <option name="Build" />
     </method>
   </configuration>

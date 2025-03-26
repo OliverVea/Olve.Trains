@@ -3,8 +3,10 @@ namespace Olve.Trains.AssetPipeline.Shaders;
 public class ShaderProgram
 {
     public required string Name { get; set; }
-    public Shader? FragmentShader { get; set; }
-    public Shader? VertexShader { get; set; }
+    public required string Destination { get; set; }
+    public required Shader FragmentShader { get; set; }
+    public required Shader VertexShader { get; set; }
+    public Shader? GeometryShader { get; set; }
     
-    public IReadOnlyList<Uniform> Uniforms { get; set; }
+    public required IReadOnlyList<Uniform> Uniforms { get; set; }
 }

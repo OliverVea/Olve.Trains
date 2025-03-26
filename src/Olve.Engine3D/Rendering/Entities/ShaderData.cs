@@ -24,4 +24,7 @@ public class ShaderData
     
     public string? FragmentPath { get; set; }
     public required string FragmentSource { get; set; }
+
+    public string? GeometryPath { get; set; }
+    public string? GeometrySource { get; set; }
 }
