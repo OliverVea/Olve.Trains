@@ -16,8 +16,7 @@ concurrency:
 
 env:
   DOTNET_VERSION: 9.0.100
-  MINIO_HOST: 192.168.1.14
-  MINIO_URL: http://192.168.1.14:9000
+  MINIO_URL: https://minio.ovhome.online
   MINIO_BUCKET: olve.trains
   TS_EXIT_NODE: tailscale-home
 
@@ -31,34 +30,14 @@ jobs:
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
-      - name: Tailscale
-        uses: tailscale/github-action@v3
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
-
-      # you can't set the exit-node name at 'up' time; so instead set it after
-      # we've gotten up and running
-      # https://github.com/tailscale/github-action/issues/123
-      # https://github.com/tailscale/tailscale/issues/4152#issuecomment-1066126643
-      - name: use named exit node in tailscale
-        run: |
-          timeout 5m sudo -E tailscale set --exit-node=${{ env.TS_EXIT_NODE }} --exit-node-allow-lan-access=true
-
-      - name: Tailscale Verification
-        run: |
-          sudo tailscale netcheck
-          sudo tailscale ip -4
-          sudo tailscale status
-          sudo tailscale ping -c 1 ${{ env.MINIO_HOST }}
-
       - name: Setup .env
         run: |
           echo "S3_URL=${{ env.MINIO_URL }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "S3_BUCKET=${{ env.MINIO_BUCKET }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "S3_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "S3_SECRET=${{ secrets.MINIO_SECRET_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
+          echo "CF_CLIENT_ID=${{ secrets.CF_CLIENT_ID }}" >> ./src/Olve.Trains.AssetPipeline/.env
+          echo "CF_CLIENT_SECRET=${{ secrets.CF_CLIENT_SECRET }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
 
       - name: Run asset pipeline
@@ -85,7 +64,7 @@ jobs:
       - name: Minio Deploy
         uses: lovellfelix/minio-deploy-action@v1
         with:
-          endpoint: ${{ secrets.MINIO_ENDPOINT }}
+          endpoint: ${{ env.MINIO_URL }}
           access_key: ${{ secrets.MINIO_ACCESS_KEY }}
           secret_key: ${{ secrets.MINIO_SECRET_KEY }}
           bucket: 'olve-trains'

@@ -1,4 +1,5 @@
 using System.Net;
+using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
@@ -65,6 +66,31 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         {
             var config = new AmazonS3Config { ServiceURL = url, ForcePathStyle = true };
             using var s3Client = new AmazonS3Client(key, secret, config);
+
+            const string cfClientIdHeader = "CF-Access-Client-Id";
+            var cfClientId = Environment.GetEnvironmentVariable("CF_CLIENT_ID");
+
+            const string cfClientSecretHeader = "CF-Access-Client-Secret";
+            var cfClientSecret = Environment.GetEnvironmentVariable("CF_CLIENT_SECRET");
+
+            s3Client.BeforeRequestEvent += (_, args) =>
+            {
+                if (args is WebServiceRequestEventArgs { Headers: not null } wsArgs)
+                {
+                    wsArgs.Headers[cfClientIdHeader] = cfClientId;
+                    wsArgs.Headers[cfClientSecretHeader] = cfClientSecret;
+                    
+                    logger.LogDebug("Received web service request header: {Header}", wsArgs.Headers);
+                }
+                else if (args is HeadersRequestEventArgs { Headers: not null } headersArgs)
+                {
+                    headersArgs.Headers[cfClientIdHeader] = cfClientId;
+                    headersArgs.Headers[cfClientSecretHeader] = cfClientSecret;
+                    
+                    logger.LogDebug("Received headers request header: {Header}", headersArgs.Headers);
+                }
+            };
+            
             var listRequest = new ListObjectsV2Request { BucketName = bucket };
             var listResponse = await s3Client.ListObjectsV2Async(listRequest, ct);
 
