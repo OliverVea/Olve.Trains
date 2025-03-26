@@ -5,6 +5,7 @@ using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
 using Olve.Results;
+using Envs = (string Url, string Bucket, string Key, string Secret, string CloudflareId, string CloudflareSecret);
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -18,6 +19,11 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
     private const string S3Bucket = "S3_BUCKET";
     private const string S3Key = "S3_KEY";
     private const string S3Secret = "S3_SECRET";
+    private const string CloudflareId = "CF_CLIENT_ID";
+    private const string CloudflareSecret = "CF_CLIENT_SECRET";
+
+    private const string CfClientIdHeader = "CF-Access-Client-Id";
+    private const string CfClientSecretHeader = "CF-Access-Client-Secret";
 
     public record Request;
     public record Response(IReadOnlyList<FileInfo> Files);
@@ -32,11 +38,9 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
             return problems.Prepend("Could not get S3 configuration");
         }
 
-        var (url, bucket, key, secret) = envVariables;
+        logger.LogInformation("Got configuration - Url: {Url}, Bucket: {Bucket}", envVariables.Url, envVariables.Bucket);
 
-        logger.LogInformation("Got configuration - Url: {Url}, Bucket: {Bucket}", url, bucket);
-
-        var retrievalResult = await RetrieveS3BucketAsync(url, bucket, key, secret, ct);
+        var retrievalResult = await RetrieveS3BucketAsync(envVariables, ct);
         if (retrievalResult.TryPickProblems(out var retrievalProblems, out var files))
         {
             return retrievalProblems.Prepend("Failed to retrieve S3 bucket");
@@ -49,54 +53,51 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         return new Response(files);
     }
 
-    private Result<(string Url, string Bucket, string Key, string Secret)> ReadS3EnvironmentVariables()
+    private Result<(string Url, string Bucket, string Key, string Secret, string CloudflareId, string CloudflareSecret)> ReadS3EnvironmentVariables()
     {
 
         return Result.Concat(
             () => EnvHelper.ReadEnvVariable(S3Url),
             () => EnvHelper.ReadEnvVariable(S3Bucket),
             () => EnvHelper.ReadEnvVariable(S3Key),
-            () => EnvHelper.ReadEnvVariable(S3Secret)
+            () => EnvHelper.ReadEnvVariable(S3Secret),
+            () => EnvHelper.ReadEnvVariable(CloudflareId),
+            () => EnvHelper.ReadEnvVariable(CloudflareSecret)
         );
     }
 
-    private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(string url, string bucket, string key, string secret, CancellationToken ct)
+    private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(Envs envs, CancellationToken ct)
     {
         try
         {
-            var config = new AmazonS3Config { ServiceURL = url, ForcePathStyle = true };
-            using var s3Client = new AmazonS3Client(key, secret, config);
+            var config = new AmazonS3Config { ServiceURL = envs.Url, ForcePathStyle = true };
+            using var s3Client = new AmazonS3Client(envs.Key, envs.Secret, config);
 
-            const string cfClientIdHeader = "CF-Access-Client-Id";
-            var cfClientId = Environment.GetEnvironmentVariable("CF_CLIENT_ID");
-
-            const string cfClientSecretHeader = "CF-Access-Client-Secret";
-            var cfClientSecret = Environment.GetEnvironmentVariable("CF_CLIENT_SECRET");
 
             s3Client.BeforeRequestEvent += (_, args) =>
             {
                 if (args is WebServiceRequestEventArgs { Headers: not null } wsArgs)
                 {
-                    wsArgs.Headers[cfClientIdHeader] = cfClientId;
-                    wsArgs.Headers[cfClientSecretHeader] = cfClientSecret;
+                    wsArgs.Headers[CfClientIdHeader] = envs.CloudflareId;
+                    wsArgs.Headers[CfClientSecretHeader] = envs.CloudflareSecret;
                     
                     logger.LogDebug("Received web service request header: {Header}", wsArgs.Headers);
                 }
                 else if (args is HeadersRequestEventArgs { Headers: not null } headersArgs)
                 {
-                    headersArgs.Headers[cfClientIdHeader] = cfClientId;
-                    headersArgs.Headers[cfClientSecretHeader] = cfClientSecret;
+                    headersArgs.Headers[CfClientIdHeader] = envs.CloudflareId;
+                    headersArgs.Headers[CfClientSecretHeader] = envs.CloudflareSecret;
                     
                     logger.LogDebug("Received headers request header: {Header}", headersArgs.Headers);
                 }
             };
             
-            var listRequest = new ListObjectsV2Request { BucketName = bucket };
+            var listRequest = new ListObjectsV2Request { BucketName = envs.Bucket };
             var listResponse = await s3Client.ListObjectsV2Async(listRequest, ct);
 
             if (listResponse.S3Objects.Count == 0)
             {
-                return new ResultProblem("No objects found in the S3 bucket '{0}' at '{1}'", bucket, url);
+                return new ResultProblem("No objects found in the S3 bucket '{0}' at '{1}'", envs.Bucket, envs.Url);
             }
 
             Directory.CreateDirectory(Paths.TempFolder);
@@ -105,7 +106,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
             foreach (var s3Object in listResponse.S3Objects)
             {
-                logger.LogDebug("Retrieving object '{0}' from S3 bucket '{1}' at '{2}'", s3Object.Key, bucket, url);
+                logger.LogDebug("Retrieving object '{0}' from S3 bucket '{1}' at '{2}'", s3Object.Key, envs.Bucket, envs.Url);
 
                 var destFilePath = Path.Combine(Paths.TempFolder, s3Object.Key);
                 var destDirectory = Path.GetDirectoryName(destFilePath);
@@ -120,11 +121,11 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
                 var combinedCt = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCt).Token;
 
-                var getRequest = new GetObjectRequest { BucketName = bucket, Key = s3Object.Key };
+                var getRequest = new GetObjectRequest { BucketName = envs.Bucket, Key = s3Object.Key };
                 using var getResponse = await s3Client.GetObjectAsync(getRequest, combinedCt);
                 if (getResponse.HttpStatusCode > (HttpStatusCode)399)
                 {
-                    return new ResultProblem("Got status code '{0}' while retrieving object '{1}' from s3 bucket '{2}' at '{3}'", getResponse.HttpStatusCode, s3Object.Key, bucket, url);
+                    return new ResultProblem("Got status code '{0}' while retrieving object '{1}' from s3 bucket '{2}' at '{3}'", getResponse.HttpStatusCode, s3Object.Key, envs.Bucket, envs.Url);
                 }
 
                 await using var responseStream = getResponse.ResponseStream;
@@ -134,14 +135,14 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
                 files.Add(new FileInfo(destFilePath));
 
-                logger.LogDebug("Retrieved object '{0}' from S3 bucket '{1}' at '{2}'", s3Object.Key, bucket, url);
+                logger.LogDebug("Retrieved object '{0}' from S3 bucket '{1}' at '{2}'", s3Object.Key, envs.Bucket, envs.Url);
             }
 
             return files;
         }
         catch (Exception ex)
         {
-            return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}' at '{1}'", bucket, url);
+            return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}' at '{1}'", envs.Bucket, envs.Url);
         }
     }
 }
