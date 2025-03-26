@@ -64,7 +64,8 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
                 vertices[i * VertexFields + 1] = z;
             }
 
-            GameManager.GL.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices, BufferUsageARB.StaticDraw);
+            GameManager.GL.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices,
+                BufferUsageARB.StaticDraw);
         });
 
         return new VBO(vbo, (uint)vertexCount);
@@ -84,33 +85,31 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
                 for (var j = 0; j < heightmapData.Width - 1; j++)
                 {
                     var index = i * heightmapData.Width + j;
-int a = index;
-int b = index + 1;
-int c = index + heightmapData.Width;
-int d = index + heightmapData.Width + 1;
+                    int a = index, b = index + 1, c = index + heightmapData.Width, d = index + heightmapData.Width + 1;
 
-if (heightmapData.Heights[a] == heightmapData.Heights[c]) // Compare heights at a and c
-{
-    indices[index * 6] = (uint)a;
-    indices[index * 6 + 1] = (uint)b;
-    indices[index * 6 + 2] = (uint)c;
-    indices[index * 6 + 3] = (uint)a;
-    indices[index * 6 + 4] = (uint)c;
-    indices[index * 6 + 5] = (uint)d;
-}
-else
-{
-    indices[index * 6] = (uint)a;
-    indices[index * 6 + 1] = (uint)b;
-    indices[index * 6 + 2] = (uint)d;
-    indices[index * 6 + 3] = (uint)b;
-    indices[index * 6 + 4] = (uint)c;
-    indices[index * 6 + 5] = (uint)d;
-}
+                    if (heightmapData.Heights[a] == heightmapData.Heights[d]) // Compare heights at a and c
+                    {
+                        indices[index * 6] = (uint)a;
+                        indices[index * 6 + 1] = (uint)b;
+                        indices[index * 6 + 2] = (uint)d;
+                        indices[index * 6 + 3] = (uint)a;
+                        indices[index * 6 + 4] = (uint)d;
+                        indices[index * 6 + 5] = (uint)c;
+                    }
+                    else
+                    {
+                        indices[index * 6] = (uint)a;
+                        indices[index * 6 + 1] = (uint)b;
+                        indices[index * 6 + 2] = (uint)c;
+                        indices[index * 6 + 3] = (uint)b;
+                        indices[index * 6 + 4] = (uint)d;
+                        indices[index * 6 + 5] = (uint)c;
+                    }
                 }
             }
 
-            GameManager.GL.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices, BufferUsageARB.StaticDraw);
+            GameManager.GL.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices,
+                BufferUsageARB.StaticDraw);
         });
 
         return new EBO(ebo, (uint)indexCount);
@@ -134,7 +133,8 @@ else
         {
             heightmapData.Heights.CopyTo(pixelData);
 
-            GameManager.GL.TexImage2D(TextureTarget.Texture2D, 0, (int)InternalFormat.R32f, (uint)heightmapData.Width, (uint)heightmapData.Length, 0, PixelFormat.Red, PixelType.Float, (ReadOnlySpan<float>)pixelData);
+            GameManager.GL.TexImage2D(TextureTarget.Texture2D, 0, (int)InternalFormat.R32f, (uint)heightmapData.Width,
+                (uint)heightmapData.Length, 0, PixelFormat.Red, PixelType.Float, (ReadOnlySpan<float>)pixelData);
         });
 
         GameManager.GL.BindTexture(TextureTarget.Texture2D, 0);
@@ -144,7 +144,8 @@ else
 
     private static void SetVertexAttributes()
     {
-        GameManager.GL.VertexAttribPointer(0, PositionFields, VertexAttribPointerType.Float, false, VertexSize, IntPtr.Zero);
+        GameManager.GL.VertexAttribPointer(0, PositionFields, VertexAttribPointerType.Float, false, VertexSize,
+            IntPtr.Zero);
         GameManager.GL.EnableVertexAttribArray(0);
     }
 
@@ -153,7 +154,6 @@ else
         GameManager.GL.BindVertexArray(0); // Unbind VAO
         GameManager.GL.BindBuffer(BufferTargetARB.ArrayBuffer, 0); // Unbind VBO
         GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0); // Unbind EBO
-
     }
 
     public Result Unregister(Registration registration)
