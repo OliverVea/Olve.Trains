@@ -22,7 +22,7 @@ public class MeshFileReader(ILogger<MeshFileReader> logger)
             return Array.Empty<Asset<MeshData>>();
         }
 
-        logger.LogInformation("Processing {ModelCount} models", modelFiles.Length);
+        logger.LogDebug("Processing {ModelCount} models", modelFiles.Length);
 
         var assimp = Assimp.GetApi();
         List<Asset<MeshData>> meshes = [];

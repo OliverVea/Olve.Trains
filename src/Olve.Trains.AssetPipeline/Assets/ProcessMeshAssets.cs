@@ -11,7 +11,7 @@ public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, MeshFileReader
 
     public async Task<Result<IReadOnlyList<Asset<MeshData>>>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
-        logger.LogInformation("Processing mesh assets");
+        logger.LogDebug("Processing mesh assets");
 
         Directory.CreateDirectory(Paths.MeshOutputFolder);
 
@@ -38,7 +38,7 @@ public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, MeshFileReader
             return templateProblems.Prepend("Failed to write template");
         }
 
-        logger.LogInformation("Processed {Count} mesh(es) successfully!", meshAssets.Count);
+        logger.LogDebug("Processed {Count} mesh(es) successfully!", meshAssets.Count);
 
         return Result.Success(meshAssets);
     }

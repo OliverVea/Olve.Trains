@@ -60,7 +60,7 @@ public class TemplateWriter(ILogger<TemplateWriter> logger)
 
             await File.WriteAllTextAsync(outputPath, sourceCode, ct);
 
-            logger.LogInformation("Processed template '{TemplatePath}' to '{Destination}'", templatePath, outputPath);
+            logger.LogDebug("Processed template '{TemplatePath}' to '{Destination}'", templatePath, outputPath);
 
             return Result.Success();
         }

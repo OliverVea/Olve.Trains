@@ -56,13 +56,15 @@ public class TerrainFileReader(ILogger<TerrainFileReader> logger, ReadOpenRaster
             return Array.Empty<Asset<TerrainData>>();
         }
 
-        logger.LogInformation("Processing {ModelCount} terrains", terrainFiles.Length);
+        logger.LogDebug("Processing {ModelCount} terrains", terrainFiles.Length);
 
         var terrainResults = terrainFiles.Select(LoadTerrain).ToList();
         if (terrainResults.TryPickProblems(out var problems, out var terrains))
         {
             return problems.Prepend("Failed to load terrains");
         }
+
+        logger.LogDebug("Processed {ModelCount} terrains", terrainFiles.Length);
 
         return Result.Success((IReadOnlyList<Asset<TerrainData>>)terrains);
     }

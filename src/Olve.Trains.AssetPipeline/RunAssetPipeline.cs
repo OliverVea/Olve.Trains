@@ -10,14 +10,13 @@ public class RunAssetPipeline(
     ILogger<RunAssetPipeline> logger,
     DownloadAssets downloadAssets,
     ProcessShaders processShaders,
-    ProcessAssets processAssets,
-    WriteMetadataSourceFiles writeMetadataSourceFiles) : IAsyncOperation<RunAssetPipeline.Request>
+    ProcessAssets processAssets) : IAsyncOperation<RunAssetPipeline.Request>
 {
     public record Request;
 
     public async Task<Result> ExecuteAsync(Request request, CancellationToken ct = default)
     {
-        logger.LogInformation("Starting asset pipeline");
+        logger.LogDebug("Starting asset pipeline");
 
         DownloadAssets.Request downloadAssetsRequest = new();
         var downloadAssetsResult = await downloadAssets.ExecuteAsync(downloadAssetsRequest, ct);
@@ -40,14 +39,7 @@ public class RunAssetPipeline(
             return processProblems.Prepend("Failed to process assets");
         }
 
-        WriteMetadataSourceFiles.Request writeMetadataSourceFilesRequest = new(downloadResponse, processResponse, compileResponse);
-        var writeMetadataSourceFilesResult = await writeMetadataSourceFiles.ExecuteAsync(writeMetadataSourceFilesRequest, ct);
-        if (writeMetadataSourceFilesResult.TryPickProblems(out var writeProblems))
-        {
-            return writeProblems.Prepend("Failed to write metadata source files");
-        }
-
-        logger.LogInformation("Asset pipeline completed successfully!");
+        logger.LogDebug("Asset pipeline completed successfully!");
 
         return Result.Success();
     }

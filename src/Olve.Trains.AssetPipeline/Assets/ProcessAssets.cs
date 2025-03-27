@@ -17,7 +17,7 @@ public class ProcessAssets(ILogger<ProcessAssets> logger, ProcessMeshAssets proc
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
-        logger.LogInformation("Processing assets");
+        logger.LogDebug("Processing assets");
 
         ProcessMeshAssets.Request meshRequest = new(request.AssetFiles);
         var meshResponse = await processMeshAssets.ExecuteAsync(meshRequest, ct);
