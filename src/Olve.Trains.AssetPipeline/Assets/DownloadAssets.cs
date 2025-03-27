@@ -78,13 +78,18 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
         if (response.StatusCode != HttpStatusCode.OK)
         {
-            return new ResultProblem("Failed to get Cloudflare cookie");
+            return new ResultProblem("Failed to get Cloudflare cookie, ({0}): '{1}'", response.StatusCode, response.ReasonPhrase ?? "No reason phrase");
         }
 
-        var cookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
-        if (cookie is null)
+        if (!response.Headers.TryGetValues("Set-Cookie", out var cookies))
         {
-            return new ResultProblem("Failed to get Cloudflare cookie");
+            return new ResultProblem("Failed to get Cloudflare cookie as there was no 'Set-Cookie' header");
+        }
+
+        var cookie = cookies.FirstOrDefault();
+        if (string.IsNullOrEmpty(cookie))
+        {
+            return new ResultProblem("Failed to get Cloudflare cookie as the 'Set-Cookie' header was empty");
         }
 
         logger.LogDebug("Received Cloudflare cookie: {Cookie}", cookie);
@@ -95,9 +100,9 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
     private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(Envs envs, CancellationToken ct)
     {
         var cookieResult = await GetCloudflareCookieAsync(envs, ct);
-        if (cookieResult.TryPickProblems(out var cookieProblems, out var cookie))
+        if (cookieResult.TryPickProblems(out var problems, out var cookie))
         {
-            return cookieProblems.Prepend("Failed to retrieve Cloudflare cookie");
+            logger.LogWarning("Failed to get Cloudflare cookie: {Problems}", problems);
         }
 
         try
@@ -105,21 +110,24 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
             var config = new AmazonS3Config { ServiceURL = envs.Url, ForcePathStyle = true };
             using var s3Client = new AmazonS3Client(envs.Key, envs.Secret, config);
 
-            s3Client.BeforeRequestEvent += (_, args) =>
+            if (cookie is not null)
             {
-                if (args is WebServiceRequestEventArgs { Headers: not null } wsArgs)
+                s3Client.BeforeRequestEvent += (_, args) =>
                 {
-                    wsArgs.Headers.Add("Cookie", cookie);
+                    if (args is WebServiceRequestEventArgs { Headers: not null } wsArgs)
+                    {
+                        wsArgs.Headers.Add("Cookie", cookie);
 
-                    logger.LogDebug("Received web service request header: {Header}", wsArgs.Headers);
-                }
-                else if (args is HeadersRequestEventArgs { Headers: not null } headersArgs)
-                {
-                    headersArgs.Headers.Add("Cookie", cookie);
+                        logger.LogDebug("Received web service request header: {Header}", wsArgs.Headers);
+                    }
+                    else if (args is HeadersRequestEventArgs { Headers: not null } headersArgs)
+                    {
+                        headersArgs.Headers.Add("Cookie", cookie);
 
-                    logger.LogDebug("Received headers request header: {Header}", headersArgs.Headers);
-                }
-            };
+                        logger.LogDebug("Received headers request header: {Header}", headersArgs.Headers);
+                    }
+                };
+            }
             
             var listRequest = new ListObjectsV2Request { BucketName = envs.Bucket };
             var listResponse = await s3Client.ListObjectsV2Async(listRequest, ct);

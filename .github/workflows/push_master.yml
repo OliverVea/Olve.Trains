@@ -70,8 +70,10 @@ jobs:
           mv "publish-${sha}.zip" $GITHUB_WORKSPACE/artifacts
 
       - name: Upload artifact to GitHub
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: publish-${sha}.zip
           path: $GITHUB_WORKSPACE/artifacts/publish-${sha}.zip
-      
+
+      - name: Log artifact
+        run: echo "Artifact: ${{ steps.upload-artifact.outputs.artifact }}"
