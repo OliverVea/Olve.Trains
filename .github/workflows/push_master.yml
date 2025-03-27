@@ -61,17 +61,11 @@ jobs:
         shell: bash
         run: dotnet publish --no-restore -c Release /p:Version="1.0.0" --output ./publish
 
-      - name: Upload .zip to GitHub
-        shell: bash
-        run: |
-          sha=$(git rev-parse --short HEAD)
-          zip -r "./publish-${sha}.zip" ./publish
-
       - name: Upload artifact to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: publish-${sha}.zip
-          path: ./publish-${sha}.zip
+          name: publish-${{ github.sha }}
+          path: ./publish
 
       - name: Log artifact
         run: echo "Artifact - ${{ steps.upload-artifact.outputs.artifact }}"
