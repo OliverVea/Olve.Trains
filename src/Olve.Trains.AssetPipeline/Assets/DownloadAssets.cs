@@ -66,28 +66,55 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         );
     }
 
+    private static async Task<Result<string>> GetCloudflareCookieAsync(Envs envs, CancellationToken ct)
+    {
+        var httpClient = new HttpClient();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{envs.Url}/minio/health/live");
+        request.Headers.Add(CfClientIdHeader, envs.CloudflareId);
+        request.Headers.Add(CfClientSecretHeader, envs.CloudflareSecret);
+
+        var response = await httpClient.SendAsync(request, ct);
+
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            return new ResultProblem("Failed to get Cloudflare cookie");
+        }
+
+        var cookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
+        if (cookie is null)
+        {
+            return new ResultProblem("Failed to get Cloudflare cookie");
+        }
+
+        return cookie;
+    }
+
     private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(Envs envs, CancellationToken ct)
     {
+        var cookieResult = await GetCloudflareCookieAsync(envs, ct);
+        if (cookieResult.TryPickProblems(out var cookieProblems, out var cookie))
+        {
+            return cookieProblems.Prepend("Failed to retrieve Cloudflare cookie");
+        }
+
         try
         {
             var config = new AmazonS3Config { ServiceURL = envs.Url, ForcePathStyle = true };
             using var s3Client = new AmazonS3Client(envs.Key, envs.Secret, config);
 
-
             s3Client.BeforeRequestEvent += (_, args) =>
             {
                 if (args is WebServiceRequestEventArgs { Headers: not null } wsArgs)
                 {
-                    wsArgs.Headers[CfClientIdHeader] = envs.CloudflareId;
-                    wsArgs.Headers[CfClientSecretHeader] = envs.CloudflareSecret;
-                    
+                    wsArgs.Headers.Add("Cookie", cookie);
+
                     logger.LogDebug("Received web service request header: {Header}", wsArgs.Headers);
                 }
                 else if (args is HeadersRequestEventArgs { Headers: not null } headersArgs)
                 {
-                    headersArgs.Headers[CfClientIdHeader] = envs.CloudflareId;
-                    headersArgs.Headers[CfClientSecretHeader] = envs.CloudflareSecret;
-                    
+                    headersArgs.Headers.Add("Cookie", cookie);
+
                     logger.LogDebug("Received headers request header: {Header}", headersArgs.Headers);
                 }
             };
