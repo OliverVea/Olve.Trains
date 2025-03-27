@@ -40,27 +40,6 @@ jobs:
           echo "CF_CLIENT_SECRET=${{ secrets.CF_CLIENT_SECRET }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
 
-      - name: Check connection to minio
-        run: |
-          # Step 1: Request and store cookies in a file
-          echo "Making the first request to store cookies..."
-          curl -v ${{ env.MINIO_URL }}/minio/health/live \
-            -H "CF-Access-Client-Id: ${{ secrets.CF_CLIENT_ID }}" \
-            -H "CF-Access-Client-Secret: ${{ secrets.CF_CLIENT_SECRET }}" \
-            -c cookies.txt
-        
-          # Debug: Show the cookies stored
-          echo "Cookies saved to cookies.txt:"
-          cat cookies.txt
-          
-          # Step 2: Reuse the cookies for the second request
-          echo "Making the second request with saved cookies..."
-          curl -v ${{ env.MINIO_URL }}/minio/health/live \
-            -H "CF-Access-Client-Id: ${{ secrets.CF_CLIENT_ID }}" \
-            -H "CF-Access-Client-Secret: ${{ secrets.CF_CLIENT_SECRET }}" \
-            -b cookies.txt
-      
-
       - name: Run asset pipeline
         shell: bash
         run: sh ./src/Olve.Trains.AssetPipeline/build.sh
@@ -82,18 +61,17 @@ jobs:
         shell: bash
         run: dotnet publish --no-restore -c Release /p:Version="1.0.0" --output ./publish
 
-      - name: Minio Deploy
-        uses: lovellfelix/minio-deploy-action@v1
+      - name: Upload .zip to GitHub
+        shell: bash
+        run: |
+          sha=$(git rev-parse --short HEAD)
+          zip -r "publish-${sha}.zip" ./publish
+          mkdir -p $GITHUB_WORKSPACE/artifacts
+          mv "publish-${sha}.zip" $GITHUB_WORKSPACE/artifacts
+
+      - name: Upload artifact to GitHub
+        uses: actions/upload-artifact@v3
         with:
-          endpoint: ${{ env.MINIO_URL }}
-          access_key: ${{ secrets.MINIO_ACCESS_KEY }}
-          secret_key: ${{ secrets.MINIO_SECRET_KEY }}
-          bucket: 'olve-trains'
-          source_dir: './publish'
-          target_dir: 'releases/1.0.0'
-
-      - name: Undo Tailscale
-        run: sudo tailscale down
-
-      - name: Exit status
-        run: echo "Done"
+          name: publish-${sha}.zip
+          path: $GITHUB_WORKSPACE/artifacts/publish-${sha}.zip
+      
