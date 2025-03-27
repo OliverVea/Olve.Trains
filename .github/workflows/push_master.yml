@@ -76,4 +76,4 @@ jobs:
           path: $GITHUB_WORKSPACE/artifacts/publish-${sha}.zip
 
       - name: Log artifact
-        run: echo "Artifact: ${{ steps.upload-artifact.outputs.artifact }}"
+        run: echo "Artifact - ${{ steps.upload-artifact.outputs.artifact }}"
