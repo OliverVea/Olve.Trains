@@ -42,9 +42,23 @@ jobs:
 
       - name: Check connection to minio
         run: |
+          # Step 1: Request and store cookies in a file
+          echo "Making the first request to store cookies..."
           curl -v ${{ env.MINIO_URL }}/minio/health/live \
             -H "CF-Access-Client-Id: ${{ secrets.CF_CLIENT_ID }}" \
-            -H "CF-Access-Client-Secret: ${{ secrets.CF_CLIENT_SECRET }}"
+            -H "CF-Access-Client-Secret: ${{ secrets.CF_CLIENT_SECRET }}" \
+            -c cookies.txt
+        
+          # Debug: Show the cookies stored
+          echo "Cookies saved to cookies.txt:"
+          cat cookies.txt
+          
+          # Step 2: Reuse the cookies for the second request
+          echo "Making the second request with saved cookies..."
+          curl -v ${{ env.MINIO_URL }}/minio/health/live \
+            -H "CF-Access-Client-Id: ${{ secrets.CF_CLIENT_ID }}" \
+            -H "CF-Access-Client-Secret: ${{ secrets.CF_CLIENT_SECRET }}" \
+            -b cookies.txt
       
 
       - name: Run asset pipeline
