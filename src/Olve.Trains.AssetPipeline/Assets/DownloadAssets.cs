@@ -66,7 +66,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         );
     }
 
-    private static async Task<Result<string>> GetCloudflareCookieAsync(Envs envs, CancellationToken ct)
+    private async Task<Result<string>> GetCloudflareCookieAsync(Envs envs, CancellationToken ct)
     {
         var httpClient = new HttpClient();
 
@@ -86,6 +86,8 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         {
             return new ResultProblem("Failed to get Cloudflare cookie");
         }
+
+        logger.LogDebug("Received Cloudflare cookie: {Cookie}", cookie);
 
         return cookie;
     }
