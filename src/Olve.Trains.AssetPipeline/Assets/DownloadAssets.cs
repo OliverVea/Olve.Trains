@@ -30,7 +30,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
-        logger.LogInformation("Getting S3 configuration from environment variables");
+        logger.LogDebug("Getting S3 configuration from environment variables");
 
         var environmentVariableResult = ReadS3EnvironmentVariables();
         if (environmentVariableResult.TryPickProblems(out var problems, out var envVariables))
@@ -179,7 +179,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         }
         catch (AmazonS3Exception ex)
         {
-            logger.LogInformation("Amazon Id: {AmazonId}, Cloudfront Id: {CloudfrontId}, Response body: {ResponseBody}", ex.AmazonId2, ex.AmazonCloudFrontId ,ex.ResponseBody);
+            logger.LogDebug("Amazon Id: {AmazonId}, Cloudfront Id: {CloudfrontId}, Response body: {ResponseBody}", ex.AmazonId2, ex.AmazonCloudFrontId ,ex.ResponseBody);
 
             return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}' at '{1}'", envs.Bucket, envs.Url);
         }

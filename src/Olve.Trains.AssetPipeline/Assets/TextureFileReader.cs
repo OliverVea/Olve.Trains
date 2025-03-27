@@ -21,13 +21,15 @@ public class TextureFileReader(ILogger<TextureFileReader> logger)
             return Array.Empty<Asset<TextureData>>();
         }
 
-        logger.LogInformation("Processing {ModelCount} textures", pngFiles.Length);
+        logger.LogDebug("Processing {ModelCount} textures", pngFiles.Length);
 
         var pngResults = pngFiles.Select(LoadTexture).ToList();
         if (pngResults.TryPickProblems(out var problems, out var textures))
         {
             return problems.Prepend("Failed to load textures");
         }
+
+        logger.LogDebug("Processed {ModelCount} textures", pngFiles.Length);
 
         return Result.Success((IReadOnlyList<Asset<TextureData>>)textures);
     }

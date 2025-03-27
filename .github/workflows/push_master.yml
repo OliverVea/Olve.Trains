@@ -65,15 +65,13 @@ jobs:
         shell: bash
         run: |
           sha=$(git rev-parse --short HEAD)
-          zip -r "publish-${sha}.zip" ./publish
-          mkdir -p $GITHUB_WORKSPACE/artifacts
-          mv "publish-${sha}.zip" $GITHUB_WORKSPACE/artifacts
+          zip -r "./publish-${sha}.zip" ./publish
 
       - name: Upload artifact to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: publish-${sha}.zip
-          path: $GITHUB_WORKSPACE/artifacts/publish-${sha}.zip
+          path: ./publish-${sha}.zip
 
       - name: Log artifact
         run: echo "Artifact - ${{ steps.upload-artifact.outputs.artifact }}"

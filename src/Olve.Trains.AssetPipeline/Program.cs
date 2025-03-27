@@ -31,7 +31,6 @@ serviceCollection.AddTransient<ProcessAssets>();
 serviceCollection.AddTransient<ProcessMeshAssets>();
 serviceCollection.AddTransient<ProcessTextureAssets>();
 serviceCollection.AddTransient<ProcessTerrainAssets>();
-serviceCollection.AddTransient<WriteMetadataSourceFiles>();
 
 serviceCollection.AddTransient<MeshFileReader>();
 serviceCollection.AddTransient<TextureFileReader>();

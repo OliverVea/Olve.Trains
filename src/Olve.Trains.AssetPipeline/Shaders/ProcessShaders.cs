@@ -19,7 +19,7 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
-        logger.LogInformation("Processing shader files");
+        logger.LogDebug("Processing shader files");
 
         var shaderFiles = Directory.GetFiles(Paths.ShaderSourceFolder, "*.glsl", SearchOption.AllDirectories);
         var shaders = new List<Shader>(shaderFiles.Length);
@@ -157,7 +157,7 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
             }
         }
         
-        logger.LogInformation("Shaders compiled successfully!");
+        logger.LogInformation("Compiled {ShaderCount} shader programs successfully!", shaderPrograms.Count);
 
         return new Response(shaderPrograms);
     }

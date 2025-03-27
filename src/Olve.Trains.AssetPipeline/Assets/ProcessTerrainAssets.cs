@@ -11,7 +11,7 @@ public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, TerrainF
 
     public async Task<Result<IReadOnlyList<Asset<TerrainData>>>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
-        logger.LogInformation("Processing terrain assets");
+        logger.LogDebug("Processing terrain assets");
 
         Directory.CreateDirectory(Paths.TerrainOutputFolder);
 
@@ -38,7 +38,7 @@ public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, TerrainF
             return templateProblems.Prepend("Failed to write template");
         }
 
-        logger.LogInformation("Processed {Count} terrain(s) successfully!", terrainAssets.Count);
+        logger.LogDebug("Processed {Count} terrain(s) successfully!", terrainAssets.Count);
 
         return Result.Success(terrainAssets);
     }

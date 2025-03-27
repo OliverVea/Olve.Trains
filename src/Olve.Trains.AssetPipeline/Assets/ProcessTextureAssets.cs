@@ -11,7 +11,7 @@ public class ProcessTextureAssets(ILogger<ProcessTextureAssets> logger, TextureF
 
     public async Task<Result<IReadOnlyList<Asset<TextureData>>>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
-        logger.LogInformation("Processing texture assets");
+        logger.LogDebug("Processing texture assets");
 
         Directory.CreateDirectory(Paths.TextureOutputFolder);
 
@@ -38,7 +38,7 @@ public class ProcessTextureAssets(ILogger<ProcessTextureAssets> logger, TextureF
             return templateProblems.Prepend("Failed to write template");
         }
 
-        logger.LogInformation("Processed {Count} model(s) successfully!", textureAssets.Count);
+        logger.LogDebug("Processed {Count} model(s) successfully!", textureAssets.Count);
 
         return Result.Success(textureAssets);
     }
