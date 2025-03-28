@@ -6,6 +6,7 @@ public static class UniformTypeExtensions
     {
         return uniformType switch
         {
+            UniformType.Bool => "bool",
             UniformType.Float => "float",
             UniformType.Vector2 => "Vector2D<float>",
             UniformType.Vector3 => "Vector3D<float>",
@@ -20,6 +21,7 @@ public static class UniformTypeExtensions
     {
         return uniformType switch
         {
+            UniformType.Bool => "RenderingParameter.Bool",
             UniformType.Float => "RenderingParameter.Float",
             UniformType.Vector2 => "RenderingParameter.Vector2D",
             UniformType.Vector3 => "RenderingParameter.Vector3D",

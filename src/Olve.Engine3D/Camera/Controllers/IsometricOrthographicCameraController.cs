@@ -21,10 +21,10 @@ public class IsometricOrthographicCameraController(ControllerCamera camera) : Ca
         var worldDirection = Vector3D.Transform(direction, cameraToWorld);
 
         worldDirection.Y = 0;
-        (worldDirection.Z, worldDirection.X) = (worldDirection.X, worldDirection.Z);
-        worldDirection = Vector3D.Normalize(worldDirection);
+        worldDirection = Vector3D.Normalize(-worldDirection);
 
         var movement = worldDirection * MoveSpeed * deltaTime.InSeconds() * _camera.Projection.OrthographicSize;
+
         _camera.View.Position += movement;
     }
 
@@ -44,7 +44,7 @@ public class IsometricOrthographicCameraController(ControllerCamera camera) : Ca
         delta = float.Clamp(delta, -1f, 1f);
 
         var zoomAmount = ZoomSpeed * delta * scale * deltaTime.InSeconds();
-        _camera.Projection.OrthographicSize = Math.Max(1f, _camera.Projection.OrthographicSize - zoomAmount);
+        _camera.Projection.OrthographicSize = float.Max(1f, _camera.Projection.OrthographicSize - zoomAmount);
     }
 
     public static IsometricOrthographicCameraController Create(

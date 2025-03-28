@@ -20,6 +20,9 @@ public static class RenderingParameter
     [DebuggerDisplay("Float {Name} ({Value})")]
     public class Float(string name, float value) : Base<float>(name, value);
 
+    [DebuggerDisplay("Bool {Name} ({Value})")]
+    public class Bool(string name, bool value) : Base<bool>(name, value);
+
     [DebuggerDisplay("Texture {Name} ({Value})")]
     public class Texture(string name, Texture2D value) : Base<Texture2D>(name, value);
 

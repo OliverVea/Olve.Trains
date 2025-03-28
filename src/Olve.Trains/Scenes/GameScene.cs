@@ -1,10 +1,8 @@
 using System.Drawing;
-using Olve.CodeGen;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
-using Olve.Engine3D.Camera.Controllers;
-using Olve.Engine3D.Input;
-using Olve.Engine3D.Input.InputSchemes;
+using Olve.Engine3D.Camera;
+using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Scenes;
@@ -16,12 +14,15 @@ namespace Olve.Trains.Scenes;
 
 public sealed class GameScene : Scene
 {
+    private readonly SceneLightService _lightService = new();
+    private readonly CameraSceneService _cameraService = new();
+
+    private ISceneService[] _services;
+
     public static readonly SceneId SceneId = new("Game Scene");
     public override SceneId Id => SceneId;
 
-    private IsometricOrthographicCameraController _cameraController = null!;
-    private readonly List<ICameraScheme> _cameraSchemes = [];
-    private CameraMovementInput _cameraMovementInput = new();
+    private HeightmapRaycaster _heightmapRaycaster;
 
     private RenderingId<MeshData> _meshRenderingId;
     private RenderingId<ShaderData> _shaderRenderingId;
@@ -29,13 +30,16 @@ public sealed class GameScene : Scene
 
     private RenderingId<HeightmapData> _terrainRenderingId;
     private RenderingId<ShaderData> _terrainShaderRenderingId;
+    private RenderingId<ShaderData> _wireframeTerrainShaderId;
 
     private RenderingInstanceId _cubeInstanceId;
-    private RenderingInstanceId _terrainInstanceId;
 
+    private Ray3D<float>? _mouseRay = null;
 
     public override Result Load()
     {
+        _services = [_lightService, _cameraService];
+
         var trainMeshResult = AssetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01);
         if (trainMeshResult.TryPickProblems(out var problems, out var trainMesh))
         {
@@ -54,13 +58,7 @@ public sealed class GameScene : Scene
             return problems;
         }
 
-        Vector3D<float> cameraTarget = new (0, 0, 0);
-        Vector3D<float> cameraViewDirection = new(0.701f, -1, 0.701f);
-
-        const float orthographicSize = 40f;
-
-        _cameraController = IsometricOrthographicCameraController.Create(cameraTarget, cameraViewDirection, orthographicSize);
-        _cameraSchemes.Add(new WasdMovement());
+        _heightmapRaycaster = new HeightmapRaycaster(terrain.Heightmap);
 
         _meshRenderingId = GameManager.MeshEntityManager.Register(trainMesh).Value;
 
@@ -74,15 +72,24 @@ public sealed class GameScene : Scene
             return problems;
         }
 
+        if (GameManager.ShaderEntityManager.Register(GameSceneEntities.TerrainWireframe.ShaderData).TryPickProblems(out problems, out var wireframeTerrainShaderId))
+        {
+            return problems;
+        }
+
         (_meshRenderingId, _textureRenderingId, _shaderRenderingId) = renderingEntityIds;
         (_terrainRenderingId, _terrainShaderRenderingId) = terrainRenderingEntityIds;
+        _wireframeTerrainShaderId = wireframeTerrainShaderId;
 
         GameSceneEntities.DefaultShader.RenderingId = _shaderRenderingId;
         GameSceneEntities.TerrainShader.RenderingId = _terrainShaderRenderingId;
-        GameSceneEntities.TerrainShader.TexelSize = new Vector2D<float>(
-            1f / terrain.Heightmap.Width,
-            1f / terrain.Heightmap.Length
-            );
+        GameSceneEntities.TerrainWireframe.RenderingId = _wireframeTerrainShaderId;
+
+        Vector2D<float> textureSize = new(1f / terrain.Heightmap.Width, 1f / terrain.Heightmap.Length);
+
+        GameSceneEntities.TerrainShader.TexelSize = textureSize;
+        GameSceneEntities.TerrainWireframe.TexelSize = textureSize;
+
 
         if (GameManager.TextureEntityManager.GetRegistration(_textureRenderingId).TryPickProblems(out problems, out var textureData))
         {
@@ -96,13 +103,14 @@ public sealed class GameScene : Scene
 
         GameSceneEntities.DefaultShader.TextureSampler = textureData.Texture;
         GameSceneEntities.TerrainShader.HeightMap = terrainRegistration.Texture;
+        GameSceneEntities.TerrainWireframe.HeightMap = terrainRegistration.Texture;
 
         if (RegisterCubeInstance().TryPickProblems(out problems, out _cubeInstanceId))
         {
             return problems;
         }
 
-        if (RegisterTerrainInstance().TryPickProblems(out problems, out _terrainInstanceId))
+        if (RegisterTerrainInstance().TryPickProblems(out problems))
         {
             return problems;
         }
@@ -112,7 +120,11 @@ public sealed class GameScene : Scene
         GameManager.GL.Disable(EnableCap.CullFace);
         GameManager.GL.Enable(EnableCap.DepthTest);
 
-        //GameManager.GL.PolygonMode(GLEnum.FrontAndBack, GLEnum.Line);
+        var loadServicesResult = _services.Select(x => x.Load());
+        if (loadServicesResult.TryPickProblems(out problems))
+        {
+            return problems;
+        }
 
         return Result.Success();
     }
@@ -139,91 +151,81 @@ public sealed class GameScene : Scene
         return GameManager.RenderingManager.RegisterInstance(_meshRenderingId, _shaderRenderingId, transform);
     }
 
-    private Result<RenderingInstanceId> RegisterTerrainInstance()
+    private Result RegisterTerrainInstance()
     {
         var transform = Matrix4X4<float>.Identity;
 
-        return GameManager.RenderingManager.RegisterInstance(_terrainRenderingId, _terrainShaderRenderingId, transform);
-    }
+        var terrainResult = GameManager.RenderingManager.RegisterInstance(_terrainRenderingId, _terrainShaderRenderingId, transform);
+        var wireframeResult = GameManager.RenderingManager.RegisterInstance(_terrainRenderingId, _wireframeTerrainShaderId, transform);
 
-    public override Result<PassInput> Input()
-    {
-        _cameraMovementInput = new CameraMovementInput();
-
-        foreach (var scheme in _cameraSchemes)
+        if (terrainResult.TryPickProblems(out var problems)
+            || wireframeResult.TryPickProblems(out problems))
         {
-            _cameraMovementInput += scheme.GetMovementInput();
+            return problems;
         }
 
-        return PassInput.Pass;
+        return Result.Success();
+    }
+
+    public override Result<Pass> Input()
+    {
+        var mouseCoordinates = GameManager.MouseManager.State.NormalizedPosition;
+
+        if (mouseCoordinates.X is >= -1 and <= 1
+            && mouseCoordinates.Y is >= -1 and <= 1
+            && _cameraService.Camera.GetRay(mouseCoordinates).TryPickValue(out var mouseRay))
+        {
+            _mouseRay = mouseRay;
+        }
+        else
+        {
+            _mouseRay = null;
+        }
+
+        return Pass.Pass;
     }
 
     private float _lastTps;
     private float _t;
-    private float _lastFps;
-    private float _sunYAngle;
-
-    // Degrees per second
-    private const float _sunYAngleSpeed = 45f;
-
-    private const float _sunXAngle = 15;
-
-    private Vector3D<float> GetSunPosition()
-    {
-        var xRadians = float.DegreesToRadians(_sunXAngle);
-        var yRadians = float.DegreesToRadians(_sunYAngle);
-
-        Vector3D<float> sunPosition = Vector3D<float>.UnitY;
-
-        sunPosition = Vector3D.Transform(sunPosition,
-            Matrix4X4.CreateRotationX(xRadians) * Matrix4X4.CreateRotationY(yRadians));
-
-        return sunPosition;
-    }
-
-
-    private Vector3D<float> GetSunDirection()
-    {
-        return Vector3D.Normalize(-GetSunPosition());
-    }
+    private readonly float _speedScalar = 1f;
 
     public override Result Update(TimeSpan deltaTime)
     {
+        deltaTime *= _speedScalar;
+
         var dt = deltaTime.InSeconds();
+
         _t += dt;
+
+
+
+        if (_mouseRay.HasValue && _heightmapRaycaster.TryRaycast(_mouseRay.Value, out var hit))
+        {
+            //GameManager.RenderingManager.SetInstanceWorld(_cubeInstanceId, Matrix4X4.CreateTranslation(hit.Value));
+            GameSceneEntities.TerrainWireframe.MousePosition = hit.Value;
+        }
 
         if (_t - _lastTps > 1)
         {
             _lastTps = _t;
-            Console.WriteLine($"TPS: {1 / dt}");
         }
 
-        _sunYAngle += _sunYAngleSpeed * dt;
-        while (_sunYAngle > 360)
+        var updateServicesResult = _services.Select(x => x.Update(deltaTime));
+        if (updateServicesResult.TryPickProblems(out var problems))
         {
-            _sunYAngle -= 360;
+            return problems;
         }
 
-        _cameraController.Move(_cameraMovementInput.Direction, deltaTime);
-        _cameraController.Zoom(_cameraMovementInput.Zoom, deltaTime);
         return Result.Success();
     }
 
     public override Result Render(TimeSpan deltaTime)
     {
-        var dt = deltaTime.InSeconds();
-
-        if (_t - _lastFps > 1)
-        {
-            _lastFps = _t;
-            Console.WriteLine($"FPS: {1 / dt}");
-        }
-
         GameManager.GL.ClearColor(Color.CornflowerBlue);
         GameManager.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        var viewMatrix = _cameraController.Camera.GetViewMatrix();
-        var projectionMatrix = _cameraController.Camera.GetProjectionMatrix();
+        var viewMatrix = _cameraService.Camera.GetViewMatrix();
+        var projectionMatrix = _cameraService.Camera.GetProjectionMatrix();
 
         GameSceneEntities.DefaultShader.View = viewMatrix;
         GameSceneEntities.DefaultShader.Projection = projectionMatrix;
@@ -231,24 +233,25 @@ public sealed class GameScene : Scene
         GameSceneEntities.TerrainShader.View = viewMatrix;
         GameSceneEntities.TerrainShader.Projection = projectionMatrix;
 
+        GameSceneEntities.TerrainWireframe.View = viewMatrix;
+        GameSceneEntities.TerrainWireframe.Projection = projectionMatrix;
+
         var cameraRotationMatrix = viewMatrix.ExtractRotation();
 
         var cameraViewDirection = Vector3D.Transform(Vector3D<float>.UnitZ, cameraRotationMatrix);
+        GameSceneEntities.DefaultShader.CameraDirection = cameraViewDirection;
         GameSceneEntities.TerrainShader.CameraDirection = cameraViewDirection;
 
-        var sunDirection = GetSunDirection();
+        var defaultShaderResult = GameManager.RenderingManager.Render(GameSceneEntities.DefaultShader).IfProblem(p => p.Prepend("Failed rendering game objects"));
+        var terrainShaderResult = GameManager.RenderingManager.Render(GameSceneEntities.TerrainShader).IfProblem(p => p.Prepend("Failed rendering terrain"));
+        var wireframeShaderResult = GameManager.RenderingManager.Render(GameSceneEntities.TerrainWireframe).IfProblem(p => p.Prepend("Failed rendering terrain wireframe"));
 
-        GameSceneEntities.DefaultShader.DirectionalLightDir = sunDirection;
-        GameSceneEntities.TerrainShader.DirectionalLightDir = sunDirection;
-
-
-        var defaultShaderResult = GameManager.RenderingManager.Render(GameSceneEntities.DefaultShader);
-        var terrainShaderResult = GameManager.RenderingManager.Render(GameSceneEntities.TerrainShader);
-
-
-        if (defaultShaderResult.TryPickProblems(out var problems) || terrainShaderResult.TryPickProblems(out problems))
+        if (defaultShaderResult.TryPickProblems(out var problems)
+            || terrainShaderResult.TryPickProblems(out problems)
+            || wireframeShaderResult.TryPickProblems(out problems)
+            )
         {
-            return problems.Prepend("Failed rendering game objects");
+            return problems;
         }
 
         return Result.Success();

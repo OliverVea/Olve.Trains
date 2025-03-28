@@ -9,24 +9,19 @@ uniform mat4 world;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 vWorldPos;  // pass world-space position to geometry shader
+uniform vec3 mousePosition;
+
+out vec3 vWorldPos;
+// Mark as flat to ensure no interpolation if desired.
+flat out float distanceToMouse;
 
 void main()
 {
-    // Calculate texture coordinate.
-    // (Assumes model positions are in texture coordinate range; adjust if needed)
     vec2 texCoord = position * texelSize;
-
-    // Sample the height value.
-    float h = texture(heightMap, texCoord).r;
-
-    // Construct the model-space position (x, h, z).
+    float h = texture(heightMap, texCoord).r + 0.01;
     vec3 pos = vec3(position.x, h, position.y);
-
-    // Transform to world space.
     vec4 worldPos = world * vec4(pos, 1.0);
     vWorldPos = worldPos.xyz;
-
-    // Transform to clip space.
+    distanceToMouse = length(vWorldPos.xz - mousePosition.xz);
     gl_Position = projection * view * worldPos;
 }

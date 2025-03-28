@@ -1,29 +1,30 @@
 using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
+using Olve.Engine3D.Rendering;
 
 namespace Olve.Engine3D.Camera;
 
 public static class CameraRayExtensions
 {
-    public static Result<Ray3D<float>> GetRay(this Camera<FirstPersonView, PerspectiveProjection> camera, Vector2D<float> screenPosition)
+    public static Result<Ray3D<float>> GetRay(this Camera<FirstPersonView, PerspectiveProjection> camera, Vector2D<float> ncdScreenPosition)
     {
         var viewMatrix = camera.GetViewMatrix();
         var projectionMatrix = camera.GetProjectionMatrix();
 
         var invertResults = Result.Concat(
-            () => viewMatrix.Invert(),
-            () => projectionMatrix.Invert()
+            () => viewMatrix.Invert().IfProblem(p => p.Prepend("Failed to invert view matrix")),
+            () => projectionMatrix.Invert().IfProblem(p => p.Prepend("Failed to invert projection matrix"))
         );
 
         if (invertResults.TryPickProblems(out var problems, out var invertedMatrices))
         {
-            return problems.Prepend("Failed to get ray from screen position '{0}'", screenPosition);
+            return problems.Prepend("Failed to get ray from screen position '{0}'", ncdScreenPosition);
         }
 
         var (iViewMatrix, iProjectionMatrix) = invertedMatrices;
 
-        var ndcX = screenPosition.X;
-        var ndcY = screenPosition.Y;
+        var ndcX = ncdScreenPosition.X;
+        var ndcY = ncdScreenPosition.Y;
         var farClip = new Vector4D<float>(ndcX, ndcY, 1f, 1f);
 
         var farView = Vector4D.Transform(farClip, iProjectionMatrix);
@@ -39,34 +40,31 @@ public static class CameraRayExtensions
     }
 
 
-    public static Result<Ray3D<float>> GetRay(this Camera<IsometricView, OrthographicProjection> camera, Vector2D<float> screenPosition)
+    public static Result<Ray3D<float>> GetRay(this Camera<IsometricView, OrthographicProjection> camera, Vector2D<float> ncdScreenPosition)
     {
-        var viewMatrix = camera.GetViewMatrix();
-        var projectionMatrix = camera.GetProjectionMatrix();
-
-        var invertResults = Result.Concat(
-            () => viewMatrix.Invert(),
-            () => projectionMatrix.Invert()
-        );
-
-        if (invertResults.TryPickProblems(out var problems, out var invertedMatrices))
+        if (camera.GetViewMatrix().Invert().TryPickProblems(out var problems, out var invertedViewMatrix))
         {
-            return problems.Prepend("Failed to get ray from screen position '{0}'", screenPosition);
+            return problems.Prepend("Failed to get ray from screen position '{0}'", ncdScreenPosition);
         }
-        var (iViewMatrix, iProjectionMatrix) = invertedMatrices;
 
-        var ndcNear = new Vector4D<float>(screenPosition.X, screenPosition.Y, -1f, 1f);
+        var invertedRotation = invertedViewMatrix.ExtractRotation();
 
-        var viewSpace = Vector4D.Transform(ndcNear, iProjectionMatrix);
-        viewSpace /= viewSpace.W;
+        var right = Vector3D<float>.UnitX;
+        var up = -Vector3D<float>.UnitY;
+        var forward = Vector3D<float>.UnitZ;
 
-        var worldSpace = Vector4D.Transform(viewSpace, iViewMatrix);
-        worldSpace /= worldSpace.W;
-        var origin = new Vector3D<float>(worldSpace.X, worldSpace.Y, worldSpace.Z);
+        right = Vector3D.Transform(right, invertedRotation);
+        up = Vector3D.Transform(up, invertedRotation);
+        forward = Vector3D.Transform(forward, invertedRotation);
 
-        var forward4 = Vector4D.Transform(new Vector4D<float>(0, 0, -1, 0), iViewMatrix);
-        var direction = Vector3D.Normalize(new Vector3D<float>(forward4.X, forward4.Y, forward4.Z));
+        var halfWidth = camera.Projection.OrthographicSize * camera.Projection.AspectRatio;
+        var halfHeight = camera.Projection.OrthographicSize;
 
-        return new Ray3D<float>(origin, direction);
+        var x = ncdScreenPosition.X * halfWidth;
+        var y = ncdScreenPosition.Y * halfHeight;
+
+        var worldPosition = camera.View.Position + right * x + up * y;
+
+        return new Ray3D<float>(worldPosition, forward);
     }
 }

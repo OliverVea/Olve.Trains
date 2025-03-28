@@ -80,11 +80,11 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
 
         BufferHelper.UsingSpan<uint>(indexCount, indices =>
         {
-            for (var i = 0; i < heightmapData.Length - 1; i++)
+            for (var z = 0; z < heightmapData.Length - 1; z++)
             {
-                for (var j = 0; j < heightmapData.Width - 1; j++)
+                for (var x = 0; x < heightmapData.Width - 1; x++)
                 {
-                    var index = i * heightmapData.Width + j;
+                    var index = z * heightmapData.Width + x;
                     int a = index, b = index + 1, c = index + heightmapData.Width, d = index + heightmapData.Width + 1;
 
                     if (heightmapData.Heights[a] == heightmapData.Heights[d]) // Compare heights at a and c
@@ -92,15 +92,15 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
                         indices[index * 6] = (uint)a;
                         indices[index * 6 + 1] = (uint)b;
                         indices[index * 6 + 2] = (uint)d;
-                        indices[index * 6 + 3] = (uint)a;
-                        indices[index * 6 + 4] = (uint)d;
-                        indices[index * 6 + 5] = (uint)c;
+                        indices[index * 6 + 3] = (uint)d;
+                        indices[index * 6 + 4] = (uint)c;
+                        indices[index * 6 + 5] = (uint)a;
                     }
                     else
                     {
-                        indices[index * 6] = (uint)a;
-                        indices[index * 6 + 1] = (uint)b;
-                        indices[index * 6 + 2] = (uint)c;
+                        indices[index * 6] = (uint)c;
+                        indices[index * 6 + 1] = (uint)a;
+                        indices[index * 6 + 2] = (uint)b;
                         indices[index * 6 + 3] = (uint)b;
                         indices[index * 6 + 4] = (uint)d;
                         indices[index * 6 + 5] = (uint)c;
@@ -117,7 +117,7 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
 
     private static Texture2D BindTexture(HeightmapData heightmapData)
     {
-        var textureLength = heightmapData.Heights.Length * 4;
+        var textureLength = heightmapData.Heights.Length;
 
         var texture = GameManager.GL.GenTexture();
         GameManager.GL.ActiveTexture(TextureUnit.Texture0);
@@ -131,7 +131,10 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
 
         BufferHelper.UsingSpan<float>(textureLength, pixelData =>
         {
-            heightmapData.Heights.CopyTo(pixelData);
+            for (var i = 0; i < textureLength; i++)
+            {
+                pixelData[i] = heightmapData.Heights[i] * heightmapData.Step;
+            }
 
             GameManager.GL.TexImage2D(TextureTarget.Texture2D, 0, (int)InternalFormat.R32f, (uint)heightmapData.Width,
                 (uint)heightmapData.Length, 0, PixelFormat.Red, PixelType.Float, (ReadOnlySpan<float>)pixelData);

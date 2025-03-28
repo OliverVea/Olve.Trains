@@ -21,7 +21,14 @@ public static class RenderingParameterHelper
             x => SetVector2D(x, location),
             x => SetVector3D(x, location),
             x => SetFloat(x, location),
+            x => SetBool(x, location),
             x => SetTexture(x, location));
+    }
+
+    private static Result SetBool(RenderingParameter.Bool b, int location)
+    {
+        GameManager.GL.Uniform1(location, b.Value ? 1 : 0);
+        return Result.Success();
     }
 
     private static Result SetMatrix3X3(RenderingParameter.Matrix3X3 matrix, int location)

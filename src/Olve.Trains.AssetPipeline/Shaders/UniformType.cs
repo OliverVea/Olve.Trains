@@ -3,6 +3,7 @@ namespace Olve.Trains.AssetPipeline.Shaders;
 public enum UniformType
 {
     Unknown,
+    Bool,
     Float,
     Vector2,
     Vector3,

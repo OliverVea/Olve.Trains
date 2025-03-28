@@ -11,6 +11,7 @@ public partial class AnyRenderingParameter : OneOfBase<
     RenderingParameter.Vector2D,
     RenderingParameter.Vector3D,
     RenderingParameter.Float,
+    RenderingParameter.Bool,
     RenderingParameter.Texture>
 {
     public AnyRenderingParameter(RenderingParameter.Matrix4X4 value) : base(value) { }
@@ -24,6 +25,7 @@ public partial class AnyRenderingParameter : OneOfBase<
         vector2D => vector2D.Name,
         vector3D => vector3D.Name,
         f => f.Name,
+        b => b.Name,
         texture => texture.Name);
 
     private string DebugDisplay => Match(
@@ -32,5 +34,6 @@ public partial class AnyRenderingParameter : OneOfBase<
         vector2D => $"Vector2D {vector2D.Name} (X: {vector2D.Value.X}, Y: {vector2D.Value.Y})",
         vector3D => $"Vector3D {vector3D.Name} (X: {vector3D.Value.X}, Y: {vector3D.Value.Y}, Z: {vector3D.Value.Z})",
         f => $"Float {f.Name} ({f.Value})",
+        b => $"Bool {b.Name} ({b.Value})",
         texture => $"Texture {texture.Name} ({texture.Value})");
 }

@@ -1,12 +1,12 @@
-namespace Olve.Engine3D.Light;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Olve.Engine3D.Math.Splines;
 
 public class CatmullRom4 : CatmullRom<Vector4D<float>>
 {
     private readonly Matrix4X4<float>[] _coefficients;
 
-    public Vector4D<float> Min { get; set; }
-    public Vector4D<float> Max { get; set; }
-
+    [SetsRequiredMembers]
     public CatmullRom4(IReadOnlyList<KeyFrame<Vector4D<float>>> keyFrames, float? min = null, float? max = null) : base(keyFrames)
     {
         Min = Vector4D<float>.One * (min ?? float.MinValue);

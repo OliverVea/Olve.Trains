@@ -69,6 +69,7 @@ public static class ShaderHelper
     {
         uniformType = uniformTypeString switch
         {
+            "bool" => UniformType.Bool,
             "vec2" => UniformType.Vector2,
             "vec3" => UniformType.Vector3,
             "float" => UniformType.Float,
