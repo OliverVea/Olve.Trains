@@ -23,7 +23,6 @@ jobs:
   # 1️⃣ Build the Asset Pipeline (Linux)
   build-assets:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,8 +56,9 @@ jobs:
         os: [ubuntu-latest, windows-latest] # Run on both OSes
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Download built assets
         uses: actions/download-artifact@v4
