@@ -22,7 +22,6 @@ env:
 jobs:
   # 1️⃣ Build the Asset Pipeline (Linux)
   build-assets:
-    name: Build game and save in minio
     runs-on: ubuntu-latest
 
     steps:
@@ -43,6 +42,12 @@ jobs:
       - name: Run asset pipeline
         shell: bash
         run: sh ./src/Olve.Trains.AssetPipeline/build.sh
+
+      - name: Upload assets to artifact storage
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-assets
+          path: src/Olve.Trains/assets
 
   # 2️⃣ Build .NET for both Linux & Windows using a Matrix
   build-dotnet:
