@@ -13,7 +13,7 @@ public abstract class Scene
 
     public virtual Result Load() => Result.Success();
     public virtual void Unload() { }
-    public virtual Result<PassInput> Input() => PassInput.Pass;
+    public virtual Result<Pass> Input() => Pass.Pass;
     public virtual Result Update(TimeSpan deltaTime) => Result.Success();
     public virtual Result Render(TimeSpan deltaTime) => Result.Success();
 }

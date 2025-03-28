@@ -1,10 +1,15 @@
-namespace Olve.Engine3D.Light;
+using Olve.Engine3D.Light;
 
-public abstract class CatmullRom<T>
+namespace Olve.Engine3D.Math.Splines;
+
+public abstract class CatmullRom<T> : IInterpolator<T>
 {
     protected readonly KeyFrame<T>[] KeyFrames;
     private readonly float _min;
     private readonly float _max;
+
+    public required T Min { get; set; }
+    public required T Max { get; set; }
 
     protected CatmullRom(IReadOnlyList<KeyFrame<T>> keyFrames)
     {
@@ -56,7 +61,7 @@ public abstract class CatmullRom<T>
         float t2 = tLocal * tLocal, t3 = t2 * tLocal;
         var tVector = new Vector4D<float>(1, tLocal, t2, t3);
 
-        return Sample(segmentIndex, in tVector);
+        return Sample(segmentIndex - 1, in tVector);
     }
 
     private int GetSegmentIndex(float time)

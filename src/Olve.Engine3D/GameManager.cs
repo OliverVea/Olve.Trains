@@ -1,4 +1,5 @@
 using Olve.Engine3D.Input;
+using Olve.Engine3D.Light;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Scenes;
@@ -38,6 +39,13 @@ public class GameManager(IWindow window, SceneId initialSceneId)
 
     private readonly RenderingManager _renderingManager = new();
     public static RenderingManager RenderingManager => Instance._renderingManager;
+
+    // Game
+    private readonly DayTimeManager _dayTimeManager = new();
+    public static DayTimeManager DayTimeManager => Instance._dayTimeManager;
+
+    private readonly DaylightManager _daylightManager = new();
+    public static DaylightManager DaylightManager => Instance._daylightManager;
 
     // Contexts
     private GL? _gl;
@@ -199,10 +207,12 @@ public class GameManager(IWindow window, SceneId initialSceneId)
     {
     }
 
-    private void Stop()
+    public void Stop()
     {
         Window.Close();
     }
+
+    public static void StopGame() => Instance.Stop();
 }
 
 public class ManagersNotInitializedException() : Exception("Managers not initialized");

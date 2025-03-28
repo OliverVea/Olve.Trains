@@ -57,7 +57,7 @@ public class PerspectiveCameraController(ControllerCamera camera) : CameraContro
 
         var zoomAmount = float.Pow(ZoomSpeed, delta) * scale * deltaTime.InSeconds();
 
-        _camera.Projection.FieldOfView = Math.Clamp(
+        _camera.Projection.FieldOfView = float.Clamp(
             _camera.Projection.FieldOfView - zoomAmount,
             MathF.PI / 6,
             MathF.PI / 2

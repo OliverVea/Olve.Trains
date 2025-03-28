@@ -1,19 +1,5 @@
 namespace Olve.Engine3D.Scenes;
 
-public enum PassInput
-{
-    Pass,
-    Block
-}
-
-public static class Extensions
-{
-    public static IEnumerable<Func<Result>> MapResult<T>(this IEnumerable<T> source, Func<T, Result> selector)
-    {
-        return source.Select(item => new Func<Result>(() => selector(item)));
-    }
-}
-
 public class SceneManager
 {
     private readonly OrderedDictionary<SceneId, Scene> _scenes = new();
@@ -144,7 +130,7 @@ public class SceneManager
                 return problems.Prepend("Got problem while updating scene input for scene '{0}'", scene.Id);
             }
 
-            if (passInput == PassInput.Block)
+            if (passInput == Pass.Block)
             {
                 break;
             }

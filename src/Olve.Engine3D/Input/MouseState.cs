@@ -1,3 +1,4 @@
+using Olve.Engine3D.Camera;
 using Silk.NET.Input;
 
 namespace Olve.Engine3D.Input;
@@ -13,6 +14,7 @@ public class MouseState
     public bool IsButtonReleased(MouseButton button) => _releasedButtons.Contains(button);
 
     public Vector2D<float> Position { get; set; }
+    public Vector2D<float> NormalizedPosition { get; set; }
     public Vector2D<float> Delta { get; set; }
     public float Scroll { get; set; }
 

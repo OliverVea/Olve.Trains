@@ -1,3 +1,4 @@
+using Olve.Engine3D.Camera;
 using Silk.NET.Input;
 
 namespace Olve.Engine3D.Input;
@@ -47,6 +48,10 @@ public class MouseManager
 
         State.Delta = position - State.Position;
         State.Position = position;
+        State.NormalizedPosition = new Vector2D<float>(
+            position.X / GameManager.Window.Size.X - 0.5f,
+            position.Y / GameManager.Window.Size.Y - 0.5f
+        ) * 2f;
         State.Scroll = _scroll;
 
 

@@ -23,14 +23,18 @@ env:
 jobs:
   build:
     name: Build game and save in minio
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
-      - name: Setup .env
+      - name: Setup .env (Linux)
+        if: runner.os == 'Linux'
         run: |
           echo "S3_URL=${{ env.MINIO_URL }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "S3_BUCKET=${{ env.MINIO_BUCKET }}" >> ./src/Olve.Trains.AssetPipeline/.env
@@ -40,9 +44,26 @@ jobs:
           echo "CF_CLIENT_SECRET=${{ secrets.CF_CLIENT_SECRET }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
 
-      - name: Run asset pipeline
+      - name: Setup .env (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo S3_URL=${{ env.MINIO_URL }} >> ./src/Olve.Trains.AssetPipeline/.env
+          echo S3_BUCKET=${{ env.MINIO_BUCKET }} >> ./src/Olve.Trains.AssetPipeline/.env
+          echo S3_KEY=${{ secrets.MINIO_ACCESS_KEY }} >> ./src/Olve.Trains.AssetPipeline/.env
+          echo S3_SECRET=${{ secrets.MINIO_SECRET_KEY }} >> ./src/Olve.Trains.AssetPipeline/.env
+          echo CF_CLIENT_ID=${{ secrets.CF_CLIENT_ID }} >> ./src/Olve.Trains.AssetPipeline/.env
+          echo CF_CLIENT_SECRET=${{ secrets.CF_CLIENT_SECRET }} >> ./src/Olve.Trains.AssetPipeline/.env
+          echo LOG_LEVEL=Debug >> ./src/Olve.Trains.AssetPipeline/.env
+
+      - name: Run asset pipeline (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: sh ./src/Olve.Trains.AssetPipeline/build.sh
+
+      - name: Run asset pipeline (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./src/Olve.Trains.AssetPipeline/build.ps1
 
       - name: Install .NET
         uses: actions/setup-dotnet@v4
@@ -50,22 +71,19 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: .NET restore
-        shell: bash
         run: dotnet restore
 
       - name: Build
-        shell: bash
         run: dotnet build --no-restore -c Release /p:Version="1.0.0"
 
       - name: Publish
-        shell: bash
         run: dotnet publish --no-restore -c Release /p:Version="1.0.0" --output ./publish
 
       - name: Upload artifact to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: publish-${{ github.sha }}
+          name: publish-${{ runner.os }}-${{ github.sha }}
           path: ./publish
 
       - name: Log artifact
-        run: echo "Artifact - ${{ steps.upload-artifact.outputs.artifact }}"
+        run: echo "Artifact - ${{ runner.os }} - ${{ github.sha }}"

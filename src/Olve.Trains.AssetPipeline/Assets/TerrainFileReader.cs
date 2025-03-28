@@ -14,14 +14,14 @@ public class HeightmapLayerParser(float heightPerStep = 0.25f, int zeroHeight = 
 
         var maxVertexCount = png.Width * png.Height;
 
-        var heights = new float[maxVertexCount];
+        var heights = new int[maxVertexCount];
 
         for (var j = 0; j < png.Height; ++j)
         {
             for (var i = 0; i < png.Width; ++i)
             {
                 var height = png.GetPixel(i, j).R;
-                heights[j * png.Width + i] = (height - zeroHeight) / heightStep * heightPerStep;
+                heights[j * png.Width + i] = (height - zeroHeight) / heightStep;
             }
         }
 
@@ -29,6 +29,7 @@ public class HeightmapLayerParser(float heightPerStep = 0.25f, int zeroHeight = 
         {
             Width = png.Width,
             Length = png.Height,
+            Step = heightPerStep,
             Heights = heights
         };
     }

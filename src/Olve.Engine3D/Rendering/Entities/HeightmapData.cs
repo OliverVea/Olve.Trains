@@ -5,8 +5,16 @@ namespace Olve.Engine3D.Rendering.Entities;
 [MemoryPackable]
 public partial class HeightmapData
 {
-    public required float[] Heights { get; set; }
+    /// Heightmap data
+    public required int[] Heights { get; set; }
+
+    /// Height of each discrete step
+    public required float Step { get; set; }
+
+    /// X-axis
     public required int Width { get; set; }
+
+    /// Z-axis
     public required int Length { get; set; }
 
     public Result Validate(int minHeight = -128, int maxHeight = 127, int maxLength = 4096, int maxWidth = 4096)
