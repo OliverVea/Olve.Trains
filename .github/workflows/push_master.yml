@@ -1,89 +1,60 @@
-name: Push to master
+name: Build and Deploy
 
 on:
   push:
     branches:
-      - master
-
-permissions:
-  actions: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "deploy"
-  cancel-in-progress: false
-
-env:
-  DOTNET_VERSION: 9.0.100
-  MINIO_URL: https://minio.ovhome.online
-  MINIO_BUCKET: olve.trains
-  TS_EXIT_NODE: tailscale-home
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build:
-    name: Build game and save in minio
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-
+  # 1️⃣ Build the Asset Pipeline (Linux)
+  build-assets:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup .env (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          echo "S3_URL=${{ env.MINIO_URL }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "S3_BUCKET=${{ env.MINIO_BUCKET }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "S3_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "S3_SECRET=${{ secrets.MINIO_SECRET_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "CF_CLIENT_ID=${{ secrets.CF_CLIENT_ID }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "CF_CLIENT_SECRET=${{ secrets.CF_CLIENT_SECRET }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
+      - name: Build and run asset pipeline
+        run: ./src/Olve.Trains.AssetPipeline/build.sh
 
-      - name: Setup .env (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          echo S3_URL=${{ env.MINIO_URL }} >> ./src/Olve.Trains.AssetPipeline/.env
-          echo S3_BUCKET=${{ env.MINIO_BUCKET }} >> ./src/Olve.Trains.AssetPipeline/.env
-          echo S3_KEY=${{ secrets.MINIO_ACCESS_KEY }} >> ./src/Olve.Trains.AssetPipeline/.env
-          echo S3_SECRET=${{ secrets.MINIO_SECRET_KEY }} >> ./src/Olve.Trains.AssetPipeline/.env
-          echo CF_CLIENT_ID=${{ secrets.CF_CLIENT_ID }} >> ./src/Olve.Trains.AssetPipeline/.env
-          echo CF_CLIENT_SECRET=${{ secrets.CF_CLIENT_SECRET }} >> ./src/Olve.Trains.AssetPipeline/.env
-          echo LOG_LEVEL=Debug >> ./src/Olve.Trains.AssetPipeline/.env
-
-      - name: Run asset pipeline (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: sh ./src/Olve.Trains.AssetPipeline/build.sh
-
-      - name: Run asset pipeline (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./src/Olve.Trains.AssetPipeline/build.ps1
-
-      - name: Install .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: .NET restore
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore -c Release /p:Version="1.0.0"
-
-      - name: Publish
-        run: dotnet publish --no-restore -c Release /p:Version="1.0.0" --output ./publish
-
-      - name: Upload artifact to GitHub
+      - name: Upload assets to artifact storage
         uses: actions/upload-artifact@v4
         with:
-          name: publish-${{ runner.os }}-${{ github.sha }}
-          path: ./publish
+          name: built-assets
+          path: src/Olve.Trains/assets # Adjust path if needed
 
-      - name: Log artifact
-        run: echo "Artifact - ${{ runner.os }} - ${{ github.sha }}"
+  # 2️⃣ Build .NET for both Linux & Windows using a Matrix
+  build-dotnet:
+    needs: build-assets
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest] # Run on both OSes
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download built assets
+        uses: actions/download-artifact@v4
+        with:
+          name: built-assets
+          path: src/Olve.Trains/assets
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore src/Olve.Trains/Olve.Trains.csproj
+
+      - name: Build
+        run: dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release --output build/${{ runner.os }}
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ runner.os }}
+          path: build/${{ runner.os }}
