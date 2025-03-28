@@ -8,13 +8,21 @@ on:
     branches:
       - master
 
+permissions:
+  actions: read
+  pages: write
+  id-token: write
+
 jobs:
   # 1️⃣ Build the Asset Pipeline (Linux)
   build-assets:
+    name: Build game and save in minio
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Setup .env
         run: |
@@ -26,14 +34,9 @@ jobs:
           echo "CF_CLIENT_SECRET=${{ secrets.CF_CLIENT_SECRET }}" >> ./src/Olve.Trains.AssetPipeline/.env
           echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
 
-      - name: Build and run asset pipeline
-        run: ./src/Olve.Trains.AssetPipeline/build.sh
-
-      - name: Upload assets to artifact storage
-        uses: actions/upload-artifact@v4
-        with:
-          name: built-assets
-          path: src/Olve.Trains/assets # Adjust path if needed
+      - name: Run asset pipeline
+        shell: bash
+        run: sh ./src/Olve.Trains.AssetPipeline/build.sh
 
   # 2️⃣ Build .NET for both Linux & Windows using a Matrix
   build-dotnet:
