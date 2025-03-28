@@ -13,6 +13,12 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  DOTNET_VERSION: 9.0.100
+  MINIO_URL: https://minio.ovhome.online
+  MINIO_BUCKET: olve.trains
+  TS_EXIT_NODE: tailscale-home
+
 jobs:
   # 1️⃣ Build the Asset Pipeline (Linux)
   build-assets:
