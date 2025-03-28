@@ -3,10 +3,10 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   # 1️⃣ Build the Asset Pipeline (Linux)
