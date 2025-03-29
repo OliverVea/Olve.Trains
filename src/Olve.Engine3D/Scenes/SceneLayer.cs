@@ -4,5 +4,6 @@ public enum SceneLayer
 {
     Background,
     Main,
-    Foreground
+    Foreground,
+
 }
