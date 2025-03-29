@@ -9,4 +9,7 @@ public readonly record struct DayTime(float Value)
     public DayTime(int hours, int minutes = 0, int seconds = 0) : this(hours + minutes / 60f + seconds / 3600f)
     {
     }
+
+    public int Hours => (int)Value;
+    public int Minutes => (int)((Value - Hours) * 60);
 }

@@ -2,10 +2,9 @@ namespace Olve.Engine3D.Scenes;
 
 public class SceneManager
 {
-    private readonly OrderedDictionary<SceneId, Scene> _scenes = new();
+    private readonly List<Scene> _scenes = new();
 
-    public IEnumerable<SceneId> SceneIds => _scenes.Keys;
-    public IEnumerable<Scene> Scenes => _scenes.Values;
+    public IReadOnlyList<Scene> Scenes => _scenes;
 
     public Result AddScenes(IEnumerable<Scene> scenes)
     {
@@ -14,7 +13,7 @@ public class SceneManager
 
     public Result AddScene(Scene scene)
     {
-        if (_scenes.ContainsKey(scene.Id))
+        if (_scenes.Any(x => x.Id == scene.Id))
         {
             return new ResultProblem("Scene with id '{0}' already exists", scene.Id);
         }
@@ -22,14 +21,14 @@ public class SceneManager
         var index = GetInsertIndex(scene.Layer, scene.LayerOrder);
 
         scene.State = SceneState.Unloaded;
-        _scenes.Insert(index, scene.Id, scene);
+        _scenes.Insert(index, scene);
 
         return Result.Success();
     }
 
     public Result RemoveScene(SceneId sceneId)
     {
-        if (!_scenes.TryGetValue(sceneId, out var scene))
+        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
         {
             return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
         }
@@ -39,14 +38,14 @@ public class SceneManager
             return new ResultProblem("Scene with id '{0}' is not unloaded", sceneId);
         }
 
-        _scenes.Remove(sceneId);
+        _scenes.Remove(scene);
 
         return Result.Success();
     }
 
     public Result LoadScene(SceneId sceneId)
     {
-        if (!_scenes.TryGetValue(sceneId, out var scene))
+        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
         {
             return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
         }
@@ -70,7 +69,7 @@ public class SceneManager
 
     public Result UnloadScene(SceneId sceneId)
     {
-        if (!_scenes.TryGetValue(sceneId, out var scene))
+        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
         {
             return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
         }
@@ -83,7 +82,7 @@ public class SceneManager
 
     public Result ActivateScene(SceneId sceneId)
     {
-        if (!_scenes.TryGetValue(sceneId, out var scene))
+        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
         {
             return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
         }
@@ -100,7 +99,7 @@ public class SceneManager
 
     public Result DeactivateScene(SceneId sceneId)
     {
-        if (!_scenes.TryGetValue(sceneId, out var scene))
+        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
         {
             return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
         }
@@ -117,7 +116,7 @@ public class SceneManager
 
     public Result Input()
     {
-        foreach (var scene in _scenes.Values)
+        foreach (var scene in _scenes)
         {
             if (scene.State != SceneState.Active)
             {
@@ -141,7 +140,7 @@ public class SceneManager
 
     public Result Update(TimeSpan gameTime)
     {
-        foreach (var scene in _scenes.Values)
+        foreach (var scene in _scenes)
         {
             if (scene.State != SceneState.Active)
             {
@@ -160,7 +159,7 @@ public class SceneManager
 
     public Result Render(TimeSpan deltaTime)
     {
-        foreach (var scene in _scenes.Values)
+        foreach (var scene in _scenes)
         {
             if (scene.State != SceneState.Active)
             {
@@ -179,7 +178,7 @@ public class SceneManager
 
     public void Close()
     {
-        foreach (var scene in _scenes.Values)
+        foreach (var scene in _scenes)
         {
             if (scene.State == SceneState.Unloaded)
             {
@@ -194,9 +193,9 @@ public class SceneManager
     {
         var index = 0;
 
-        foreach (var scene in _scenes.Values)
+        foreach (var scene in _scenes)
         {
-            if (scene.Layer <= layer && scene.LayerOrder < layerOrder)
+            if (scene.Layer > layer || scene.Layer == layer && scene.LayerOrder > layerOrder)
             {
                 index++;
             }

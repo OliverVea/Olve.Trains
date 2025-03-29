@@ -4,10 +4,11 @@ using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
+using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Silk.NET.Maths;
 
-namespace Olve.Trains.Scenes;
+namespace Olve.Trains.Scenes.Game;
 
 public class CameraSceneService : ISceneService
 {
@@ -31,20 +32,32 @@ public class CameraSceneService : ISceneService
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    CameraMovementInput _movementInput;
+
+    public Result<Pass> Input()
     {
-        var movementInput = new CameraMovementInput();
+        _movementInput = new CameraMovementInput();
 
         foreach (var scheme in _cameraSchemes)
         {
-            movementInput += scheme.GetMovementInput();
+            _movementInput += scheme.GetMovementInput();
         }
 
-        _cameraController.Move(movementInput.Direction, deltaTime);
-        _cameraController.Zoom(movementInput.Zoom, deltaTime);
+        return Pass.Pass;
+    }
+
+    public Result Update(TimeSpan deltaTime)
+    {
+        _cameraController.Move(_movementInput.Direction, deltaTime);
+        _cameraController.Zoom(_movementInput.Zoom, deltaTime);
+
+        _movementInput = new CameraMovementInput();
 
         return Result.Success();
     }
 
-    public Result Unload() => throw new NotImplementedException();
+    public Result Unload()
+    {
+        return Result.Success();
+    }
 }

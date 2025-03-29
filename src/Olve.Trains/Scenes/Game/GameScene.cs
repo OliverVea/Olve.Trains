@@ -7,6 +7,7 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
+using Olve.Trains.Scenes.Game;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
@@ -180,6 +181,20 @@ public sealed class GameScene : Scene
         else
         {
             _mouseRay = null;
+        }
+
+        foreach (var service in _services)
+        {
+            var inputResult = service.Input();
+            if (inputResult.TryPickProblems(out var problems, out var passInput))
+            {
+                return problems;
+            }
+
+            if (passInput == Pass.Block)
+            {
+                return Pass.Block;
+            }
         }
 
         return Pass.Pass;

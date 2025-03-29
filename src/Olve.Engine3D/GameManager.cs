@@ -9,13 +9,13 @@ using Silk.NET.Windowing;
 
 namespace Olve.Engine3D;
 
-public class GameManager(IWindow window, SceneId initialSceneId)
+public class GameManager(IWindow window, IEnumerable<SceneId> initialSceneIds)
 {
     private static GameManager? _instance;
     private static GameManager Instance => _instance ?? throw new ManagersNotInitializedException();
 
     private readonly IWindow _window = window;
-    private readonly SceneId _initialSceneId = initialSceneId;
+    private readonly IEnumerable<SceneId> _initialSceneIds = initialSceneIds;
 
     private readonly SceneManager _sceneManager = new();
 
@@ -59,14 +59,14 @@ public class GameManager(IWindow window, SceneId initialSceneId)
 
     private Result _result = Result.Success();
 
-    public static Result Initialize(IWindow window, Scene[] initialScenes, SceneId initialSceneId)
+    public static Result Initialize(IWindow window, Scene[] initialScenes, params IEnumerable<SceneId> initialSceneIds)
     {
         if (_instance is not null)
         {
             return new ResultProblem("Managers already initialized");
         }
 
-        _instance = new GameManager(window, initialSceneId);
+        _instance = new GameManager(window, initialSceneIds);
 
         SceneManager.AddScenes(initialScenes);
 
@@ -131,11 +131,20 @@ public class GameManager(IWindow window, SceneId initialSceneId)
             () => Result.Try<IInputContext, Exception>(() => Window.CreateInput(), "Error while creating input context")
         );
 
-    private static Result SetupSceneManager() =>
-        Result.Chain(
-            () => SceneManager.LoadScene(Instance._initialSceneId),
-            () => SceneManager.ActivateScene(Instance._initialSceneId)
-        );
+    private static Result SetupSceneManager()
+    {
+        var results = Instance._initialSceneIds.Select(id =>
+            Result.Chain(
+                () => SceneManager.LoadScene(id),
+                () => SceneManager.ActivateScene(id)));
+
+        if (results.TryPickProblems(out var problems))
+        {
+            return problems.Prepend("Error while setting up initial scenes");
+        }
+
+        return Result.Success();
+    }
 
     private static Result SetupInput() =>
         Result.Chain(

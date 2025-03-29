@@ -61,7 +61,7 @@ public static class GameSceneEntities
         Matrix4X4<float>.Identity,
         default,
         false,
-        true);
+        false);
 
 
     public static readonly TextureData DefaultTexture = new()
