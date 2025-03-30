@@ -2,7 +2,8 @@ namespace Olve.Engine3D.Light;
 
 public class DayTimeManager
 {
-    public TimeSpan DayLength { get; set; } = TimeSpan.FromMinutes(20);
+    public static readonly TimeSpan DefaultDayLength = TimeSpan.FromMinutes(20);
+    public TimeSpan DayLength { get; set; } = DefaultDayLength;
     public DayTime CurrentTime { get; set; } = new(0);
 
     public Action? OnDayStart { get; set; }

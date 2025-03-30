@@ -1,5 +1,6 @@
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
+using Olve.Engine3D.Logging;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Scenes;
@@ -46,6 +47,8 @@ public class GameManager(IWindow window, IEnumerable<SceneId> initialSceneIds)
 
     private readonly DaylightManager _daylightManager = new();
     public static DaylightManager DaylightManager => Instance._daylightManager;
+
+    public static ILoggingManager LoggingManager { get; set; } = new NoopLoggingManager();
 
     // Contexts
     private GL? _gl;

@@ -24,4 +24,8 @@
       <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Scenes\Console\Commands\" />
+    </ItemGroup>
+
 </Project>

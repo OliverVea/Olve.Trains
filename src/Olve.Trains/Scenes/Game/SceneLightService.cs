@@ -7,8 +7,8 @@ namespace Olve.Trains.Scenes;
 
 public class SceneLightService : ISceneService
 {
-    private static readonly DayTime DayStart = new(8, 30);
-    private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(5);
+    private static readonly DayTime DayStart = new(5, 30);
+    private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(6);
     
     private DaylightId _sunId, _moonId;
 

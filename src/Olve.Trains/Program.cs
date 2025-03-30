@@ -35,5 +35,7 @@ Result RunGame()
         return p;
     }
 
+    GameManager.LoggingManager = new ConsoleLoggingManager();
+
     return GameManager.Run();
 }
