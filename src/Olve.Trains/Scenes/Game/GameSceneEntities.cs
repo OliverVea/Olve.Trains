@@ -222,6 +222,18 @@ public static class GameSceneEntities
         return new Vector2D<float>(x, 0);
     }
 
+    public static readonly DayTime Midnight0 = new(0);
+    public static readonly DayTime Midnight24 = new(24);
+    public static readonly DayTime BeforeSunrise = new(5, 30);
+    public static readonly DayTime SunriseStart = new(6);
+    public static readonly DayTime SunriseMiddle = new(7, 30);
+    public static readonly DayTime SunriseEnd = new(9);
+    public static readonly DayTime Noon = new(13, 30);
+    public static readonly DayTime SunsetBegin = new(18);
+    public static readonly DayTime SunsetMiddle = new(19, 30);
+    public static readonly DayTime SunsetEnd = new(21);
+    public static readonly DayTime AfterSunset = new(21, 30);
+
     public static class Colors
     {
         public static readonly Vector3D<float> Black = new(0, 0, 0);
@@ -238,78 +250,74 @@ public static class GameSceneEntities
         public static readonly Vector3D<float> MoonWhite = new Vector3D<float>(200, 200, 255) / 255f;
     }
 
-    private static readonly DayTimeKeyFrame<Vector3D<float>>[] SunColorKeyFrames =
+    private static readonly DayTimeKeyFrame<Vector3D<float>>[] SunColor =
     [
-        (new DayTime(0), Colors.Black),
-        (new DayTime(5, 30), Colors.Black),
-        (new DayTime(6), Colors.SunRed),
-        (new DayTime(6, 30), Colors.SunOrange),
-        (new DayTime(7), Colors.SunPaleOrange),
-        (new DayTime(7, 30), Colors.SunYellow),
-        (new DayTime(9), Colors.SunWhite),
-        (new DayTime(17), Colors.SunWhite),
-        (new DayTime(18, 30), Colors.SunYellow),
-        (new DayTime(19), Colors.SunPaleOrange),
-        (new DayTime(19, 30), Colors.SunOrange),
-        (new DayTime(20), Colors.SunRed),
-        (new DayTime(20, 30), Colors.Black),
-        (new DayTime(24), Colors.Black),
+        (Midnight0, Colors.Black),
+        (BeforeSunrise, Colors.Black),
+        (SunriseStart, Colors.SunRed),
+        (SunriseMiddle, Colors.SunOrange),
+        (SunriseEnd, Colors.SunWhite),
+        (SunsetBegin, Colors.SunWhite),
+        (SunsetMiddle, Colors.SunPaleOrange),
+        (SunsetEnd, Colors.SunRed),
+        (AfterSunset, Colors.Black),
+        (Midnight24, Colors.Black),
     ];
 
-    private static readonly DayTimeKeyFrame<float>[] SunAngleKeyFrames =
+    private static readonly DayTimeKeyFrame<float>[] SunAngle =
     [
-        (new DayTime(0), 0),
-        (new DayTime(6, 30), 0),
-        (new DayTime(20, 30), 180),
-        (new DayTime(24), 180),
+        (Midnight0, 0),
+        (SunriseStart, 0),
+        (SunsetMiddle, 180),
+        (Midnight24, 180),
     ];
 
-    private static readonly DayTimeKeyFrame<float>[] SunIntensityKeyFrames =
+    private static readonly DayTimeKeyFrame<float>[] SunIntensity =
     [
-        (new DayTime(0), 0),
-        (new DayTime(5, 30), 0),
-        (new DayTime(9), 1f),
-        (new DayTime(17), 1f),
-        (new DayTime(20, 30), 0),
-        (new DayTime(24), 0),
+        (Midnight0, 0),
+        (BeforeSunrise, 0),
+        (SunriseEnd, 0.85f),
+        (Noon, 1f),
+        (SunsetBegin, 0.85f),
+        (AfterSunset, 0),
+        (Midnight24, 0),
     ];
 
-    private static readonly DayTimeKeyFrame<float>[] SunAmbientIntensityKeyFrames =
+    private static readonly DayTimeKeyFrame<float>[] SunAmbientIntensity =
     [
-        (new DayTime(0), 0),
-        (new DayTime(6), 0),
-        (new DayTime(9), 0.45f),
-        (new DayTime((9 + 18) / 2f), 0.6f),
-        (new DayTime(18), 0.45f),
-        (new DayTime(21), 0),
-        (new DayTime(24), 0),
+        (Midnight0, 0),
+        (BeforeSunrise, 0),
+        (SunriseEnd, 0.45f),
+        (Noon, 0.6f),
+        (SunsetBegin, 0.45f),
+        (AfterSunset, 0),
+        (Midnight24, 0),
     ];
 
+    private static readonly DayTimeKeyFrame<Vector3D<float>>[] SunAmbientColor =
+    [
+        (Midnight0, Colors.Black),
+        (Midnight24, Colors.Black),
+    ];
 
     public static readonly DaylightData SunData = new()
     {
-        Angle = new Curve1(InterpolationType.Linear, SunAngleKeyFrames) { Min = 0, Max = 180},
-        Color = new Curve3(InterpolationType.CatmullRom, SunColorKeyFrames) { Min = Colors.Black, Max = Colors.White},
-        Intensity = new Curve1(InterpolationType.CatmullRom, SunIntensityKeyFrames) { Min = 0, Max = 1},
-        AmbientColor = new Curve3(InterpolationType.Linear, (new DayTime(0), Colors.Shadow), (new DayTime(24), Colors.Shadow)),
-        AmbientIntensity = new Curve1(InterpolationType.CatmullRom, SunAmbientIntensityKeyFrames) { Min = 0, Max = 1},
+        Angle = new Curve1(InterpolationType.Linear, SunAngle) { Min = 0, Max = 180},
+        Color = new Curve3(InterpolationType.CatmullRom, SunColor) { Min = Colors.Black, Max = Colors.White},
+        Intensity = new Curve1(InterpolationType.CatmullRom, SunIntensity) { Min = 0, Max = 1},
+        AmbientColor = new Curve3(InterpolationType.Linear, SunAmbientColor),
+        AmbientIntensity = new Curve1(InterpolationType.CatmullRom, SunAmbientIntensity) { Min = 0, Max = 1},
     };
 
-    private static readonly DayTimeKeyFrame<Vector3D<float>>[] MoonColorKeyFrames =
+    private static readonly DayTimeKeyFrame<Vector3D<float>>[] MoonColor =
     [
-        (new DayTime(0), Colors.MoonWhite),
-        (new DayTime(24), Colors.MoonWhite),
+        (Midnight0, Colors.MoonWhite),
+        (Midnight24, Colors.MoonWhite),
     ];
 
-    private static readonly DayTimeKeyFrame<float>[] MoonAngleKeyFrames =
-    [
-        (new DayTime(0), 90),
-        (new DayTime(6), 180),
-        (new DayTime(18), 0),
-        (new DayTime(24), 90),
-    ];
+    private static readonly DayTimeKeyFrame<float>[] MoonAngle = SunAngle.Select(x => x with { Value = (180 + x.Value) % 360 }).ToArray();
 
-    private static readonly DayTimeKeyFrame<float>[] MoonIntensityKeyFrames =
+    private static readonly DayTimeKeyFrame<float>[] MoonIntensity =
     [
         (new DayTime(0), 0.45f),
         (new DayTime(5), 0.45f),
@@ -319,18 +327,24 @@ public static class GameSceneEntities
         (new DayTime(24), 0.45f),
     ];
 
-    private static readonly DayTimeKeyFrame<float>[] MoonAmbientIntensityKeyFrames =
+    private static readonly DayTimeKeyFrame<float>[] MoonAmbientIntensity =
     [
-        (new DayTime(0), 0.25f),
-        (new DayTime(24), 0.25f),
+        (Midnight0, 0.25f),
+        (Midnight24, 0.25f),
+    ];
+
+    private static readonly DayTimeKeyFrame<Vector3D<float>>[] MoonAmbientColor =
+    [
+        (Midnight0, Colors.MoonBlue),
+        (Midnight24, Colors.MoonBlue),
     ];
 
     public static readonly DaylightData MoonData = new()
     {
-        Angle = new Curve1(InterpolationType.Linear, MoonAngleKeyFrames) { Min = 0, Max = 180 },
-        Color = new Curve3(InterpolationType.CatmullRom, MoonColorKeyFrames) { Min = Colors.Black, Max = Colors.MoonWhite },
-        Intensity = new Curve1(InterpolationType.CatmullRom, MoonIntensityKeyFrames) { Min = 0, Max = 1f },
-        AmbientColor = new Curve3(InterpolationType.Linear, (new DayTime(0), Colors.MoonBlue), (new DayTime(24), Colors.MoonBlue)),
-        AmbientIntensity = new Curve1(InterpolationType.CatmullRom, MoonAmbientIntensityKeyFrames) { Min = 0, Max = 1f },
+        Angle = new Curve1(InterpolationType.Linear, MoonAngle) { Min = 0, Max = 180 },
+        Color = new Curve3(InterpolationType.CatmullRom, MoonColor) { Min = Colors.Black, Max = Colors.MoonWhite },
+        Intensity = new Curve1(InterpolationType.CatmullRom, MoonIntensity) { Min = 0, Max = 1f },
+        AmbientColor = new Curve3(InterpolationType.Linear, MoonAmbientColor),
+        AmbientIntensity = new Curve1(InterpolationType.CatmullRom, MoonAmbientIntensity) { Min = 0, Max = 1f },
     };
 }

@@ -10,18 +10,13 @@ public class ConsoleScene : Scene
     public override SceneId Id => SceneId;
     public override SceneLayer Layer => SceneLayer.Foreground;
 
-    private GameScene _gameScene = null!;
     private ConsoleService _consoleService = null!;
+    private ConsoleCommandService _consoleCommandService = null!;
 
     public override Result Load()
     {
-        var gameScene = GameManager.SceneManager.Scenes.OfType<GameScene>().FirstOrDefault();
-        if (gameScene is null)
-        {
-            return new ResultProblem("Game scene not found");
-        }
-
-        _consoleService = new ConsoleService(gameScene);
+        _consoleCommandService = new ConsoleCommandService();
+        _consoleService = new ConsoleService(_consoleCommandService);
         return _consoleService.Load();
     }
 

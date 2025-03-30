@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
+using Olve.Engine3D.Logging;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Silk.NET.Input;
@@ -16,17 +17,18 @@ public readonly record struct UIDayTime(int Hour, int Minute)
     public override string ToString() => $"{Hour:D2}:{Minute:D2}";
 }
 
-public readonly record struct UIState(UIDayTime DayTime, ConcurrentQueue<string> Console, string? ConsoleCommand = null);
+public readonly record struct UIState(UIDayTime DayTime, IReadOnlyList<string> Console, string? ConsoleCommand = null);
 
-public class ConsoleService(GameScene gameScene) : ISceneService
+public class ConsoleService(ConsoleCommandService consoleCommandService) : ISceneService
 {
     private Thread? _consoleThread;
     private bool _running;
     private UIState _state;
-    private ConcurrentQueue<string> _console = new();
 
     private bool _consoleActive;
-    private StringBuilder _consoleBuffer = new();
+    private readonly StringBuilder _consoleBuffer = new();
+
+    private readonly string[] _consoleMessages = new string[3];
 
     public Result Load()
     {
@@ -51,7 +53,27 @@ public class ConsoleService(GameScene gameScene) : ISceneService
 
         _consoleThread.Start();
 
+        Array.Fill(_consoleMessages, string.Empty);
+
+        GameManager.LoggingManager.OnLog += OnLog;
+
         return Result.Success();
+    }
+
+    private void OnLog(LogMessage logMessage)
+    {
+        var message = logMessage.Message;
+
+        message = logMessage.Level switch {
+            LogLevel.Warning => $"[yellow]{message}[/]",
+            LogLevel.Error => $"[red]{message}[/]",
+            LogLevel.Critical => $"[red bold]{message}[/]",
+            _ => message
+        };
+
+        _consoleMessages[0] = _consoleMessages[1];
+        _consoleMessages[1] = _consoleMessages[2];
+        _consoleMessages[2] = message;
     }
 
     public Result<Pass> Input()
@@ -70,7 +92,12 @@ public class ConsoleService(GameScene gameScene) : ISceneService
 
             if (keyboardState.IsKeyPressed(Key.Enter))
             {
-                //GameManager.LoggingManager.Log("CONSOLE COMMAND: " + _consoleCommand);
+                var result = consoleCommandService.Execute(_consoleBuffer.ToString());
+                if (result.TryPickProblems(out var problems))
+                {
+                    GameManager.LoggingManager.Log(problems);
+                }
+
                 _consoleActive = false;
                 _consoleBuffer.Clear();
             }
@@ -118,8 +145,8 @@ public class ConsoleService(GameScene gameScene) : ISceneService
 
         _state = new UIState(new UIDayTime(
             GameManager.DayTimeManager.CurrentTime.Hours,
-            (GameManager.DayTimeManager.CurrentTime.Minutes / 15) * 15),
-            _console,
+            GameManager.DayTimeManager.CurrentTime.Minutes),
+            _consoleMessages,
             _consoleActive ? _consoleBuffer.ToString() : null);
 
         return Result.Success();
@@ -128,6 +155,8 @@ public class ConsoleService(GameScene gameScene) : ISceneService
     public Result Unload()
     {
         _running = false;
+
+        GameManager.LoggingManager.OnLog -= OnLog;
 
         return Result.Success();
     }
@@ -185,7 +214,7 @@ public class ConsoleService(GameScene gameScene) : ISceneService
                 bodyChanged = false;
             }
 
-            var consoleChanged = state.Console != previousState.Console || state.ConsoleCommand != previousState.ConsoleCommand;
+            var consoleChanged = state.ConsoleCommand != previousState.ConsoleCommand || !state.Console.CollectionEquals(previousState.Console);
             if (consoleChanged)
             {
                 IEnumerable<IRenderable> consoleLines = state.Console.Select(x => new Markup(x));
@@ -230,5 +259,37 @@ public class ConsoleService(GameScene gameScene) : ISceneService
 
             previousState = state;
         }
+    }
+}
+
+public static class EnumerableExtensions
+{
+    public static bool CollectionEquals<T>(this IReadOnlyList<T>? first, IReadOnlyList<T>? second)
+        where T : notnull
+    {
+        if (first is null && second is null)
+        {
+            return true;
+        }
+
+        if (first is null || second is null)
+        {
+            return false;
+        }
+
+        if (first.Count != second.Count)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < first.Count; i++)
+        {
+            if (!first[i].Equals(second[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
