@@ -8,7 +8,7 @@ using Silk.NET.Windowing;
 var options = WindowOptions.Default with
 {
     Title = "My first Silk.NET program!",
-    Size = new Vector2D<int>(1920, 1080),
+    Size = new Vector2D<int>(1280, 720),
     Samples = 8
 };
 
@@ -30,7 +30,13 @@ return 0;
 
 Result RunGame()
 {
-    if (GameManager.Initialize(window, [new ConsoleScene(), new GameScene()], GameScene.SceneId, ConsoleScene.SceneId).TryPickProblems(out var p))
+    if (GameManager.Initialize(window, [
+            //new ConsoleScene(),
+            new GameScene()
+            ], 
+            GameScene.SceneId
+            //ConsoleScene.SceneId
+            ).TryPickProblems(out var p))
     {
         return p;
     }

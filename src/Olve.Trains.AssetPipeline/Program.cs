@@ -63,7 +63,11 @@ if (result.TryPickProblems(out var mainProblems))
 {
     foreach (var problem in mainProblems)
     {
-        logger.LogError(problem.ToDebugString());
+        var message = $"{problem.Message} at {{{problem.Args.Length}}}";
+        
+        var problemArgs = problem.Args.Append(problem.OriginInformation.LinkString).ToArray();
+        
+        logger.LogError(message, problemArgs);
     }
 
     return 1;
@@ -72,6 +76,5 @@ if (result.TryPickProblems(out var mainProblems))
 logger.LogInformation("--------------------------------------");
 logger.LogInformation("|     Asset Pipeline Completed!      |");
 logger.LogInformation("--------------------------------------");
-
 
 return 0;

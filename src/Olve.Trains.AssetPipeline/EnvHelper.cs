@@ -14,4 +14,15 @@ public static class EnvHelper
 
         return value;
     }
+    
+    public static string ReadEnvVariableOrDefault(string key, string defaultValue)
+    {
+        var value = Environment.GetEnvironmentVariable(key);
+        if (value == null)
+        {
+            return defaultValue;
+        }
+
+        return value;
+    }
 }
