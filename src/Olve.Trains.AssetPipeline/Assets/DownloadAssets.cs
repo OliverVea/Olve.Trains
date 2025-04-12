@@ -5,7 +5,7 @@ using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
 using Olve.Results;
-using Envs = (string Url, string Bucket, string Key, string Secret, string CloudflareId, string CloudflareSecret);
+using Envs = (string Url, string Bucket, string Key, string Secret);
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -53,16 +53,14 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         return new Response(files);
     }
 
-    private Result<(string Url, string Bucket, string Key, string Secret, string CloudflareId, string CloudflareSecret)> ReadS3EnvironmentVariables()
+    private Result<Envs> ReadS3EnvironmentVariables()
     {
 
         return Result.Concat(
             () => EnvHelper.ReadEnvVariable(S3Url),
             () => EnvHelper.ReadEnvVariable(S3Bucket),
             () => EnvHelper.ReadEnvVariable(S3Key),
-            () => EnvHelper.ReadEnvVariable(S3Secret),
-            () => EnvHelper.ReadEnvVariable(CloudflareId),
-            () => EnvHelper.ReadEnvVariable(CloudflareSecret)
+            () => EnvHelper.ReadEnvVariable(S3Secret)
         );
     }
 
@@ -71,8 +69,17 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         var httpClient = new HttpClient();
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"{envs.Url}/minio/health/live");
-        request.Headers.Add(CfClientIdHeader, envs.CloudflareId);
-        request.Headers.Add(CfClientSecretHeader, envs.CloudflareSecret);
+        
+        var cloudflareId = EnvHelper.ReadEnvVariableOrDefault(CloudflareId, string.Empty);
+        var cloudflareSecret = EnvHelper.ReadEnvVariableOrDefault(CloudflareSecret, string.Empty);
+        
+        if (string.IsNullOrEmpty(cloudflareId) || string.IsNullOrEmpty(cloudflareSecret))
+        {
+            return new ResultProblem("Cloudflare client ID or secret is not set");
+        }
+        
+        request.Headers.Add(CfClientIdHeader, cloudflareId);
+        request.Headers.Add(CfClientSecretHeader, cloudflareSecret);
 
         var response = await httpClient.SendAsync(request, ct);
 
@@ -127,6 +134,10 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
                         logger.LogDebug("Received headers request header: {Header}", headersArgs.Headers);
                     }
                 };
+            }
+            else 
+            {
+                logger.LogWarning("No Cloudflare cookie was set, this may cause issues");
             }
             
             var listRequest = new ListObjectsV2Request { BucketName = envs.Bucket };

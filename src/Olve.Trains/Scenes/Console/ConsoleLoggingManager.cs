@@ -35,7 +35,7 @@ public class ConsoleLoggingManager : ILoggingManager
 
         LogMessage logMessage = new(logLevel, resultProblem.Message)
         {
-            SourcePath = resultProblem.OriginInformation.FilePath,
+            SourcePath = resultProblem.OriginInformation.FilePath.Path,
             SourceLine = resultProblem.OriginInformation.LineNumber,
             Tags = resultProblem.Tags
         };
