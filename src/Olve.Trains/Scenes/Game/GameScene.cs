@@ -7,18 +7,17 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
-using Olve.Trains.Scenes.Game;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
-namespace Olve.Trains.Scenes;
+namespace Olve.Trains.Scenes.Game;
 
 public sealed class GameScene : Scene
 {
     private readonly SceneLightService _lightService = new();
     private readonly CameraSceneService _cameraService = new();
 
-    private ISceneService[] _services;
+    private ISceneService[] _services = [];
 
     public static readonly SceneId SceneId = new("Game Scene");
     public override SceneId Id => SceneId;

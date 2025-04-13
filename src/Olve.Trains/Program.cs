@@ -1,47 +1,70 @@
 ﻿using Olve.Engine3D;
+using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Olve.Trains.Scenes;
 using Olve.Trains.Scenes.Console;
+using Olve.Trains.Scenes.Game;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
-var options = WindowOptions.Default with
-{
-    Title = "My first Silk.NET program!",
-    Size = new Vector2D<int>(1280, 720),
-    Samples = 8
-};
+namespace Olve.Trains;
 
-var window = Window.Create(options);
-
-var result = RunGame();
-if (result.TryPickProblems(out var problems))
+public static class Program
 {
-    foreach (var problem in problems)
+    private static readonly WindowOptions WindowOptions = WindowOptions.Default with
     {
-        Console.WriteLine(problem.ToDebugString());
+        Title = "My first Silk.NET program!",
+        Size = new Vector2D<int>(1280, 720),
+        Samples = 8
+    };
+
+    private static readonly Scene[] Scenes =
+    [
+        new ConsoleScene(),
+        new GameScene()
+    ];
+
+    private static readonly SceneId[] SceneIds =
+    [
+        GameScene.SceneId,
+        ConsoleScene.SceneId
+    ];
+
+    public static int Main()
+    {
+        var result = RunGame();
+        return LogResult(result);
     }
 
-    return -1;
-}
-
-return 0;
-
-
-Result RunGame()
-{
-    if (GameManager.Initialize(window, [
-            //new ConsoleScene(),
-            new GameScene()
-            ], 
-            GameScene.SceneId
-            //ConsoleScene.SceneId
-            ).TryPickProblems(out var p))
+    private static Result RunGame()
     {
-        return p;
+        var window = Window.Create(WindowOptions);
+
+        var initializationResult = GameManager.Initialize(window, Scenes, SceneIds);
+        if (initializationResult.TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
+        GameManager.LoggingManager = new ConsoleLoggingManager();
+
+        return GameManager.Run();
     }
 
-    GameManager.LoggingManager = new ConsoleLoggingManager();
+    private static int LogResult(Result result)
+    {
+        if (result.TryPickProblems(out var problems))
+        {
+            foreach (var problem in problems)
+            {
+                Console.WriteLine(problem.ToDebugString());
+            }
 
-    return GameManager.Run();
+            return 1;
+        }
+
+        Console.WriteLine("Game exited successfully.");
+        return 0;
+    }
+
 }
