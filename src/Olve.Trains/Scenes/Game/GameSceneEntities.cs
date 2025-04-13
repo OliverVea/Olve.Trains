@@ -1,5 +1,6 @@
 using Olve.CodeGen;
 using Olve.Engine3D.Light;
+using Olve.Engine3D.Math.Splines;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Primitives;
