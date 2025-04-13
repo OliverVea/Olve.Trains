@@ -1,4 +1,4 @@
-namespace Olve.Engine3D.Light;
+namespace Olve.Engine3D.Math.Splines;
 
 public interface IInterpolator<T>
 {

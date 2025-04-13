@@ -1,6 +1,5 @@
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
-using Olve.Engine3D.Rendering.OpenGL.Handles;
 
 namespace Olve.Engine3D.Rendering.EntityManagers;
 

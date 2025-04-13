@@ -1,4 +1,3 @@
-using Olve.Engine3D.Camera;
 using Silk.NET.Input;
 
 namespace Olve.Engine3D.Input;

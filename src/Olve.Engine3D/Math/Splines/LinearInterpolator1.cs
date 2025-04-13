@@ -1,6 +1,4 @@
-using Olve.Engine3D.Math.Splines;
-
-namespace Olve.Engine3D.Light;
+namespace Olve.Engine3D.Math.Splines;
 
 public class LinearInterpolator1(IReadOnlyList<KeyFrame<float>> keyFrames) : LinearInterpolator<float>(keyFrames)
 {

@@ -1,5 +1,3 @@
-using Olve.Engine3D.Light;
-
 namespace Olve.Engine3D.Math.Splines;
 
 public abstract class CatmullRom<T> : IInterpolator<T>
