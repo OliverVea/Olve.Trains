@@ -1,4 +1,6 @@
 using System.Drawing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Camera;
@@ -14,15 +16,13 @@ namespace Olve.Trains.Scenes.Game;
 
 public sealed class GameScene : Scene
 {
-    private readonly SceneLightService _lightService = new();
-    private readonly CameraSceneService _cameraService = new();
-
     private ISceneService[] _services = [];
+    private CameraSceneService _cameraService = null!;
 
     public static readonly SceneId SceneId = new("Game Scene");
     public override SceneId Id => SceneId;
 
-    private HeightmapRaycaster _heightmapRaycaster;
+    private HeightmapRaycaster _heightmapRaycaster = null!;
 
     private RenderingId<MeshData> _meshRenderingId;
     private RenderingId<ShaderData> _shaderRenderingId;
@@ -34,11 +34,32 @@ public sealed class GameScene : Scene
 
     private RenderingInstanceId _cubeInstanceId;
 
-    private Ray3D<float>? _mouseRay = null;
+    private Ray3D<float>? _mouseRay;
 
     public override Result Load()
     {
-        _services = [_lightService, _cameraService];
+        ServiceCollection serviceCollection = new();
+
+        foreach (var service in GameManager.Services)
+        {
+            serviceCollection.Add(service);
+        }
+
+        serviceCollection.AddSingleton<SceneLightService>();
+        serviceCollection.AddSingleton<ISceneService>(sp => sp.GetRequiredService<SceneLightService>());
+
+        serviceCollection.AddSingleton<CameraSceneService>();
+        serviceCollection.AddSingleton<ISceneService>(sp => sp.GetRequiredService<CameraSceneService>());
+
+        serviceCollection.AddSingleton<TrackArrowRenderingService>();
+        serviceCollection.AddSingleton<TrackService>();
+        serviceCollection.AddSingleton<ISceneService>(sp => sp.GetRequiredService<TrackService>());
+
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+
+        _services = serviceProvider.GetServices<ISceneService>().ToArray();
+
+        _cameraService = serviceProvider.GetRequiredService<CameraSceneService>();
 
         var trainMeshResult = AssetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01);
         if (trainMeshResult.TryPickProblems(out var problems, out var trainMesh))

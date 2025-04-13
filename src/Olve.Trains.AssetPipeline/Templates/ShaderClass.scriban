@@ -20,15 +20,10 @@ public static partial class Shaders
     {
         public RenderingId<ShaderData> RenderingId { get; set; }
 
-        public {{ Name}}({{ for x in 0..(Uniforms.size - 1) }}{{Uniforms[x].DataType}} {{Uniforms[x].VariableName}}{{ if x < (Uniforms.size - 1) }},{{ end }}{{ end }})
-        {
-            {{ for x in 0..(Uniforms.size - 1) }}{{Uniforms[x].PropertyName}} = {{Uniforms[x].VariableName}};
-    {{ end }}    }
-    
-        {{ for x in 0..(Uniforms.size - 1) }}public {{Uniforms[x].DataType}} {{Uniforms[x].PropertyName}} { get; set; }
-    {{ end }}
-    
-        public ShaderData ShaderData { get; } = new ShaderData
+        {{ for x in 0..(Uniforms.size - 1) }}public {{Uniforms[x].DataType}} {{Uniforms[x].PropertyName}} { get; set; }{{Uniforms[x].Initializer}}
+{{ end }}
+
+        public ShaderData ShaderData { get; } = new()
         {
             Name = "{{ Name }}",
             VertexPath = "{{ VertexShader.SourcePath }}",

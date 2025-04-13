@@ -22,4 +22,8 @@
       <ProjectReference Include="..\..\src\Olve.Engine3D\Olve.Engine3D.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="bin\Debug\net9.0\hermite.svg" />
+    </ItemGroup>
+
 </Project>

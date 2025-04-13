@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
@@ -59,6 +60,10 @@ public class GameManager(IWindow window, SceneId[] initialSceneIds)
     public static IInputContext Input => Instance._input ?? throw new NotSupportedException("Input has not been initialized");
     public static SceneManager SceneManager => Instance._sceneManager;
 
+    // ServiceProvider
+    private IServiceCollection? _serviceProvider;
+    public static IServiceCollection Services => Instance._serviceProvider ?? throw new NotSupportedException("ServiceProvider has not been initialized");
+
 
     private Result _result = Result.Success();
 
@@ -115,6 +120,8 @@ public class GameManager(IWindow window, SceneId[] initialSceneIds)
 
         (_gl, _input) = contexts;
 
+        SetupDependencyInjection();
+
         if (SetupSceneManager().TryPickProblems(out problems))
         {
             return problems.Prepend("Error while setting up scene manager");
@@ -154,6 +161,26 @@ public class GameManager(IWindow window, SceneId[] initialSceneIds)
             () => KeyboardManager.Initialize(),
             () => MouseManager.Initialize()
         );
+
+    private static void SetupDependencyInjection()
+    {
+        _instance._serviceProvider = new ServiceCollection();
+
+        _instance._serviceProvider.AddSingleton(_instance);
+        _instance._serviceProvider.AddSingleton(_instance._window);
+        _instance._serviceProvider.AddSingleton(_instance._gl);
+        _instance._serviceProvider.AddSingleton(_instance._input);
+        _instance._serviceProvider.AddSingleton(_instance._meshEntityManager);
+        _instance._serviceProvider.AddSingleton(_instance._shaderManager);
+        _instance._serviceProvider.AddSingleton(_instance._textureManager);
+        _instance._serviceProvider.AddSingleton(_instance._heightmapEntityManager);
+        _instance._serviceProvider.AddSingleton(_instance._renderingManager);
+        _instance._serviceProvider.AddSingleton(_instance._keyboardManager);
+        _instance._serviceProvider.AddSingleton(_instance._mouseManager);
+        _instance._serviceProvider.AddSingleton(_instance._dayTimeManager);
+        _instance._serviceProvider.AddSingleton(_instance._daylightManager);
+        _instance._serviceProvider.AddSingleton(_instance._sceneManager);
+    }
 
     private void OnUpdate(double deltaSeconds)
     {
