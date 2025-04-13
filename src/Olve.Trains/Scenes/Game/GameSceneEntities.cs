@@ -5,7 +5,7 @@ using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Primitives;
 using Silk.NET.Maths;
 
-namespace Olve.Trains.Scenes;
+namespace Olve.Trains.Scenes.Game;
 
 public enum Direction
 {

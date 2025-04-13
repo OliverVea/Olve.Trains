@@ -3,7 +3,7 @@ using Olve.Engine3D.Light;
 using Olve.Results;
 using Silk.NET.Maths;
 
-namespace Olve.Trains.Scenes;
+namespace Olve.Trains.Scenes.Game;
 
 public class SceneLightService : ISceneService
 {

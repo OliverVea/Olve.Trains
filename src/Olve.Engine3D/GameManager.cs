@@ -10,13 +10,13 @@ using Silk.NET.Windowing;
 
 namespace Olve.Engine3D;
 
-public class GameManager(IWindow window, IEnumerable<SceneId> initialSceneIds)
+public class GameManager(IWindow window, SceneId[] initialSceneIds)
 {
     private static GameManager? _instance;
     private static GameManager Instance => _instance ?? throw new ManagersNotInitializedException();
 
     private readonly IWindow _window = window;
-    private readonly IEnumerable<SceneId> _initialSceneIds = initialSceneIds;
+    private readonly SceneId[] _initialSceneIds = initialSceneIds;
 
     private readonly SceneManager _sceneManager = new();
 
@@ -62,7 +62,7 @@ public class GameManager(IWindow window, IEnumerable<SceneId> initialSceneIds)
 
     private Result _result = Result.Success();
 
-    public static Result Initialize(IWindow window, Scene[] initialScenes, params IEnumerable<SceneId> initialSceneIds)
+    public static Result Initialize(IWindow window, Scene[] initialScenes, SceneId[] initialSceneIds)
     {
         if (_instance is not null)
         {
