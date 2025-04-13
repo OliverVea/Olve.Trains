@@ -31,4 +31,14 @@ public static class UniformTypeExtensions
             _ => "Unknown"
         };
     }
+
+    public static string GetInitializer(this UniformType uniformType)
+    {
+        return uniformType switch
+        {
+            UniformType.Matrix3 => " = Matrix3X3<float>.Identity;",
+            UniformType.Matrix4 => " = Matrix4X4<float>.Identity;",
+            _ => ""
+        };
+    }
 }

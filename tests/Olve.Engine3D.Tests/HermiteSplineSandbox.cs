@@ -6,9 +6,6 @@ namespace Olve.Engine3D.Tests;
 
 public static class HermiteSplineSandbox
 {
-    private const float C = 2.5f;
-    private const string FileName = "quickstart.svg";
-
     private const float T0 = 0;
     private const float T1 = 1;
     private const float Dt = 0.01f;
@@ -16,10 +13,14 @@ public static class HermiteSplineSandbox
     private const int W = 600;
     private const int H = 600;
 
+    const string FileName = "hermite.svg";
+
     public static void Run1()
     {
-        Hermite2.Knot p0 = new(new Vector2D<float>(0, 0), default, new Vector2D<float>(1, 0) * C);
-        Hermite2.Knot p1 = new(new Vector2D<float>(1, 1), new Vector2D<float>(0, 1) * C, default);
+        const float c = 1.0f;
+
+        Hermite2.Knot p0 = new(new Vector2D<float>(0, 0), default, new Vector2D<float>(1, 0) * c);
+        Hermite2.Knot p1 = new(new Vector2D<float>(1, 1), new Vector2D<float>(0, 1) * c, default);
 
         KeyFrame<Hermite2.Knot>[] keyFrames =
         [
@@ -60,14 +61,6 @@ public static class HermiteSplineSandbox
     public static void RunMultipleCs()
     {
         float[] cValues = [0.5f, 1.0f, 1.5f, 2.0f, 3.0f];
-        string fileName = "multi_c_hermite.svg";
-
-        const float T0 = 0;
-        const float T1 = 1;
-        const float Dt = 0.01f;
-
-        const int W = 600;
-        const int H = 600;
 
         Plot plot = new();
 
@@ -105,7 +98,7 @@ public static class HermiteSplineSandbox
             throw new Exception("Could not get assembly executable path");
         }
 
-        var filePath = path.Parent / fileName;
+        var filePath = path.Parent / FileName;
 
         plot.SaveSvg(filePath.Path, W, H);
 

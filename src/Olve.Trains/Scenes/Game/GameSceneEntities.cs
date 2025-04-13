@@ -21,49 +21,12 @@ public enum Direction
 
 public static class GameSceneEntities
 {
-    public static readonly Shaders.Default DefaultShader = new(
-        default,
-        0,
-        default,
-        default,
-        0,
-        default,
-        default,
-        0,
-        textureSampler: new Texture2D(0, 0, 0),
-        world: Matrix4X4<float>.Identity,
-        view: Matrix4X4<float>.Identity,
-        projection: Matrix4X4<float>.Identity,
-        cameraDirection: Vector3D<float>.Zero
-    );
-
-    public static readonly Shaders.Terrain TerrainShader = new(
-        default,
-        default,
-        default,
-        default,
-        default,
-        default,
-        default,
-        default,
-        heightMap: new Texture2D(0, 0, 0),
-        texelSize: new Vector2D<float>(0, 0),
-        world: Matrix4X4<float>.Identity,
-        view: Matrix4X4<float>.Identity,
-        projection: Matrix4X4<float>.Identity,
-        cameraDirection: Vector3D<float>.Zero);
-
-    public static readonly Shaders.TerrainWireframe TerrainWireframe = new(
-        5f,
-        default,
-        default,
-        Matrix4X4<float>.Identity,
-        Matrix4X4<float>.Identity,
-        Matrix4X4<float>.Identity,
-        default,
-        false,
-        false);
-
+    public static readonly Shaders.Default DefaultShader = new();
+    public static readonly Shaders.Terrain TerrainShader = new();
+    public static readonly Shaders.TerrainWireframe TerrainWireframe = new()
+    {
+        MouseRadius = 5f
+    };
 
     public static readonly TextureData DefaultTexture = new()
     {

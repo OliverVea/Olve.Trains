@@ -187,7 +187,8 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
                 { "UniformType", uniform.Type },
                 { "DataType", uniform.Type.GetDataType() },
                 { "RenderParameterType", uniform.Type.GetRenderParameterType() },
-                { "LayoutLocation", uniform.LayoutLocation }
+                { "LayoutLocation", uniform.LayoutLocation },
+                { "Initializer", uniform.Type.GetInitializer() }
             };
 
             uniformObjects.Add(uniformObject);
