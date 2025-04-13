@@ -1,4 +1,4 @@
-namespace Olve.Engine3D.Math.Splines;
+namespace Olve.Engine3D.Light;
 
 public enum InterpolationType
 {
