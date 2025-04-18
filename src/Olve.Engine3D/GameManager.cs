@@ -11,6 +11,8 @@ using Silk.NET.Windowing;
 
 namespace Olve.Engine3D;
 
+
+
 public class GameManager(IWindow window, SceneId[] initialSceneIds)
 {
     private static GameManager? _instance;
@@ -67,7 +69,7 @@ public class GameManager(IWindow window, SceneId[] initialSceneIds)
 
     private Result _result = Result.Success();
 
-    public static Result Initialize(IWindow window, Scene[] initialScenes, SceneId[] initialSceneIds)
+    public Result Initialize(IWindow window, Scene[] initialScenes, SceneId[] initialSceneIds)
     {
         if (_instance is not null)
         {
@@ -81,7 +83,7 @@ public class GameManager(IWindow window, SceneId[] initialSceneIds)
         return Result.Success();
     }
 
-    public static Result Run()
+    public Result Run()
     {
         if (_instance is null)
         {

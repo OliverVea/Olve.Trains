@@ -1,6 +1,5 @@
 using System.Drawing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Camera;
@@ -14,7 +13,7 @@ using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.Game;
 
-public sealed class GameScene : Scene
+public sealed class GameScene(GameProvider gameProvider) : Scene
 {
     private ISceneService[] _services = [];
     private CameraSceneService _cameraService = null!;
@@ -38,28 +37,10 @@ public sealed class GameScene : Scene
 
     public override Result Load()
     {
-        ServiceCollection serviceCollection = new();
-
-        foreach (var service in GameManager.Services)
-        {
-            serviceCollection.Add(service);
-        }
-
-        serviceCollection.AddSingleton<SceneLightService>();
-        serviceCollection.AddSingleton<ISceneService>(sp => sp.GetRequiredService<SceneLightService>());
-
-        serviceCollection.AddSingleton<CameraSceneService>();
-        serviceCollection.AddSingleton<ISceneService>(sp => sp.GetRequiredService<CameraSceneService>());
-
-        serviceCollection.AddSingleton<TrackArrowRenderingService>();
-        serviceCollection.AddSingleton<TrackService>();
-        serviceCollection.AddSingleton<ISceneService>(sp => sp.GetRequiredService<TrackService>());
-
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-
-        _services = serviceProvider.GetServices<ISceneService>().ToArray();
-
-        _cameraService = serviceProvider.GetRequiredService<CameraSceneService>();
+        GameSceneProvider gameSceneProvider = new(gameProvider);
+        
+        _cameraService = gameSceneProvider.GetRequiredService<CameraSceneService>();
+        _services = gameSceneProvider.GetServices<ISceneService>().ToArray();
 
         var trainMeshResult = AssetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01);
         if (trainMeshResult.TryPickProblems(out var problems, out var trainMesh))

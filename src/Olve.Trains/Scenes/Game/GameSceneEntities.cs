@@ -8,17 +8,6 @@ using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game;
 
-public enum Direction
-{
-    None,
-    North,
-    South,
-    East,
-    West,
-    Up,
-    Down
-}
-
 public static class GameSceneEntities
 {
     public static readonly Shaders.Default DefaultShader = new();
