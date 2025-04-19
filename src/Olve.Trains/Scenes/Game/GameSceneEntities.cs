@@ -11,11 +11,6 @@ namespace Olve.Trains.Scenes.Game;
 public static class GameSceneEntities
 {
     public static readonly Shaders.Default DefaultShader = new();
-    public static readonly Shaders.Terrain TerrainShader = new();
-    public static readonly Shaders.TerrainWireframe TerrainWireframe = new()
-    {
-        MouseRadius = 5f
-    };
 
     public static readonly TextureData DefaultTexture = new()
     {

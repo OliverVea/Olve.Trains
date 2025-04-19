@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Olve.Trains (Full)" type="DotNetProject" factoryName=".NET Project">
+  <configuration default="false" name="Olve.Trains (Slim)" type="DotNetProject" factoryName=".NET Project">
     <option name="EXE_PATH" value="$PROJECT_DIR$/src/Olve.Trains/bin/Debug/net9.0/Olve.Trains" />
     <option name="PROGRAM_PARAMETERS" value="" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/Olve.Trains/bin/Debug/net9.0" />
@@ -20,7 +20,6 @@
     <option name="PROJECT_TFM" value="net9.0" />
     <method v="2">
       <option name="CleanSolution" enabled="true" />
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Asset Pipeline" run_configuration_type="docker-deploy" />
       <option name="Build" />
     </method>
   </configuration>

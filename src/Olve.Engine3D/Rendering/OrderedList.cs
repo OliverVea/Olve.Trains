@@ -14,6 +14,12 @@ public class OrderedList<T> where T : IComparable<T>
 
         return index;
     }
+    
+    public T this[int index]
+    {
+        get => _list[index];
+        set => _list[index] = value;
+    }
 
     public void Insert(T item)
     {
