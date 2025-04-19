@@ -1,26 +1,24 @@
-using System.Drawing;
-using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Camera;
+using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Silk.NET.Maths;
-using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.Game;
-
-public sealed class GameScene(GameProvider gameProvider) : Scene
+public sealed class CoreGameService(CameraSceneService cameraSceneService,
+    MeshEntityManager meshEntityManager,
+    ShaderEntityManager shaderEntityManager,
+    TextureEntityManager textureEntityManager,
+    HeightmapEntityManager heightmapEntityManager,
+    RenderingManager renderingManager,
+    MouseManager mouseManager) : SceneService
 {
-    private ISceneService[] _services = [];
-    private CameraSceneService _cameraService = null!;
-
-    public static readonly SceneId SceneId = new("Game Scene");
-    public override SceneId Id => SceneId;
-
     private HeightmapRaycaster _heightmapRaycaster = null!;
 
     private RenderingId<MeshData> _meshRenderingId;
@@ -31,17 +29,10 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
     private RenderingId<ShaderData> _terrainShaderRenderingId;
     private RenderingId<ShaderData> _wireframeTerrainShaderId;
 
-    private RenderingInstanceId _cubeInstanceId;
-
     private Ray3D<float>? _mouseRay;
 
     public override Result Load()
     {
-        GameSceneProvider gameSceneProvider = new(gameProvider);
-        
-        _cameraService = gameSceneProvider.GetRequiredService<CameraSceneService>();
-        _services = gameSceneProvider.GetServices<ISceneService>().ToArray();
-
         var trainMeshResult = AssetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01);
         if (trainMeshResult.TryPickProblems(out var problems, out var trainMesh))
         {
@@ -62,7 +53,7 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
 
         _heightmapRaycaster = new HeightmapRaycaster(terrain.Heightmap);
 
-        _meshRenderingId = GameManager.MeshEntityManager.Register(trainMesh).Value;
+        _meshRenderingId = meshEntityManager.Register(trainMesh).Value;
 
         if (RegisterEntities(trainMesh, trainTexture, GameSceneEntities.DefaultShader.ShaderData).TryPickProblems(out problems, out var renderingEntityIds))
         {
@@ -74,7 +65,7 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
             return problems;
         }
 
-        if (GameManager.ShaderEntityManager.Register(GameSceneEntities.TerrainWireframe.ShaderData).TryPickProblems(out problems, out var wireframeTerrainShaderId))
+        if (shaderEntityManager.Register(GameSceneEntities.TerrainWireframe.ShaderData).TryPickProblems(out problems, out var wireframeTerrainShaderId))
         {
             return problems;
         }
@@ -93,12 +84,12 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
         GameSceneEntities.TerrainWireframe.TexelSize = textureSize;
 
 
-        if (GameManager.TextureEntityManager.GetRegistration(_textureRenderingId).TryPickProblems(out problems, out var textureData))
+        if (textureEntityManager.GetRegistration(_textureRenderingId).TryPickProblems(out problems, out var textureData))
         {
             return problems;
         }
 
-        if (GameManager.HeightmapEntityManager.GetRegistration(_terrainRenderingId).TryPickProblems(out problems, out var terrainRegistration))
+        if (heightmapEntityManager.GetRegistration(_terrainRenderingId).TryPickProblems(out problems, out var terrainRegistration))
         {
             return problems;
         }
@@ -107,7 +98,7 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
         GameSceneEntities.TerrainShader.HeightMap = terrainRegistration.Texture;
         GameSceneEntities.TerrainWireframe.HeightMap = terrainRegistration.Texture;
 
-        if (RegisterCubeInstance().TryPickProblems(out problems, out _cubeInstanceId))
+        if (RegisterCubeInstance().TryPickProblems(out problems, out _))
         {
             return problems;
         }
@@ -118,15 +109,6 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
         }
         
         // MSAA
-        GameManager.GL.Enable(EnableCap.Multisample);
-        GameManager.GL.Disable(EnableCap.CullFace);
-        GameManager.GL.Enable(EnableCap.DepthTest);
-
-        var loadServicesResult = _services.Select(x => x.Load());
-        if (loadServicesResult.TryPickProblems(out problems))
-        {
-            return problems;
-        }
 
         return Result.Success();
     }
@@ -134,31 +116,31 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
     private Result<(RenderingId<MeshData>, RenderingId<TextureData>, RenderingId<ShaderData>)> RegisterEntities(MeshData meshData, TextureData textureData, ShaderData shaderData)
     {
         return Result.Concat(
-            () => GameManager.MeshEntityManager.Register(meshData),
-            () => GameManager.TextureEntityManager.Register(textureData),
-            () => GameManager.ShaderEntityManager.Register(shaderData));
+            () => meshEntityManager.Register(meshData),
+            () => textureEntityManager.Register(textureData),
+            () => shaderEntityManager.Register(shaderData));
     }
 
     private Result<(RenderingId<HeightmapData>, RenderingId<ShaderData>)> RegisterTerrainEntities(HeightmapData heightmapData, ShaderData shaderData)
     {
         return Result.Concat(
-            () => GameManager.HeightmapEntityManager.Register(heightmapData),
-            () => GameManager.ShaderEntityManager.Register(shaderData));
+            () => heightmapEntityManager.Register(heightmapData),
+            () => shaderEntityManager.Register(shaderData));
     }
 
     private Result<RenderingInstanceId> RegisterCubeInstance()
     {
         var transform = Matrix4X4<float>.Identity;
 
-        return GameManager.RenderingManager.RegisterInstance(_meshRenderingId, _shaderRenderingId, transform);
+        return renderingManager.RegisterInstance(_meshRenderingId, _shaderRenderingId, transform);
     }
 
     private Result RegisterTerrainInstance()
     {
         var transform = Matrix4X4<float>.Identity;
 
-        var terrainResult = GameManager.RenderingManager.RegisterInstance(_terrainRenderingId, _terrainShaderRenderingId, transform);
-        var wireframeResult = GameManager.RenderingManager.RegisterInstance(_terrainRenderingId, _wireframeTerrainShaderId, transform);
+        var terrainResult = renderingManager.RegisterInstance(_terrainRenderingId, _terrainShaderRenderingId, transform);
+        var wireframeResult = renderingManager.RegisterInstance(_terrainRenderingId, _wireframeTerrainShaderId, transform);
 
         if (terrainResult.TryPickProblems(out var problems)
             || wireframeResult.TryPickProblems(out problems))
@@ -169,33 +151,19 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
         return Result.Success();
     }
 
-    public override Result<Pass> Input()
+    public override Result<Pass> Input(TimeSpan deltaTime)
     {
-        var mouseCoordinates = GameManager.MouseManager.State.NormalizedPosition;
+        var mouseCoordinates = mouseManager.State.NormalizedPosition;
 
         if (mouseCoordinates.X is >= -1 and <= 1
             && mouseCoordinates.Y is >= -1 and <= 1
-            && _cameraService.Camera.GetRay(mouseCoordinates).TryPickValue(out var mouseRay))
+            && cameraSceneService.Camera.GetRay(mouseCoordinates).TryPickValue(out var mouseRay))
         {
             _mouseRay = mouseRay;
         }
         else
         {
             _mouseRay = null;
-        }
-
-        foreach (var service in _services)
-        {
-            var inputResult = service.Input();
-            if (inputResult.TryPickProblems(out var problems, out var passInput))
-            {
-                return problems;
-            }
-
-            if (passInput == Pass.Block)
-            {
-                return Pass.Block;
-            }
         }
 
         return Pass.Pass;
@@ -213,11 +181,8 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
 
         _t += dt;
 
-
-
         if (_mouseRay.HasValue && _heightmapRaycaster.TryRaycast(_mouseRay.Value, out var hit))
         {
-            //GameManager.RenderingManager.SetInstanceWorld(_cubeInstanceId, Matrix4X4.CreateTranslation(hit.Value));
             GameSceneEntities.TerrainWireframe.MousePosition = hit.Value;
         }
 
@@ -226,22 +191,14 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
             _lastTps = _t;
         }
 
-        var updateServicesResult = _services.Select(x => x.Update(deltaTime));
-        if (updateServicesResult.TryPickProblems(out var problems))
-        {
-            return problems;
-        }
-
         return Result.Success();
     }
 
     public override Result Render(TimeSpan deltaTime)
     {
-        GameManager.GL.ClearColor(Color.CornflowerBlue);
-        GameManager.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        var viewMatrix = _cameraService.Camera.GetViewMatrix();
-        var projectionMatrix = _cameraService.Camera.GetProjectionMatrix();
+        var viewMatrix = cameraSceneService.Camera.GetViewMatrix();
+        var projectionMatrix = cameraSceneService.Camera.GetProjectionMatrix();
 
         GameSceneEntities.DefaultShader.View = viewMatrix;
         GameSceneEntities.DefaultShader.Projection = projectionMatrix;
@@ -258,9 +215,9 @@ public sealed class GameScene(GameProvider gameProvider) : Scene
         GameSceneEntities.DefaultShader.CameraDirection = cameraViewDirection;
         GameSceneEntities.TerrainShader.CameraDirection = cameraViewDirection;
 
-        var defaultShaderResult = GameManager.RenderingManager.Render(GameSceneEntities.DefaultShader).IfProblem(p => p.Prepend("Failed rendering game objects"));
-        var terrainShaderResult = GameManager.RenderingManager.Render(GameSceneEntities.TerrainShader).IfProblem(p => p.Prepend("Failed rendering terrain"));
-        var wireframeShaderResult = GameManager.RenderingManager.Render(GameSceneEntities.TerrainWireframe).IfProblem(p => p.Prepend("Failed rendering terrain wireframe"));
+        var defaultShaderResult = renderingManager.Render(GameSceneEntities.DefaultShader).IfProblem(p => p.Prepend("Failed rendering game objects"));
+        var terrainShaderResult = renderingManager.Render(GameSceneEntities.TerrainShader).IfProblem(p => p.Prepend("Failed rendering terrain"));
+        var wireframeShaderResult = renderingManager.Render(GameSceneEntities.TerrainWireframe).IfProblem(p => p.Prepend("Failed rendering terrain wireframe"));
 
         if (defaultShaderResult.TryPickProblems(out var problems)
             || terrainShaderResult.TryPickProblems(out problems)

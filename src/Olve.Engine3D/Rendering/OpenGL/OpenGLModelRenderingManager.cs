@@ -5,13 +5,13 @@ using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
-public static class OpenGLModelRenderingManager
+public class OpenGLModelRenderingManager(Provider<GL> glProvider)
 {
-    public static Result LoadShaderInOpenGL(ShaderProgram shaderProgram, RenderingParameters parameters)
+    public Result LoadShaderInOpenGL(ShaderProgram shaderProgram, RenderingParameters parameters)
     {
-        GameManager.GL.UseProgram(shaderProgram.Handle);
+        glProvider.Value.UseProgram(shaderProgram.Handle);
 
-        var results = parameters.Parameters.Select(parameter => parameter.SetUniforms(shaderProgram));
+        var results = parameters.Parameters.Select(parameter => parameter.SetUniforms(glProvider.Value, shaderProgram));
 
         if (results.TryPickProblems(out var problems))
         {
@@ -24,21 +24,21 @@ public static class OpenGLModelRenderingManager
         return Result.Success();
     }
 
-    public static Result LoadModelInOpenGL(VAO vao, VBO vbo, EBO ebo)
+    public Result LoadModelInOpenGL(VAO vao, VBO vbo, EBO ebo)
     {
-        GameManager.GL.BindVertexArray(vao.Handle);
-        GameManager.GL.BindBuffer(BufferTargetARB.ArrayBuffer, vbo.Handle);
-        GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo.Handle);
+        glProvider.Value.BindVertexArray(vao.Handle);
+        glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, vbo.Handle);
+        glProvider.Value.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo.Handle);
 
         return Result.Success();
     }
 
-    public static Result RenderModel(int worldLocation, int? normalMatrixLocation, Matrix4X4<float> world, uint indexCount)
+    public Result RenderModel(int worldLocation, int? normalMatrixLocation, Matrix4X4<float> world, uint indexCount)
     {
         Span<float> worldBuffer = stackalloc float[16];
         world.CopyTo(worldBuffer);
 
-        GameManager.GL.UniformMatrix4(worldLocation, 1, false, worldBuffer);
+        glProvider.Value.UniformMatrix4(worldLocation, 1, false, worldBuffer);
 
         if (normalMatrixLocation.HasValue)
         {
@@ -48,15 +48,15 @@ public static class OpenGLModelRenderingManager
 
             normalMatrix.CopyTo(normalMatrixBuffer);
 
-            GameManager.GL.UniformMatrix3(normalMatrixLocation.Value, 1, true, normalMatrixBuffer);
+            glProvider.Value.UniformMatrix3(normalMatrixLocation.Value, 1, true, normalMatrixBuffer);
         }
 
         return RenderModel(indexCount);
     }
 
-    public static Result RenderModel(uint indexCount)
+    public Result RenderModel(uint indexCount)
     {
-        GameManager.GL.DrawElements(PrimitiveType.Triangles, indexCount, DrawElementsType.UnsignedInt, in Unsafe.NullRef<int>());
+        glProvider.Value.DrawElements(PrimitiveType.Triangles, indexCount, DrawElementsType.UnsignedInt, in Unsafe.NullRef<int>());
 
         return Result.Success();
     }

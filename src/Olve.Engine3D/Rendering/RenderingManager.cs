@@ -1,4 +1,5 @@
 using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Shaders;
@@ -6,7 +7,12 @@ using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering;
 
-public class RenderingManager
+public class RenderingManager(
+    Provider<GL> glProvider,
+    OpenGLModelRenderingManager openGLModelRenderingManager,
+    MeshEntityManager meshEntityManager,
+    HeightmapEntityManager heightmapEntityManager,
+    ShaderEntityManager shaderEntityManager)
 {
     private readonly ThreadSafeUintGenerator _instanceUintGenerator = new();
     private RenderingInstanceId NextInstanceId() => new(_instanceUintGenerator.Next());
@@ -54,12 +60,12 @@ public class RenderingManager
         RenderingId<ShaderData> shaderId,
         Matrix4X4<float> worldMatrix)
     {
-        if (GameManager.MeshEntityManager.GetRegistration(meshId).TryPickProblems(out var problems, out var meshData))
+        if (meshEntityManager.GetRegistration(meshId).TryPickProblems(out var problems, out var meshData))
         {
             return problems.Prepend("Failed to get mesh data");
         }
 
-        if (GameManager.ShaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
+        if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
         {
             return problems.Prepend("Failed to get shader data");
         }
@@ -77,12 +83,12 @@ public class RenderingManager
         RenderingId<ShaderData> shaderId,
         Matrix4X4<float> worldMatrix)
     {
-        if (GameManager.HeightmapEntityManager.GetRegistration(terrainId).TryPickProblems(out var problems, out var terrainRegistration))
+        if (heightmapEntityManager.GetRegistration(terrainId).TryPickProblems(out var problems, out var terrainRegistration))
         {
             return problems.Prepend("Failed to get mesh data");
         }
 
-        if (GameManager.ShaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
+        if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
         {
             return problems.Prepend("Failed to get shader data");
         }
@@ -152,7 +158,7 @@ public class RenderingManager
 
         var instanceRange = Instances.GetRange(startIndex, endIndex - startIndex);
 
-        if (GameManager.ShaderEntityManager.GetRegistration(shader.RenderingId)
+        if (shaderEntityManager.GetRegistration(shader.RenderingId)
             .TryPickProblems(out var problems, out var shaderRegistration))
         {
             return problems.Prepend("Failed to get shader registration for shader '{0}' ('{1}').", shader.ShaderData.Name, shader.RenderingId);
@@ -160,7 +166,7 @@ public class RenderingManager
 
         var parameters = shader.MakeParameters();
 
-        if (OpenGLModelRenderingManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
+        if (openGLModelRenderingManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
             .TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to load shader '{0}' into OpenGL", shader.ShaderData.Name);
@@ -174,13 +180,13 @@ public class RenderingManager
         return Result.Success();
     }
 
-    private static Result RenderInstances(IEnumerable<Instance> instanceRange, OpenGLShaderManager.Registration shaderRegistration)
+    private Result RenderInstances(IEnumerable<Instance> instanceRange, OpenGLShaderManager.Registration shaderRegistration)
     {
         try
         {
             foreach (var instance in instanceRange)
             {
-                if (OpenGLModelRenderingManager.LoadModelInOpenGL(
+                if (openGLModelRenderingManager.LoadModelInOpenGL(
                         instance.VAO,
                         instance.VBO,
                         instance.EBO).TryPickProblems(out var problems))
@@ -190,7 +196,7 @@ public class RenderingManager
 
                 if (shaderRegistration.WorldPositionLocation is { } worldPositionLocation)
                 {
-                    if (OpenGLModelRenderingManager.RenderModel(
+                    if (openGLModelRenderingManager.RenderModel(
                             worldPositionLocation,
                             shaderRegistration.NormalMatrixLocation,
                             instance.Transform,
@@ -201,7 +207,7 @@ public class RenderingManager
                 }
                 else
                 {
-                    if (OpenGLModelRenderingManager.RenderModel(instance.EBO.IndexCount).TryPickProblems(out problems))
+                    if (openGLModelRenderingManager.RenderModel(instance.EBO.IndexCount).TryPickProblems(out problems))
                     {
                         return problems.Prepend("Failed to render model instance with OpenGL");
                     }
@@ -213,70 +219,12 @@ public class RenderingManager
             return new ResultProblem(e, "Failed to render entity instances");
         }
 
-        var error = GameManager.GL.GetError();
+        var error = glProvider.Value.GetError();
         if (error != GLEnum.NoError)
         {
             return new ResultProblem("OpenGL error: {0}", error);
         }
 
         return Result.Success();
-    }
-}
-
-public class OrderedList<T> where T : IComparable<T>
-{
-    private readonly List<T> _list = new();
-
-    public int GetIndex(T item)
-    {
-        var index = _list.BinarySearch(item);
-        if (index < 0)
-        {
-            index = ~index;
-        }
-
-        return index;
-    }
-
-    public void Insert(T item)
-    {
-        var index = GetIndex(item);
-        if (index >= _list.Count)
-        {
-            _list.Add(item);
-            return;
-        }
-
-        var current = _list[index];
-        if (current.CompareTo(item) == 0)
-        {
-            _list[index] = item;
-        }
-
-        _list.Insert(index, item);
-    }
-
-    public void Remove(T item)
-    {
-        _list.RemoveAt(GetIndex(item));
-    }
-
-    public void Replace(T item)
-    {
-        var index = GetIndex(item);
-        _list[index] = item;
-    }
-
-    public T? FirstOrDefault(Func<T, bool> match)
-    {
-        return _list.FirstOrDefault(match);
-    }
-
-    public IEnumerable<T> GetRange(int startIndex, int count)
-    {
-        for (var i = startIndex; i < startIndex + count; i++)
-        {
-            yield return _list[i];
-        }
     }
 }

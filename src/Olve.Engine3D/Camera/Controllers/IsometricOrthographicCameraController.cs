@@ -48,6 +48,7 @@ public class IsometricOrthographicCameraController(ControllerCamera camera) : Ca
     }
 
     public static IsometricOrthographicCameraController Create(
+        Vector2D<float> windowSize,
         Vector3D<float> target,
         Vector3D<float> viewDirection,
         float orthographicSize = 10f)
@@ -66,7 +67,7 @@ public class IsometricOrthographicCameraController(ControllerCamera camera) : Ca
 
         IsometricView view = new() { Position = cameraPosition, Rotation = worldRotation };
 
-        var aspectRatio = GameManager.Window.Size.X / (float)GameManager.Window.Size.Y;
+        var aspectRatio = windowSize.X / windowSize.Y;
         const float nearPlane = 0.01f;
         const float farPlane = 10000f;
 

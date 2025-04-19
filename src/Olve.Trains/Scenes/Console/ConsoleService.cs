@@ -1,8 +1,7 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
-using Olve.Engine3D;
 using Olve.Engine3D.Input;
+using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
@@ -12,14 +11,7 @@ using Spectre.Console.Rendering;
 
 namespace Olve.Trains.Scenes.Console;
 
-public readonly record struct UIDayTime(int Hour, int Minute)
-{
-    public override string ToString() => $"{Hour:D2}:{Minute:D2}";
-}
-
-public readonly record struct UIState(UIDayTime DayTime, IReadOnlyList<string> Console, string? ConsoleCommand = null);
-
-public class ConsoleService(ConsoleCommandService consoleCommandService) : ISceneService
+public class ConsoleService(ConsoleCommandService consoleCommandService, ILoggingManager loggingManager, KeyboardManager keyboardManager, DayTimeManager dayTimeManager) : SceneService
 {
     private Thread? _consoleThread;
     private bool _running;
@@ -30,7 +22,7 @@ public class ConsoleService(ConsoleCommandService consoleCommandService) : IScen
 
     private readonly string[] _consoleMessages = new string[3];
 
-    public Result Load()
+    public override Result Load()
     {
         if (_consoleThread is not null || _running)
         {
@@ -55,7 +47,7 @@ public class ConsoleService(ConsoleCommandService consoleCommandService) : IScen
 
         Array.Fill(_consoleMessages, string.Empty);
 
-        GameManager.LoggingManager.OnLog += OnLog;
+        loggingManager.OnLog += OnLog;
 
         return Result.Success();
     }
@@ -76,9 +68,9 @@ public class ConsoleService(ConsoleCommandService consoleCommandService) : IScen
         _consoleMessages[2] = message;
     }
 
-    public Result<Pass> Input()
+    public override Result<Pass> Input(TimeSpan deltaTime)
     {
-        var keyboardState = GameManager.KeyboardManager.State;
+        var keyboardState = keyboardManager.State;
 
         var shift = keyboardState.IsKeyDown(Key.ShiftLeft) || keyboardState.IsKeyDown(Key.ShiftRight);
         
@@ -95,7 +87,7 @@ public class ConsoleService(ConsoleCommandService consoleCommandService) : IScen
                 var result = consoleCommandService.Execute(_consoleBuffer.ToString());
                 if (result.TryPickProblems(out var problems))
                 {
-                    GameManager.LoggingManager.Log(problems);
+                    loggingManager.Log(problems);
                 }
 
                 _consoleActive = false;
@@ -135,7 +127,7 @@ public class ConsoleService(ConsoleCommandService consoleCommandService) : IScen
         return _consoleActive ? Pass.Block : Pass.Pass;
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public override Result Update(TimeSpan deltaTime)
     {
         if (_consoleThread is null || !_consoleThread.IsAlive)
         {
@@ -144,22 +136,24 @@ public class ConsoleService(ConsoleCommandService consoleCommandService) : IScen
         }
 
         _state = new UIState(new UIDayTime(
-            GameManager.DayTimeManager.CurrentTime.Hours,
-            GameManager.DayTimeManager.CurrentTime.Minutes),
+            dayTimeManager.CurrentTime.Hours,
+            dayTimeManager.CurrentTime.Minutes),
             _consoleMessages,
             _consoleActive ? _consoleBuffer.ToString() : null);
 
         return Result.Success();
     }
 
-    public Result Unload()
+    public override Result Unload()
     {
         _running = false;
 
-        GameManager.LoggingManager.OnLog -= OnLog;
+        loggingManager.OnLog -= OnLog;
 
         return Result.Success();
     }
+    
+    public override Result Render(TimeSpan deltaTime) => Result.Success();
 
     private static void Render(LiveDisplayContext context, Layout layout, in bool running, in UIState state)
     {
@@ -259,37 +253,5 @@ public class ConsoleService(ConsoleCommandService consoleCommandService) : IScen
 
             previousState = state;
         }
-    }
-}
-
-public static class EnumerableExtensions
-{
-    public static bool CollectionEquals<T>(this IReadOnlyList<T>? first, IReadOnlyList<T>? second)
-        where T : notnull
-    {
-        if (first is null && second is null)
-        {
-            return true;
-        }
-
-        if (first is null || second is null)
-        {
-            return false;
-        }
-
-        if (first.Count != second.Count)
-        {
-            return false;
-        }
-
-        for (var i = 0; i < first.Count; i++)
-        {
-            if (!first[i].Equals(second[i]))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 }

@@ -4,7 +4,7 @@ using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
-public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGLHeightmapManager.Registration>
+public class OpenGLHeightmapManager(Provider<GL> glProvider) : IOpenGLEntityManager<HeightmapData, OpenGLHeightmapManager.Registration>
 {
     private const int PositionFields = 2;
     private const int VertexFields = PositionFields;
@@ -32,18 +32,18 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
         return new Registration(vao, vbo, ebo, texture2D);
     }
 
-    private static VAO BindVAO()
+    private VAO BindVAO()
     {
-        var vao = GameManager.GL.CreateVertexArray();
-        GameManager.GL.BindVertexArray(vao);
+        var vao = glProvider.Value.CreateVertexArray();
+        glProvider.Value.BindVertexArray(vao);
 
         return new VAO(vao);
     }
 
-    private static VBO BindVBO(HeightmapData heightmapData)
+    private VBO BindVBO(HeightmapData heightmapData)
     {
-        var vbo = GameManager.GL.CreateBuffer();
-        GameManager.GL.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
+        var vbo = glProvider.Value.CreateBuffer();
+        glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
 
         /*  Each pixel in the heightmap is a tile - ie. fence post problem
             +---+---+---+
@@ -64,17 +64,17 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
                 vertices[i * VertexFields + 1] = z;
             }
 
-            GameManager.GL.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices,
+            glProvider.Value.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices,
                 BufferUsageARB.StaticDraw);
         });
 
         return new VBO(vbo, (uint)vertexCount);
     }
 
-    private static EBO BindEBO(HeightmapData heightmapData)
+    private EBO BindEBO(HeightmapData heightmapData)
     {
-        var ebo = GameManager.GL.CreateBuffer();
-        GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
+        var ebo = glProvider.Value.CreateBuffer();
+        glProvider.Value.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
 
         var indexCount = heightmapData.Width * heightmapData.Length * 6;
 
@@ -108,26 +108,26 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
                 }
             }
 
-            GameManager.GL.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices,
+            glProvider.Value.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices,
                 BufferUsageARB.StaticDraw);
         });
 
         return new EBO(ebo, (uint)indexCount);
     }
 
-    private static Texture2D BindTexture(HeightmapData heightmapData)
+    private Texture2D BindTexture(HeightmapData heightmapData)
     {
         var textureLength = heightmapData.Heights.Length;
 
-        var texture = GameManager.GL.GenTexture();
-        GameManager.GL.ActiveTexture(TextureUnit.Texture0);
-        GameManager.GL.BindTexture(TextureTarget.Texture2D, texture);
+        var texture = glProvider.Value.GenTexture();
+        glProvider.Value.ActiveTexture(TextureUnit.Texture0);
+        glProvider.Value.BindTexture(TextureTarget.Texture2D, texture);
 
-        GameManager.GL.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMinFilter, (int)GLEnum.Nearest);
-        GameManager.GL.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMagFilter, (int)GLEnum.Nearest);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMinFilter, (int)GLEnum.Nearest);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMagFilter, (int)GLEnum.Nearest);
 
-        GameManager.GL.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, (int)GLEnum.ClampToEdge);
-        GameManager.GL.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, (int)GLEnum.ClampToEdge);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, (int)GLEnum.ClampToEdge);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, (int)GLEnum.ClampToEdge);
 
         BufferHelper.UsingSpan<float>(textureLength, pixelData =>
         {
@@ -136,35 +136,35 @@ public class OpenGLHeightmapManager : IOpenGLEntityManager<HeightmapData, OpenGL
                 pixelData[i] = heightmapData.Heights[i] * heightmapData.Step;
             }
 
-            GameManager.GL.TexImage2D(TextureTarget.Texture2D, 0, (int)InternalFormat.R32f, (uint)heightmapData.Width,
+            glProvider.Value.TexImage2D(TextureTarget.Texture2D, 0, (int)InternalFormat.R32f, (uint)heightmapData.Width,
                 (uint)heightmapData.Length, 0, PixelFormat.Red, PixelType.Float, (ReadOnlySpan<float>)pixelData);
         });
 
-        GameManager.GL.BindTexture(TextureTarget.Texture2D, 0);
+        glProvider.Value.BindTexture(TextureTarget.Texture2D, 0);
 
         return new Texture2D(texture, (uint)heightmapData.Width, (uint)heightmapData.Length);
     }
 
-    private static void SetVertexAttributes()
+    private void SetVertexAttributes()
     {
-        GameManager.GL.VertexAttribPointer(0, PositionFields, VertexAttribPointerType.Float, false, VertexSize,
+        glProvider.Value.VertexAttribPointer(0, PositionFields, VertexAttribPointerType.Float, false, VertexSize,
             IntPtr.Zero);
-        GameManager.GL.EnableVertexAttribArray(0);
+        glProvider.Value.EnableVertexAttribArray(0);
     }
 
-    private static void Cleanup()
+    private void Cleanup()
     {
-        GameManager.GL.BindVertexArray(0); // Unbind VAO
-        GameManager.GL.BindBuffer(BufferTargetARB.ArrayBuffer, 0); // Unbind VBO
-        GameManager.GL.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0); // Unbind EBO
+        glProvider.Value.BindVertexArray(0); // Unbind VAO
+        glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, 0); // Unbind VBO
+        glProvider.Value.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0); // Unbind EBO
     }
 
     public Result Unregister(Registration registration)
     {
-        GameManager.GL.DeleteVertexArray(registration.VAO.Handle);
-        GameManager.GL.DeleteBuffer(registration.VBO.Handle);
-        GameManager.GL.DeleteBuffer(registration.EBO.Handle);
-        GameManager.GL.DeleteTexture(registration.Texture2D.Handle);
+        glProvider.Value.DeleteVertexArray(registration.VAO.Handle);
+        glProvider.Value.DeleteBuffer(registration.VBO.Handle);
+        glProvider.Value.DeleteBuffer(registration.EBO.Handle);
+        glProvider.Value.DeleteTexture(registration.Texture2D.Handle);
 
         return Result.Success();
     }

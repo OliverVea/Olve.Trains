@@ -1,43 +1,33 @@
-using Olve.Engine3D;
+using Jab;
+using Microsoft.Extensions.DependencyInjection;
+using Olve.Engine3D.Input;
+using Olve.Engine3D.Light;
+using Olve.Engine3D.Logging;
 using Olve.Engine3D.Scenes;
-using Olve.Results;
 
 namespace Olve.Trains.Scenes.Console;
 
-public class ConsoleScene : Scene
+[ServiceProvider(RootServices =  [typeof(SceneService)])]
+[Singleton(typeof(ConsoleService))]
+[Singleton(typeof(SceneService), Factory = nameof(GetConsoleService))]
+[Singleton(typeof(ConsoleCommandService))]
+[Singleton(typeof(ILoggingManager), Factory = nameof(GetLoggingManager))]
+[Singleton(typeof(DayTimeManager), Factory = nameof(GetDayTimeManager))]
+[Singleton(typeof(KeyboardManager), Factory = nameof(GetKeyboardManager))]
+[Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
+public partial class ConsoleSceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
-    public static readonly SceneId SceneId = new("Console");
-    public override SceneId Id => SceneId;
-    public override SceneLayer Layer => SceneLayer.Foreground;
-
-    private ConsoleService _consoleService = null!;
-    private ConsoleCommandService _consoleCommandService = null!;
-
-    public override Result Load()
-    {
-        _consoleCommandService = new ConsoleCommandService();
-        _consoleService = new ConsoleService(_consoleCommandService);
-        return _consoleService.Load();
-    }
-
-    public override Result<Pass> Input()
-    {
-        var result = _consoleService.Input();
-        if (result.TryPickProblems(out var problems, out var pass))
-        {
-            return problems;
-        }
-
-        return pass;
-    }
-
-    public override Result Update(TimeSpan deltaTime)
-    {
-        return _consoleService.Update(deltaTime);
-    }
-
-    public override void Unload()
-    {
-        _consoleService.Unload();
-    }
+    private static ConsoleService GetConsoleService(IServiceProvider serviceProvider) =>
+        serviceProvider.GetRequiredService<ConsoleService>();
+    
+    
+    private ILoggingManager GetLoggingManager() => gameProvider.GetService<ILoggingManager>();
+    private DayTimeManager GetDayTimeManager() => gameProvider.GetService<DayTimeManager>();
+    private KeyboardManager GetKeyboardManager() => gameProvider.GetService<KeyboardManager>();
+    public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
+    
+    private IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>
+    [
+        provider.GetRequiredService<ConsoleService>(),
+    ];
 }

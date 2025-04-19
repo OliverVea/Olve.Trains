@@ -1,28 +1,28 @@
-using Olve.Engine3D;
 using Olve.Engine3D.Light;
+using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game;
 
-public class SceneLightService : ISceneService
+public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager daylightManager) : SceneService
 {
     private static readonly DayTime DayStart = new(5, 30);
     private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(6);
     
     private DaylightId _sunId, _moonId;
 
-    public Result Load()
+    public override Result Load()
     {
-        GameManager.DayTimeManager.CurrentTime = DayStart;
-        GameManager.DayTimeManager.DayLength = DayDuration;
+        dayTimeManager.CurrentTime = DayStart;
+        dayTimeManager.DayLength = DayDuration;
 
-        if (GameManager.DaylightManager.AddLight(GameSceneEntities.SunData).TryPickProblems(out var problems, out _sunId))
+        if (daylightManager.AddLight(GameSceneEntities.SunData).TryPickProblems(out var problems, out _sunId))
         {
             return problems;
         }
 
-        if (GameManager.DaylightManager.AddLight(GameSceneEntities.MoonData).TryPickProblems(out problems, out _moonId))
+        if (daylightManager.AddLight(GameSceneEntities.MoonData).TryPickProblems(out problems, out _moonId))
         {
             return problems;
         }
@@ -30,17 +30,17 @@ public class SceneLightService : ISceneService
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public override Result Update(TimeSpan deltaTime)
     {
-        GameManager.DayTimeManager.Step(deltaTime);
+        dayTimeManager.Step(deltaTime);
 
-        if (GameManager.DaylightManager.Sample(_sunId, GameManager.DayTimeManager.CurrentTime)
+        if (daylightManager.Sample(_sunId, dayTimeManager.CurrentTime)
             .TryPickProblems(out var problems, out var sunValue))
         {
             return problems;
         }
 
-        if (GameManager.DaylightManager.Sample(_moonId, GameManager.DayTimeManager.CurrentTime)
+        if (daylightManager.Sample(_moonId, dayTimeManager.CurrentTime)
             .TryPickProblems(out problems, out var moonValue))
         {
             return problems;
@@ -80,10 +80,10 @@ public class SceneLightService : ISceneService
         return Result.Success();
     }
 
-    public Result Unload()
+    public override Result Unload()
     {
-        GameManager.DaylightManager.RemoveLight(_sunId);
-        GameManager.DaylightManager.RemoveLight(_moonId);
+        daylightManager.RemoveLight(_sunId);
+        daylightManager.RemoveLight(_moonId);
 
         return Result.Success();
     }

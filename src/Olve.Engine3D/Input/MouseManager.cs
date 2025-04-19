@@ -1,8 +1,9 @@
 using Silk.NET.Input;
+using Silk.NET.Windowing;
 
 namespace Olve.Engine3D.Input;
 
-public class MouseManager
+public class MouseManager(Provider<IInputContext> inputContextProvider, Provider<IWindow> windowProvider)
 {
     private float _scroll;
     private readonly HashSet<MouseButton> _pressedButtons = [];
@@ -15,7 +16,7 @@ public class MouseManager
         //GameManager.Input.Mice[0].Cursor.IsConfined = true;
         //GameManager.Input.Mice[0].Cursor.CursorMode = CursorMode.Disabled;
 
-        foreach (var mouse in GameManager.Input.Mice)
+        foreach (var mouse in inputContextProvider.Value.Mice)
         {
             mouse.MouseDown += OnButtonPressed;
             mouse.MouseUp += OnButtonReleased;
@@ -39,7 +40,7 @@ public class MouseManager
 
         var position = Vector2D<float>.Zero;
 
-        foreach (var mouse in GameManager.Input.Mice)
+        foreach (var mouse in inputContextProvider.Value.Mice)
         {
             var pos = mouse.Position;
             position += new Vector2D<float>(pos.X, pos.Y);
@@ -48,8 +49,8 @@ public class MouseManager
         State.Delta = position - State.Position;
         State.Position = position;
         State.NormalizedPosition = new Vector2D<float>(
-            position.X / GameManager.Window.Size.X - 0.5f,
-            position.Y / GameManager.Window.Size.Y - 0.5f
+            position.X / windowProvider.Value.Size.X - 0.5f,
+            position.Y / windowProvider.Value.Size.Y - 0.5f
         ) * 2f;
         State.Scroll = _scroll;
 

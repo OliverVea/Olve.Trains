@@ -1,11 +1,10 @@
-using Olve.Engine3D;
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
 using Olve.Results;
 
 namespace Olve.Trains.Scenes.Console;
 
-public class ConsoleCommandService
+public class ConsoleCommandService(ILoggingManager loggingManager, DayTimeManager dayTimeManager)
 {
     public Result Execute(string command)
     {
@@ -34,7 +33,7 @@ public class ConsoleCommandService
         }
 
         var message = string.Join(' ', parameters);
-        GameManager.LoggingManager.Log(LogLevel.Info, message);
+        loggingManager.Log(LogLevel.Info, message);
 
         return Result.Success();
     }
@@ -68,7 +67,7 @@ public class ConsoleCommandService
             return new ResultProblem("Timescale must be greater than 0");
         }
 
-        GameManager.DayTimeManager.DayLength = DayTimeManager.DefaultDayLength / result;
+        dayTimeManager.DayLength = DayTimeManager.DefaultDayLength / result;
 
         return Result.Success();
     }
@@ -78,7 +77,7 @@ public class ConsoleCommandService
         var hours = (int)result;
         var minutes = (int)((result - hours) * 60);
 
-        GameManager.DayTimeManager.CurrentTime = new DayTime(hours, minutes);
+        dayTimeManager.CurrentTime = new DayTime(hours, minutes);
 
         return Result.Success();
     }
