@@ -1,42 +1,71 @@
 using Olve.CodeGen;
 using Olve.Engine3D.Assets;
+using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
-using Olve.Engine3D.Rendering.Shaders;
+using Olve.Engine3D.Rendering.OpenGL.Handles;
+using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game;
 
 public class TrackArrowRenderingService(
-    RenderingManager renderingManager,
+    CameraSceneService cameraSceneService,
+    RenderingManager3D renderingManager3D,
+    TextureEntityManager textureEntityManager,
     ShaderEntityManager shaderEntityManager,
-    MeshEntityManager meshEntityManager)
+    TerrainRaycastService terrainRaycastService,
+    TrackPlacingService trackPlacingService,
+    MeshEntityManager meshEntityManager) : SceneService
 {
-    public IShader Shader { get; set; } = null!;
+    private float _scale = 1f;
+    
+    public Shaders.Default? Shader { get; set; }
     public RenderingId<MeshData> MeshRenderingId { get; set; }
     public RenderingInstanceId InstanceId { get; set; }
+    
+    public override int Priority => GetPriorityFromDependencies([cameraSceneService, terrainRaycastService]);
 
-    public Result Load()
+    public override Result Load()
     {
-        var shaderResult = LoadShader();
-        if (shaderResult.TryPickProblems(out var problems, out var shader))
+        var textureResult = LoadTexture();
+        if (textureResult.TryPickProblems(out var problems, out var textureId))
+        {
+            return problems.Prepend("Failed to load texture");
+        }
+        
+        var shaderResult = LoadShader(textureId);
+        if (shaderResult.TryPickProblems(out problems, out var shader))
         {
             return problems.Prepend("Failed to load shader");
         }
 
         Shader = shader;
 
-        var meshResult = LoadMesh();
-        if (meshResult.TryPickProblems(out problems, out var meshRenderingId))
+        var meshResult = AssetLoader.LoadAsset(Meshes.SM_Icon_Arrow_Small_01);
+        if (meshResult.TryPickProblems(out problems, out var meshData))
         {
             return problems.Prepend("Failed to load mesh");
         }
-
+        
+        var meshRegistrationResult = meshEntityManager.Register(meshData);
+        if (meshRegistrationResult.TryPickProblems(out problems, out var meshRenderingId))
+        {
+            return problems.Prepend("Failed to register mesh");
+        }
+        
+        AABB aabbTarget = new(Vector3D<float>.Zero, Vector3D<float>.One);
+        var scaleResult = AABBHelper.GetUniformScaleToFitInside(meshData, aabbTarget);
+        if (scaleResult.TryPickProblems(out problems, out _scale))
+        {
+            return problems.Prepend("Failed to compute scale");
+        }
+        
         MeshRenderingId = meshRenderingId;
 
-        if (renderingManager.RegisterInstance(MeshRenderingId, shader.RenderingId, Matrix4X4<float>.Identity).TryPickProblems(out problems, out var instanceId))
+        if (renderingManager3D.RegisterInstance(meshRenderingId, shader.RenderingId, Matrix4X4<float>.Identity).TryPickProblems(out problems, out var instanceId))
         {
             return problems.Prepend("Failed to register mesh");
         }
@@ -45,20 +74,41 @@ public class TrackArrowRenderingService(
 
         return Result.Success();
     }
+    
+    private Result<Texture2D> LoadTexture()
+    {
+        var textureResult = AssetLoader.LoadAsset(Textures.PolygonPrototype_Texture_01);
+        if (textureResult.TryPickProblems(out var problems, out var textureData))
+        {
+            return problems.Prepend("Failed to load texture");
+        }
 
-    private Result<RenderingId<MeshData>> LoadMesh() => Result.Chain(
-        () => AssetLoader.LoadAsset(Meshes.SM_Icon_Arrow_Small_01),
-        meshEntityManager.Register);
+        var registrationResult = textureEntityManager.Register(textureData);
+        if (registrationResult.TryPickProblems(out problems, out var textureId))
+        {
+            return problems.Prepend("Failed to register texture");
+        }
+        
 
-    private Result<IShader> LoadShader()
+        if (textureEntityManager.GetRegistration(textureId).TryPickProblems(out problems, out var textureRegistration))
+        {
+            return problems;
+        }
+
+        return textureRegistration.Texture;
+    }
+
+    private Result<Shaders.Default> LoadShader(Texture2D texture2D)
     {
         Shaders.Default shader = new()
         {
             AmbientLightColor = new Vector3D<float>(1f, 1f, 1f),
-            AmbientLightIntensity = 1f
+            AmbientLightIntensity = 1f,
+            TextureSampler = texture2D
         };
 
-        if (shaderEntityManager.Register(shader.ShaderData).TryPickProblems(out var problems, out var shaderId))
+        var registrationResult = shaderEntityManager.Register(shader.ShaderData);
+        if (registrationResult.TryPickProblems(out var problems, out var shaderId))
         {
             return problems.Prepend("Failed to register shader");
         }
@@ -66,5 +116,53 @@ public class TrackArrowRenderingService(
         shader.RenderingId = shaderId;
 
         return shader;
+    }
+
+    public override Result Update(TimeSpan deltaTime)
+    {
+        var worldMatrix = ComputeWorldMatrix();
+        if (renderingManager3D.SetInstanceWorld(InstanceId, worldMatrix).TryPickProblems(out var problems))
+        {
+            return problems.Prepend("Failed to update instance");
+        }
+        
+        return Result.Success();
+    }
+
+    public override Result Render(TimeSpan deltaTime)
+    {
+        if (Shader == null)
+        {
+            return new ResultProblem("Shader is not loaded");
+        }
+        
+        Shader.View = cameraSceneService.ViewMatrix;
+        Shader.Projection = cameraSceneService.ProjectionMatrix;
+        Shader.CameraDirection = cameraSceneService.CameraViewDirection;
+        
+        return renderingManager3D.Render(Shader);
+    }
+
+    private Matrix4X4<float> ComputeWorldMatrix()
+    {
+        if (trackPlacingService.CurrentPoint is not { } currentPoint)
+        {
+            return Matrix4X4<float>.Identity * 0f;
+        }
+        
+        var yOffset = Vector3D<float>.UnitY * 0.15f;
+        var yRotation = currentPoint.Direction switch 
+        {
+            Direction.North => 0f,
+            Direction.East => MathF.PI / 2f,
+            Direction.South => MathF.PI,
+            Direction.West => MathF.PI * 3f / 2f,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        
+        return Matrix4X4.CreateScale(new Vector3D<float>(0.7f, 0.7f, 0.2f) * _scale) *
+               Matrix4X4.CreateRotationX(MathF.PI / 2f) *
+                Matrix4X4.CreateRotationY(yRotation) *
+               Matrix4X4.CreateTranslation(currentPoint.Point + yOffset);
     }
 }

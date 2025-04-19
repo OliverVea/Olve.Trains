@@ -7,7 +7,7 @@ using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering;
 
-public class RenderingManager(
+public class RenderingManager3D(
     Provider<GL> glProvider,
     OpenGLModelRenderingManager openGLModelRenderingManager,
     MeshEntityManager meshEntityManager,
@@ -156,8 +156,6 @@ public class RenderingManager(
             return Result.Success();
         }
 
-        var instanceRange = Instances.GetRange(startIndex, endIndex - startIndex);
-
         if (shaderEntityManager.GetRegistration(shader.RenderingId)
             .TryPickProblems(out var problems, out var shaderRegistration))
         {
@@ -172,7 +170,7 @@ public class RenderingManager(
             return problems.Prepend("Failed to load shader '{0}' into OpenGL", shader.ShaderData.Name);
         }
 
-        if (RenderInstances(instanceRange, shaderRegistration).TryPickProblems(out problems))
+        if (RenderInstances(startIndex, endIndex, shaderRegistration).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to render entity instances with shader '{0}'", shader.ShaderData.Name);
         }
@@ -180,12 +178,14 @@ public class RenderingManager(
         return Result.Success();
     }
 
-    private Result RenderInstances(IEnumerable<Instance> instanceRange, OpenGLShaderManager.Registration shaderRegistration)
+    private Result RenderInstances(int startIndex, int endIndex, OpenGLShaderManager.Registration shaderRegistration)
     {
         try
         {
-            foreach (var instance in instanceRange)
+            for (var i = startIndex; i < endIndex; i++)
             {
+                var instance = Instances[i];
+                
                 if (openGLModelRenderingManager.LoadModelInOpenGL(
                         instance.VAO,
                         instance.VBO,

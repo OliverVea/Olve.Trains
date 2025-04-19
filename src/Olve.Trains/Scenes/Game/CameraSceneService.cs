@@ -5,6 +5,7 @@ using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
+using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Silk.NET.Maths;
@@ -20,6 +21,13 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
 
     public Camera<IsometricView, OrthographicProjection> Camera => _cameraController.Camera;
     private Vector2D<float> WindowSize => new (windowProvider.Value.Size.X, windowProvider.Value.Size.Y);
+    
+    
+    public Matrix4X4<float> ViewMatrix { get; set; }
+    public Matrix4X4<float> RotationMatrix { get; set; }
+    public Matrix4X4<float> ProjectionMatrix { get; set; }
+    
+    public Vector3D<float> CameraViewDirection { get; set; }
 
     public override Result Load()
     {
@@ -53,7 +61,14 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
     {
         _cameraController.Move(_movementInput.Direction, deltaTime);
         _cameraController.Zoom(_movementInput.Zoom, deltaTime);
-
+        
+        ViewMatrix = Camera.GetViewMatrix();
+        ProjectionMatrix = Camera.GetProjectionMatrix();
+        
+        RotationMatrix = ViewMatrix.ExtractRotation();
+        
+        CameraViewDirection = Vector3D.Transform(Vector3D<float>.UnitZ, RotationMatrix);
+        
         _movementInput = new CameraMovementInput();
 
         return Result.Success();

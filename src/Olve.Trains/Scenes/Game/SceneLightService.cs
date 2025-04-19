@@ -11,6 +11,13 @@ public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager da
     private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(6);
     
     private DaylightId _sunId, _moonId;
+    
+    public Vector3D<float> SunDirection { get; set; }
+    public DaylightValue SunValue { get; set; } = new();
+    public Vector3D<float> MoonDirection { get; set; }
+    public DaylightValue MoonValue { get; set; } = new();
+    
+    public Vector3D<float> AmbientLightColor => SunValue.AmbientColor * SunValue.AmbientIntensity + MoonValue.AmbientColor * MoonValue.AmbientIntensity;
 
     public override Result Load()
     {
@@ -45,14 +52,17 @@ public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager da
         {
             return problems;
         }
-
-
+        
         var sunRadians = float.DegreesToRadians(-sunValue.Angle);
         var sunDirection = Vector3D.Transform(Vector3D<float>.UnitX, Matrix4X4.CreateRotationZ(sunRadians));
 
         var moonRadians = float.DegreesToRadians(-moonValue.Angle);
         var moonDirection = Vector3D.Transform(Vector3D<float>.UnitX, Matrix4X4.CreateRotationZ(moonRadians));
-
+        
+        SunValue = sunValue;
+        MoonValue = moonValue;
+        SunDirection = sunDirection;
+        MoonDirection = moonDirection;
 
         GameSceneEntities.DefaultShader.DirectionalLight0Dir = sunDirection;
         GameSceneEntities.DefaultShader.DirectionalLight0Color = sunValue.Color;
@@ -62,20 +72,8 @@ public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager da
         GameSceneEntities.DefaultShader.DirectionalLight1Color = moonValue.Color;
         GameSceneEntities.DefaultShader.DirectionalLight1Intensity = moonValue.Intensity;
 
-        GameSceneEntities.DefaultShader.AmbientLightColor = sunValue.AmbientColor * sunValue.Intensity + moonValue.AmbientColor * moonValue.Intensity;
+        GameSceneEntities.DefaultShader.AmbientLightColor = AmbientLightColor;
         GameSceneEntities.DefaultShader.AmbientLightIntensity = 1f;
-
-
-        GameSceneEntities.TerrainShader.DirectionalLight0Dir = sunDirection;
-        GameSceneEntities.TerrainShader.DirectionalLight0Color = sunValue.Color;
-        GameSceneEntities.TerrainShader.DirectionalLight0Intensity = sunValue.Intensity;
-
-        GameSceneEntities.TerrainShader.DirectionalLight1Dir = moonDirection;
-        GameSceneEntities.TerrainShader.DirectionalLight1Color = moonValue.Color;
-        GameSceneEntities.TerrainShader.DirectionalLight1Intensity = moonValue.Intensity;
-
-        GameSceneEntities.TerrainShader.AmbientLightColor = sunValue.AmbientColor * sunValue.Intensity + moonValue.AmbientColor * moonValue.Intensity;
-        GameSceneEntities.TerrainShader.AmbientLightIntensity = 1f;
 
         return Result.Success();
     }

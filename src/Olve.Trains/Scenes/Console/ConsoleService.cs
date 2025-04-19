@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
@@ -170,7 +171,7 @@ public class ConsoleService(ConsoleCommandService consoleCommandService, ILoggin
 
         while (running)
         {
-            if (previousState == state)
+            if (previousState == state && previousState.Console.CollectionEquals(state.Console))
             {
                 Thread.Sleep(20);
                 continue;

@@ -11,4 +11,9 @@ public abstract class SceneService
     public virtual Result<Pass> Input(TimeSpan deltaTime) => Result<Pass>.Success(Pass.Pass);
     public virtual Result Update(TimeSpan deltaTime) => Result.Success();
     public virtual Result Render(TimeSpan deltaTime) => Result.Success();
+    
+    protected static int GetPriorityFromDependencies(IReadOnlyCollection<SceneService> dependencies)
+    {
+        return dependencies.Max(service => service.Priority) + 1;
+    }
 }
