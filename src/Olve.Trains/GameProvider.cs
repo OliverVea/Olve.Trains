@@ -1,52 +1,31 @@
 using Jab;
+using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
-using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.Console;
-using Silk.NET.Input;
-using Silk.NET.OpenGL;
-using Silk.NET.Windowing;
+using Olve.Trains.Scenes.Game;
 
 namespace Olve.Trains;
 
 [ServiceProvider]
-[Singleton(typeof(WindowProvider))]
-[Singleton(typeof(GLProvider))]
-[Singleton(typeof(InputContextProvider))]
+[Singleton(typeof(GameManager))]
 [Singleton(typeof(SceneManager))]
 [Singleton(typeof(KeyboardManager))]
 [Singleton(typeof(MouseManager))]
-[Singleton(typeof(MeshEntityManager))]
-[Singleton(typeof(ShaderEntityManager))]
-[Singleton(typeof(TextureEntityManager))]
-[Singleton(typeof(HeightmapEntityManager))]
-[Singleton(typeof(RenderingManager))]
 [Singleton(typeof(DayTimeManager))]
 [Singleton(typeof(DaylightManager))]
 [Singleton(typeof(ILoggingManager), typeof(ConsoleLoggingManager))]
+[Singleton(typeof(IScene), Factory = nameof(GetGameScene))]
+[Singleton(typeof(IScene), Factory = nameof(GetConsoleScene))]
+[Singleton(typeof(GameProvider), Factory = nameof(GetGameProvider))]
+[Import(typeof(IWindowingProvider))]
+[Import(typeof(IOpenGLProvider))]
 public partial class GameProvider
 {
-    
+    public GameProvider GetGameProvider() => this;
+
+    public IScene GetGameScene(IServiceProvider serviceProvider) => new Scene<GameSceneProvider>(new GameSceneProvider(this), SceneIds.GameScene);
+    public IScene GetConsoleScene(IServiceProvider serviceProvider) => new Scene<ConsoleSceneProvider>(new ConsoleSceneProvider(this), SceneIds.ConsoleScene);
 }
-
-public class NotInitializedException<T>() : Exception($"The {typeof(T).Name} has not been initialized.");
-
-public abstract class Provider<T>
-{
-    private T? _value;
-
-    public T Value => _value ?? throw new NotInitializedException<T>();
-
-    public void Set(T value)
-    {
-        _value = value;
-    }
-}
-
-public class WindowProvider : Provider<IWindow>;
-public class GLProvider : Provider<GL>;
-public class InputContextProvider : Provider<IInputContext>;
-

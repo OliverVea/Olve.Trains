@@ -24,8 +24,4 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Camera\Cameras\" />
-    </ItemGroup>
-
 </Project>

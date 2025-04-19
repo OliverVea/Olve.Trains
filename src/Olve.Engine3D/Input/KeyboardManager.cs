@@ -2,7 +2,7 @@ using Silk.NET.Input;
 
 namespace Olve.Engine3D.Input;
 
-public class KeyboardManager
+public class KeyboardManager(Provider<IInputContext> inputContextProvider)
 {
     private readonly HashSet<Key> _pressedKeys = [];
     private readonly HashSet<Key> _releasedKeys = [];
@@ -11,7 +11,7 @@ public class KeyboardManager
 
     public Result Initialize()
     {
-        foreach (var keyboard in GameManager.Input.Keyboards)
+        foreach (var keyboard in inputContextProvider.Value.Keyboards)
         {
             keyboard.KeyDown += OnKeyPressed;
             keyboard.KeyUp += OnKeyReleased;

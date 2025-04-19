@@ -4,15 +4,13 @@ using Olve.Engine3D.Rendering.OpenGL.Handles;
 
 namespace Olve.Engine3D.Rendering.EntityManagers;
 
-public class MeshEntityManager : RenderingEntityManagerBase<MeshData, MeshEntityManager.Registration>
+public class MeshEntityManager(OpenGLMeshManager openGLMeshManager) : RenderingEntityManagerBase<MeshData, MeshEntityManager.Registration>
 {
-    private readonly OpenGLMeshManager _openGLMeshManager = new();
-    
     public readonly record struct Registration(VAO VAO, VBO VBO, EBO EBO);
 
     protected override Result<Registration> RegisterInOpenGL(MeshData entity)
     {
-        if (_openGLMeshManager.Register(entity).TryPickProblems(out var problems, out var registration))
+        if (openGLMeshManager.Register(entity).TryPickProblems(out var problems, out var registration))
         {
             return problems.Prepend("Failed registering mesh in OpenGL");
         }
@@ -26,7 +24,7 @@ public class MeshEntityManager : RenderingEntityManagerBase<MeshData, MeshEntity
     {
         OpenGLMeshManager.Registration openGLRegistration = new(registration.VAO, registration.VBO, registration.EBO);
 
-        if (_openGLMeshManager.Unregister(openGLRegistration).TryPickProblems(out var problems))
+        if (openGLMeshManager.Unregister(openGLRegistration).TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed unregistering mesh in OpenGL");
         }

@@ -2,9 +2,9 @@ using Silk.NET.Input;
 
 namespace Olve.Engine3D.Input.InputSchemes;
 
-public class WasdMovement : ICameraScheme
+public class WasdMovement(KeyboardManager keyboardManager) : ICameraScheme
 {
-    private KeyboardState KeyboardState => GameManager.KeyboardManager.State;
+    private KeyboardState KeyboardState => keyboardManager.State;
 
     private static readonly (Key, Vector3D<float>)[] MovementDirections =
     [

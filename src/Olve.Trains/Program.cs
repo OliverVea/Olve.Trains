@@ -1,9 +1,5 @@
 ﻿using Olve.Engine3D;
-using Olve.Engine3D.Scenes;
 using Olve.Results;
-using Olve.Trains.Scenes;
-using Olve.Trains.Scenes.Console;
-using Olve.Trains.Scenes.Game;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
@@ -18,18 +14,6 @@ public static class Program
         Samples = 8
     };
 
-    private static readonly Scene[] Scenes =
-    [
-        new ConsoleScene(),
-        new GameScene()
-    ];
-
-    private static readonly SceneId[] SceneIds =
-    [
-        GameScene.SceneId,
-        ConsoleScene.SceneId
-    ];
-
     public static int Main()
     {
         var result = RunGame();
@@ -39,16 +23,10 @@ public static class Program
     private static Result RunGame()
     {
         var window = Window.Create(WindowOptions);
+        GameProvider gameProvider = new();
 
-        var initializationResult = GameManager.Initialize(window, Scenes, SceneIds);
-        if (initializationResult.TryPickProblems(out var problems))
-        {
-            return problems;
-        }
-
-        GameManager.LoggingManager = new ConsoleLoggingManager();
-
-        return GameManager.Run();
+        var gameManager = gameProvider.GetService<GameManager>();
+        return gameManager.Run(window, [SceneIds.GameScene, SceneIds.ConsoleScene]);
     }
 
     private static int LogResult(Result result)

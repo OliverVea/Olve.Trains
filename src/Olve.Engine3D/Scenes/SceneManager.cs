@@ -1,58 +1,21 @@
+using Olve.Utilities.Ids;
+
 namespace Olve.Engine3D.Scenes;
 
-public class SceneManager
+public class SceneManager(IEnumerable<IScene> scenes)
 {
-    private readonly List<Scene> _scenes = new();
+    private readonly List<IScene> _scenes = scenes.OrderBy(x => x.LayerOrder).ThenBy(x => x.Layer).ToList();
 
-    public IReadOnlyList<Scene> Scenes => _scenes;
-
-    public Result AddScenes(IEnumerable<Scene> scenes)
-    {
-        return Result.Chain(scenes.MapResult(AddScene));
-    }
-
-    public Result AddScene(Scene scene)
-    {
-        if (_scenes.Any(x => x.Id == scene.Id))
-        {
-            return new ResultProblem("Scene with id '{0}' already exists", scene.Id);
-        }
-
-        var index = GetInsertIndex(scene.Layer, scene.LayerOrder);
-
-        scene.State = SceneState.Unloaded;
-        _scenes.Insert(index, scene);
-
-        return Result.Success();
-    }
-
-    public Result RemoveScene(SceneId sceneId)
+    public Result LoadScene(Id<IScene> sceneId)
     {
         if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
         {
-            return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
+            return new ResultProblem("IScene with id '{0}' does not exist", sceneId);
         }
 
         if (scene.State != SceneState.Unloaded)
         {
-            return new ResultProblem("Scene with id '{0}' is not unloaded", sceneId);
-        }
-
-        _scenes.Remove(scene);
-
-        return Result.Success();
-    }
-
-    public Result LoadScene(SceneId sceneId)
-    {
-        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
-        {
-            return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
-        }
-
-        if (scene.State != SceneState.Unloaded)
-        {
-            return new ResultProblem("Scene with id '{0}' is not unloaded", sceneId);
+            return new ResultProblem("IScene with id '{0}' is not unloaded", sceneId);
         }
 
         var loadResult = scene.Load();
@@ -67,11 +30,11 @@ public class SceneManager
         return Result.Success();
     }
 
-    public Result UnloadScene(SceneId sceneId)
+    public Result UnloadScene(Id<IScene> sceneId)
     {
         if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
         {
-            return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
+            return new ResultProblem("IScene with id '{0}' does not exist", sceneId);
         }
 
         scene.Unload();
@@ -80,16 +43,16 @@ public class SceneManager
         return Result.Success();
     }
 
-    public Result ActivateScene(SceneId sceneId)
+    public Result ActivateScene(Id<IScene> sceneId)
     {
         if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
         {
-            return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
+            return new ResultProblem("IScene with id '{0}' does not exist", sceneId);
         }
 
         if (scene.State != SceneState.Inactive)
         {
-            return new ResultProblem("Scene with id '{0}' is not inactive", sceneId);
+            return new ResultProblem("IScene with id '{0}' is not inactive", sceneId);
         }
 
         scene.State = SceneState.Active;
@@ -97,16 +60,16 @@ public class SceneManager
         return Result.Success();
     }
 
-    public Result DeactivateScene(SceneId sceneId)
+    public Result DeactivateScene(Id<IScene> sceneId)
     {
         if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
         {
-            return new ResultProblem("Scene with id '{0}' does not exist", sceneId);
+            return new ResultProblem("IScene with id '{0}' does not exist", sceneId);
         }
 
         if (scene.State != SceneState.Active)
         {
-            return new ResultProblem("Scene with id '{0}' is not active", sceneId);
+            return new ResultProblem("IScene with id '{0}' is not active", sceneId);
         }
 
         scene.State = SceneState.Inactive;
@@ -114,7 +77,7 @@ public class SceneManager
         return Result.Success();
     }
 
-    public Result Input()
+    public Result Input(TimeSpan gameTime)
     {
         foreach (var scene in _scenes)
         {
@@ -123,7 +86,7 @@ public class SceneManager
                 continue;
             }
 
-            var inputResult = scene.Input();
+            var inputResult = scene.Input(gameTime);
             if (inputResult.TryPickProblems(out var problems, out var passInput))
             {
                 return problems.Prepend("Got problem while updating scene input for scene '{0}'", scene.Id);
@@ -187,20 +150,5 @@ public class SceneManager
 
             scene.Unload();
         }
-    }
-
-    private int GetInsertIndex(SceneLayer layer, int layerOrder)
-    {
-        var index = 0;
-
-        foreach (var scene in _scenes)
-        {
-            if (scene.Layer > layer || scene.Layer == layer && scene.LayerOrder > layerOrder)
-            {
-                index++;
-            }
-        }
-
-        return index;
     }
 }

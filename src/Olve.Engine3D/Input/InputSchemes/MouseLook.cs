@@ -1,8 +1,10 @@
+using Silk.NET.Windowing;
+
 namespace Olve.Engine3D.Input.InputSchemes;
 
-public class MouseLook : ICameraScheme
+public class MouseLook(MouseManager mouseManager, Provider<IWindow> windowProvider) : ICameraScheme
 {
-    private MouseState MouseState => GameManager.MouseManager.State;
+    private MouseState MouseState => mouseManager.State;
 
     public CameraMovementInput GetMovementInput()
     {
@@ -17,8 +19,8 @@ public class MouseLook : ICameraScheme
     {
         var rotation = Vector2D<float>.Zero;
 
-        rotation.X = MouseState.Delta.X / GameManager.Window.Size.X;
-        rotation.Y = -MouseState.Delta.Y / GameManager.Window.Size.Y;
+        rotation.X = MouseState.Delta.X / windowProvider.Value.Size.X;
+        rotation.Y = -MouseState.Delta.Y / windowProvider.Value.Size.Y;
 
         return rotation;
     }
