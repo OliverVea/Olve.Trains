@@ -10,8 +10,8 @@
         <PackageReference Include="BigGustave" Version="1.0.6" />
         <PackageReference Include="MemoryPack" Version="1.21.4" />
         <PackageReference Include="Olve.OpenRaster" Version="0.1.5" />
-        <PackageReference Include="Olve.Results" Version="0.19.3" />
-        <PackageReference Include="Olve.Utilities" Version="0.19.3" />
+        <PackageReference Include="Olve.Results" Version="0.20.1" />
+        <PackageReference Include="Olve.Utilities" Version="0.20.1" />
         <PackageReference Include="OneOf" Version="3.0.271" />
         <PackageReference Include="OneOf.SourceGenerator" Version="3.0.271" />
         <PackageReference Include="Silk.NET.Input" Version="2.22.0" />

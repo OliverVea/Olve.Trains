@@ -26,7 +26,10 @@ public static class Program
         GameProvider gameProvider = new();
 
         var gameManager = gameProvider.GetService<GameManager>();
-        return gameManager.Run(window, [SceneIds.GameScene, SceneIds.ConsoleScene]);
+        return gameManager.Run(window, [
+            SceneIds.GameScene,
+            // SceneIds.ConsoleScene // Doesn't work on Windows?
+        ]);
     }
 
     private static int LogResult(Result result)
