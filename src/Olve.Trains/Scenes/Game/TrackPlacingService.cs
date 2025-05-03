@@ -3,11 +3,14 @@ using Olve.Engine3D.Logging;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
 using Silk.NET.Input;
+using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game;
 
 public class TrackPlacingService(TerrainRaycastService terrainRaycastService, MouseManager mouseManager, KeyboardManager keyboardManager, ILoggingManager loggingManager, TrackService trackService) : SceneService
 {
+    private static readonly Vector3D<float> Offset = new(0, 0f, 0);
+    
     public TrackPoint? PreviousPoint { get; private set; }
     public TrackPoint? CurrentPoint { get; private set; }
     
@@ -43,14 +46,28 @@ public class TrackPlacingService(TerrainRaycastService terrainRaycastService, Mo
         
         if (keyboardManager.State.IsKeyPressed(Key.R)) 
         {
-            Direction = Direction switch
+            if (keyboardManager.State.Shift)
             {
-                Direction.North => Direction.East,
-                Direction.East => Direction.South,
-                Direction.South => Direction.West,
-                Direction.West => Direction.North,
-                _ => throw new ArgumentOutOfRangeException()
-            };
+                Direction = Direction switch
+                {
+                    Direction.North => Direction.East,
+                    Direction.East => Direction.South,
+                    Direction.South => Direction.West,
+                    Direction.West => Direction.North,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
+            else
+            {
+                Direction = Direction switch
+                {
+                    Direction.North => Direction.West,
+                    Direction.West => Direction.South,
+                    Direction.South => Direction.East,
+                    Direction.East => Direction.North,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
         }
         
         return Pass.Pass;
@@ -59,7 +76,7 @@ public class TrackPlacingService(TerrainRaycastService terrainRaycastService, Mo
     public override Result Update(TimeSpan deltaTime)
     {
         CurrentPoint = terrainRaycastService.TerrainIntersectionTileCenter is { } tileCenter
-            ? new TrackPoint(tileCenter, Direction)
+            ? new TrackPoint(tileCenter + Offset, Direction.ToVector3D())
             : null;
         
         return Result.Success();

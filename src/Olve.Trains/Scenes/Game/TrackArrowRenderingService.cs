@@ -151,17 +151,14 @@ public class TrackArrowRenderingService(
         }
         
         var yOffset = Vector3D<float>.UnitY * 0.15f;
-        var yRotation = currentPoint.Direction switch 
-        {
-            Direction.North => 0f,
-            Direction.East => MathF.PI / 2f,
-            Direction.South => MathF.PI,
-            Direction.West => MathF.PI * 3f / 2f,
-            _ => throw new ArgumentOutOfRangeException()
-        };
+        
+        Vector2D<float> currentTangent2d = new(currentPoint.Tangent.X, currentPoint.Tangent.Z);
+        Vector2D<float> northTangent2d = new(0f, 1f);
+        
+        var yRotation = -float.Atan2(currentTangent2d.Y, currentTangent2d.X) + float.Pi / 2f;
         
         return Matrix4X4.CreateScale(new Vector3D<float>(0.7f, 0.7f, 0.2f) * _scale) *
-               Matrix4X4.CreateRotationX(MathF.PI / 2f) *
+               Matrix4X4.CreateRotationX(float.Pi / 2f) *
                 Matrix4X4.CreateRotationY(yRotation) *
                Matrix4X4.CreateTranslation(currentPoint.Point + yOffset);
     }

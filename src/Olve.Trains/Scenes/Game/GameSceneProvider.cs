@@ -24,6 +24,7 @@ namespace Olve.Trains.Scenes.Game;
 [Singleton(typeof(GLService))]
 [Singleton(typeof(TrackPlacingService))]
 [Singleton(typeof(TrackService))]
+[Singleton(typeof(TrackSplineService))]
 [Singleton(typeof(TrackRenderingService))]
 [Transient(typeof(MeshEntityManager), Factory = nameof(GetMeshEntityManager))]
 [Transient(typeof(HeightmapEntityManager), Factory = nameof(GetHeightmapEntityManager))]

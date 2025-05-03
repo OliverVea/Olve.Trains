@@ -2,20 +2,35 @@ using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Scenes;
 
-public sealed class Scene<TProvider>(TProvider provider, Id<IScene> sceneId, int layerOrder = 0) : IScene where TProvider : class, ISceneServicesProvider
+public sealed class Scene<TProvider> : IScene where TProvider : class, ISceneServicesProvider
 {
-    private readonly IReadOnlyCollection<SceneService> _sceneServices = provider.GetSceneServices().OrderBy(x => x.Priority).ToList();
+    private readonly SceneService[] _sceneServices;
+    private readonly Result[] _serviceResults;
+
+    public Scene(TProvider provider, Id<IScene> sceneId, int layerOrder = 0)
+    {
+        Id = sceneId;
+        LayerOrder = layerOrder;
+        
+        _sceneServices = provider.GetSceneServices().OrderBy(x => x.Priority).ToArray();
+        _serviceResults = new Result[_sceneServices.Length];
+    }
     
-    public Id<IScene> Id => sceneId;
+    public Id<IScene> Id { get; }
+    public int LayerOrder { get; }
+    
     public SceneLayer Layer => SceneLayer.Main;
     public SceneState State { get; set; } = SceneState.Unloaded;
 
-    public int LayerOrder => layerOrder;
 
     public Result Load()
     {
-        var results = _sceneServices.Select(x => x.Load());
-        if (results.TryPickProblems(out var problems))
+        for (var i = 0; i < _sceneServices.Length; i++)
+        {
+            _serviceResults[i] = _sceneServices[i].Load();
+        }
+        
+        if (_serviceResults.TryPickProblems(out var problems))
         {
             return problems;
         }
@@ -25,8 +40,12 @@ public sealed class Scene<TProvider>(TProvider provider, Id<IScene> sceneId, int
 
     public Result Unload()
     {
-        var results = _sceneServices.Select(x => x.Unload());
-        if (results.TryPickProblems(out var problems))
+        for (var i = 0; i < _sceneServices.Length; i++)
+        {
+            _serviceResults[i] = _sceneServices[i].Unload();
+        }
+        
+        if (_serviceResults.TryPickProblems(out var problems))
         {
             return problems;
         }
@@ -55,8 +74,12 @@ public sealed class Scene<TProvider>(TProvider provider, Id<IScene> sceneId, int
 
     public Result Update(TimeSpan deltaTime)
     {
-        var results = _sceneServices.Select(x => x.Update(deltaTime));
-        if (results.TryPickProblems(out var problems))
+        for (var i = 0; i < _sceneServices.Length; i++)
+        {
+            _serviceResults[i] = _sceneServices[i].Update(deltaTime);
+        }
+        
+        if (_serviceResults.TryPickProblems(out var problems))
         {
             return problems;
         }
@@ -66,8 +89,12 @@ public sealed class Scene<TProvider>(TProvider provider, Id<IScene> sceneId, int
 
     public Result Render(TimeSpan deltaTime)
     {
-        var results = _sceneServices.Select(x => x.Render(deltaTime));
-        if (results.TryPickProblems(out var problems))
+        for (var i = 0; i < _sceneServices.Length; i++)
+        {
+            _serviceResults[i] = _sceneServices[i].Render(deltaTime);
+        }
+        
+        if (_serviceResults.TryPickProblems(out var problems))
         {
             return problems;
         }

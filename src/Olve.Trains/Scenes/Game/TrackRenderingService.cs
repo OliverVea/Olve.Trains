@@ -7,17 +7,18 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
+using Olve.Utilities.Ids;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.Game;
 
-public class TrackRenderingService(TrackService trackService, Provider<GL> glProvider, LineStripEntityManager lineStripEntityManager, CameraSceneService cameraSceneService, ShaderEntityManager shaderEntityManager, OpenGLModelRenderingManager openGLModelRenderingManager) : SceneService
+public class TrackRenderingService(TrackService trackService, Provider<GL> glProvider, LineStripEntityManager lineStripEntityManager, CameraSceneService cameraSceneService, ShaderEntityManager shaderEntityManager, OpenGLModelRenderingManager openGLModelRenderingManager, TrackSplineService trackSplineService) : SceneService
 {
     private const int TrackVertexCount = 100;
     
-    private readonly Dictionary<Hermite3, RenderingId<LineStripData>> _trackInstanceIds = new();
-    private readonly Queue<Hermite3> _tracksToLoad = new();
+    private readonly Dictionary<Id<Track>, RenderingId<LineStripData>> _trackInstanceIds = new();
+    private readonly Queue<Id<Track>> _tracksToLoad = new();
     private readonly Shaders.LineStrip _shader = new();
     
     private RenderingId<ShaderData>? _shaderId;
@@ -36,37 +37,46 @@ public class TrackRenderingService(TrackService trackService, Provider<GL> glPro
         return Result.Success();
     }
     
-    private void OnTrackAdded(Hermite3 track) => 
-        _tracksToLoad.Enqueue(track);
+    private void OnTrackAdded(Track track)
+    {
+        _tracksToLoad.Enqueue(track.Id);
+    }
 
     public override Result Update(TimeSpan deltaTime)
     {
-        while (_tracksToLoad.TryDequeue(out var track))
+        while (_tracksToLoad.TryDequeue(out var trackId))
         {
-            var lineStripData = GetLineStripData(track);
+            if (GetLineStripData(trackId).TryPickProblems(out var problems, out var lineStripData))
+            {
+                return problems.Prepend("Failed to get line strip data");
+            }
             
-            if (lineStripEntityManager.Register(lineStripData).TryPickProblems(out var problems, out var instanceId))
+            if (lineStripEntityManager.Register(lineStripData).TryPickProblems(out problems, out var instanceId))
             {
                 return problems.Prepend("Failed to register track");
             }
 
-            _trackInstanceIds[track] = instanceId;
+            _trackInstanceIds[trackId] = instanceId;
         }
         
         return Result.Success();
     }
     
-    private LineStripData GetLineStripData(Hermite3 track)
+    private Result<LineStripData> GetLineStripData(Id<Track> trackId)
     {
-        var positions = new Vector3D<float>[TrackVertexCount];
+        if (trackSplineService.GetPoints(trackId, TrackVertexCount).TryPickProblems(out var problems, out var positions))
+        {
+            return problems.Prepend("Failed to get track points");
+        }
+        
+        if (positions.Length != TrackVertexCount)
+        {
+            return new ResultProblem("Track length must be equal to vertex count");
+        }
+        
         var colors = new Vector3D<float>[TrackVertexCount];
         
         Array.Fill(colors, Vector3D<float>.One);
-        
-        for (var i = 0; i < TrackVertexCount; i++){
-            var t = (float)i / TrackVertexCount;
-            positions[i] = track.Sample(t);
-        }
         
         return new LineStripData
         {

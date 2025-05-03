@@ -17,4 +17,16 @@ public static class DirectionExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
     }
+    
+    public static float ToYRotation(this Direction direction)
+    {
+        return direction switch
+        {
+            Direction.North => 0,
+            Direction.South => MathF.PI,
+            Direction.East => MathF.PI / 2,
+            Direction.West => -MathF.PI / 2,
+            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+        };
+    }
 }
