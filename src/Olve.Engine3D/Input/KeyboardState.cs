@@ -8,6 +8,10 @@ public class KeyboardState
     private readonly HashSet<Key> _downKeys = [];
     private readonly HashSet<Key> _pressedKeys = [];
     private readonly HashSet<Key> _releasedKeys = [];
+    
+    public bool Shift => IsKeyDown(Key.ShiftLeft) || IsKeyDown(Key.ShiftRight);
+    public bool Control => IsKeyDown(Key.ControlLeft) || IsKeyDown(Key.ControlRight);
+    public bool Alt => IsKeyDown(Key.AltLeft) || IsKeyDown(Key.AltRight);
 
     public bool IsKeyDown(Key key) => _downKeys.Contains(key);
     public bool IsKeyPressed(Key key) => _pressedKeys.Contains(key);

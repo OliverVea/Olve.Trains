@@ -27,7 +27,7 @@ public class OpenGLTextureManager(Provider<GL> glProvider) : IOpenGLEntityManage
         glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, (int)GLEnum.Repeat);
         glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, (int)GLEnum.Repeat);
 
-        BufferHelper.UsingSpan<byte>(textureLength, pixelData =>
+        BufferHelper.WithSpan<byte>(textureLength, pixelData =>
         {
             textureData.Pixels.CopyTo(pixelData);
 

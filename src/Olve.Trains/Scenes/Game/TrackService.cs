@@ -1,34 +1,48 @@
-using Olve.Engine3D.Math.Splines;
 using Olve.Results;
-using Silk.NET.Maths;
+using Olve.Utilities.Ids;
 
 namespace Olve.Trains.Scenes.Game;
 
 public class TrackService
 {
-    private readonly List<Hermite3> _tracks = [];
+    private readonly SortedList<Id<Track>, Track> _tracks = [];
     
-    public IReadOnlyList<Hermite3> Tracks => _tracks;
+    public Action<Track>? OnTrackAdded { get; set; }
+    public Action<Track>? OnTrackRemoved { get; set; }
     
-    public Action<Hermite3>? OnTrackAdded { get; set; }
-    public Action<Hermite3>? OnTrackRemoved { get; set; }
-    
-    public Result AddTrack(TrackPoint start, TrackPoint end)
+    public Result<Id<Track>> AddTrack(TrackPoint start, TrackPoint end)
     {
-        var distance = Vector3D.Distance(start.Point, end.Point);
+        var trackId = Id<Track>.New();
+        Track track = new(trackId, start, end);
         
-        var startTangent = start.Direction.ToVector3D() * distance;
-        var endTangent = end.Direction.ToVector3D() * distance;
-        
-        var track = new Hermite3([
-            new(0, new(start.Point, startTangent, startTangent)),
-            new(1, new(end.Point, endTangent, endTangent))
-        ]);
-        
-        _tracks.Add(track);
+        _tracks.Add(track.Id, track);
         
         OnTrackAdded?.Invoke(track);
         
+        return track.Id;
+    }
+    
+    public Result RemoveTrack(Id<Track> trackId)
+    {
+        if (!_tracks.TryGetValue(trackId, out var track))
+        {
+            return new ResultProblem("Track with id '{0}' not found", trackId);
+        }
+        
+        _tracks.Remove(trackId);
+        
+        OnTrackRemoved?.Invoke(track);
+        
         return Result.Success();
+    }
+    
+    public Result<Track> GetTrack(Id<Track> trackId)
+    {
+        if (!_tracks.TryGetValue(trackId, out var track))
+        {
+            return new ResultProblem("Track with id '{0}' not found", trackId);
+        }
+        
+        return track;
     }
 }

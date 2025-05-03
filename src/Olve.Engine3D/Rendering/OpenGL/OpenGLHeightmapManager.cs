@@ -54,7 +54,7 @@ public class OpenGLHeightmapManager(Provider<GL> glProvider) : IOpenGLEntityMana
          */
         var vertexCount = (heightmapData.Width + 1) * (heightmapData.Length + 1);
 
-        BufferHelper.UsingSpan<float>(vertexCount * VertexFields, vertices =>
+        BufferHelper.WithSpan<float>(vertexCount * VertexFields, vertices =>
         {
             for (var i = 0; i < heightmapData.Heights.Length; i++)
             {
@@ -78,7 +78,7 @@ public class OpenGLHeightmapManager(Provider<GL> glProvider) : IOpenGLEntityMana
 
         var indexCount = heightmapData.Width * heightmapData.Length * 6;
 
-        BufferHelper.UsingSpan<uint>(indexCount, indices =>
+        BufferHelper.WithSpan<uint>(indexCount, indices =>
         {
             for (var z = 0; z < heightmapData.Length - 1; z++)
             {
@@ -129,7 +129,7 @@ public class OpenGLHeightmapManager(Provider<GL> glProvider) : IOpenGLEntityMana
         glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, (int)GLEnum.ClampToEdge);
         glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, (int)GLEnum.ClampToEdge);
 
-        BufferHelper.UsingSpan<float>(textureLength, pixelData =>
+        BufferHelper.WithSpan<float>(textureLength, pixelData =>
         {
             for (var i = 0; i < textureLength; i++)
             {

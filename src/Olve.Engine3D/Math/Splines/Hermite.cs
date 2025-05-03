@@ -46,7 +46,7 @@ public abstract class Hermite<T> : IInterpolator<T>
     {
         for (var i = 0; i < KeyFrames.Count - 1; i++)
         {
-            if (time >= KeyFrames[i].Time && time < KeyFrames[i + 1].Time)
+            if (time >= KeyFrames[i].Time && time <= KeyFrames[i + 1].Time)
             {
                 return i;
             }

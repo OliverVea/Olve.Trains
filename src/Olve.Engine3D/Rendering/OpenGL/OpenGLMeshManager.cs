@@ -49,7 +49,7 @@ public class OpenGLMeshManager(Provider<GL> glProvider) : IOpenGLEntityManager<M
         var vbo = glProvider.Value.CreateBuffer();
         glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
 
-        BufferHelper.UsingSpan<float>(meshData.VertexCount * VertexFields, vertices =>
+        BufferHelper.WithSpan<float>(meshData.VertexCount * VertexFields, vertices =>
         {
             meshData.Positions.CopyTo(vertices, VertexFields, offset: 0);
             meshData.Normals.CopyTo(vertices, VertexFields, offset: PositionFields);
@@ -66,7 +66,7 @@ public class OpenGLMeshManager(Provider<GL> glProvider) : IOpenGLEntityManager<M
         var ebo = glProvider.Value.CreateBuffer();
         glProvider.Value.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
 
-        BufferHelper.UsingSpan<uint>(meshData.Indices.Length * 3, indices =>
+        BufferHelper.WithSpan<uint>(meshData.Indices.Length * 3, indices =>
         {
             meshData.Indices.CopyTo(indices);
 

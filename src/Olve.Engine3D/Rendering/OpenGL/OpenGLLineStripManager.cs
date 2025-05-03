@@ -25,7 +25,7 @@ public class OpenGLLineStripManager(Provider<GL> glProvider) : IOpenGLEntityMana
         var vbo = glProvider.Value.CreateBuffer();
         glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
 
-        BufferHelper.UsingSpan<float>(entityData.VertexCount * VertexFields, vertices =>
+        BufferHelper.WithSpan<float>(entityData.VertexCount * VertexFields, vertices =>
         {
             entityData.Positions.CopyTo(vertices, VertexFields);
             entityData.Colors.CopyTo(vertices, VertexFields, offset: 3);
