@@ -5,7 +5,7 @@ using Olve.Utilities.Ids;
 
 namespace Olve.Trains.Scenes.Game;
 
-public class GraphService(TrackService trackService) : SceneService
+public class TrackLookupService(TrackService trackService) : SceneService
 {
     private static readonly IReadOnlySet<GraphNode> EmptyGraphNodes = new HashSet<GraphNode>();
     private static readonly IReadOnlySet<Id<Track>> EmptyTrackIds = new HashSet<Id<Track>>();
