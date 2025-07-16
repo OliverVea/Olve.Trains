@@ -36,13 +36,8 @@ public class TrackService
         return Result.Success();
     }
     
-    public Result<Track> GetTrack(Id<Track> trackId)
+    public bool TryGetTrack(Id<Track> trackId, out Track track)
     {
-        if (!_tracks.TryGetValue(trackId, out var track))
-        {
-            return new ResultProblem("Track with id '{0}' not found", trackId);
-        }
-        
-        return track;
+        return _tracks.TryGetValue(trackId, out track);
     }
 }
