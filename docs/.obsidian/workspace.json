@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "terrain/index.md",
+                "file": "pathfinding/index.md",
                 "mode": "source",
                 "source": false
               },
@@ -170,6 +170,9 @@
   },
   "active": "100eb1643880a463",
   "lastOpenFiles": [
+    "terrain/index.md",
+    "pathfinding/index.md",
+    "pathfinding",
     "terrain/terrain-rendering.svg",
     "terrain/terrain-geometry.svg",
     "terrain/terrain-coordinates.svg",
