@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
 using Olve.Engine3D;
@@ -6,6 +7,7 @@ using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Scenes;
 using Olve.Results;
+using Olve.Utilities.Collections;
 using Silk.NET.Input;
 using Spectre.Console;
 using Spectre.Console.Rendering;
@@ -14,6 +16,9 @@ namespace Olve.Trains.Scenes.Console;
 
 public class ConsoleService(ConsoleCommandService consoleCommandService, ILoggingManager loggingManager, KeyboardManager keyboardManager, DayTimeManager dayTimeManager) : SceneService
 {
+    private const int MessageCount = 3;
+    private const int RenderingTimeSampleCount = 10;
+    
     private Thread? _consoleThread;
     private bool _running;
     private UIState _state;
@@ -21,7 +26,7 @@ public class ConsoleService(ConsoleCommandService consoleCommandService, ILoggin
     private bool _consoleActive;
     private readonly StringBuilder _consoleBuffer = new();
 
-    private readonly string[] _consoleMessages = new string[3];
+    private readonly FixedSizeQueue<string> _consoleMessages = new(MessageCount);
 
     public override Result Load()
     {
@@ -46,9 +51,21 @@ public class ConsoleService(ConsoleCommandService consoleCommandService, ILoggin
 
         _consoleThread.Start();
 
-        Array.Fill(_consoleMessages, string.Empty);
+        for (var i = 0; i < MessageCount; i++)
+        {
+            _consoleMessages.Enqueue(string.Empty);
+        }
 
         loggingManager.OnLog += OnLog;
+
+        return Result.Success();
+    }
+
+    public override Result Unload()
+    {
+        _running = false;
+
+        loggingManager.OnLog -= OnLog;
 
         return Result.Success();
     }
@@ -64,9 +81,7 @@ public class ConsoleService(ConsoleCommandService consoleCommandService, ILoggin
             _ => message
         };
 
-        _consoleMessages[0] = _consoleMessages[1];
-        _consoleMessages[1] = _consoleMessages[2];
-        _consoleMessages[2] = message;
+        _consoleMessages.Enqueue(message);
     }
 
     public override Result<Pass> Input(TimeSpan deltaTime)
@@ -139,17 +154,8 @@ public class ConsoleService(ConsoleCommandService consoleCommandService, ILoggin
         _state = new UIState(new UIDayTime(
             dayTimeManager.CurrentTime.Hours,
             dayTimeManager.CurrentTime.Minutes),
-            _consoleMessages,
+            _consoleMessages.ToImmutableList(),
             _consoleActive ? _consoleBuffer.ToString() : null);
-
-        return Result.Success();
-    }
-
-    public override Result Unload()
-    {
-        _running = false;
-
-        loggingManager.OnLog -= OnLog;
 
         return Result.Success();
     }
@@ -158,101 +164,105 @@ public class ConsoleService(ConsoleCommandService consoleCommandService, ILoggin
 
     private static void Render(LiveDisplayContext context, Layout layout, in bool running, in UIState state)
     {
-        UIState previousState = default;
-
-        NoBoxBorder noBoxBorder = new();
-        var bold = Style.Parse("bold");
-        var dim = Style.Parse("dim");
-        var slowBlink = Style.Parse("rapidblink");
-
-        var bodyChanged = true;
-
-        TimeSpan sample0 = new(0), sample1 = new(0), sample2 = new(0), sample3 = new(0), sample4 = new(0);
-
-        while (running)
+        try
         {
-            if (previousState == state && previousState.Console.CollectionEquals(state.Console))
+            UIState previousState = default;
+
+            NoBoxBorder noBoxBorder = new();
+            var bold = Style.Parse("bold");
+            var dim = Style.Parse("dim");
+            var slowBlink = Style.Parse("rapidblink");
+
+            var bodyChanged = true;
+
+            FixedSizeQueue<TimeSpan> samples = new(RenderingTimeSampleCount);
+            
+            while (running)
             {
-                Thread.Sleep(20);
-                continue;
-            }
-
-            var start = Stopwatch.GetTimestamp();
-
-            var headerChanged = state.DayTime != previousState.DayTime;
-            if (headerChanged)
-            {
-                var refreshTime = (sample0 + sample1 + sample2 + sample3 + sample4).TotalMilliseconds / 5;
-
-                layout["Header"].Update(
-                    new Panel(
-                        new Align(
-                            new Columns(
-                                new Text($"Time: {state.DayTime}"),
-                                new Text("Balance: 30.000€"),
-                                new Text($"UI refresh time: {refreshTime:F2}ms")
-                            )
-                            {
-                                Padding = new Padding(4, 0),
-                                Expand = false,
-                            },
-                        HorizontalAlignment.Center)
-                    ).Expand());
-            }
-
-            if (bodyChanged)
-            {
-                var panel = new Panel(string.Empty).Border(noBoxBorder).Expand();
-
-                layout["Body"].Update(panel);
-
-                bodyChanged = false;
-            }
-
-            var consoleChanged = state.ConsoleCommand != previousState.ConsoleCommand || !state.Console.CollectionEquals(previousState.Console);
-            if (consoleChanged)
-            {
-                IEnumerable<IRenderable> consoleLines = state.Console.Select(x => new Markup(x));
-
-                var consoleCommandActive = state.ConsoleCommand is not null;
-                var consoleCommand = "> " + (state.ConsoleCommand ?? "press [C] to activate console");
-                var consoleStyle = consoleCommandActive ? bold : dim;
-
-                if (consoleCommandActive)
+                if (previousState == state && previousState.Console.CollectionEquals(state.Console))
                 {
-                    Columns columns = new(new Text(consoleCommand, consoleStyle), new Text("_", slowBlink))
+                    Thread.Sleep(20);
+                    continue;
+                }
+
+                var start = Stopwatch.GetTimestamp();
+
+                var headerChanged = state.DayTime != previousState.DayTime;
+                if (headerChanged)
+                {
+                    var refreshTime = samples.Average(x => x.TotalMilliseconds);
+
+                    layout["Header"].Update(
+                        new Panel(
+                            new Align(
+                                new Columns(
+                                    new Text($"Time: {state.DayTime}"),
+                                    new Text("Balance: 30.000€"),
+                                    new Text($"UI refresh time: {refreshTime:F2}ms")
+                                )
+                                {
+                                    Padding = new Padding(4, 0),
+                                    Expand = false,
+                                },
+                            HorizontalAlignment.Center)
+                        ).Expand());
+                }
+
+                if (bodyChanged)
+                {
+                    var panel = new Panel(string.Empty).Border(noBoxBorder).Expand();
+
+                    layout["Body"].Update(panel);
+
+                    bodyChanged = false;
+                }
+
+                var consoleChanged = state.ConsoleCommand != previousState.ConsoleCommand || !state.Console.CollectionEquals(previousState.Console);
+                if (consoleChanged)
+                {
+                    IEnumerable<IRenderable> consoleLines = state.Console.Select(x => new Markup(x));
+
+                    var consoleCommandActive = state.ConsoleCommand is not null;
+                    var consoleCommand = "> " + (state.ConsoleCommand ?? "press [C] to activate console");
+                    var consoleStyle = consoleCommandActive ? bold : dim;
+
+                    if (consoleCommandActive)
                     {
-                        Padding = new Padding(0, 0, 0, 0),
-                        Expand = false
-                    };
+                        Columns columns = new(new Text(consoleCommand, consoleStyle), new Text("_", slowBlink))
+                        {
+                            Padding = new Padding(0, 0, 0, 0),
+                            Expand = false
+                        };
 
-                    consoleLines = consoleLines.Append(columns);
+                        consoleLines = consoleLines.Append(columns);
+                    }
+
+                    else
+                    {
+                        var text = new Text(consoleCommand, consoleStyle);
+
+                        consoleLines = consoleLines.Append(text);
+                    }
+
+                    var rows = new Rows(consoleLines);
+                    var align = new Align(rows, HorizontalAlignment.Left, VerticalAlignment.Bottom);
+
+                    var console = new Panel(align).Header("Console").Expand();
+
+                    layout["Console"].Update(console);
                 }
 
-                else
-                {
-                    var text = new Text(consoleCommand, consoleStyle);
+                context.Refresh();
 
-                    consoleLines = consoleLines.Append(text);
-                }
+                var deltaTime = Stopwatch.GetElapsedTime(start);
+                samples.Enqueue(deltaTime);
 
-                var rows = new Rows(consoleLines);
-                var align = new Align(rows, HorizontalAlignment.Left, VerticalAlignment.Bottom);
-
-                var console = new Panel(align).Header("Console").Expand();
-
-                layout["Console"].Update(console);
+                previousState = state;
             }
-
-            context.Refresh();
-
-            sample4 = sample3;
-            sample3 = sample2;
-            sample2 = sample1;
-            sample1 = sample0;
-            sample0 = Stopwatch.GetElapsedTime(start);
-
-            previousState = state;
+        } catch (Exception ex)
+        {
+            AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
+            AnsiConsole.WriteLine("An error occurred while rendering the console. Please check the logs for more details.");
         }
     }
 }

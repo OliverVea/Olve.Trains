@@ -36,8 +36,8 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=E9AF23D0_002DA530_002D4349_002D8482_002D2B144EC672DC_002Fd_003Aassets_002Fd_003Ashaders_002Ff_003ALineStrip_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=E9AF23D0_002DA530_002D4349_002D8482_002D2B144EC672DC_002Fd_003Aassets_002Fd_003Ashaders_002Ff_003ATerrainWireframe_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=E9AF23D0_002DA530_002D4349_002D8482_002D2B144EC672DC_002Fd_003Aassets_002Fd_003Ashaders_002Ff_003ATerrain_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=e68f0f83_002D931f_002D4c75_002Db16e_002D5567e2586cbd/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from Solution" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;Solution /&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=e68f0f83_002D931f_002D4c75_002Db16e_002D5567e2586cbd/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from Solution" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;Solution /&gt;
 &lt;/SessionState&gt;</s:String>
 	
 	

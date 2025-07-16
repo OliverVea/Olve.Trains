@@ -7,14 +7,14 @@ namespace Olve.Trains.Scenes.Game;
 
 public class TrackSplineService(TrackService trackService)
 {
-    public const float StartTime = 0.0f;
-    public const float EndTime = 1.0f;
+    private const float StartTime = 0.0f;
+    private const float EndTime = 1.0f;
     
     public Result<Hermite3> GetSpline(Id<Track> trackId)
     {
-        if (trackService.GetTrack(trackId).TryPickProblems(out var problems, out var track))
+        if (!trackService.TryGetTrack(trackId, out var track))
         {
-            return problems.Prepend("Failed to get track");
+            return new ResultProblem("Failed to get track");
         }
 
         Hermite3.Knot startKnot = new(track.Start.Point, track.Start.Tangent, track.Start.Tangent);

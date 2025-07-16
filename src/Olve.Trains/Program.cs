@@ -28,7 +28,7 @@ public static class Program
         var gameManager = gameProvider.GetService<GameManager>();
         return gameManager.Run(window, [
             SceneIds.GameScene,
-            // SceneIds.ConsoleScene // Doesn't work on Windows?
+            SceneIds.ConsoleScene // Doesn't work on Windows?
         ]);
     }
 
