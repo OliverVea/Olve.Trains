@@ -16,6 +16,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.AssetPipeline.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Engine3D.Tests", "tests\Olve.Engine3D.Tests\Olve.Engine3D.Tests.csproj", "{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.Tests", "tests\Olve.Trains.Tests\Olve.Trains.Tests.csproj", "{1A91E2C5-6737-4B18-9E8C-99EA35D994BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.GameLogic", "src\Olve.Trains.GameLogic\Olve.Trains.GameLogic.csproj", "{716E38BC-6571-4CDA-A05E-A63F35D6D5C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,8 +47,16 @@ Global
 		{71320460-C43E-43E6-8405-A3C0F821BDD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71320460-C43E-43E6-8405-A3C0F821BDD4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
+                {68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Release|Any CPU.Build.0 = Release|Any CPU
+                {1A91E2C5-6737-4B18-9E8C-99EA35D994BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {1A91E2C5-6737-4B18-9E8C-99EA35D994BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {1A91E2C5-6737-4B18-9E8C-99EA35D994BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {1A91E2C5-6737-4B18-9E8C-99EA35D994BB}.Release|Any CPU.Build.0 = Release|Any CPU
+                {716E38BC-6571-4CDA-A05E-A63F35D6D5C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {716E38BC-6571-4CDA-A05E-A63F35D6D5C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {716E38BC-6571-4CDA-A05E-A63F35D6D5C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {716E38BC-6571-4CDA-A05E-A63F35D6D5C0}.Release|Any CPU.Build.0 = Release|Any CPU
+        EndGlobalSection
 EndGlobal
