@@ -18,8 +18,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Engine3D.Tests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.Tests", "tests\Olve.Trains.Tests\Olve.Trains.Tests.csproj", "{1A91E2C5-6737-4B18-9E8C-99EA35D994BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.GameLogic", "src\Olve.Trains.GameLogic\Olve.Trains.GameLogic.csproj", "{716E38BC-6571-4CDA-A05E-A63F35D6D5C0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,9 +52,5 @@ Global
                 {1A91E2C5-6737-4B18-9E8C-99EA35D994BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
                 {1A91E2C5-6737-4B18-9E8C-99EA35D994BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
                 {1A91E2C5-6737-4B18-9E8C-99EA35D994BB}.Release|Any CPU.Build.0 = Release|Any CPU
-                {716E38BC-6571-4CDA-A05E-A63F35D6D5C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-                {716E38BC-6571-4CDA-A05E-A63F35D6D5C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-                {716E38BC-6571-4CDA-A05E-A63F35D6D5C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-                {716E38BC-6571-4CDA-A05E-A63F35D6D5C0}.Release|Any CPU.Build.0 = Release|Any CPU
         EndGlobalSection
 EndGlobal
