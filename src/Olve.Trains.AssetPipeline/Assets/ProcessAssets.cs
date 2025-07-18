@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Operations;
 using Olve.Results;
+using Olve.Trains.AssetPipeline;
+using System;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -12,35 +14,58 @@ public class ProcessAssets(ILogger<ProcessAssets> logger, ProcessMeshAssets proc
 {
     private static readonly string TemplateFilePath = Path.Combine(Paths.TemplatesSourceFolder, "MeshesClass.scriban");
 
-    public record Request(IReadOnlyList<FileInfo> AssetFiles);
+    public record Request(IReadOnlyList<FileInfo> AssetFiles, BuildTargets Targets);
     public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets, IReadOnlyList<Asset<TextureData>> TextureAssets, IReadOnlyList<Asset<TerrainData>> TerrainAssets);
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
         logger.LogDebug("Processing assets");
 
-        ProcessMeshAssets.Request meshRequest = new(request.AssetFiles);
-        var meshResponse = await processMeshAssets.ExecuteAsync(meshRequest, ct);
-        if (meshResponse.TryPickProblems(out var meshProblems, out var meshAssets))
+        IReadOnlyList<Asset<MeshData>> meshAssets = Array.Empty<Asset<MeshData>>();
+        IReadOnlyList<Asset<TextureData>> textureAssets = Array.Empty<Asset<TextureData>>();
+        IReadOnlyList<Asset<TerrainData>> terrainAssets = Array.Empty<Asset<TerrainData>>();
+
+        if (request.Targets.HasFlag(BuildTargets.Meshes))
         {
-            return meshProblems.Prepend("Failed to process mesh assets");
+            ProcessMeshAssets.Request meshRequest = new(request.AssetFiles);
+            var meshResponse = await processMeshAssets.ExecuteAsync(meshRequest, ct);
+            if (meshResponse.TryPickProblems(out var meshProblems, out var meshes))
+            {
+                return meshProblems.Prepend("Failed to process mesh assets");
+            }
+
+            meshAssets = meshes;
         }
 
-        ProcessTextureAssets.Request textureRequest = new(request.AssetFiles);
-        var textureResponse = await processTextureAssets.ExecuteAsync(textureRequest, ct);
-        if (textureResponse.TryPickProblems(out var textureProblems, out var textureAssets))
+        if (request.Targets.HasFlag(BuildTargets.Textures))
         {
-            return textureProblems.Prepend("Failed to process texture assets");
+            ProcessTextureAssets.Request textureRequest = new(request.AssetFiles);
+            var textureResponse = await processTextureAssets.ExecuteAsync(textureRequest, ct);
+            if (textureResponse.TryPickProblems(out var textureProblems, out var textures))
+            {
+                return textureProblems.Prepend("Failed to process texture assets");
+            }
+
+            textureAssets = textures;
         }
 
-        ProcessTerrainAssets.Request terrainRequest = new(request.AssetFiles);
-        var terrainResponse = await processTerrainAssets.ExecuteAsync(terrainRequest, ct);
-        if (terrainResponse.TryPickProblems(out var terrainProblems, out var terrainAssets))
+        if (request.Targets.HasFlag(BuildTargets.Terrains))
         {
-            return terrainProblems.Prepend("Failed to process terrain assets");
+            ProcessTerrainAssets.Request terrainRequest = new(request.AssetFiles);
+            var terrainResponse = await processTerrainAssets.ExecuteAsync(terrainRequest, ct);
+            if (terrainResponse.TryPickProblems(out var terrainProblems, out var terrains))
+            {
+                return terrainProblems.Prepend("Failed to process terrain assets");
+            }
+
+            terrainAssets = terrains;
         }
 
-        logger.LogInformation("Processed {MeshCount} mesh(es), {TextureCount} texture(s), and {TerrainCount} terrain(s) successfully!", meshAssets.Count, textureAssets.Count, terrainAssets.Count);
+        logger.LogInformation(
+            "Processed {MeshCount} mesh(es), {TextureCount} texture(s), and {TerrainCount} terrain(s) successfully!",
+            meshAssets.Count,
+            textureAssets.Count,
+            terrainAssets.Count);
 
         return new Response(meshAssets, textureAssets, terrainAssets);
     }
