@@ -12,6 +12,13 @@ S3_SECRET=PichNjFNXZfWc6zmCwpNr74b09DQTL1IMELbePA2
 
 Run [`build.sh`](./build.sh) to build the assets.
 
+You can limit which assets to build with flags:
+
+```bash
+dotnet run --project src/Olve.Trains.AssetPipeline -- --shaders --textures
+dotnet run --project src/Olve.Trains.AssetPipeline -- --all
+```
+
 Run `dotnet build` in `Olve.Trains` to build the game.
 
 ## Todo

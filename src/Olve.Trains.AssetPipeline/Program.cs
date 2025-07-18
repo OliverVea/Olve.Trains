@@ -58,7 +58,8 @@ logger.LogInformation("--------------------------------------");
 
 CancellationTokenSource cts = new();
 
-var result = await runAssetPipeline.ExecuteAsync(new (), cts.Token);
+var targets = BuildTargetParser.Parse(args);
+var result = await runAssetPipeline.ExecuteAsync(new(targets), cts.Token);
 if (result.TryPickProblems(out var mainProblems))
 {
     foreach (var problem in mainProblems)
