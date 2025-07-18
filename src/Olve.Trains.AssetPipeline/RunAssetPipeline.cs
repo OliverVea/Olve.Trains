@@ -3,6 +3,8 @@ using Olve.Operations;
 using Olve.Results;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Shaders;
+using System;
+using System.IO;
 
 namespace Olve.Trains.AssetPipeline;
 
@@ -12,31 +14,44 @@ public class RunAssetPipeline(
     ProcessShaders processShaders,
     ProcessAssets processAssets) : IAsyncOperation<RunAssetPipeline.Request>
 {
-    public record Request;
+    public record Request(BuildTargets Targets);
 
     public async Task<Result> ExecuteAsync(Request request, CancellationToken ct = default)
     {
         logger.LogDebug("Starting asset pipeline");
 
-        DownloadAssets.Request downloadAssetsRequest = new();
-        var downloadAssetsResult = await downloadAssets.ExecuteAsync(downloadAssetsRequest, ct);
-        if (downloadAssetsResult.TryPickProblems(out var downloadProblems, out var downloadResponse))
+        IReadOnlyList<FileInfo> assetFiles = Array.Empty<FileInfo>();
+
+        if (request.Targets.RequiresS3Resources())
         {
-            return downloadProblems.Prepend("Failed to download assets");
+            DownloadAssets.Request downloadAssetsRequest = new();
+            var downloadAssetsResult = await downloadAssets.ExecuteAsync(downloadAssetsRequest, ct);
+            if (downloadAssetsResult.TryPickProblems(out var downloadProblems, out var downloadResponse))
+            {
+                return downloadProblems.Prepend("Failed to download assets");
+            }
+
+            assetFiles = downloadResponse.Files;
         }
 
-        ProcessShaders.Request compileShadersRequest = new();
-        var compileShadersResult = await processShaders.ExecuteAsync(compileShadersRequest, ct);
-        if (compileShadersResult.TryPickProblems(out var shaderProblems, out var compileResponse))
+        if (request.Targets.HasFlag(BuildTargets.Shaders))
         {
-            return shaderProblems.Prepend("Failed to compile shaders");
+            ProcessShaders.Request compileShadersRequest = new();
+            var compileShadersResult = await processShaders.ExecuteAsync(compileShadersRequest, ct);
+            if (compileShadersResult.TryPickProblems(out var shaderProblems))
+            {
+                return shaderProblems.Prepend("Failed to compile shaders");
+            }
         }
 
-        ProcessAssets.Request processAssetsRequest = new(downloadResponse.Files);
-        var processAssetsResult = await processAssets.ExecuteAsync(processAssetsRequest, ct);
-        if (processAssetsResult.TryPickProblems(out var processProblems, out var processResponse))
+        if (request.Targets.RequiresS3Resources())
         {
-            return processProblems.Prepend("Failed to process assets");
+            ProcessAssets.Request processAssetsRequest = new(assetFiles, request.Targets);
+            var processAssetsResult = await processAssets.ExecuteAsync(processAssetsRequest, ct);
+            if (processAssetsResult.TryPickProblems(out var processProblems))
+            {
+                return processProblems.Prepend("Failed to process assets");
+            }
         }
 
         logger.LogDebug("Asset pipeline completed successfully!");
