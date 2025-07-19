@@ -21,8 +21,12 @@
         <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.4" />
     </ItemGroup>
 
-    <ItemGroup>
+  <ItemGroup>
       <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
-    </ItemGroup>
+  </ItemGroup>
+
+  <Target Name="CompileShaders" BeforeTargets="BeforeBuild">
+    <Exec Command="dotnet run --project ..\Olve.Trains.AssetPipeline\Olve.Trains.AssetPipeline.csproj -- --shaders" />
+  </Target>
 
 </Project>
