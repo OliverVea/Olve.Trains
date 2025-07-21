@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using Amazon.Runtime;
 using Amazon.S3;
@@ -25,7 +26,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
     private const string CfClientIdHeader = "CF-Access-Client-Id";
     private const string CfClientSecretHeader = "CF-Access-Client-Secret";
 
-    public record Request;
+    public record Request(TimeSpan InitialTimeout, bool AllowFailure);
     public record Response(IReadOnlyList<FileInfo> Files);
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
@@ -35,14 +36,26 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         var environmentVariableResult = ReadS3EnvironmentVariables();
         if (environmentVariableResult.TryPickProblems(out var problems, out var envVariables))
         {
+            if (request.AllowFailure)
+            {
+                logger.LogWarning("Could not get S3 configuration: {Problems}", problems);
+                return new Response(Array.Empty<FileInfo>());
+            }
+
             return problems.Prepend("Could not get S3 configuration");
         }
 
         logger.LogInformation("Got configuration - Url: {Url}, Bucket: {Bucket}", envVariables.Url, envVariables.Bucket);
 
-        var retrievalResult = await RetrieveS3BucketAsync(envVariables, ct);
+        var retrievalResult = await RetrieveS3BucketAsync(envVariables, request.InitialTimeout, ct);
         if (retrievalResult.TryPickProblems(out var retrievalProblems, out var files))
         {
+            if (request.AllowFailure)
+            {
+                logger.LogWarning("Failed to retrieve S3 bucket: {Problems}", retrievalProblems);
+                return new Response(Array.Empty<FileInfo>());
+            }
+
             return retrievalProblems.Prepend("Failed to retrieve S3 bucket");
         }
 
@@ -104,7 +117,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         return cookie;
     }
 
-    private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(Envs envs, CancellationToken ct)
+    private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(Envs envs, TimeSpan initialTimeout, CancellationToken ct)
     {
         var cookieResult = await GetCloudflareCookieAsync(envs, ct);
         if (cookieResult.TryPickProblems(out var problems, out var cookie))
@@ -141,7 +154,19 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
             }
             
             var listRequest = new ListObjectsV2Request { BucketName = envs.Bucket };
-            var listResponse = await s3Client.ListObjectsV2Async(listRequest, ct);
+
+            using var initialTimeoutCts = new CancellationTokenSource(initialTimeout);
+            using var combinedInitialCts = CancellationTokenSource.CreateLinkedTokenSource(ct, initialTimeoutCts.Token);
+
+            ListObjectsV2Response listResponse;
+            try
+            {
+                listResponse = await s3Client.ListObjectsV2Async(listRequest, combinedInitialCts.Token);
+            }
+            catch (OperationCanceledException) when (initialTimeoutCts.IsCancellationRequested)
+            {
+                return new ResultProblem("Timed out after {0}ms when listing objects in bucket '{1}' at '{2}'", initialTimeout.TotalMilliseconds, envs.Bucket, envs.Url);
+            }
 
             if (listResponse.S3Objects.Count == 0)
             {
