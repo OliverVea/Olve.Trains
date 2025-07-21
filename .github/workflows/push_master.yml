@@ -38,7 +38,7 @@ jobs:
 
       - name: Run asset pipeline
         shell: bash
-        run: sh ./src/Olve.Trains.AssetPipeline/build.sh
+        run: sh ./src/Olve.Trains.AssetPipeline/build.sh --s3-timeout 5000
 
       - name: Upload assets to artifact storage
         uses: actions/upload-artifact@v4
