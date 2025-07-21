@@ -13,8 +13,8 @@ public class RunAssetPipeline(
     DownloadAssets downloadAssets,
     ProcessShaders processShaders,
     ProcessAssets processAssets) : IAsyncOperation<RunAssetPipeline.Request>
-{
-    public record Request(BuildTargets Targets);
+    {
+    public record Request(BuildTargets Targets, TimeSpan InitialS3Timeout, bool AllowS3Failure);
 
     public async Task<Result> ExecuteAsync(Request request, CancellationToken ct = default)
     {
@@ -24,14 +24,24 @@ public class RunAssetPipeline(
 
         if (request.Targets.RequiresS3Resources())
         {
-            DownloadAssets.Request downloadAssetsRequest = new();
+            DownloadAssets.Request downloadAssetsRequest = new(request.InitialS3Timeout, request.AllowS3Failure);
             var downloadAssetsResult = await downloadAssets.ExecuteAsync(downloadAssetsRequest, ct);
             if (downloadAssetsResult.TryPickProblems(out var downloadProblems, out var downloadResponse))
             {
-                return downloadProblems.Prepend("Failed to download assets");
+                if (request.AllowS3Failure)
+                {
+                    logger.LogWarning("Failed to download assets: {Problems}", downloadProblems);
+                    assetFiles = Array.Empty<FileInfo>();
+                }
+                else
+                {
+                    return downloadProblems.Prepend("Failed to download assets");
+                }
             }
-
-            assetFiles = downloadResponse.Files;
+            else
+            {
+                assetFiles = downloadResponse.Files;
+            }
         }
 
         if (request.Targets.HasFlag(BuildTargets.Shaders))

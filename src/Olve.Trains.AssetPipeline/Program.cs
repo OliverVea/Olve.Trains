@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+using System;
+using System.Collections.Generic;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.OpenRaster;
 using Olve.Trains.AssetPipeline;
@@ -58,8 +60,10 @@ logger.LogInformation("--------------------------------------");
 
 CancellationTokenSource cts = new();
 
-var targets = BuildTargetParser.Parse(args);
-var result = await runAssetPipeline.ExecuteAsync(new(targets), cts.Token);
+var (initialTimeout, allowS3Failure, remainingArgs) = S3OptionsParser.Parse(args);
+
+var targets = BuildTargetParser.Parse(remainingArgs);
+var result = await runAssetPipeline.ExecuteAsync(new(targets, initialTimeout, allowS3Failure), cts.Token);
 if (result.TryPickProblems(out var mainProblems))
 {
     foreach (var problem in mainProblems)
