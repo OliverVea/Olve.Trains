@@ -15,4 +15,4 @@ docker run \
    -v "$(pwd)/Olve.Trains/Shaders:/app/shaders:ro" \
    --env-file "$(pwd)/Olve.Trains.AssetPipeline/.env" \
    olve-trains-asset-pipeline \
-   .
+   . "$@"
