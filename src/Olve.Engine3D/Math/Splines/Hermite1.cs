@@ -1,5 +1,3 @@
-using System.Runtime.Intrinsics.X86;
-
 namespace Olve.Engine3D.Math.Splines;
 
 public class Hermite1 : Hermite<float>
@@ -26,6 +24,12 @@ public class Hermite1 : Hermite<float>
                 Vector4D.Dot(characteristic.Row3, geometry),
                 Vector4D.Dot(characteristic.Row4, geometry));
         }
+    }
+
+    protected override float SampleDerivative(int segmentIndex, in Vector4D<float> tPrime, float segmentDuration)
+    {
+        var dLocal = Vector4D.Dot(tPrime, _coefficients[segmentIndex]);
+        return dLocal / segmentDuration;
     }
 
     protected override float Sample(int segmentIndex, in Vector4D<float> t)

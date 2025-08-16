@@ -21,6 +21,12 @@ public class Hermite2 : Hermite<Vector2D<float>>
         }
     }
 
+    protected override Vector2D<float> SampleDerivative(int segmentIndex, in Vector4D<float> tPrime, float segmentDuration)
+    {
+        var dLocal = tPrime * _coefficients[segmentIndex];
+        return dLocal / segmentDuration;
+    }
+
     protected override Vector2D<float> Sample(int segmentIndex, in Vector4D<float> t)
     {
         var result = t * _coefficients[segmentIndex];

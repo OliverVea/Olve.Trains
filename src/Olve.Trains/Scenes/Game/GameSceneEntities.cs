@@ -1,8 +1,7 @@
 using Olve.CodeGen;
+using Olve.Engine3D;
 using Olve.Engine3D.Light;
-using Olve.Engine3D.Math.Splines;
 using Olve.Engine3D.Rendering.Entities;
-using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Primitives;
 using Silk.NET.Maths;
 
@@ -67,43 +66,43 @@ public static class GameSceneEntities
         new (-0.5f, -0.5f, 0.5f),
     ];
 
-    public static readonly Direction[] CubeDirections =
+    public static readonly CardinalDirection[] CubeDirections =
     [
         // Top
-        Direction.Up,
-        Direction.Up,
-        Direction.Up,
-        Direction.Up,
+        CardinalDirection.Up,
+        CardinalDirection.Up,
+        CardinalDirection.Up,
+        CardinalDirection.Up,
 
         // Left
-        Direction.West,
-        Direction.West,
-        Direction.West,
-        Direction.West,
+        CardinalDirection.West,
+        CardinalDirection.West,
+        CardinalDirection.West,
+        CardinalDirection.West,
 
         // Right
-        Direction.East,
-        Direction.East,
-        Direction.East,
-        Direction.East,
+        CardinalDirection.East,
+        CardinalDirection.East,
+        CardinalDirection.East,
+        CardinalDirection.East,
 
         // Front
-        Direction.North,
-        Direction.North,
-        Direction.North,
-        Direction.North,
+        CardinalDirection.North,
+        CardinalDirection.North,
+        CardinalDirection.North,
+        CardinalDirection.North,
 
         // Back
-        Direction.South,
-        Direction.South,
-        Direction.South,
-        Direction.South,
+        CardinalDirection.South,
+        CardinalDirection.South,
+        CardinalDirection.South,
+        CardinalDirection.South,
 
         // Bottom
-        Direction.Down,
-        Direction.Down,
-        Direction.Down,
-        Direction.Down,
+        CardinalDirection.Down,
+        CardinalDirection.Down,
+        CardinalDirection.Down,
+        CardinalDirection.Down,
     ];
 
     public static readonly TriangleIndex[] CubeIndices =
@@ -141,30 +140,30 @@ public static class GameSceneEntities
         TextureCoordinates = CubeDirections.Select(MapToTexture).ToArray()
     };
 
-    public static Vector3D<float> MapToNormal(Direction direction) => direction switch
+    public static Vector3D<float> MapToNormal(CardinalDirection cardinalDirection) => cardinalDirection switch
     {
-        Direction.None => new Vector3D<float>(0, 0, 0),
-        Direction.North => new Vector3D<float>(0, 0, 1),
-        Direction.South => new Vector3D<float>(0, 0, -1),
-        Direction.East => new Vector3D<float>(1, 0, 0),
-        Direction.West => new Vector3D<float>(-1, 0, 0),
-        Direction.Up => new Vector3D<float>(0, 1, 0),
-        Direction.Down => new Vector3D<float>(0, -1, 0),
-        _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+        CardinalDirection.None => new Vector3D<float>(0, 0, 0),
+        CardinalDirection.North => new Vector3D<float>(0, 0, 1),
+        CardinalDirection.South => new Vector3D<float>(0, 0, -1),
+        CardinalDirection.East => new Vector3D<float>(1, 0, 0),
+        CardinalDirection.West => new Vector3D<float>(-1, 0, 0),
+        CardinalDirection.Up => new Vector3D<float>(0, 1, 0),
+        CardinalDirection.Down => new Vector3D<float>(0, -1, 0),
+        _ => throw new ArgumentOutOfRangeException(nameof(cardinalDirection), cardinalDirection, null)
     };
 
-    public static Vector2D<float> MapToTexture(Direction direction)
+    public static Vector2D<float> MapToTexture(CardinalDirection cardinalDirection)
     {
-        var x = direction switch
+        var x = cardinalDirection switch
         {
-            Direction.None => 0,
-            Direction.North => 1f / 7f,
-            Direction.South => 2f / 7f,
-            Direction.East => 3f / 7f,
-            Direction.West => 4f / 7f,
-            Direction.Up => 0.99f,
-            Direction.Down => 0,
-            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+            CardinalDirection.None => 0,
+            CardinalDirection.North => 1f / 7f,
+            CardinalDirection.South => 2f / 7f,
+            CardinalDirection.East => 3f / 7f,
+            CardinalDirection.West => 4f / 7f,
+            CardinalDirection.Up => 0.99f,
+            CardinalDirection.Down => 0,
+            _ => throw new ArgumentOutOfRangeException(nameof(cardinalDirection), cardinalDirection, null)
         };
 
         return new Vector2D<float>(x, 0);

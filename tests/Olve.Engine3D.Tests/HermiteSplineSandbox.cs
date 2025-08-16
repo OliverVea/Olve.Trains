@@ -29,8 +29,10 @@ public static class HermiteSplineSandbox
         ];
 
         Hermite2 spline = new(keyFrames);
+        UniformHermite<Vector2D<float>> uniformSpline = new(spline, new Vector2Metric());
 
         List<float> xs = [], ys = [];
+        List<float> xsU = [], ysU = [];
 
         for (float t = T0; t < T1; t += Dt)
         {
@@ -38,11 +40,19 @@ public static class HermiteSplineSandbox
 
             xs.Add(result.X);
             ys.Add(result.Y);
+
+            result = uniformSpline.SampleAtDistance(t * uniformSpline.Length);
+
+            xsU.Add(result.X + 0.2f);
+            ysU.Add(result.Y);
         }
 
         Plot myPlot = new();
 
         var scatter = myPlot.Add.Scatter(xs, ys);
+        scatter.MarkerSize *= 0.4f;
+        
+        scatter = myPlot.Add.Scatter(xsU, ysU);
         scatter.MarkerSize *= 0.4f;
 
         if (!Paths.Path.TryGetAssemblyExecutable(out var path))

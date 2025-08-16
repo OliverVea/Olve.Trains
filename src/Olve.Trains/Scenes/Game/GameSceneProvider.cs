@@ -8,13 +8,17 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Scenes;
+using Olve.Logging;
+using Olve.Trains.Scenes.Game.CommandHandlers;
+using Olve.Trains.Scenes.Game.Terrain;
+using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.Game.Vehicles;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains.Scenes.Game;
 
 [ServiceProvider]
-[Singleton(typeof(CoreGameService))]
 [Singleton(typeof(SceneLightService))]
 [Singleton(typeof(TrackArrowRenderingService))]
 [Singleton(typeof(TerrainService))]
@@ -26,6 +30,16 @@ namespace Olve.Trains.Scenes.Game;
 [Singleton(typeof(TrackService))]
 [Singleton(typeof(TrackSplineService))]
 [Singleton(typeof(TrackRenderingService))]
+[Singleton(typeof(TrackJunctionUpdatingService))]
+[Singleton(typeof(TrackConnectionService))]
+[Singleton(typeof(TrackJunctionService))]
+[Singleton(typeof(SetTimeHandlerService))]
+[Singleton(typeof(VehicleService))]
+[Singleton(typeof(VehiclePositionService))]
+[Singleton(typeof(PlaceVehicleHandlerService))]
+[Singleton(typeof(VehicleRenderingService))]
+[Singleton(typeof(VehicleMovementService))]
+[Singleton(typeof(CommandHandlerServiceCollection), Factory= nameof(GetCommandHandlerServiceCollection))]
 [Transient(typeof(MeshEntityManager), Factory = nameof(GetMeshEntityManager))]
 [Transient(typeof(HeightmapEntityManager), Factory = nameof(GetHeightmapEntityManager))]
 [Transient(typeof(ShaderEntityManager), Factory = nameof(GetShaderEntityManager))]
@@ -43,6 +57,7 @@ namespace Olve.Trains.Scenes.Game;
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 public partial class GameSceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
+    private CommandHandlerServiceCollection GetCommandHandlerServiceCollection() => gameProvider.GetService<CommandHandlerServiceCollection>();
     private MeshEntityManager GetMeshEntityManager() => gameProvider.GetRequiredService<MeshEntityManager>();
     private HeightmapEntityManager GetHeightmapEntityManager() => gameProvider.GetRequiredService<HeightmapEntityManager>();
     private ShaderEntityManager GetShaderEntityManager() => gameProvider.GetRequiredService<ShaderEntityManager>();
@@ -61,7 +76,6 @@ public partial class GameSceneProvider(GameProvider gameProvider) : ISceneServic
     
     private IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>
     [
-        provider.GetRequiredService<CoreGameService>(),
         provider.GetRequiredService<SceneLightService>(),
         provider.GetRequiredService<GLService>(),
         provider.GetRequiredService<TrackArrowRenderingService>(),
@@ -70,7 +84,13 @@ public partial class GameSceneProvider(GameProvider gameProvider) : ISceneServic
         provider.GetRequiredService<TerrainRaycastService>(),
         provider.GetRequiredService<TerrainService>(),
         provider.GetRequiredService<TrackPlacingService>(),
+        provider.GetRequiredService<TrackSplineService>(),
         provider.GetRequiredService<TrackRenderingService>(),
+        provider.GetRequiredService<TrackJunctionUpdatingService>(),
+        provider.GetRequiredService<SetTimeHandlerService>(),
+        provider.GetRequiredService<PlaceVehicleHandlerService>(),
+        provider.GetRequiredService<VehicleRenderingService>(),
+        provider.GetRequiredService<VehicleMovementService>(),
     ];
 
 }

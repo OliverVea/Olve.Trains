@@ -20,7 +20,13 @@ public class Hermite3 : Hermite<Vector3D<float>>
             _coefficients[i] = Characteristics.Hermite * keyFrameMatrix;
         }
     }
-    
+
+    protected override Vector3D<float> SampleDerivative(int segmentIndex, in Vector4D<float> tPrime, float segmentDuration)
+    {
+        var dLocal = tPrime * _coefficients[segmentIndex];
+        return dLocal / segmentDuration;
+    }
+
     protected override Vector3D<float> Sample(int segmentIndex, in Vector4D<float> t)
     {
         var result = t * _coefficients[segmentIndex];

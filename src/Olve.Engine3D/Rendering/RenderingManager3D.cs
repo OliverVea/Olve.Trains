@@ -17,7 +17,8 @@ public class RenderingManager3D(
     private readonly ThreadSafeUintGenerator _instanceUintGenerator = new();
     private RenderingInstanceId NextInstanceId() => new(_instanceUintGenerator.Next());
 
-    protected readonly OrderedList<Instance> Instances = new();
+    // Dictionary on shader?
+    protected readonly SortedList<RenderingInstanceId, Instance> Instances = new();
 
     protected readonly record struct Instance(
         RenderingInstanceId InstanceId,
@@ -25,35 +26,7 @@ public class RenderingManager3D(
         VAO VAO,
         VBO VBO,
         EBO EBO,
-        Matrix4X4<float> Transform) : IComparable<Instance>
-    {
-        public int CompareTo(Instance other)
-        {
-            // Order: shader > VAO > VBO > EBO > InstanceId
-
-            if (ShaderId.Id != other.ShaderId.Id)
-            {
-                return ShaderId.Id.CompareTo(other.ShaderId.Id);
-            }
-
-            if (VAO.Handle != other.VAO.Handle)
-            {
-                return VAO.Handle.CompareTo(other.VAO.Handle);
-            }
-
-            if (VBO.Handle != other.VBO.Handle)
-            {
-                return VBO.Handle.CompareTo(other.VBO.Handle);
-            }
-
-            if (EBO.Handle != other.EBO.Handle)
-            {
-                return EBO.Handle.CompareTo(other.EBO.Handle);
-            }
-
-            return InstanceId.Id.CompareTo(other.InstanceId.Id);
-        }
-    }
+        Matrix4X4<float> Transform);
     
     public Result<RenderingInstanceId> RegisterInstance(
         RenderingId<MeshData> meshId,
@@ -73,7 +46,7 @@ public class RenderingManager3D(
         var instanceId = NextInstanceId();
         Instance instance = new(instanceId, shaderId, meshData.VAO, meshData.VBO, meshData.EBO, worldMatrix);
 
-        Instances.Insert(instance);
+        Instances.Add(instanceId, instance);
 
         return instanceId;
     }
@@ -96,44 +69,40 @@ public class RenderingManager3D(
         var instanceId = NextInstanceId();
         Instance instance = new(instanceId, shaderId, terrainRegistration.VAO, terrainRegistration.VBO, terrainRegistration.EBO, worldMatrix);
 
-        Instances.Insert(instance);
+        Instances.Add(instanceId, instance);
 
         return instanceId;
     }
 
     public Result DeregisterInstance(RenderingInstanceId instanceId)
     {
-        var instance = Instances.FirstOrDefault(x => x.InstanceId == instanceId);
-
-        if (instance == default)
+        if (!Instances.Remove(instanceId))
         {
             return new ResultProblem("Entity instance with '{0}' is not registered", instanceId);
         }
-
-        Instances.Remove(instance);
 
         return Result.Success();
     }
 
     public Result SetInstanceWorld(RenderingInstanceId instanceId, Matrix4X4<float> worldMatrix)
     {
-        var instance = Instances.FirstOrDefault(x => x.InstanceId == instanceId);
-        if (instance == default)
+        var instanceIndex = Instances.IndexOfKey(instanceId);
+        if (instanceIndex == -1)
         {
             return new ResultProblem("Entity instance with '{0}' is not registered", instanceId);
         }
 
+        var instance = Instances.GetValueAtIndex(instanceIndex);
         var newInstance = instance with { Transform = worldMatrix };
 
-        Instances.Replace(newInstance);
+        Instances.SetValueAtIndex(instanceIndex, newInstance);
 
         return Result.Success();
     }
 
     public Result<Matrix4X4<float>> GetInstanceWorld(RenderingInstanceId instanceId)
     {
-        var instance = Instances.FirstOrDefault(x => x.InstanceId == instanceId);
-        if (instance == default)
+        if (!Instances.TryGetValue(instanceId, out var instance))
         {
             return new ResultProblem("Entity instance with '{0}' is not registered", instanceId);
         }
@@ -148,10 +117,7 @@ public class RenderingManager3D(
             return new ResultProblem("Shader ID is not set");
         }
 
-        var startIndex = Instances.GetIndex(new Instance { ShaderId = shader.RenderingId });
-        var endIndex = Instances.GetIndex(new Instance { ShaderId = new RenderingId<ShaderData>(shader.RenderingId.Id + 1) });
-
-        if (startIndex == endIndex)
+        if (Instances.Count == 0)
         {
             return Result.Success();
         }
@@ -170,7 +136,7 @@ public class RenderingManager3D(
             return problems.Prepend("Failed to load shader '{0}' into OpenGL", shader.ShaderData.Name);
         }
 
-        if (RenderInstances(startIndex, endIndex, shaderRegistration).TryPickProblems(out problems))
+        if (RenderInstances(shader.RenderingId, shaderRegistration).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to render entity instances with shader '{0}'", shader.ShaderData.Name);
         }
@@ -178,13 +144,17 @@ public class RenderingManager3D(
         return Result.Success();
     }
 
-    private Result RenderInstances(int startIndex, int endIndex, OpenGLShaderManager.Registration shaderRegistration)
+    private Result RenderInstances(RenderingId<ShaderData> shaderRenderingId,
+        OpenGLShaderManager.Registration shaderRegistration)
     {
         try
         {
-            for (var i = startIndex; i < endIndex; i++)
+            foreach (var instance in Instances.Values)
             {
-                var instance = Instances[i];
+                if (instance.ShaderId != shaderRenderingId)
+                {
+                    continue;
+                }
                 
                 if (openGLModelRenderingManager.LoadModelInOpenGL(
                         instance.VAO,

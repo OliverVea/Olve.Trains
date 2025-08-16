@@ -16,7 +16,7 @@ namespace Olve.CodeGen;
 public static partial class Shaders
 {
 
-    public class {{ Name }} : IShader
+    public partial class {{ Name }} : IShader
     {
         public RenderingId<ShaderData> RenderingId { get; set; }
 

@@ -1,32 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>true</ImplicitUsings>
         <PublishSelfContained>true</PublishSelfContained>
     </PropertyGroup>
     <ItemGroup>
         <None Update="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="assets\meshes\SM_Veh_Bullet_01.mesh">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
-        <PackageReference Include="Silk.NET.Input" Version="2.22.0" />
-        <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
-        <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
-        <PackageReference Include="Spectre.Console" Version="0.50.0" />
-        <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.4" />
+        <PackageReference Include="Microsoft.Extensions.ObjectPool" />
     </ItemGroup>
 
   <ItemGroup>
       <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
+      <ProjectReference Include="..\Olve.Engine3D.DebugServer\Olve.Engine3D.DebugServer.csproj" />
   </ItemGroup>
 
-  <Target Name="CompileShaders" BeforeTargets="BeforeBuild">
-    <Exec Command="dotnet run --project ..\Olve.Trains.AssetPipeline\Olve.Trains.AssetPipeline.csproj -- --shaders" />
-  </Target>
+  <ItemGroup>
+    <Folder Include="Scenes\Game\SignalService\" />
+  </ItemGroup>
 
 </Project>

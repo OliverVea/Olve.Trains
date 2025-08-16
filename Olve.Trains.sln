@@ -8,6 +8,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "repo", "repo", "{E216E70C-0
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		.github\workflows\push_master.yml = .github\workflows\push_master.yml
+		Directory.Build.props = src\Directory.Build.props
+		Directory.Packages.props = src\Directory.Packages.props
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		package.json = package.json
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.AssetPipeline", "src\Olve.Trains.AssetPipeline\Olve.Trains.AssetPipeline.csproj", "{B87ED8C2-DA0E-4CC2-A042-6D5C56D2113C}"
@@ -15,6 +20,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.AssetPipeline.Tests", "tests\Olve.Trains.AssetPipeline.Tests\Olve.Trains.AssetPipeline.Tests.csproj", "{71320460-C43E-43E6-8405-A3C0F821BDD4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Engine3D.Tests", "tests\Olve.Engine3D.Tests\Olve.Engine3D.Tests.csproj", "{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Engine3D.DebugServer", "src\Olve.Engine3D.DebugServer\Olve.Engine3D.DebugServer.csproj", "{202B1E32-B6BE-4F5B-8DFA-F7A87D9DAE96}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Engine3D.DebugServer.Host", "src\Olve.Engine3D.DebugServer.Host\Olve.Engine3D.DebugServer.Host.csproj", "{24FC8AB4-A5B9-40D4-AE2E-D85783515AED}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C45EDF72-B7DF-45B3-B57C-E2E26E53F7E3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{48F88CA1-3A43-45FA-8852-8E6BD5CC5354}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,5 +59,22 @@ Global
 		{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{202B1E32-B6BE-4F5B-8DFA-F7A87D9DAE96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{202B1E32-B6BE-4F5B-8DFA-F7A87D9DAE96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{202B1E32-B6BE-4F5B-8DFA-F7A87D9DAE96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{202B1E32-B6BE-4F5B-8DFA-F7A87D9DAE96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24FC8AB4-A5B9-40D4-AE2E-D85783515AED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24FC8AB4-A5B9-40D4-AE2E-D85783515AED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24FC8AB4-A5B9-40D4-AE2E-D85783515AED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24FC8AB4-A5B9-40D4-AE2E-D85783515AED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{68F1F1D9-8EF5-4730-B276-E3C7F776D9EE} = {C45EDF72-B7DF-45B3-B57C-E2E26E53F7E3}
+		{71320460-C43E-43E6-8405-A3C0F821BDD4} = {C45EDF72-B7DF-45B3-B57C-E2E26E53F7E3}
+		{FE1C07E7-5E2E-416B-B698-0E1081DE1C7C} = {48F88CA1-3A43-45FA-8852-8E6BD5CC5354}
+		{202B1E32-B6BE-4F5B-8DFA-F7A87D9DAE96} = {48F88CA1-3A43-45FA-8852-8E6BD5CC5354}
+		{E9AF23D0-A530-4349-8482-2B144EC672DC} = {48F88CA1-3A43-45FA-8852-8E6BD5CC5354}
+		{B87ED8C2-DA0E-4CC2-A042-6D5C56D2113C} = {48F88CA1-3A43-45FA-8852-8E6BD5CC5354}
+		{24FC8AB4-A5B9-40D4-AE2E-D85783515AED} = {48F88CA1-3A43-45FA-8852-8E6BD5CC5354}
 	EndGlobalSection
 EndGlobal

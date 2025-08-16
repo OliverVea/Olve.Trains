@@ -1,3 +1,4 @@
+using Olve.CodeGen;
 using Olve.Engine3D;
 using Olve.Engine3D.Camera;
 using Olve.Engine3D.Camera.Controllers;
@@ -7,13 +8,14 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
+using Olve.Logging;
 using Olve.Results;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains.Scenes.Game;
 
-public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManager keyboardManager) : SceneService
+public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow> windowProvider, KeyboardManager keyboardManager) : SceneService(loggingManager)
 {
     private IsometricOrthographicCameraController _cameraController = null!;
 
@@ -29,7 +31,7 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
     
     public Vector3D<float> CameraViewDirection { get; set; }
 
-    public override Result Load()
+    protected override Result OnLoad()
     {
         Vector3D<float> cameraTarget = new (0, 0, 0);
         Vector3D<float> cameraViewDirection = new(0.701f, -1, 0.701f);
@@ -45,7 +47,7 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
 
     CameraMovementInput _movementInput;
 
-    public override Result<Pass> Input(TimeSpan deltaTime)
+    protected override Result<Pass> OnInput(TimeSpan deltaTime)
     {
         _movementInput = new CameraMovementInput();
 
@@ -57,7 +59,7 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
         return Pass.Pass;
     }
 
-    public override Result Update(TimeSpan deltaTime)
+    protected override Result OnUpdate(TimeSpan deltaTime)
     {
         _cameraController.Move(_movementInput.Direction, deltaTime);
         _cameraController.Zoom(_movementInput.Zoom, deltaTime);
@@ -72,5 +74,16 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
         _movementInput = new CameraMovementInput();
 
         return Result.Success();
+    }
+
+    public void ApplyCameraPositionParameters(ICameraPositionShader positionShader)
+    {
+        positionShader.View = ViewMatrix;
+        positionShader.Projection = ProjectionMatrix;
+    }
+
+    public void ApplyCameraDirectionParameters(ICameraDirectionShader shader)
+    {
+        shader.CameraDirection = CameraViewDirection;
     }
 }

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
+    <PackageReference Include="Olve.Logging" />
+    <PackageReference Include="Olve.MinimalApi" />
+    <PackageReference Include="Olve.Paths" />
+    <PackageReference Include="Olve.Results" />
+    <PackageReference Include="Olve.Validation" />
+    <EmbeddedResource Include="SvelteDist\**\*.*" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="SvelteDist\" />
+  </ItemGroup>
+</Project>

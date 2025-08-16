@@ -1,0 +1,300 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Olve.Engine3D.DebugServer.Host | v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/run-command": {
+      "post": {
+        "tags": [
+          "Olve.Engine3D.DebugServer.Host"
+        ],
+        "operationId": "RunCommand",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunCommandRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResultProblem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logs": {
+      "post": {
+        "tags": [
+          "Olve.Engine3D.DebugServer.Host"
+        ],
+        "operationId": "GetLogs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetLogsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetLogsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResultProblem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Olve.Engine3D.DebugServer.Host"
+        ],
+        "operationId": "GetHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Exception": {
+        "type": "object",
+        "properties": {
+          "targetSite": {
+            "$ref": "#/components/schemas/MethodBase"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "nullable": true
+          },
+          "innerException": {
+            "$ref": "#/components/schemas/Exception"
+          },
+          "helpLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "hResult": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stackTrace": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "nullable": true
+      },
+      "GetLogsRequest": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "logLevel": {
+            "$ref": "#/components/schemas/LogLevel"
+          },
+          "since": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GetLogsResponse": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogMessage"
+            }
+          }
+        }
+      },
+      "IPath": { },
+      "IPath2": {
+        "nullable": true
+      },
+      "LogLevel": {
+        "enum": [
+          "None",
+          "Trace",
+          "Debug",
+          "Info",
+          "Warning",
+          "Error",
+          "Critical"
+        ]
+      },
+      "LogMessage": {
+        "required": [
+          "level",
+          "message",
+          "sourcePath",
+          "sourceLine",
+          "time",
+          "tags"
+        ],
+        "type": "object",
+        "properties": {
+          "level": {
+            "$ref": "#/components/schemas/LogLevel"
+          },
+          "message": {
+            "type": "string"
+          },
+          "sourcePath": {
+            "$ref": "#/components/schemas/IPath2"
+          },
+          "sourceLine": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        }
+      },
+      "MethodBase": {
+        "nullable": true
+      },
+      "ProblemOriginInformation": {
+        "type": "object",
+        "properties": {
+          "filePath": {
+            "$ref": "#/components/schemas/IPath"
+          },
+          "lineNumber": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "linkString": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ResultProblem": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "severity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "args": {
+            "type": "array",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "exception": {
+            "$ref": "#/components/schemas/Exception"
+          },
+          "originInformation": {
+            "$ref": "#/components/schemas/ProblemOriginInformation"
+          }
+        }
+      },
+      "RunCommandRequest": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "times": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Olve.Engine3D.DebugServer.Host"
+    }
+  ]
+}
