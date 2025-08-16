@@ -11,6 +11,9 @@ public class OpenGLHeightmapManager(Provider<GL> glProvider) : IOpenGLEntityMana
 
     private const int PositionSize = PositionFields * sizeof(float);
     private const int VertexSize = PositionSize;
+    
+    private static readonly int ClampToEdge = (int)GLEnum.ClampToEdge;
+    private static readonly int Nearest = (int)GLEnum.Nearest;
 
     public readonly record struct Registration(VAO VAO, VBO VBO, EBO EBO, Texture2D Texture2D);
 
@@ -123,11 +126,11 @@ public class OpenGLHeightmapManager(Provider<GL> glProvider) : IOpenGLEntityMana
         glProvider.Value.ActiveTexture(TextureUnit.Texture0);
         glProvider.Value.BindTexture(TextureTarget.Texture2D, texture);
 
-        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMinFilter, (int)GLEnum.Nearest);
-        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMagFilter, (int)GLEnum.Nearest);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMinFilter, in Nearest);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMagFilter, in Nearest);
 
-        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, (int)GLEnum.ClampToEdge);
-        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, (int)GLEnum.ClampToEdge);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, in ClampToEdge);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, in ClampToEdge);
 
         BufferHelper.WithSpan<float>(textureLength, pixelData =>
         {

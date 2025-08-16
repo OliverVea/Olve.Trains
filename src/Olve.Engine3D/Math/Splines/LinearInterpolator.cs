@@ -31,6 +31,11 @@ public abstract class LinearInterpolator<T>(IReadOnlyList<KeyFrame<T>> keyFrames
         throw new InvalidOperationException("This should never happen.");
     }
 
+    public T Tangent(float time)
+    {
+        throw new NotImplementedException();
+    }
+
     protected abstract T Lerp(T a, T b, float t);
     protected abstract T Clamp(T value, T min, T max);
 }

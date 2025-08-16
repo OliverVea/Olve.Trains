@@ -1,16 +1,17 @@
 using System.Drawing;
 using Olve.Engine3D;
 using Olve.Engine3D.Scenes;
+using Olve.Logging;
 using Olve.Results;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes;
 
-public class GLService(Provider<GL> glProvider) : SceneService
+public class GLService(ILoggingManager loggingManager, Provider<GL> glProvider) : SceneService(loggingManager)
 {
     public override int Priority => -10;
 
-    public override Result Load()
+    protected override Result OnLoad()
     {
         glProvider.Value.Enable(EnableCap.Multisample);
         glProvider.Value.Disable(EnableCap.CullFace);
@@ -19,7 +20,7 @@ public class GLService(Provider<GL> glProvider) : SceneService
         return Result.Success();
     }
 
-    public override Result Render(TimeSpan deltaTime)
+    protected override Result OnRender(TimeSpan deltaTime)
     {
         glProvider.Value.ClearColor(Color.CornflowerBlue);
         glProvider.Value.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);

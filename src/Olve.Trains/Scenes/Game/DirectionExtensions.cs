@@ -1,32 +1,33 @@
+using Olve.Engine3D;
 using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game;
 
 public static class DirectionExtensions
 {
-    public static Vector3D<float> ToVector3D(this Direction direction)
+    public static Vector3D<float> ToVector3D(this CardinalDirection cardinalDirection)
     {
-        return direction switch
+        return cardinalDirection switch
         {
-            Direction.North => new Vector3D<float>(0, 0, 1),
-            Direction.South => new Vector3D<float>(0, 0, -1),
-            Direction.East => new Vector3D<float>(1, 0, 0),
-            Direction.West => new Vector3D<float>(-1, 0, 0),
-            Direction.Up => new Vector3D<float>(0, 1, 0),
-            Direction.Down => new Vector3D<float>(0, -1, 0),
-            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+            CardinalDirection.North => new Vector3D<float>(0, 0, 1),
+            CardinalDirection.South => new Vector3D<float>(0, 0, -1),
+            CardinalDirection.East => new Vector3D<float>(1, 0, 0),
+            CardinalDirection.West => new Vector3D<float>(-1, 0, 0),
+            CardinalDirection.Up => new Vector3D<float>(0, 1, 0),
+            CardinalDirection.Down => new Vector3D<float>(0, -1, 0),
+            _ => throw new ArgumentOutOfRangeException(nameof(cardinalDirection), cardinalDirection, null)
         };
     }
     
-    public static float ToYRotation(this Direction direction)
+    public static float ToYRotation(this CardinalDirection cardinalDirection)
     {
-        return direction switch
+        return cardinalDirection switch
         {
-            Direction.North => 0,
-            Direction.South => MathF.PI,
-            Direction.East => MathF.PI / 2,
-            Direction.West => -MathF.PI / 2,
-            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+            CardinalDirection.North => 0,
+            CardinalDirection.South => MathF.PI,
+            CardinalDirection.East => MathF.PI / 2,
+            CardinalDirection.West => -MathF.PI / 2,
+            _ => throw new ArgumentOutOfRangeException(nameof(cardinalDirection), cardinalDirection, null)
         };
     }
 }

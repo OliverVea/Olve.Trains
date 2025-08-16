@@ -1,0 +1,12 @@
+[
+  {
+    "level": 1,
+    "message": "Started",
+    "time": "2023-01-01T00:00:00Z"
+  },
+  {
+    "level": 2,
+    "message": "Warning message",
+    "time": "2023-01-01T01:00:00Z"
+  }
+]

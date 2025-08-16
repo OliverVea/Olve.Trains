@@ -7,6 +7,9 @@ namespace Olve.Engine3D.Rendering.OpenGL;
 public class OpenGLTextureManager(Provider<GL> glProvider) : IOpenGLEntityManager<TextureData, Texture2D>
 {
     private const int BytesPerPixel = 4;
+    
+    private static readonly int Nearest = (int)GLEnum.Nearest;
+    private static readonly int Repeat = (int)GLEnum.Repeat;
 
     public Result<Texture2D> Register(TextureData textureData)
     {
@@ -21,11 +24,11 @@ public class OpenGLTextureManager(Provider<GL> glProvider) : IOpenGLEntityManage
         glProvider.Value.ActiveTexture(TextureUnit.Texture0);
         glProvider.Value.BindTexture(TextureTarget.Texture2D, texture);
 
-        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMinFilter, (int)GLEnum.Nearest);
-        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMagFilter, (int)GLEnum.Nearest);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMinFilter, in Nearest);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMagFilter, in Nearest);
 
-        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, (int)GLEnum.Repeat);
-        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, (int)GLEnum.Repeat);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, in Repeat);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, in Repeat);
 
         BufferHelper.WithSpan<byte>(textureLength, pixelData =>
         {

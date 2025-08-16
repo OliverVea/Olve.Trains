@@ -10,7 +10,7 @@ public static class Program
     private static readonly WindowOptions WindowOptions = WindowOptions.Default with
     {
         Title = "My first Silk.NET program!",
-        Size = new Vector2D<int>(1280, 720),
+        Size = new Vector2D<int>(1920, 1080),
         Samples = 8
     };
 

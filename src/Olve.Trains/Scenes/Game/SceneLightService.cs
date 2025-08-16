@@ -1,11 +1,13 @@
+using Olve.CodeGen;
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Scenes;
+using Olve.Logging;
 using Olve.Results;
 using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game;
 
-public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager daylightManager) : SceneService
+public class SceneLightService(ILoggingManager loggingManager, DayTimeManager dayTimeManager, DaylightManager daylightManager) : SceneService(loggingManager)
 {
     private static readonly DayTime DayStart = new(5, 30);
     private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(6);
@@ -19,7 +21,7 @@ public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager da
     
     public Vector3D<float> AmbientLightColor => SunValue.AmbientColor * SunValue.AmbientIntensity + MoonValue.AmbientColor * MoonValue.AmbientIntensity;
 
-    public override Result Load()
+    protected override Result OnLoad()
     {
         dayTimeManager.CurrentTime = DayStart;
         dayTimeManager.DayLength = DayDuration;
@@ -37,7 +39,7 @@ public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager da
         return Result.Success();
     }
 
-    public override Result Update(TimeSpan deltaTime)
+    protected override Result OnUpdate(TimeSpan deltaTime)
     {
         dayTimeManager.Step(deltaTime);
 
@@ -64,25 +66,29 @@ public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager da
         SunDirection = sunDirection;
         MoonDirection = moonDirection;
 
-        GameSceneEntities.DefaultShader.DirectionalLight0Dir = sunDirection;
-        GameSceneEntities.DefaultShader.DirectionalLight0Color = sunValue.Color;
-        GameSceneEntities.DefaultShader.DirectionalLight0Intensity = sunValue.Intensity;
-
-        GameSceneEntities.DefaultShader.DirectionalLight1Dir = moonDirection;
-        GameSceneEntities.DefaultShader.DirectionalLight1Color = moonValue.Color;
-        GameSceneEntities.DefaultShader.DirectionalLight1Intensity = moonValue.Intensity;
-
-        GameSceneEntities.DefaultShader.AmbientLightColor = AmbientLightColor;
-        GameSceneEntities.DefaultShader.AmbientLightIntensity = 1f;
-
         return Result.Success();
     }
 
-    public override Result Unload()
+    protected override Result OnUnload()
     {
         daylightManager.RemoveLight(_sunId);
         daylightManager.RemoveLight(_moonId);
 
         return Result.Success();
+    }
+
+    public void ApplyShaderParameters(IDaylightShader shader)
+    {
+        shader.DirectionalLight0Dir = SunDirection;
+        shader.DirectionalLight0Color = SunValue.Color;
+        shader.DirectionalLight0Intensity = SunValue.Intensity;
+
+        shader.DirectionalLight1Dir = SunDirection;
+        shader.DirectionalLight1Color = MoonValue.Color;
+        shader.DirectionalLight1Intensity = MoonValue.Intensity;
+
+        shader.AmbientLightColor = AmbientLightColor;
+        shader.AmbientLightIntensity = 1f;
+        
     }
 }

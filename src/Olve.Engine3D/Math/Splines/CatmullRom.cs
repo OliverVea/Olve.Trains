@@ -62,6 +62,11 @@ public abstract class CatmullRom<T> : IInterpolator<T>
         return Sample(segmentIndex - 1, in tVector);
     }
 
+    public T Tangent(float time)
+    {
+        throw new NotImplementedException();
+    }
+
     private int GetSegmentIndex(float time)
     {
         var segmentIndex = 1;

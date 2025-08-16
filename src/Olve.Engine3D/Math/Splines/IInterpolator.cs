@@ -6,4 +6,5 @@ public interface IInterpolator<T>
     public T Max { get; set; }
 
     T Sample(float time);
+    T Tangent(float time);
 }

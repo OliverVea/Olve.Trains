@@ -11,4 +11,9 @@ public class NoneInterpolator<T>(T value) : IInterpolator<T>
     {
         return _value;
     }
+
+    public T Tangent(float time)
+    {
+        throw new NotImplementedException();
+    }
 }

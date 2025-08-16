@@ -39,7 +39,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
             if (request.AllowFailure)
             {
                 logger.LogWarning("Could not get S3 configuration: {Problems}", problems);
-                return new Response(Array.Empty<FileInfo>());
+                return new Response([]);
             }
 
             return problems.Prepend("Could not get S3 configuration");
@@ -53,7 +53,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
             if (request.AllowFailure)
             {
                 logger.LogWarning("Failed to retrieve S3 bucket: {Problems}", retrievalProblems);
-                return new Response(Array.Empty<FileInfo>());
+                return new Response([]);
             }
 
             return retrievalProblems.Prepend("Failed to retrieve S3 bucket");
@@ -68,12 +68,11 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
     private Result<Envs> ReadS3EnvironmentVariables()
     {
-
         return Result.Concat(
-            () => EnvHelper.ReadEnvVariable(S3Url),
-            () => EnvHelper.ReadEnvVariable(S3Bucket),
-            () => EnvHelper.ReadEnvVariable(S3Key),
-            () => EnvHelper.ReadEnvVariable(S3Secret)
+            EnvHelper.ReadEnvVariable(S3Url),
+            EnvHelper.ReadEnvVariable(S3Bucket),
+            EnvHelper.ReadEnvVariable(S3Key),
+            EnvHelper.ReadEnvVariable(S3Secret)
         );
     }
 
