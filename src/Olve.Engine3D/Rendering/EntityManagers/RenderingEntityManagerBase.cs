@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Olve.Engine3D.Rendering.EntityManagers;
 
 public abstract class RenderingEntityManagerBase<TEntity, TRegistration>
@@ -44,6 +46,11 @@ public abstract class RenderingEntityManagerBase<TEntity, TRegistration>
         return Result.Success();
     }
 
+    public bool TryGetRegistration(RenderingId<TEntity> entityId, [MaybeNullWhen(false)] out TRegistration registration)
+    {
+        return ModelRegistrations.TryGetValue(entityId, out registration);
+    }
+    
     public Result<TRegistration> GetRegistration(RenderingId<TEntity> entityId)
     {
         if (!ModelRegistrations.TryGetValue(entityId, out var registration))

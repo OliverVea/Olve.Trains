@@ -1,5 +1,4 @@
 ﻿using Olve.Engine3D;
-using Olve.Results;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
@@ -10,7 +9,7 @@ public static class Program
     private static readonly WindowOptions WindowOptions = WindowOptions.Default with
     {
         Title = "My first Silk.NET program!",
-        Size = new Vector2D<int>(1920, 1080),
+        Size = new Vector2D<int>(1280, 720),
         Samples = 8
     };
 
@@ -28,7 +27,7 @@ public static class Program
         var gameManager = gameProvider.GetService<GameManager>();
         return gameManager.Run(window, [
             SceneIds.GameScene,
-            SceneIds.ConsoleScene // Doesn't work on Windows?
+            SceneIds.ConsoleScene
         ]);
     }
 

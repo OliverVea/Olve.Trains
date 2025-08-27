@@ -7,6 +7,7 @@ public interface IShader
 {
     RenderingId<ShaderData> RenderingId { get; set; }
     ShaderData ShaderData { get; }
+    RenderState BlendState { get; }
 
     RenderingParameters MakeParameters();
 }

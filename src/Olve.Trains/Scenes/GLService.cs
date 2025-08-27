@@ -2,7 +2,6 @@ using System.Drawing;
 using Olve.Engine3D;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Results;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes;

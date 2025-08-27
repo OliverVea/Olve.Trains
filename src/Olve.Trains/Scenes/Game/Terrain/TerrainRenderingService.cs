@@ -2,24 +2,33 @@ using Olve.CodeGen;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
+using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Results;
+using Olve.Trains.Scenes.Game.Camera;
+using Olve.Trains.Scenes.Game.Light;
 using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game.Terrain;
 
-public class TerrainRenderingService(ILoggingManager loggingManager, TerrainService terrainService, ShaderEntityManager shaderEntityManager, HeightmapEntityManager heightmapEntityManager,
-    RenderingManager3D renderingManager3D, CameraSceneService cameraSceneService, TerrainRaycastService terrainRaycastService, SceneLightService sceneLightService) : SceneService(loggingManager)
+public class TerrainRenderingService(ILoggingManager loggingManager,
+    TerrainService terrainService,
+    ShaderEntityManager shaderEntityManager,
+    HeightmapEntityManager heightmapEntityManager,
+    RenderingManager3D renderingManager3D,
+    CameraSceneService cameraSceneService,
+    TerrainRaycastService terrainRaycastService,
+    SceneLightService sceneLightService) : SceneService(loggingManager)
 {
     public RenderingId<HeightmapData> TerrainRenderingId { get; set; }
     public RenderingInstanceId TerrainInstanceId { get; set; }
     public RenderingInstanceId WireframeTerrainInstanceId { get; set; }
     
     private readonly Shaders.Terrain _terrainShader = new();
-    private readonly Shaders.TerrainWireframe _terrainWireframe = new()
+    private readonly Shaders.TerrainWireframe _terrainWireframe = new() 
     {
-        MouseRadius = 5f
+        MouseRadius = 5f,
+        BlendState = RenderState.Additive
     };
 
     public override int Priority => GetPriorityFromDependencies([cameraSceneService, terrainService, terrainRaycastService, sceneLightService]);
@@ -93,15 +102,8 @@ public class TerrainRenderingService(ILoggingManager loggingManager, TerrainServ
         cameraSceneService.ApplyCameraPositionParameters(_terrainShader);
         cameraSceneService.ApplyCameraDirectionParameters(_terrainShader);
         cameraSceneService.ApplyCameraPositionParameters(_terrainWireframe);
+        terrainRaycastService.ApplyTerrainIntersectionParameters(_terrainWireframe);
         
-        if (terrainRaycastService.TerrainIntersection is {} intersection)
-        {
-            _terrainWireframe.MousePosition = intersection;
-        }
-        else
-        {
-            _terrainWireframe.MousePosition = new Vector3D<float>(-1000f, -1000f, -1000f);
-        }
         
         var terrainShaderResult = renderingManager3D.Render(_terrainShader).IfProblem(p => p.Prepend("Failed rendering terrain"));
         var wireframeShaderResult = renderingManager3D.Render(_terrainWireframe).IfProblem(p => p.Prepend("Failed rendering terrain wireframe"));

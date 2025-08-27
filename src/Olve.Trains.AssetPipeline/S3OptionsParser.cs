@@ -7,11 +7,11 @@ public static class S3OptionsParser
 {
     public static (TimeSpan Timeout, bool AllowFailure, string[] RemainingArgs) Parse(string[] args)
     {
-        TimeSpan timeout = TimeSpan.FromMilliseconds(200);
-        bool allowFailure = false;
+        var timeout = TimeSpan.FromMilliseconds(2000);
+        var allowFailure = false;
 
         List<string> remaining = new(args);
-        for (int i = 0; i < remaining.Count; )
+        for (var i = 0; i < remaining.Count; )
         {
             var arg = remaining[i];
             if (arg == "--s3-timeout" && i + 1 < remaining.Count && int.TryParse(remaining[i + 1], out var ms))

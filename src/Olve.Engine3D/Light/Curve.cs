@@ -2,18 +2,12 @@ using Olve.Engine3D.Math.Splines;
 
 namespace Olve.Engine3D.Light;
 
-public class Curve<T> where T : struct
+public class Curve<T>(InterpolationType interpolationType, params IEnumerable<DayTimeKeyFrame<T>> keyFrames) where T : struct
 {
-    public IReadOnlyList<KeyFrame<T>> KeyFrames { get; }
-    public InterpolationType InterpolationType { get; set; }
-    public T? Min { get; set; }
-    public T? Max { get; set; }
-
-    public Curve(InterpolationType interpolationType, params IEnumerable<DayTimeKeyFrame<T>> keyFrames)
-    {
-        KeyFrames = keyFrames.Select(x => new KeyFrame<T>(x.Time.Value, x.Value)).ToList();
-        InterpolationType = interpolationType;
-    }
+    public IReadOnlyList<KeyFrame<T>> KeyFrames { get; } = keyFrames.Select(x => new KeyFrame<T>(x.Time.Value, x.Value)).ToList();
+    public InterpolationType InterpolationType { get; } = interpolationType;
+    public T? Min { get; init; }
+    public T? Max { get; init; }
 
     public Result Validate()
     {

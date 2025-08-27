@@ -10,9 +10,9 @@ namespace Olve.Trains.AssetPipeline.Shaders;
 ///     Compiles shader slang shaders to GLSL
 /// </summary>
 /// <param name="logger"></param>
-public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templateWriter) : IAsyncOperation<ProcessShaders.Request, ProcessShaders.Response>
+public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templateWriter, ShaderOptions shaderOptions) : IAsyncOperation<ProcessShaders.Request, ProcessShaders.Response>
 {
-    private static readonly string TemplateFilePath = Path.Combine(Paths.TemplatesSourceFolder, "ShaderClass.scriban");
+    private static readonly string TemplateFileName = "ShaderClass.scriban";
     
     public record Request;
     public record Response(IReadOnlyList<ShaderProgram> Shaders);
@@ -21,14 +21,15 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
     {
         logger.LogDebug("Processing shader files");
 
-        var shaderFiles = Directory.GetFiles(Paths.ShaderSourceFolder, "*.glsl", SearchOption.AllDirectories);
+        var shaderRoot = string.IsNullOrWhiteSpace(shaderOptions?.ShadersDirectory) ? Paths.ShaderSourceFolder : shaderOptions.ShadersDirectory;
+        var shaderFiles = Directory.GetFiles(shaderRoot, "*.glsl", SearchOption.AllDirectories);
         var shaders = new List<Shader>(shaderFiles.Length);
 
         Directory.CreateDirectory(Paths.ShaderOutputFolder);
         
         foreach (var absoluteShaderFile in shaderFiles)
         {
-            var shaderFile = Path.GetRelativePath(Paths.ShaderSourceFolder, absoluteShaderFile);
+            var shaderFile = Path.GetRelativePath(shaderRoot, absoluteShaderFile);
             logger.LogDebug("Reading shader: {ShaderFile}", shaderFile);
             
             // Load shader as string
@@ -143,14 +144,24 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
             shaderPrograms.Add(shaderProgram);
         }
         
-        if (!File.Exists(TemplateFilePath))
+        // Resolve template path (check container path first, then project-relative fallbacks)
+        var templateCandidates = new[]
         {
-            return new ResultProblem("Template file '{0}' not found", TemplateFilePath);
+            Path.Combine(Paths.TemplatesSourceFolder, TemplateFileName),
+            Path.Combine(Directory.GetCurrentDirectory(), "src", "Olve.Trains.AssetPipeline", "Templates", TemplateFileName),
+            Path.Combine(Directory.GetCurrentDirectory(), "Templates", TemplateFileName),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "src", "Olve.Trains.AssetPipeline", "Templates", TemplateFileName)
+        }.Select(Path.GetFullPath).ToArray();
+
+        var templatePath = templateCandidates.FirstOrDefault(File.Exists);
+        if (templatePath == null)
+        {
+            return new ResultProblem("Template file '{0}' not found. Searched: {1}", TemplateFileName, string.Join("; ", templateCandidates));
         }
 
         foreach (var shaderProgram in shaderPrograms)
         {
-            var shaderProgramResult = await WriteShaderSourceFileAsync(shaderProgram, ct);
+            var shaderProgramResult = await WriteShaderSourceFileAsync(shaderProgram, templatePath, ct);
             if (shaderProgramResult.TryPickProblems(out var problems))
             {
                 return problems.Prepend("Failed to write shader source file for shader program '{0}'", shaderProgram.Name);
@@ -162,13 +173,13 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
         return new Response(shaderPrograms);
     }
 
-    private async Task<Result> WriteShaderSourceFileAsync(ShaderProgram shaderProgram, CancellationToken ct)
+    private async Task<Result> WriteShaderSourceFileAsync(ShaderProgram shaderProgram, string templatePath, CancellationToken ct)
     {
         logger.LogDebug("Rendering shader program: {ShaderProgramName}", shaderProgram.Name);
 
         var scriptObject = MapToScriptObject(shaderProgram);
 
-        return await templateWriter.WriteTemplateAsync(TemplateFilePath, scriptObject, shaderProgram.Destination , ct);
+        return await templateWriter.WriteTemplateAsync(templatePath, scriptObject, shaderProgram.Destination , ct);
     }
 
     private static ScriptObject MapToScriptObject(ShaderProgram shaderProgram)

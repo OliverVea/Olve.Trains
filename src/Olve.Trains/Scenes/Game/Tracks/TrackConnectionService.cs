@@ -1,12 +1,12 @@
-﻿using Olve.Utilities.Ids;
+﻿using Olve.Trains.Scenes.Game.Junctions;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 
-public class TrackConnectionService(TrackJunctionService trackJunctionService)
+public class TrackConnectionService(JunctionService junctionService)
 {
     public IReadOnlySet<Id<Track>> GetConnectingTracks(TrackPoint trackPoint)
     {
-        var connections = trackJunctionService.GetConnections(trackPoint);
+        var connections = junctionService.GetConnections(trackPoint);
 
         HashSet<Id<Track>> connectingTrackIds = [];
         foreach (var (junctionTrackId, junctionTrackPoint) in connections)

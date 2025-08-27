@@ -20,6 +20,9 @@ public class RenderingManager3D(
     // Dictionary on shader?
     protected readonly SortedList<RenderingInstanceId, Instance> Instances = new();
 
+    private const int ErrorCounterThreshold = 20;
+    private int errorCounter = 0;
+
     protected readonly record struct Instance(
         RenderingInstanceId InstanceId,
         RenderingId<ShaderData> ShaderId,
@@ -127,6 +130,27 @@ public class RenderingManager3D(
         {
             return problems.Prepend("Failed to get shader registration for shader '{0}' ('{1}').", shader.ShaderData.Name, shader.RenderingId);
         }
+        
+        switch (shader.BlendState.Blend)
+        {
+            case BlendMode.None:
+                glProvider.Value.Disable(GLEnum.Blend);
+                break;
+            case BlendMode.Alpha:
+                glProvider.Value.Enable(GLEnum.Blend);
+                glProvider.Value.BlendFunc(GLEnum.SrcAlpha, GLEnum.OneMinusSrcAlpha);
+                break;
+            case BlendMode.Premultiplied:
+                glProvider.Value.Enable(GLEnum.Blend);
+                glProvider.Value.BlendFunc(GLEnum.One, GLEnum.OneMinusSrcAlpha);
+                break;
+            case BlendMode.Additive:
+                glProvider.Value.Enable(GLEnum.Blend);
+                glProvider.Value.BlendFunc(GLEnum.SrcAlpha, GLEnum.One); // common additive
+                break;
+        }
+
+        glProvider.Value.DepthMask(shader.BlendState.DepthWrite);
 
         var parameters = shader.MakeParameters();
 
@@ -139,7 +163,10 @@ public class RenderingManager3D(
         if (RenderInstances(shader.RenderingId, shaderRegistration).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to render entity instances with shader '{0}'", shader.ShaderData.Name);
-        }
+        }   
+        
+        glProvider.Value.DepthMask(true);
+        glProvider.Value.Disable(GLEnum.Blend);
 
         return Result.Success();
     }
@@ -189,12 +216,18 @@ public class RenderingManager3D(
             return new ResultProblem(e, "Failed to render entity instances");
         }
 
-        var error = glProvider.Value.GetError();
-        if (error != GLEnum.NoError)
+        errorCounter++;
+        if (errorCounter >= ErrorCounterThreshold)
         {
-            return new ResultProblem("OpenGL error: {0}", error);
+            var error = glProvider.Value.GetError();
+            if (error != GLEnum.NoError)
+            {
+                return new ResultProblem("OpenGL error: {0}", error);
+            }
+            
+            errorCounter = 0;
         }
-
+        
         return Result.Success();
     }
 }

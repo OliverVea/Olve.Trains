@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Scenes\Game\SignalService\" />
+    <Folder Include="Scenes\Game\Stations\" />
   </ItemGroup>
 
 </Project>

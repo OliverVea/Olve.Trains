@@ -53,7 +53,7 @@ public class TerrainFileReader(ILogger<TerrainFileReader> logger, ReadOpenRaster
 
         if (terrainFiles.Length == 0)
         {
-            logger.LogWarning("No terraom files found");
+            logger.LogWarning("No terrain files found");
             return Array.Empty<Asset<TerrainData>>();
         }
 

@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using Olve.Engine3D.Systems;
 using Olve.Logging;
-using Olve.Utilities.Ids;
 
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
@@ -11,7 +10,8 @@ public enum VehiclePositionType
     OnTrack
 }
 
-public class VehiclePositionService(ILoggingManager loggingManager, VehicleService vehicleService) : BaseEntityAuxiliaryService<VehicleService, Vehicle>(loggingManager, vehicleService)
+public class VehiclePositionService(ILoggingManager loggingManager,
+    VehicleService vehicleService) : BaseEntityAuxiliaryService<Vehicle>(loggingManager, vehicleService)
 {
     private readonly ConcurrentDictionary<Id<Vehicle>, VehiclePositionType> _positionTypes = new();
     private readonly ConcurrentDictionary<Id<Vehicle>, TrackPosition> _trackPositions = new();
@@ -23,10 +23,11 @@ public class VehiclePositionService(ILoggingManager loggingManager, VehicleServi
         return _positionTypes.GetValueOrDefault(vehicleId, VehiclePositionType.None);
     }
 
-    public void SetTrackPosition(Id<Vehicle> vehicleId, TrackPosition trackPosition)
+    public Result SetTrackPosition(Id<Vehicle> vehicleId, TrackPosition trackPosition)
     {
         _positionTypes[vehicleId] = VehiclePositionType.OnTrack;
         _trackPositions[vehicleId] = trackPosition;
+        return Result.Success();
     }
 
     public bool TryGetTrackPosition(Id<Vehicle> vehicleId, out TrackPosition trackPosition)

@@ -2,13 +2,12 @@ using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Results;
 
 namespace Olve.Trains.Scenes.Game.Terrain;
 
 public class TerrainService(ILoggingManager loggingManager) : SceneService(loggingManager)
 {
-    public TerrainData? Terrain { get; set; }
+    public TerrainData? Terrain { get; private set; }
 
     protected override Result OnLoad()
     {

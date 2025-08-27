@@ -5,23 +5,22 @@ using Olve.Utilities.Lookup;
 
 namespace Olve.Engine3D.Systems;
 
-public abstract class BaseEntityAuxiliaryService<TEntityService, TEntity>(
+public abstract class BaseEntityAuxiliaryService<TEntity>(
     ILoggingManager loggingManager,
-    TEntityService entityService) : SceneService(loggingManager)
+    IEntityService<TEntity> entityService) : SceneService(loggingManager)
     where TEntity : IHasId<Id<TEntity>>
-    where TEntityService : BaseEntityService<TEntity>
 {
     protected override Result OnLoad()
     {
-        entityService.OnAdded += OnAdded;
-        entityService.OnRemoved += OnRemoved;
+        entityService.OnAdded.Subscribe(OnAdded);
+        entityService.OnRemoved.Subscribe(OnRemoved);
         return Result.Success();
     }
 
     protected override Result OnUnload()
     {
-        entityService.OnAdded -= OnAdded;
-        entityService.OnRemoved -= OnRemoved;
+        entityService.OnAdded.Unsubscribe(OnAdded);
+        entityService.OnRemoved.Unsubscribe(OnRemoved);
         return Result.Success();
     }
 

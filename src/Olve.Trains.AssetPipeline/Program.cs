@@ -47,7 +47,12 @@ serviceCollection.AddTransient<ReadLayerAs<HeightmapData>>();
 ILayerParser<HeightmapData> heightmapLayerParser = new HeightmapLayerParser(0.25f, 128, 8);
 serviceCollection.AddSingleton(heightmapLayerParser);
 
+// Parse --shaders-dir option and register ShaderOptions
+var (shadersDir, argsAfterShaders) = ShadersDirParser.Parse(args);
+args = argsAfterShaders;
 
+var shaderOptions = new ShaderOptions { ShadersDirectory = string.IsNullOrWhiteSpace(shadersDir) ? Paths.ShaderSourceFolder : shadersDir };
+serviceCollection.AddSingleton(shaderOptions);
 
 var serviceProvider = serviceCollection.BuildServiceProvider();
 
