@@ -5,22 +5,22 @@ using Olve.Utilities.Lookup;
 
 namespace Olve.Engine3D.Systems;
 
-public abstract class BaseEntityService<TValue> where TValue : IHasId<Id<TValue>>
+public abstract class BaseEntityService<TEntity> : IEntityService<TEntity> where TEntity : IHasId<Id<TEntity>>
 {
     protected readonly ILoggingManager LoggingManager;
     
-    private readonly SortedList<Id<TValue>, TValue> _entities = [];
-    private readonly string _valueTypeName = typeof(TValue).Name;
+    private readonly SortedList<Id<TEntity>, TEntity> _entities = [];
+    private readonly string _valueTypeName = typeof(TEntity).Name;
     private readonly string[] _loggingTags;
     private readonly Lock _entityLock = new();
 
-    private Lazy<HashSet<Id<TValue>>> _entityIds = new(() => []);
-    private Lazy<HashSet<TValue>> _entityValues = new(() => []);
+    private Lazy<HashSet<Id<TEntity>>> _entityIds = new(() => []);
+    private Lazy<HashSet<TEntity>> _entityValues = new(() => []);
     
-    public IReadOnlyCollection<Id<TValue>> Ids => _entityIds.Value; 
-    public IReadOnlyCollection<Id<TValue>> Entities => _entityIds.Value; 
+    public IReadOnlyCollection<Id<TEntity>> Ids => _entityIds.Value; 
+    public IReadOnlyCollection<TEntity> Entities => _entityValues.Value; 
 
-    private HashSet<Id<TValue>> GetAllIds()
+    private HashSet<Id<TEntity>> GetAllIds()
     {
         lock (_entityLock)
         {
@@ -28,7 +28,7 @@ public abstract class BaseEntityService<TValue> where TValue : IHasId<Id<TValue>
         } 
     }
 
-    private HashSet<TValue> GetAllValues()
+    private HashSet<TEntity> GetAllValues()
     {
         lock (_entityLock)
         {
@@ -43,13 +43,13 @@ public abstract class BaseEntityService<TValue> where TValue : IHasId<Id<TValue>
     }
 
     private string ServiceTypeName => GetType().Name;
-    
-    public Action<Id<TValue>>? OnAdded { get; set; }
-    public Action<Id<TValue>>? OnRemoved { get; set; }
+
+    public Event<Id<TEntity>> OnAdded { get; } = new();
+    public Event<Id<TEntity>> OnRemoved { get; } = new();
 
     public int Count => _entities.Count;
     
-    protected Result<Id<TValue>> Add(TValue entity)
+    protected Result<Id<TEntity>> Add(TEntity entity)
     {
         if (_entities.ContainsKey(entity.Id))
         {
@@ -61,16 +61,16 @@ public abstract class BaseEntityService<TValue> where TValue : IHasId<Id<TValue>
         {
             _entities.Add(entity.Id, entity);
         }
-        _entityIds = new Lazy<HashSet<Id<TValue>>>(GetAllIds);
-        _entityValues = new Lazy<HashSet<TValue>>(GetAllValues);
-        OnAdded?.Invoke(entity.Id);
+        _entityIds = new Lazy<HashSet<Id<TEntity>>>(GetAllIds);
+        _entityValues = new Lazy<HashSet<TEntity>>(GetAllValues);
+        OnAdded.Invoke(entity.Id);
         
         LoggingManager.Log(LogLevel.Debug, $"Added entity of type '{_valueTypeName}' with id '{entity.Id}'", _loggingTags);
         
         return entity.Id;
     }
     
-    public DeletionResult Remove(Id<TValue> id)
+    public DeletionResult Remove(Id<TEntity> id)
     {
         if (!_entities.ContainsKey(id))
         {
@@ -78,27 +78,27 @@ public abstract class BaseEntityService<TValue> where TValue : IHasId<Id<TValue>
             return DeletionResult.NotFound();
         }
         
-        OnRemoved?.Invoke(id);
+        OnRemoved.Invoke(id);
 
         lock (_entityLock)
         {
             _entities.Remove(id);
         }
         
-        _entityIds = new Lazy<HashSet<Id<TValue>>>(GetAllIds);
-        _entityValues = new Lazy<HashSet<TValue>>(GetAllValues);
+        _entityIds = new Lazy<HashSet<Id<TEntity>>>(GetAllIds);
+        _entityValues = new Lazy<HashSet<TEntity>>(GetAllValues);
         
         LoggingManager.Log(LogLevel.Debug, $"Removed entity of type '{_valueTypeName}' with id '{id}'", _loggingTags);
         
         return DeletionResult.Success();
     }
     
-    public bool TryGet(Id<TValue> id, [MaybeNullWhen(false)] out TValue entity)
+    public bool TryGet(Id<TEntity> id, [MaybeNullWhen(false)] out TEntity entity)
     {
         return _entities.TryGetValue(id, out entity);
     }
 
-    public Result<TValue> Get(Id<TValue> id)
+    public Result<TEntity> Get(Id<TEntity> id)
     {
         if (TryGet(id, out var entity))
         {
@@ -108,5 +108,5 @@ public abstract class BaseEntityService<TValue> where TValue : IHasId<Id<TValue>
         return new ResultProblem("Did not find entity with id '{0}'", id);
     }
     
-    public bool Exists(Id<TValue> id) => _entities.ContainsKey(id);
+    public bool Exists(Id<TEntity> id) => _entities.ContainsKey(id);
 }

@@ -1,4 +1,5 @@
 using Olve.Engine3D.Math.Splines;
+using Olve.Engine3D.Time;
 
 namespace Olve.Engine3D.Light;
 
@@ -69,7 +70,7 @@ public class DaylightManager
         };
     }
 
-    private IInterpolator<float> CreateInterpolator(Curve<float> curve)
+    private static IInterpolator<float> CreateInterpolator(Curve<float> curve)
     {
         IInterpolator<float> interpolator = curve.InterpolationType switch
         {

@@ -66,7 +66,7 @@ public class TemplateWriter(ILogger<TemplateWriter> logger)
         }
         catch (Exception e)
         {
-            return new ResultProblem(e, "Failed to write template '{0}' to path '{1}':", templatePath, outputPath);
+            return new ResultProblem(e, "Failed to write template '{0}' to path '{1}' with message: {2}", templatePath, outputPath, e.Message);
         }
     }
 

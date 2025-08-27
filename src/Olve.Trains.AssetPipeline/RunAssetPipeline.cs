@@ -19,6 +19,8 @@ public class RunAssetPipeline(
     public async Task<Result> ExecuteAsync(Request request, CancellationToken ct = default)
     {
         logger.LogDebug("Starting asset pipeline");
+        logger.LogInformation("Temp folder: {TempFolder}", Paths.TempFolder);
+        logger.LogInformation("Asset output folder: {OutputFolder}", Paths.OutputFolder);
 
         IReadOnlyList<FileInfo> assetFiles = Array.Empty<FileInfo>();
 

@@ -1,13 +1,15 @@
 using Jab;
-using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Time;
 using Olve.Logging;
 using Olve.Trains.Scenes.Console;
 using Olve.Trains.Scenes.Game;
+using Olve.Trains.Scenes.Game.Light;
+using Olve.Trains.Scenes.Game.Time;
 
 namespace Olve.Trains;
 
@@ -29,6 +31,6 @@ public partial class GameProvider
 {
     public GameProvider GetGameProvider() => this;
 
-    public IScene GetGameScene(IServiceProvider serviceProvider) => new Scene<GameSceneProvider>(new GameSceneProvider(this), SceneIds.GameScene);
-    public IScene GetConsoleScene(IServiceProvider serviceProvider) => new Scene<ConsoleSceneProvider>(new ConsoleSceneProvider(this), SceneIds.ConsoleScene);
+    public IScene GetGameScene() => new Scene<GameSceneProvider>(new GameSceneProvider(this), SceneIds.GameScene);
+    public IScene GetConsoleScene() => new Scene<ConsoleSceneProvider>(new ConsoleSceneProvider(this), SceneIds.ConsoleScene);
 }

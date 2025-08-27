@@ -9,13 +9,10 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
     private readonly HashSet<MouseButton> _pressedButtons = [];
     private readonly HashSet<MouseButton> _releasedButtons = [];
 
-    public MouseState State { get; private set; } = new();
+    public MouseState State { get; } = new();
 
     public Result Initialize()
     {
-        //GameManager.Input.Mice[0].Cursor.IsConfined = true;
-        //GameManager.Input.Mice[0].Cursor.CursorMode = CursorMode.Disabled;
-
         foreach (var mouse in inputContextProvider.Value.Mice)
         {
             mouse.MouseDown += OnButtonPressed;
@@ -53,7 +50,6 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
             position.Y / windowProvider.Value.Size.Y - 0.5f
         ) * 2f;
         State.Scroll = _scroll;
-
 
         return Result.Success();
     }

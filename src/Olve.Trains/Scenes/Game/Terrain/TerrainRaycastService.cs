@@ -3,12 +3,16 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Results;
+using Olve.Trains.Scenes.Game.Camera;
+using Olve.Trains.Scenes.Game.ShaderExtensions;
 using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game.Terrain;
 
-public class TerrainRaycastService(ILoggingManager loggingManager, MouseManager mouseManager, CameraSceneService cameraSceneService, TerrainService terrainService) : SceneService(loggingManager)
+public class TerrainRaycastService(ILoggingManager loggingManager,
+    MouseManager mouseManager,
+    CameraSceneService cameraSceneService,
+    TerrainService terrainService) : SceneService(loggingManager)
 {
     private HeightmapRaycaster? _heightmapRaycaster;
     
@@ -67,7 +71,7 @@ public class TerrainRaycastService(ILoggingManager loggingManager, MouseManager 
         {
             TerrainIntersection = intersection;
             
-            // Convert to 2D index
+            // Convert to 2D index 
             var x = (int)intersection.Value.X;
             var z = (int)intersection.Value.Z;
             
@@ -76,5 +80,17 @@ public class TerrainRaycastService(ILoggingManager loggingManager, MouseManager 
         }
 
         return Result.Success();
+    }
+
+    public void ApplyTerrainIntersectionParameters(IWorldMousePositionShader shader)
+    {
+        if (TerrainIntersection is {} intersection)
+        {
+            shader.MousePosition = intersection;
+        }
+        else
+        {
+            shader.MousePosition = new Vector3D<float>(-1000f, -1000f, -1000f);
+        }
     }
 }

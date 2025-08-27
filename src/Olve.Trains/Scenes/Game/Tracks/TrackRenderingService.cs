@@ -6,8 +6,7 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Results;
-using Olve.Utilities.Ids;
+using Olve.Trains.Scenes.Game.Camera;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
@@ -39,7 +38,14 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         
         _shaderId = shaderId;
         
-        trackService.OnAdded += OnTrackAdded;
+        trackService.OnAdded.Subscribe(OnTrackAdded);
+
+        return Result.Success();
+    }
+
+    protected override Result OnUnload()
+    {
+        trackService.OnAdded.Unsubscribe(OnTrackAdded);
 
         return Result.Success();
     }
@@ -131,9 +137,9 @@ public class TrackRenderingService(ILoggingManager loggingManager,
     
     private Result DrawTrack(GL gl, RenderingId<LineStripData> trackRenderingId)
     {
-        if (lineStripEntityManager.GetRegistration(trackRenderingId).TryPickProblems(out var problems, out var lineStripRegistration))
+        if (!lineStripEntityManager.TryGetRegistration(trackRenderingId, out var lineStripRegistration))
         {
-            return problems.Prepend("Failed to get track registration");
+            return new ResultProblem("Failed to get track registration");
         }
 
         var vao = lineStripRegistration.VAO.Handle;

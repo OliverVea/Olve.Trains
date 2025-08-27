@@ -11,13 +11,12 @@ public class OpenGLModelRenderingManager(Provider<GL> glProvider)
     {
         glProvider.Value.UseProgram(shaderProgram.Handle);
 
-        var results = parameters.Parameters.Select(parameter => parameter.SetUniforms(glProvider.Value, shaderProgram));
-
-        if (results.TryPickProblems(out var problems))
+        foreach (var parameter in parameters.Parameters)
         {
-            foreach (var problem in problems)
+            var result = parameter.SetUniforms(glProvider.Value, shaderProgram);
+            if (result.Failed)
             {
-                Console.WriteLine(problem.ToDebugString());
+                return result;
             }
         }
 

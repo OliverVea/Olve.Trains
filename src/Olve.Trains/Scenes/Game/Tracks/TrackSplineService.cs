@@ -3,15 +3,13 @@ using Olve.Engine3D.Math;
 using Olve.Engine3D.Math.Splines;
 using Olve.Engine3D.Systems;
 using Olve.Logging;
-using Olve.Results;
-using Olve.Utilities.Ids;
 using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 
-public class TrackSplineService(ILoggingManager loggingManager, TrackService trackService) : BaseEntityAuxiliaryService<TrackService, Track>(loggingManager, trackService)
+public class TrackSplineService(ILoggingManager loggingManager,
+    TrackService trackService) : BaseEntityAuxiliaryService<Track>(loggingManager, trackService)
 {
-    private readonly TrackService _trackService = trackService;
     private static readonly ResultProblem TimeInvalidProblem = new("Time must be between {0} and {1}", StartTime, EndTime);
     
     private const float StartTime = 0.0f;
@@ -143,7 +141,7 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
     
     private Result<UniformHermite<Vector3D<float>>> CreateSpline(Id<Track> trackId)
     {
-        if (!_trackService.TryGet(trackId, out var track))
+        if (!trackService.TryGet(trackId, out var track))
         {
             return new ResultProblem("Failed to get track");
         }

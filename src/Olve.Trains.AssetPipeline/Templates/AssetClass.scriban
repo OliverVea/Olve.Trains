@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------
 using Olve.Engine3D.Rendering.Entities;
 
+// ReSharper disable once CheckNamespace
 namespace Olve.Engine3D.Assets;
 
 public static class {{ ClassName }}

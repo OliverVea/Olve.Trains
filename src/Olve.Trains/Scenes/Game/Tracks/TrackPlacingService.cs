@@ -2,7 +2,6 @@ using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Results;
 using Olve.Trains.Scenes.Game.Terrain;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -28,29 +27,9 @@ public class TrackPlacingService(ILoggingManager loggingManager,
     {
         if (mouseManager.State.IsButtonPressed(MouseButton.Left))
         {
-            if (PreviousPoint is null)
+            if (PlaceTrack().TryPickProblems(out var problems))
             {
-                PreviousPoint = CurrentPoint;
-            }
-            else
-            {
-                if (CurrentPoint is null)
-                {
-                    return new ResultProblem("Current point is null");
-                }
-
-                var start = PreviousPoint.Value with { Tangent = -PreviousPoint.Value.Tangent };
-                var end = CurrentPoint.Value;
-                
-                if (trackService.AddTrack(start, end).TryPickProblems(out var problems, out var trackId))
-                {
-                    return problems.Prepend("Failed to add track");
-                }
-                
-                LoggingManager.Log(LogLevel.Info, $"Created track with id '{trackId}'");
-                LoggingManager.Log(LogLevel.Debug, $"Placed track from {start} to {end}");
-                
-                PreviousPoint = null;
+                return problems;
             }
         }
         
@@ -83,6 +62,80 @@ public class TrackPlacingService(ILoggingManager loggingManager,
         return Pass.Pass;
     }
 
+    private Result PlaceTrack()
+    {
+        if (PreviousPoint is not {} startPoint)
+        {
+            PreviousPoint = CurrentPoint;
+        }
+        else
+        {
+            if (CurrentPoint is not {} endPoint)
+            {
+                return  new ResultProblem("Current point is null");
+            }
+                
+            var delta = endPoint.Point - startPoint.Point;
+            if (delta.Length < MathConstants.Epsilon)
+            {
+                return Result.Success();
+            }
+
+            List<(TrackPoint Start, TrackPoint End)> tracks = [];
+                
+            if (TrackIsStraightLine(startPoint, endPoint))
+            {
+                var deltaNormalized = Vector3D.Normalize(delta);
+                var subtracks = float.Round(delta.Length);
+                for (var i = 0; i < subtracks; i++)
+                {
+                    var subtrackStart = startPoint.Point + deltaNormalized * i;
+                    var subtrackEnd = startPoint.Point + deltaNormalized * (i + 1);
+                        
+                    tracks.Add((
+                        new TrackPoint(subtrackStart, deltaNormalized), 
+                        new TrackPoint(subtrackEnd, deltaNormalized)));
+                }
+            }
+            else
+            {
+                tracks.Add((startPoint, endPoint));
+            }
+
+            var trackResults = tracks.Select(p => PlaceTrack(p.Start, p.End));
+            if (trackResults.TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+        }
+
+        return Result.Success();
+    }
+
+    private Result PlaceTrack(TrackPoint startPoint, TrackPoint endPoint)
+    {
+        var pointDistance = (startPoint.Point - endPoint.Point).Length;
+        if (pointDistance < 0.01f)
+        {
+            LoggingManager.Log(LogLevel.Warning, "Tried to place track with distance 0");
+            return Result.Success();
+        }
+        
+        startPoint = startPoint with { Tangent = -startPoint.Tangent };
+                
+        if (trackService.AddTrack(startPoint, endPoint).TryPickProblems(out var problems, out var trackId))
+        {
+            return problems.Prepend("Failed to add track");
+        }
+                
+        LoggingManager.Log(LogLevel.Info, $"Created track with id '{trackId}'");
+        LoggingManager.Log(LogLevel.Debug, $"Placed track from {startPoint} to {endPoint}");
+                
+        PreviousPoint = null;
+        
+        return Result.Success();
+    }
+
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
         CurrentPoint = terrainRaycastService.TerrainIntersectionTileCenter is { } tileCenter
@@ -90,5 +143,14 @@ public class TrackPlacingService(ILoggingManager loggingManager,
             : null;
         
         return Result.Success();
+    }
+
+    private bool TrackIsStraightLine(TrackPoint startPoint, TrackPoint endPoint)
+    {
+        var delta = endPoint.Point - startPoint.Point;
+        
+        return delta.CountZeroDimensions() == 2
+               && (startPoint.Tangent - endPoint.Tangent).Length < MathConstants.Epsilon
+               && (Vector3D.Normalize(startPoint.Tangent) - Vector3D.Normalize(delta)).Length < MathConstants.Epsilon;
     }
 }

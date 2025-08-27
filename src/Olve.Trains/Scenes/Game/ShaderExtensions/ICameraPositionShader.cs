@@ -1,6 +1,6 @@
 ﻿using Silk.NET.Maths;
 
-namespace Olve.CodeGen;
+namespace Olve.Trains.Scenes.Game.ShaderExtensions;
 
 public interface ICameraPositionShader
 {

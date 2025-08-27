@@ -21,9 +21,9 @@ public class ProcessAssets(ILogger<ProcessAssets> logger, ProcessMeshAssets proc
     {
         logger.LogDebug("Processing assets");
 
-        IReadOnlyList<Asset<MeshData>> meshAssets = Array.Empty<Asset<MeshData>>();
-        IReadOnlyList<Asset<TextureData>> textureAssets = Array.Empty<Asset<TextureData>>();
-        IReadOnlyList<Asset<TerrainData>> terrainAssets = Array.Empty<Asset<TerrainData>>();
+        IReadOnlyList<Asset<MeshData>> meshAssets = [];
+        IReadOnlyList<Asset<TextureData>> textureAssets = [];
+        IReadOnlyList<Asset<TerrainData>> terrainAssets = [];
 
         if (request.Targets.HasFlag(BuildTargets.Meshes))
         {

@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using Olve.CodeGen;
+﻿using Olve.CodeGen;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
@@ -8,10 +7,13 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Systems;
 using Olve.Logging;
-using Olve.Results;
+using Olve.Trains.meshes;
+using Olve.Trains.Scenes.Game.Camera;
+using Olve.Trains.Scenes.Game.Light;
 using Olve.Trains.Scenes.Game.Tracks;
-using Olve.Utilities.Ids;
+using Olve.Trains.textures;
 using Silk.NET.Maths;
 using RenderingServiceHelper = Olve.Engine3D.Rendering.RenderingServiceHelper;
 
@@ -33,8 +35,8 @@ public class VehicleRenderingService(
 
     private RenderingId<MeshData> MeshRenderingId { get; set; }
     private readonly Dictionary<Id<Vehicle>, RenderingInstanceId> _instanceIds  = new();
-    private readonly ConcurrentQueue<Id<Vehicle>> _toAdd = new();
-    private readonly ConcurrentQueue<Id<Vehicle>> _toRemove = new();
+    private readonly EventQueue<Id<Vehicle>> _toAddQueue = new(vehicleService.OnAdded);
+    private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = new(vehicleService.OnRemoved);
     private readonly Shaders.Default _shader = new();
     private float _scale = 1;
     
@@ -75,68 +77,59 @@ public class VehicleRenderingService(
         
         MeshRenderingId = meshRenderingId;
 
-        vehicleService.OnAdded += OnVehicleAdded;
-        vehicleService.OnRemoved += OnVehicleRemoved;
+        _toAddQueue.SetHandler(AddVehicle).Init();
+        _toRemoveQueue.SetHandler(RemoveVehicle).Init();
 
         return Result.Success();
     }
 
-    private void AddVehicle(Id<Vehicle> vehicleId)
+    protected override Result OnUnload()
+    {
+        _toAddQueue.Cleanup();
+        _toRemoveQueue.Cleanup();
+
+        return Result.Success();
+    }
+
+    private Result AddVehicle(Id<Vehicle> vehicleId)
     {
         if (_instanceIds.ContainsKey(vehicleId))
         {
-            LoggingManager.Log(LogLevel.Debug, $"Tried to add vehicle with id '{vehicleId}' twice. Skipping.");
+            return new ResultProblem("Tried to add vehicle with id '{0}' twice.", vehicleId);
         }
         
         var registerInstanceResult = renderingManager3D.RegisterInstance(MeshRenderingId, _shader.RenderingId, new Matrix4X4<float>());
         if (registerInstanceResult.TryPickProblems(out var problems, out var meshRenderingId))
         {
-            LoggingManager.Log(problems);
-            return;
+            return problems.Prepend("Failed to add vehicle");
         }
         
         _instanceIds[vehicleId] = meshRenderingId;
+        return Result.Success();
     }
 
-    private void RemoveVehicle(Id<Vehicle> vehicleId)
+    private Result RemoveVehicle(Id<Vehicle> vehicleId)
     {
         if (_instanceIds.TryGetValue(vehicleId, out var instanceId))
         {
             renderingManager3D.DeregisterInstance(instanceId);
             _instanceIds.Remove(vehicleId);
         }
-    }
 
-    private void OnVehicleAdded(Id<Vehicle> vehicleId)
-    {
-        _toAdd.Enqueue(vehicleId);
-    }
-
-    private void OnVehicleRemoved(Id<Vehicle> vehicleId)
-    {
-        _toRemove.Enqueue(vehicleId);
+        return Result.Success();
     }
 
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
-        if (_toRemove.Any())
-        {
-            foreach (var id in _toRemove) RemoveVehicle(id);
-            _toRemove.Clear(); 
-        }
-
-        if (_toAdd.Any())
-        {
-            foreach (var id in _toAdd) AddVehicle(id);
-            _toAdd.Clear();
-        }
+        _toAddQueue.Update();
+        _toRemoveQueue.Update();
         
         foreach (var (vehicleId, trackPosition) in vehiclePositionService.TrackPositions)
         {
             if (!_instanceIds.TryGetValue(vehicleId, out var instanceId))
             {
                 LoggingManager.Log(LogLevel.Warning, $"Did not find rendering instance id for vehicle with id '{vehicleId}'. Enqueueing it for registration");
-                _toAdd.Enqueue(vehicleId);
+                AddVehicle(vehicleId);
                 continue;
             }
             

@@ -3,27 +3,26 @@
 // |               WARNING: This is a generated file. Do not modify it manually.                    |
 // |                                                                                                |
 // --------------------------------------------------------------------------------------------------
-using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.Parameters;
+// ReSharper disable RedundantUsingDirective
 using Olve.Engine3D.Rendering.Entities;
-using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
+using Olve.Engine3D.Rendering.Parameters;
+using Olve.Engine3D.Rendering.Shaders;
 using Silk.NET.Maths;
 
+// ReSharper disable once CheckNamespace
 namespace Olve.CodeGen;
 
 
 public static partial class Shaders
 {
 
-    public partial class {{ Name }} : IShader
+    public partial class {{ Name }} : BaseWorldShader
     {
-        public RenderingId<ShaderData> RenderingId { get; set; }
-
         {{ for x in 0..(Uniforms.size - 1) }}public {{Uniforms[x].DataType}} {{Uniforms[x].PropertyName}} { get; set; }{{Uniforms[x].Initializer}}
 {{ end }}
 
-        public ShaderData ShaderData { get; } = new()
+        public override ShaderData ShaderData { get; } = new()
         {
             Name = "{{ Name }}",
             VertexPath = "{{ VertexShader.SourcePath }}",
@@ -34,7 +33,7 @@ public static partial class Shaders
             GeometrySource = @"{{ GeometryShader.SourceCode }}",{{ end }}
         };
     
-        public RenderingParameters MakeParameters()
+        public override RenderingParameters MakeParameters()
         {
             return new(
             [
