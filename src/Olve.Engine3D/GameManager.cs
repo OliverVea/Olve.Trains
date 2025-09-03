@@ -1,5 +1,6 @@
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Systems;
 using Olve.Utilities.Ids;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
@@ -7,9 +8,12 @@ using Silk.NET.Windowing;
 
 namespace Olve.Engine3D;
 
+public class ScreenResizedEvent
+{
+    public Event<Vector2D<int>> OnWindowResize { get; } = new();
+}
 
-
-public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvider, Provider<IInputContext> inputContextProvider, KeyboardManager keyboardManager, MouseManager mouseManager, SceneManager sceneManager)
+public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvider, Provider<IInputContext> inputContextProvider, KeyboardManager keyboardManager, MouseManager mouseManager, SceneManager sceneManager, ScreenResizedEvent screenResizedEvent)
 {
     private Result _result = Result.Success();
     private Id<IScene>[] _initialScenes = [];
@@ -150,6 +154,8 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
 
     private void OnFramebufferResize(Vector2D<int> size)
     {
+        glProvider.Value.Viewport(size);
+        screenResizedEvent.OnWindowResize.Invoke(size);
     }
 
     public void Stop()
