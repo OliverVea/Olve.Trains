@@ -20,6 +20,7 @@ namespace Olve.Trains;
 [Singleton(typeof(MouseManager))]
 [Singleton(typeof(DayTimeManager))]
 [Singleton(typeof(DaylightManager))]
+[Singleton(typeof(ScreenResizedEvent))]
 [Singleton(typeof(CommandHandlerServiceCollection))]
 [Singleton(typeof(IScene), Factory = nameof(GetGameScene))]
 [Singleton(typeof(IScene), Factory = nameof(GetConsoleScene))]

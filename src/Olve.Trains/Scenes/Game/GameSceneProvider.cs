@@ -67,6 +67,7 @@ namespace Olve.Trains.Scenes.Game;
 [Transient(typeof(RenderingManager3D), Factory = nameof(GetRenderingManager))]
 [Transient(typeof(ShaderEntityManager), Factory = nameof(GetShaderEntityManager))]
 [Transient(typeof(TextureEntityManager), Factory = nameof(GetTextureEntityManager))]
+[Transient(typeof(ScreenResizedEvent), Factory = nameof(GetScreenResizedEvent))]
 public partial class GameSceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
     private CommandHandlerServiceCollection GetCommandHandlerServiceCollection() => gameProvider.GetService<CommandHandlerServiceCollection>();
@@ -74,6 +75,7 @@ public partial class GameSceneProvider(GameProvider gameProvider) : ISceneServic
     private HeightmapEntityManager GetHeightmapEntityManager() => gameProvider.GetRequiredService<HeightmapEntityManager>();
     private ShaderEntityManager GetShaderEntityManager() => gameProvider.GetRequiredService<ShaderEntityManager>();
     private TextureEntityManager GetTextureEntityManager() => gameProvider.GetRequiredService<TextureEntityManager>();
+    private ScreenResizedEvent GetScreenResizedEvent() => gameProvider.GetRequiredService<ScreenResizedEvent>();
     private LineStripEntityManager GetLineStripEntityManager() => gameProvider.GetRequiredService<LineStripEntityManager>();
     private OpenGLModelRenderingManager GetOpenGLModelRenderingManager() => gameProvider.GetRequiredService<OpenGLModelRenderingManager>();
     private RenderingManager3D GetRenderingManager() => gameProvider.GetRequiredService<RenderingManager3D>();

@@ -9,12 +9,11 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.ShaderExtensions;
-using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains.Scenes.Game.Camera;
 
-public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow> windowProvider, KeyboardManager keyboardManager) : SceneService(loggingManager)
+public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent) : SceneService(loggingManager)
 {
     private IsometricOrthographicCameraController _cameraController = null!;
 
@@ -39,7 +38,14 @@ public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow
         _cameraController = IsometricOrthographicCameraController.Create(WindowSize, cameraTarget, cameraViewDirection, orthographicSize);
 
         _cameraSchemes.Add(new WasdMovement(keyboardManager));
+        screenResizedEvent.OnWindowResize.Subscribe(OnWindowResize);
 
+        return Result.Success();
+    }
+
+    protected override Result OnUnload()
+    {
+        screenResizedEvent.OnWindowResize.Unsubscribe(OnWindowResize);
         return Result.Success();
     }
 
@@ -83,5 +89,11 @@ public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow
     public void ApplyCameraDirectionParameters(ICameraDirectionShader shader)
     {
         shader.CameraDirection = _cameraViewDirection;
+    }
+
+    private void OnWindowResize(Vector2D<int> newWindowSize)
+    {
+        var aspectRatio = (float)newWindowSize.X / newWindowSize.Y;
+        _cameraController.Camera.Projection.AspectRatio = aspectRatio;
     }
 }

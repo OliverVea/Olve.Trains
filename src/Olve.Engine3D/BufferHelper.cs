@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace Olve.Engine3D;
 
@@ -9,11 +10,11 @@ namespace Olve.Engine3D;
 /// </summary>
 public static class BufferHelper
 {
-    private const int MaxStackAllocationSize = 2048;
+    private const int MaxStackBytes = 8 * 1024;
 
     /// <summary>
     /// Executes <paramref name="action"/> on a <see cref="Span{T}"/> of length <paramref name="spanSize"/>.
-    /// If <paramref name="spanSize"/> is less than or equal to <paramref name="maxStackAllocationSize"/>,
+    /// If <paramref name="spanSize"/> is less than or equal to <paramref name="maxStackBytes"/> in bytes (depends on the size of the element type),
     /// the span is allocated on the stack. Otherwise, a pooled array is rented (and returned) after use.
     /// </summary>
     /// <typeparam name="T">The element type of the span. Must be an unmanaged type.</typeparam>
@@ -23,9 +24,9 @@ public static class BufferHelper
     /// If <c>true</c> and a pooled array is used, the contents
     /// of the rented buffer will be cleared before invoking <paramref name="action"/>.
     /// </param>
-    /// <param name="maxStackAllocationSize">
+    /// <param name="maxStackBytes">
     /// The threshold at which the helper switches from <c>stackalloc</c> to array pooling.
-    /// Defaults to <c>MaxStackAllocationSize</c> (2048).
+    /// Defaults to <c>MaxStackBytes</c> (8096).
     /// </param>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown if <paramref name="spanSize"/> is negative.</exception>
@@ -33,31 +34,36 @@ public static class BufferHelper
         int spanSize,
         Action<Span<T>> action,
         bool ensureClearedArray = false,
-        int maxStackAllocationSize = MaxStackAllocationSize) where T : unmanaged
+        int maxStackBytes = MaxStackBytes) where T : unmanaged
     {
         ArgumentNullException.ThrowIfNull(action);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(spanSize);
-        ArgumentOutOfRangeException.ThrowIfNegative(maxStackAllocationSize);
+        ArgumentOutOfRangeException.ThrowIfNegative(maxStackBytes);
         
+        var elemSize = Unsafe.SizeOf<T>();
+        var neededBytes = checked(spanSize * elemSize);
         T[]? array = null;
 
         try
         {
-            array = spanSize > maxStackAllocationSize ? ArrayPool<T>.Shared.Rent(spanSize) : null;
-            if (ensureClearedArray && array is not null)
+            if (neededBytes > maxStackBytes)
             {
-                Array.Clear(array, 0, spanSize);
+                array = ArrayPool<T>.Shared.Rent(spanSize);
+                if (ensureClearedArray) { Array.Clear(array, 0, spanSize); }
+                action(array.AsSpan(0, spanSize));
             }
-            
-            var span = array is not null ? array.AsSpan(0, spanSize) : stackalloc T[spanSize];
-
-            action(span);
+            else
+            {
+                Span<T> span = stackalloc T[spanSize];
+                if (ensureClearedArray) { span.Clear(); }
+                action(span);
+            }
         }
         finally
         {
             if (array is not null)
             {
-                ArrayPool<T>.Shared.Return(array);
+                ArrayPool<T>.Shared.Return(array, clearArray: ensureClearedArray);
             }
         }
     }
@@ -65,7 +71,7 @@ public static class BufferHelper
 
     /// <summary>
     /// Executes <paramref name="func"/> on a <see cref="Span{TIn}"/> of length <paramref name="spanSize"/>
-    /// and returns its result. Uses <c>stackalloc</c> up to <paramref name="maxStackAllocationSize"/>, otherwise
+    /// and returns its result. Uses <c>stackalloc</c> up to <paramref name="maxStackBytes"/> (depends on element size), otherwise
     /// a pooled array is rented and returned after use.
     /// </summary>
     /// <typeparam name="TIn">The element type of the span. Must be an unmanaged type.</typeparam>
@@ -76,7 +82,7 @@ public static class BufferHelper
     /// If <c>true</c> and a pooled array is used, the contents
     /// of the rented buffer will be cleared before invoking <paramref name="func"/>.
     /// </param>
-    /// <param name="maxStackAllocationSize">
+    /// <param name="maxStackBytes">
     /// The threshold at which the helper switches from <c>stackalloc</c> to array pooling.
     /// Defaults to <c>MaxStackAllocationSize</c> (2048).
     /// </param>
@@ -87,31 +93,36 @@ public static class BufferHelper
         int spanSize,
         Func<Span<TIn>, TOut> func,
         bool ensureClearedArray = false,
-        int maxStackAllocationSize = MaxStackAllocationSize) where TIn : unmanaged
+        int maxStackBytes = MaxStackBytes) where TIn : unmanaged
     {
         ArgumentNullException.ThrowIfNull(func);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(spanSize);
-        ArgumentOutOfRangeException.ThrowIfNegative(maxStackAllocationSize);
+        ArgumentOutOfRangeException.ThrowIfNegative(maxStackBytes);
         
+        var elemSize = Unsafe.SizeOf<TIn>();
+        var neededBytes = checked(spanSize * elemSize);
         TIn[]? array = null;
 
         try
         {
-            array = spanSize > maxStackAllocationSize ? ArrayPool<TIn>.Shared.Rent(spanSize) : null;
-            if (ensureClearedArray && array is not null)
+            if (neededBytes > maxStackBytes)
             {
-                Array.Clear(array, 0, spanSize);
+                array = ArrayPool<TIn>.Shared.Rent(spanSize);
+                if (ensureClearedArray) Array.Clear(array, 0, spanSize);
+                return func(array.AsSpan(0, spanSize));
             }
-            
-            var span = array is not null ? array.AsSpan(0, spanSize) : stackalloc TIn[spanSize];
-
-            return func(span);
+            else
+            {
+                Span<TIn> span = stackalloc TIn[spanSize];
+                if (ensureClearedArray) span.Clear();
+                return func(span);
+            }
         }
         finally
         {
             if (array is not null)
             {
-                ArrayPool<TIn>.Shared.Return(array);
+                ArrayPool<TIn>.Shared.Return(array, clearArray: ensureClearedArray);
             }
         }
     }
