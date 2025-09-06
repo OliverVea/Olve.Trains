@@ -5,11 +5,10 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Trains.Scenes.Game.Camera;
 using Olve.Trains.Scenes.Game.Light;
-using Silk.NET.Maths;
+using Olve.Trains.Scenes.Game.Terrain;
 
-namespace Olve.Trains.Scenes.Game.Terrain;
+namespace Olve.Trains.Scenes.Rendering;
 
 public class TerrainRenderingService(ILoggingManager loggingManager,
     TerrainService terrainService,

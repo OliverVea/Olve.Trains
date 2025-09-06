@@ -1,4 +1,5 @@
 using Olve.Engine3D.Math.Splines;
+using Olve.Engine3D.Utilities;
 
 namespace Olve.Engine3D.Light;
 

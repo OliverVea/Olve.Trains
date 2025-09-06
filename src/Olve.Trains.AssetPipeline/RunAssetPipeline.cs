@@ -3,8 +3,6 @@ using Olve.Operations;
 using Olve.Results;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Shaders;
-using System;
-using System.IO;
 
 namespace Olve.Trains.AssetPipeline;
 

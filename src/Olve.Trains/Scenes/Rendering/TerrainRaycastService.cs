@@ -3,11 +3,10 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Trains.Scenes.Game.Camera;
 using Olve.Trains.Scenes.Game.ShaderExtensions;
-using Silk.NET.Maths;
+using Olve.Trains.Scenes.Game.Terrain;
 
-namespace Olve.Trains.Scenes.Game.Terrain;
+namespace Olve.Trains.Scenes.Rendering;
 
 public class TerrainRaycastService(ILoggingManager loggingManager,
     MouseManager mouseManager,
@@ -19,7 +18,6 @@ public class TerrainRaycastService(ILoggingManager loggingManager,
     public Ray3D<float>? MouseRay { get; set; }
     public Vector3D<float>? TerrainIntersection { get; set; }
     public Vector3D<float>? TerrainIntersectionTileCenter { get; set; }
-    public Vector2D<int>? TerrainIntersectionIndex { get; set; }
     
     public override int Priority => GetPriorityFromDependencies([cameraSceneService, terrainService]);
 
@@ -75,7 +73,6 @@ public class TerrainRaycastService(ILoggingManager loggingManager,
             var x = (int)intersection.Value.X;
             var z = (int)intersection.Value.Z;
             
-            TerrainIntersectionIndex = new Vector2D<int>(x, z);
             TerrainIntersectionTileCenter = new Vector3D<float>(x + 0.5f, intersection.Value.Y, z + 0.5f);
         }
 

@@ -1,4 +1,3 @@
-using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
@@ -11,13 +10,24 @@ public class TerrainService(ILoggingManager loggingManager) : SceneService(loggi
 
     protected override Result OnLoad()
     {
-        var terrainResult = AssetLoader.LoadAsset(Terrains.terrain01);
-        if (terrainResult.TryPickProblems(out var problems, out var terrain))
-        {
-            return problems;
-        }
+        const int length = 50;
+        const int width = 50;
         
-        Terrain = terrain;
+        var heights = new int[length * width];
+        Array.Fill(heights, 1);
+
+        HeightmapData heightmap = new()
+        {
+            Heights = heights,
+            Width = width,
+            Length = length,
+            Step = 0.125f
+        };
+        
+        Terrain = new TerrainData
+        {
+            Heightmap = heightmap
+        };
         
         return Result.Success();
     }

@@ -3,7 +3,6 @@ using Olve.Engine3D.Systems;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Utilities.CollectionExtensions;
-using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 

@@ -129,7 +129,7 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
                 }
             }
 
-            var destinationPath = Path.Combine(Paths.ShaderOutputFolder, programName + ".cs");
+            var destinationPath = Path.Combine(Paths.ShaderOutputFolder, "Shaders." + programName + ".cs");
             
             var shaderProgram = new ShaderProgram
             {

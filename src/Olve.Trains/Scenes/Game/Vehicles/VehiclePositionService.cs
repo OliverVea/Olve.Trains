@@ -4,12 +4,6 @@ using Olve.Logging;
 
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
-public enum VehiclePositionType
-{
-    None = 0,
-    OnTrack
-}
-
 public class VehiclePositionService(ILoggingManager loggingManager,
     VehicleService vehicleService) : BaseEntityAuxiliaryService<Vehicle>(loggingManager, vehicleService)
 {

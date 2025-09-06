@@ -11,7 +11,7 @@ using Olve.Logging;
 using Olve.Trains.Scenes.Game.ShaderExtensions;
 using Silk.NET.Windowing;
 
-namespace Olve.Trains.Scenes.Game.Camera;
+namespace Olve.Trains.Scenes.Rendering;
 
 public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent) : SceneService(loggingManager)
 {

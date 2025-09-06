@@ -9,15 +9,12 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Logging;
-using Olve.Trains.meshes;
-using Olve.Trains.Scenes.Game.Camera;
 using Olve.Trains.Scenes.Game.Light;
 using Olve.Trains.Scenes.Game.Tracks;
-using Olve.Trains.textures;
-using Silk.NET.Maths;
+using Olve.Trains.Scenes.Game.Vehicles;
 using RenderingServiceHelper = Olve.Engine3D.Rendering.RenderingServiceHelper;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.Rendering;
 
 public class VehicleRenderingService(
     ILoggingManager loggingManager,

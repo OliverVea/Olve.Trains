@@ -1,17 +1,22 @@
+using Olve.Logging;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Scenes;
 
 public sealed class Scene<TProvider> : IScene where TProvider : class, ISceneServicesProvider
 {
+    private readonly string _name =  $"Scene<{typeof(TProvider).Name}>";
+    
+    private readonly ILoggingManager _loggingManager;
     private readonly SceneService[] _sceneServices;
     private readonly Result[] _serviceResults;
 
-    public Scene(TProvider provider, Id<IScene> sceneId, int layerOrder = 0)
+    public Scene(ILoggingManager loggingManager, TProvider provider, Id<IScene> sceneId, int layerOrder = 0)
     {
         Id = sceneId;
         LayerOrder = layerOrder;
-        
+
+        _loggingManager = loggingManager;
         _sceneServices = provider.GetSceneServices().OrderBy(x => x.Priority).ToArray();
         _serviceResults = new Result[_sceneServices.Length];
     }
@@ -25,6 +30,8 @@ public sealed class Scene<TProvider> : IScene where TProvider : class, ISceneSer
 
     public Result Load()
     {
+        _loggingManager.Log(LogLevel.Debug, $"Loading scene: {_name}");
+        
         for (var i = 0; i < _sceneServices.Length; i++)
         {
             _serviceResults[i] = _sceneServices[i].Load();
@@ -34,6 +41,8 @@ public sealed class Scene<TProvider> : IScene where TProvider : class, ISceneSer
         {
             return problems;
         }
+        
+        _loggingManager.Log(LogLevel.Debug, $"Finished loading scene: {_name}");
         
         return Result.Success();
     }

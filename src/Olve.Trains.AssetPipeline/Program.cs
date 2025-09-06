@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using System;
-using System.Collections.Generic;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.OpenRaster;
 using Olve.Trains.AssetPipeline;

@@ -3,6 +3,7 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Shaders;
+using Olve.Utilities.Ids;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering;
@@ -21,7 +22,7 @@ public class RenderingManager3D(
     protected readonly SortedList<RenderingInstanceId, Instance> Instances = new();
 
     private const int ErrorCounterThreshold = 20;
-    private int errorCounter = 0;
+    private int _errorCounter;
 
     protected readonly record struct Instance(
         RenderingInstanceId InstanceId,
@@ -216,8 +217,8 @@ public class RenderingManager3D(
             return new ResultProblem(e, "Failed to render entity instances");
         }
 
-        errorCounter++;
-        if (errorCounter >= ErrorCounterThreshold)
+        _errorCounter++;
+        if (_errorCounter >= ErrorCounterThreshold)
         {
             var error = glProvider.Value.GetError();
             if (error != GLEnum.NoError)
@@ -225,7 +226,7 @@ public class RenderingManager3D(
                 return new ResultProblem("OpenGL error: {0}", error);
             }
             
-            errorCounter = 0;
+            _errorCounter = 0;
         }
         
         return Result.Success();

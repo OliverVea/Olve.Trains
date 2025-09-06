@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.DebugServer;
@@ -7,7 +5,6 @@ using Olve.Engine3D.DebugServer.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Paths;
 
 namespace Olve.Trains.Scenes.Console;
 
@@ -38,7 +35,7 @@ public class WebConsoleService(ILoggingManager loggingManager, ConsoleSceneProvi
 
         _webHost.ConfigureOlveEngine3DDebugServer();
 
-        _webHost.RunAsync();
+        _ = _webHost.RunAsync();
 
         return Result.Success();
     }
@@ -53,13 +50,4 @@ public class WebConsoleService(ILoggingManager loggingManager, ConsoleSceneProvi
         _webHost?.StopAsync().GetAwaiter().GetResult();
         return Result.Success();
     }
-}
-
-public class PathJsonConverter : JsonConverter<IPath>
-{
-    public override IPath Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => Paths.Path.Create(reader.GetString() ?? string.Empty);
-
-    public override void Write(Utf8JsonWriter writer, IPath value, JsonSerializerOptions options)
-        => writer.WriteStringValue(value.Path);
 }

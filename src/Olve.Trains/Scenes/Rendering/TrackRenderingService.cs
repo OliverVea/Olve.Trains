@@ -6,11 +6,11 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Trains.Scenes.Game.Camera;
-using Silk.NET.Maths;
+using Olve.Trains.Scenes.Game.Stations;
+using Olve.Trains.Scenes.Game.Tracks;
 using Silk.NET.OpenGL;
 
-namespace Olve.Trains.Scenes.Game.Tracks;
+namespace Olve.Trains.Scenes.Rendering;
 
 public class TrackRenderingService(ILoggingManager loggingManager,
     TrackService trackService,
@@ -19,6 +19,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
     CameraSceneService cameraSceneService,
     ShaderEntityManager shaderEntityManager,
     OpenGLModelRenderingManager openGLModelRenderingManager,
+    StationPlatformService stationPlatformService,
     TrackSplineService trackSplineService) : SceneService(loggingManager)
 {
     private const int TrackVertexCount = 100;
@@ -86,8 +87,11 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         }
         
         var colors = new Vector3D<float>[TrackVertexCount];
+        var color = stationPlatformService.TryGetPlatform(trackId, out _)
+            ? new Vector3D<float>(1, 0, 0)
+            : new Vector3D<float>(1, 1, 1);
         
-        Array.Fill(colors, Vector3D<float>.One);
+        Array.Fill(colors, color);
         
         return new LineStripData
         {

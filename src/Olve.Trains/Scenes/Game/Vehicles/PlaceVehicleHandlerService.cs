@@ -1,3 +1,4 @@
+using System.Globalization;
 using Olve.Engine3D.DebugServer.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Logging;
@@ -40,7 +41,7 @@ public class PlaceVehicleHandlerService(
         }
 
         var speedString = commandContext.Arguments.GetValueOrDefault(SpeedArgument.Key, "0");
-        if (!float.TryParse(speedString, out var speed))
+        if (!float.TryParse(speedString, NumberFormatInfo.InvariantInfo, out var speed))
         {
             return new ResultProblem("Got invalid speed value '{0}'", speedString);
         }
@@ -58,10 +59,4 @@ public class PlaceVehicleHandlerService(
         var vehicleName = "Vehicle_" + vehicleService.Count + 1;
         return vehicleService.AddVehicle(vehicleName);
     }
-}
-
-public static class CommandContextExtensions
-{
-    public static Result<Id<T>> GetId<T>(this CommandContext commandContext, CommandArgument commandArgument)
-        => Id<T>.Parse(commandContext.Arguments[commandArgument.Key]);
 }

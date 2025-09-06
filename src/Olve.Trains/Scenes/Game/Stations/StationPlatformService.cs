@@ -1,0 +1,40 @@
+﻿using System.Diagnostics.CodeAnalysis;
+using Olve.Engine3D.Systems;
+using Olve.Logging;
+using Olve.Trains.Scenes.Game.Tracks;
+
+namespace Olve.Trains.Scenes.Game.Stations;
+
+public class StationPlatformService(ILoggingManager loggingManager) : BaseEntityService<StationPlatform>(loggingManager)
+{
+    private readonly Dictionary<Id<Track>, Id<StationPlatform>> _platformsByTrack = new();
+
+    public Result<Id<StationPlatform>> AddPlatform(Id<Track> trackId)
+    {
+        if (_platformsByTrack.ContainsKey(trackId))
+        {
+            return new ResultProblem("Track with id '{0}' already has a platform", trackId);
+        }
+        
+        var platformId = Id<StationPlatform>.New();
+        _platformsByTrack.Add(trackId, platformId);
+        StationPlatform platform = new(platformId, trackId, Id<Station>.New());
+
+        return Add(platform);
+    }
+    
+    public DeletionResult RemoveForTrack(Id<Track> trackId)
+    {
+        if (!_platformsByTrack.Remove(trackId, out var platformId))
+        {
+            return DeletionResult.NotFound();
+        }
+
+        return Remove(platformId);
+    }
+
+    public bool TryGetPlatform(Id<Track> trackId, [MaybeNullWhen(false)] out Id<StationPlatform> platformId)
+    {
+        return _platformsByTrack.TryGetValue(trackId, out platformId);
+    }
+}

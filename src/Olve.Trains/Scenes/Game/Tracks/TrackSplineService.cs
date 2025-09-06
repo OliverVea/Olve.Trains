@@ -1,9 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Math.Splines;
 using Olve.Engine3D.Systems;
 using Olve.Logging;
-using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 
@@ -22,20 +20,21 @@ public class TrackSplineService(ILoggingManager loggingManager,
         _trackSplines.Remove(id);
     }
 
-    private bool TryGetSpline(Id<Track> trackId, [MaybeNullWhen(false)] out UniformHermite<Vector3D<float>> trackSpline, [MaybeNullWhen(true)] out ResultProblemCollection problems)
+    private Result<UniformHermite<Vector3D<float>>> GetOrAddSpline(Id<Track> trackId)
     {
-        if (!_trackSplines.TryGetValue(trackId, out trackSpline))
+        if (_trackSplines.TryGetValue(trackId, out var trackSpline))
         {
-            if (CreateSpline(trackId).TryPickProblems(out problems, out trackSpline))
-            {
-                return false;
-            }
-
-            _trackSplines[trackId] = trackSpline;
+            return trackSpline;
+        }
+        
+        if (CreateSpline(trackId).TryPickProblems(out var problems, out trackSpline))
+        {
+            return problems;
         }
 
-        problems = null;
-        return true;
+        _trackSplines[trackId] = trackSpline;
+
+        return trackSpline;
     }
 
     public Result<Vector3D<float>> GetPoint(Id<Track> trackId, float time)
@@ -45,7 +44,7 @@ public class TrackSplineService(ILoggingManager loggingManager,
             return TimeInvalidProblem;
         }
         
-        if (!TryGetSpline(trackId, out var spline, out var problems))
+        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
         {
             return problems.Prepend("Failed to get spline");
         }
@@ -53,9 +52,20 @@ public class TrackSplineService(ILoggingManager loggingManager,
         return spline.Sample(time);
     }
 
+    public Result<(Vector3D<float> Start, Vector3D<float> End)> GetEnds(Id<Track> trackId)
+    {
+        
+        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
+        {
+            return problems.Prepend("Failed to get spline");
+        }
+
+        return (spline.Sample(StartTime), spline.Sample(EndTime));
+    } 
+
     public Result<float> GetLength(Id<Track> trackId)
     {
-        if (!TryGetSpline(trackId, out var spline, out var problems))
+        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
         {
             return problems.Prepend("Failed to get spline");
         }
@@ -70,7 +80,7 @@ public class TrackSplineService(ILoggingManager loggingManager,
             return TimeInvalidProblem;
         }
         
-        if (!TryGetSpline(trackId, out var spline, out var problems))
+        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
         {
             return problems.Prepend("Failed to get spline");
         }
@@ -85,7 +95,7 @@ public class TrackSplineService(ILoggingManager loggingManager,
             return TimeInvalidProblem;
         }
         
-        if (!TryGetSpline(trackId, out var spline, out var problems))
+        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
         {
             return problems.Prepend("Failed to get spline");
         }
@@ -123,7 +133,7 @@ public class TrackSplineService(ILoggingManager loggingManager,
             return new ResultProblem("Count must be greater than 0");
         }
         
-        if (!TryGetSpline(trackId, out var spline, out var problems))
+        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
         {
             return problems.Prepend("Failed to get spline");
         }
