@@ -1,3 +1,5 @@
+using Olve.Utilities.Ids;
+
 namespace Olve.Engine3D.Rendering;
 
 public readonly record struct RenderingId<TEntity>(uint Id)

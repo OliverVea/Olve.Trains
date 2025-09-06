@@ -48,28 +48,20 @@ public class OpenGLHeightmapManager(Provider<GL> glProvider) : IOpenGLEntityMana
         var vbo = glProvider.Value.CreateBuffer();
         glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
 
-        /*  Each pixel in the heightmap is a tile - ie. fence post problem
-            +---+---+---+
-            | 1 | 1 | 2 |
-            +---+---+---+
-            | 2 | 2 | 2 |
-            +---+---+---+
-         */
-        var vertexCount = (heightmapData.Width + 1) * (heightmapData.Length + 1);
+        var vertexCount = heightmapData.Width * heightmapData.Length;
 
         BufferHelper.WithSpan<float>(vertexCount * VertexFields, vertices =>
         {
-            for (var i = 0; i < heightmapData.Heights.Length; i++)
+            for (var i = 0; i < vertexCount; i++)
             {
-                int x = i % heightmapData.Width, z = i / heightmapData.Width;
-
-                vertices[i * VertexFields] = x;
+                var x = i % heightmapData.Width;
+                var z = i / heightmapData.Width;
+                vertices[i * VertexFields + 0] = x;
                 vertices[i * VertexFields + 1] = z;
             }
-
-            glProvider.Value.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices,
-                BufferUsageARB.StaticDraw);
+            glProvider.Value.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices, BufferUsageARB.StaticDraw);
         });
+
 
         return new VBO(vbo, (uint)vertexCount);
     }
@@ -79,41 +71,41 @@ public class OpenGLHeightmapManager(Provider<GL> glProvider) : IOpenGLEntityMana
         var ebo = glProvider.Value.CreateBuffer();
         glProvider.Value.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
 
-        var indexCount = heightmapData.Width * heightmapData.Length * 6;
+        var quadsX = heightmapData.Width  - 1;
+        var quadsZ = heightmapData.Length - 1;
+        var indexCount = quadsX * quadsZ * 6;
 
         BufferHelper.WithSpan<uint>(indexCount, indices =>
         {
-            for (var z = 0; z < heightmapData.Length - 1; z++)
+            var k = 0; // write cursor
+            for (var z = 0; z < quadsZ; z++)
             {
-                for (var x = 0; x < heightmapData.Width - 1; x++)
+                for (var x = 0; x < quadsX; x++)
                 {
-                    var index = z * heightmapData.Width + x;
-                    int a = index, b = index + 1, c = index + heightmapData.Width, d = index + heightmapData.Width + 1;
+                    var a = z * heightmapData.Width + x;
+                    var b = a + 1;
+                    var c = a + heightmapData.Width;
+                    var d = c + 1;
 
-                    if (heightmapData.Heights[a] == heightmapData.Heights[d]) // Compare heights at a and c
+                    // Pick a diagonal deterministically; using height average is common:
+                    var diagAd = (heightmapData.Heights[a] + heightmapData.Heights[d])
+                                 <= (heightmapData.Heights[b] + heightmapData.Heights[c]);
+
+                    if (diagAd)
                     {
-                        indices[index * 6] = (uint)a;
-                        indices[index * 6 + 1] = (uint)b;
-                        indices[index * 6 + 2] = (uint)d;
-                        indices[index * 6 + 3] = (uint)d;
-                        indices[index * 6 + 4] = (uint)c;
-                        indices[index * 6 + 5] = (uint)a;
+                        indices[k++] = (uint)a; indices[k++] = (uint)b; indices[k++] = (uint)d;
+                        indices[k++] = (uint)d; indices[k++] = (uint)c; indices[k++] = (uint)a;
                     }
                     else
                     {
-                        indices[index * 6] = (uint)c;
-                        indices[index * 6 + 1] = (uint)a;
-                        indices[index * 6 + 2] = (uint)b;
-                        indices[index * 6 + 3] = (uint)b;
-                        indices[index * 6 + 4] = (uint)d;
-                        indices[index * 6 + 5] = (uint)c;
+                        indices[k++] = (uint)c; indices[k++] = (uint)a; indices[k++] = (uint)b;
+                        indices[k++] = (uint)b; indices[k++] = (uint)d; indices[k++] = (uint)c;
                     }
                 }
             }
-
-            glProvider.Value.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices,
-                BufferUsageARB.StaticDraw);
+            glProvider.Value.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices, BufferUsageARB.StaticDraw);
         });
+
 
         return new EBO(ebo, (uint)indexCount);
     }

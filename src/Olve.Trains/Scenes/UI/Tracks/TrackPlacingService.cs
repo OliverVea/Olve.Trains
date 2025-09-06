@@ -2,11 +2,11 @@ using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Trains.Scenes.Game.Terrain;
+using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.Rendering;
 using Silk.NET.Input;
-using Silk.NET.Maths;
 
-namespace Olve.Trains.Scenes.Game.Tracks;
+namespace Olve.Trains.Scenes.UI.Tracks;
 
 public class TrackPlacingService(ILoggingManager loggingManager,
     TerrainRaycastService terrainRaycastService,
@@ -43,7 +43,7 @@ public class TrackPlacingService(ILoggingManager loggingManager,
                     CardinalDirection.East => CardinalDirection.South,
                     CardinalDirection.South => CardinalDirection.West,
                     CardinalDirection.West => CardinalDirection.North,
-                    _ => throw new ArgumentOutOfRangeException()
+                    _ => throw new NotSupportedException($"CW Rotation of CardinalDirection '{CardinalDirection}' is not supported.")
                 };
             }
             else
@@ -54,7 +54,7 @@ public class TrackPlacingService(ILoggingManager loggingManager,
                     CardinalDirection.West => CardinalDirection.South,
                     CardinalDirection.South => CardinalDirection.East,
                     CardinalDirection.East => CardinalDirection.North,
-                    _ => throw new ArgumentOutOfRangeException()
+                    _ => throw new NotSupportedException($"CCW Rotation of CardinalDirection '{CardinalDirection}' is not supported.")
                 };
             }
         }

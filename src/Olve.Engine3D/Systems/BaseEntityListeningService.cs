@@ -50,6 +50,22 @@ public abstract class BaseEntityListeningService<TEntity>(ILoggingManager loggin
 
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
-        return Result.Chain(_addedEventQueue.Update, _removedEventQueue.Update);
+        if (_addSubscribed)
+        {
+            if (_addedEventQueue.Update().TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+        }
+
+        if (_deleteSubscribed)
+        {
+            if (_removedEventQueue.Update().TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+        }
+
+        return Result.Success();
     }
 }

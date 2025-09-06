@@ -1,9 +1,10 @@
-﻿using Olve.Engine3D.DebugServer.Commands;
+﻿using System.Globalization;
+using Olve.Engine3D.DebugServer.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Time;
 using Olve.Logging;
 
-namespace Olve.Trains.Scenes.Game.Light;
+namespace Olve.Trains.Scenes.Game.Time;
 
 public class SetTimeHandlerService(ILoggingManager loggingManager, DayTimeManager dayTimeManager, CommandHandlerServiceCollection commandHandlerServiceCollection) : CommandHandlerService(loggingManager, commandHandlerServiceCollection)
 {
@@ -29,7 +30,9 @@ public class SetTimeHandlerService(ILoggingManager loggingManager, DayTimeManage
     private static bool TryParseDayTime(string dayTimeString, out DayTime dayTime)
     {
         var parts = dayTimeString.Split(':');
-        if (parts.Length != 2 || !int.TryParse(parts[0], out var hour) || !int.TryParse(parts[1], out var minute))
+        if (parts.Length != 2
+            || !int.TryParse(parts[0], NumberFormatInfo.InvariantInfo, out var hour)
+            || !int.TryParse(parts[1], NumberFormatInfo.InvariantInfo, out var minute))
         {
             dayTime = default;
             return false;

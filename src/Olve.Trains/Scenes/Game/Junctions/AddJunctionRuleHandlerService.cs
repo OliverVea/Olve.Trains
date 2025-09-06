@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Olve.Engine3D;
 using Olve.Engine3D.DebugServer.Commands;
 using Olve.Engine3D.Logging;
+using Olve.Engine3D.Utilities;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Game.Vehicles;
@@ -51,8 +52,10 @@ public class AddJunctionRuleHandlerService(
     private static Result<(string Vehicles, string Sources, string Destinations, string Distribution)>
         ParseRuleString(string rule)
     {
+#pragma warning disable MA0009
         var match = Regex.Match(rule, RulePattern,
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.IgnorePatternWhitespace);
+#pragma warning restore MA0009
 
         if (!match.Success)
         {
@@ -96,8 +99,8 @@ public class AddJunctionRuleHandlerService(
     private static Result<SignalRuleVehicle> ParseVehicle(string vehicle)
     {
         if (string.Equals(vehicle, "any", StringComparison.InvariantCultureIgnoreCase)) return Result.Success<SignalRuleVehicle>(new Any());
-        if (vehicle.StartsWith("vehicle")) return ParseIdArgument<Vehicle>(vehicle).MapValue(x => (SignalRuleVehicle)x);
-        if (vehicle.StartsWith("group")) return ParseIdArgument<VehicleGroup>(vehicle).MapValue(x => (SignalRuleVehicle)x);
+        if (vehicle.StartsWith("vehicle", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Vehicle>(vehicle).MapValue(x => (SignalRuleVehicle)x);
+        if (vehicle.StartsWith("group", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<VehicleGroup>(vehicle).MapValue(x => (SignalRuleVehicle)x);
         return new ResultProblem("Could not parse vehicle '{0}'", vehicle);
     }
 
@@ -114,8 +117,8 @@ public class AddJunctionRuleHandlerService(
     private static Result<SignalRuleSource> ParseSource(string source)
     {
         if (string.Equals(source, "any", StringComparison.InvariantCultureIgnoreCase)) return Result.Success<SignalRuleSource>(new Any());
-        if (source.StartsWith("track")) return ParseIdArgument<Track>(source).MapValue(x => (SignalRuleSource)x);
-        if (source.StartsWith("direction")) return ParseEnumArgument<CardinalDirection>(source).MapValue(x => (SignalRuleSource)x);
+        if (source.StartsWith("track", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Track>(source).MapValue(x => (SignalRuleSource)x);
+        if (source.StartsWith("direction", StringComparison.InvariantCultureIgnoreCase)) return ParseEnumArgument<CardinalDirection>(source).MapValue(x => (SignalRuleSource)x);
         return new ResultProblem("Could not parse source '{0}'", source);
     }
 
@@ -132,8 +135,8 @@ public class AddJunctionRuleHandlerService(
     private static Result<SignalRuleDestination> ParseDestination(string destination)
     {
         if (string.Equals(destination, "any", StringComparison.InvariantCultureIgnoreCase)) return Result.Success<SignalRuleDestination>(new Any());
-        if (destination.StartsWith("track")) return ParseIdArgument<Track>(destination).MapValue(x => (SignalRuleDestination)x);
-        if (destination.StartsWith("direction")) return ParseEnumArgument<CardinalDirection>(destination).MapValue(x => (SignalRuleDestination)x);
+        if (destination.StartsWith("track", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Track>(destination).MapValue(x => (SignalRuleDestination)x);
+        if (destination.StartsWith("direction", StringComparison.InvariantCultureIgnoreCase)) return ParseEnumArgument<CardinalDirection>(destination).MapValue(x => (SignalRuleDestination)x);
         return new ResultProblem("Could not parse destination '{0}'", destination);
     }
 
@@ -188,31 +191,4 @@ public class AddJunctionRuleHandlerService(
         return stringWithArgument[(start+1)..end];
     }
 
-}
-
-public static class ResultExtensions
-{
-    public static Result ToEmptyResult<T>(this Result<T> result) => result.TryPickProblems(out var problems) 
-        ? problems
-        : Result.Success();
-
-    public static Result<TDestination> MapValue<TSource, TDestination>(this Result<TSource> result, Func<TSource, Result<TDestination>> mapper)
-    {
-        if (result.TryPickProblems(out var problems, out var value))
-        {
-            return problems;
-        }
-
-        return mapper(value);
-    }
-    
-    public static Result<TDestination> MapValue<TSource, TDestination>(this Result<TSource> result, Func<TSource, TDestination> mapper)
-    {
-        if (result.TryPickProblems(out var problems, out var value))
-        {
-            return problems;
-        }
-
-        return mapper(value);
-    }
 }

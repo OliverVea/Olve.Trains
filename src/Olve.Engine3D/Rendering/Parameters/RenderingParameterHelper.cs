@@ -1,5 +1,4 @@
 using Olve.Engine3D.Rendering.OpenGL.Handles;
-using Olve.Utilities.CollectionExtensions;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.Parameters;

@@ -1,4 +1,4 @@
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Engine3D.Utilities;
 
 public static class DictionaryResultExtensions
 {

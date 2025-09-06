@@ -8,37 +8,35 @@ using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
-using Olve.Trains.meshes;
-using Olve.Trains.Scenes.Game.Camera;
-using Olve.Trains.Scenes.Game.Terrain;
-using Olve.Trains.textures;
-using Silk.NET.Maths;
+using Olve.Trains.Scenes.Rendering;
 
-namespace Olve.Trains.Scenes.Game.Tracks;
+namespace Olve.Trains.Scenes.UI.Tracks;
 
-public class TrackArrowRenderingService(ILoggingManager loggingManager, 
+public class TrackArrowRenderingService(
+    ILoggingManager loggingManager,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
     TextureEntityManager textureEntityManager,
     ShaderEntityManager shaderEntityManager,
-    TerrainRaycastService terrainRaycastService,
     TrackPlacingService trackPlacingService,
     MeshEntityManager meshEntityManager) : SceneService(loggingManager)
 {
     private float _scale = 1f;
-    
+
     private readonly Shaders.Default _shader = new()
     {
         AmbientLightColor = new Vector3D<float>(1f, 1f, 1f),
         AmbientLightIntensity = 1f,
     };
-    
+
     private RenderingId<MeshData> MeshRenderingId { get; set; }
     private RenderingInstanceId InstanceId { get; set; }
-    
-    public override int Priority { get; } = GetPriorityFromDependencies([cameraSceneService, terrainRaycastService]);
-    
-    private Result<Texture2D> LoadTexture(AssetPath<TextureData> texturePath) => RenderingServiceHelper.LoadTexture(texturePath, textureEntityManager);
+
+    public override int Priority { get; } = GetPriorityFromDependencies([cameraSceneService, trackPlacingService]);
+
+    private Result<Texture2D> LoadTexture(AssetPath<TextureData> texturePath) =>
+        RenderingServiceHelper.LoadTexture(texturePath, textureEntityManager);
+
     private Result LoadShader(IShader shader) => RenderingServiceHelper.LoadShader(shader, shaderEntityManager);
 
     protected override Result OnLoad()
@@ -49,7 +47,7 @@ public class TrackArrowRenderingService(ILoggingManager loggingManager,
         }
 
         _shader.TextureSampler = textureId;
-        
+
         if (LoadShader(_shader).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to load shader");
@@ -59,23 +57,24 @@ public class TrackArrowRenderingService(ILoggingManager loggingManager,
         {
             return problems.Prepend("Failed to load mesh");
         }
-        
+
         var meshRegistrationResult = meshEntityManager.Register(meshData);
         if (meshRegistrationResult.TryPickProblems(out problems, out var meshRenderingId))
         {
             return problems.Prepend("Failed to register mesh");
         }
-        
+
         AABB aabbTarget = new(Vector3D<float>.Zero, Vector3D<float>.One);
         var scaleResult = AABBHelper.GetUniformScaleToFitInside(meshData, aabbTarget);
         if (scaleResult.TryPickProblems(out problems, out _scale))
         {
             return problems.Prepend("Failed to compute scale");
         }
-        
+
         MeshRenderingId = meshRenderingId;
 
-        if (renderingManager3D.RegisterInstance(meshRenderingId, _shader.RenderingId, Matrix4X4<float>.Identity).TryPickProblems(out problems, out var instanceId))
+        if (renderingManager3D.RegisterInstance(MeshRenderingId, _shader.RenderingId, new Matrix4X4<float>())
+            .TryPickProblems(out problems, out var instanceId))
         {
             return problems.Prepend("Failed to register mesh");
         }
@@ -92,7 +91,7 @@ public class TrackArrowRenderingService(ILoggingManager loggingManager,
         {
             return problems.Prepend("Failed to update instance");
         }
-        
+
         return Result.Success();
     }
 
@@ -100,7 +99,7 @@ public class TrackArrowRenderingService(ILoggingManager loggingManager,
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
-        
+
         return renderingManager3D.Render(_shader);
     }
 
@@ -108,18 +107,18 @@ public class TrackArrowRenderingService(ILoggingManager loggingManager,
     {
         if (trackPlacingService.CurrentPoint is not { } currentPoint)
         {
-            return Matrix4X4<float>.Identity * 0f;
+            return new Matrix4X4<float>();
         }
-        
+
         var yOffset = Vector3D<float>.UnitY * 0.15f;
-        
+
         Vector2D<float> currentTangent2d = new(currentPoint.Tangent.X, currentPoint.Tangent.Z);
-        
+
         var yRotation = -float.Atan2(currentTangent2d.Y, currentTangent2d.X) + float.Pi / 2f;
-        
+
         return Matrix4X4.CreateScale(new Vector3D<float>(0.7f, 0.7f, 0.2f) * _scale) *
                Matrix4X4.CreateRotationX(float.Pi / 2f) *
-                Matrix4X4.CreateRotationY(yRotation) *
+               Matrix4X4.CreateRotationY(yRotation) *
                Matrix4X4.CreateTranslation(currentPoint.Point + yOffset);
     }
 }

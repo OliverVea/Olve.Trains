@@ -5,12 +5,9 @@ using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Systems;
 using Olve.Logging;
-using Olve.Trains.meshes;
-using Olve.Trains.Scenes.Game.Camera;
-using Olve.Trains.textures;
-using Silk.NET.Maths;
+using Olve.Trains.Scenes.Game.Junctions;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.Rendering;
 
 public class JunctionSignalRenderingService(ILoggingManager loggingManager, 
     CameraSceneService cameraSceneService,
@@ -41,7 +38,7 @@ public class JunctionSignalRenderingService(ILoggingManager loggingManager,
             return problems.Prepend("Failed to load shader");
         }
 
-        if (AssetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01).TryPickProblems(out problems, out var meshData))
+        if (AssetLoader.LoadAsset(Meshes.SM_Prop_CrossingLight_01).TryPickProblems(out problems, out var meshData))
         {
             return problems.Prepend("Failed to load mesh");
         }
@@ -69,7 +66,7 @@ public class JunctionSignalRenderingService(ILoggingManager loggingManager,
             return problems;
         }
         
-        var junctionWorld = Matrix4X4.CreateScale(0.05f) * junction.Position.ToWorldMatrix();
+        var junctionWorld =  Matrix4X4.CreateScale(0.2f) * Matrix4X4.CreateRotationY(float.Pi) * Matrix4X4.CreateTranslation(0, -0.9f, 0) * junction.Position.ToWorldMatrix();
         var renderingResult = renderingManager3D.RegisterInstance(MeshRenderingId, _shader.RenderingId, junctionWorld);
         if (renderingResult.TryPickProblems(out problems, out var junctionInstanceId))
         {

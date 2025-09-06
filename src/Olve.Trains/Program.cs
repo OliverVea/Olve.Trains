@@ -1,5 +1,4 @@
 ﻿using Olve.Engine3D;
-using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains;
@@ -8,7 +7,7 @@ public static class Program
 {
     private static readonly WindowOptions WindowOptions = WindowOptions.Default with
     {
-        Title = "My first Silk.NET program!",
+        Title = "On Track to Grow",
         Size = new Vector2D<int>(1280, 720),
         Samples = 8
     };
@@ -27,7 +26,9 @@ public static class Program
         var gameManager = gameProvider.GetService<GameManager>();
         return gameManager.Run(window, [
             SceneIds.GameScene,
-            SceneIds.ConsoleScene
+            SceneIds.RenderingScene,
+            SceneIds.UIScene,
+            SceneIds.ConsoleScene,
         ]);
     }
 

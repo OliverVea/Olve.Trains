@@ -1,4 +1,4 @@
-namespace Olve.Engine3D;
+namespace Olve.Engine3D.Utilities;
 
 public static class TimeSpanExtensions
 {

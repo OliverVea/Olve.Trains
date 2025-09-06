@@ -1,4 +1,5 @@
 using Jab;
+using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
@@ -8,8 +9,8 @@ using Olve.Engine3D.Time;
 using Olve.Logging;
 using Olve.Trains.Scenes.Console;
 using Olve.Trains.Scenes.Game;
-using Olve.Trains.Scenes.Game.Light;
-using Olve.Trains.Scenes.Game.Time;
+using Olve.Trains.Scenes.Rendering;
+using Olve.Trains.Scenes.UI;
 
 namespace Olve.Trains;
 
@@ -22,8 +23,11 @@ namespace Olve.Trains;
 [Singleton(typeof(DaylightManager))]
 [Singleton(typeof(ScreenResizedEvent))]
 [Singleton(typeof(CommandHandlerServiceCollection))]
-[Singleton(typeof(IScene), Factory = nameof(GetGameScene))]
-[Singleton(typeof(IScene), Factory = nameof(GetConsoleScene))]
+[Singleton(typeof(GameSceneProvider))]
+[Singleton(typeof(UISceneProvider))]
+[Singleton(typeof(ConsoleSceneProvider))]
+[Singleton(typeof(RenderingSceneProvider))]
+[Singleton(typeof(IEnumerable<IScene>), Factory = nameof(GetAllScenes))]
 [Singleton(typeof(GameProvider), Factory = nameof(GetGameProvider))]
 [Singleton(typeof(ILoggingManager), typeof(InMemoryLoggingManager))]
 [Import(typeof(IWindowingProvider))]
@@ -31,7 +35,16 @@ namespace Olve.Trains;
 public partial class GameProvider
 {
     public GameProvider GetGameProvider() => this;
-
-    public IScene GetGameScene() => new Scene<GameSceneProvider>(new GameSceneProvider(this), SceneIds.GameScene);
-    public IScene GetConsoleScene() => new Scene<ConsoleSceneProvider>(new ConsoleSceneProvider(this), SceneIds.ConsoleScene);
+    private IEnumerable<IScene> GetAllScenes(IServiceProvider provider)
+    {
+        var loggingManager = provider.GetRequiredService<ILoggingManager>();
+        
+        return
+        [
+            new Scene<GameSceneProvider>(loggingManager, provider.GetRequiredService<GameSceneProvider>(), SceneIds.GameScene),
+            new Scene<RenderingSceneProvider>(loggingManager, provider.GetRequiredService<RenderingSceneProvider>(), SceneIds.RenderingScene, 1),
+            new Scene<UISceneProvider>(loggingManager, provider.GetRequiredService<UISceneProvider>(), SceneIds.UIScene, 2),
+            new Scene<ConsoleSceneProvider>(loggingManager, provider.GetRequiredService<ConsoleSceneProvider>(), SceneIds.ConsoleScene, 3),
+        ];
+    }
 }

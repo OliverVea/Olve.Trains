@@ -1,0 +1,48 @@
+﻿using Jab;
+using Microsoft.Extensions.DependencyInjection;
+using Olve.Engine3D.Input;
+using Olve.Engine3D.Rendering;
+using Olve.Engine3D.Rendering.EntityManagers;
+using Olve.Engine3D.Scenes;
+using Olve.Logging;
+using Olve.Trains.Scenes.Game;
+using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.Rendering;
+using Olve.Trains.Scenes.UI.Tracks;
+
+namespace Olve.Trains.Scenes.UI;
+
+[ServiceProvider]
+[Singleton(typeof(TrackArrowRenderingService))]
+[Singleton(typeof(TrackPlacingService))]
+[Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
+[Transient(typeof(ILoggingManager), Factory = nameof(GetLoggingManager))]
+[Transient(typeof(TerrainRaycastService), Factory = nameof(GetTerrainRaycastService))]
+[Transient(typeof(MouseManager), Factory = nameof(GetMouseManager))]
+[Transient(typeof(KeyboardManager), Factory = nameof(GetKeyboardManager))]
+[Transient(typeof(MeshEntityManager), Factory = nameof(GetMeshEntityManager))]
+[Transient(typeof(ShaderEntityManager), Factory = nameof(GetShaderEntityManager))]
+[Transient(typeof(TextureEntityManager), Factory = nameof(GetTextureEntityManager))]
+[Transient(typeof(CameraSceneService), Factory = nameof(GetCameraSceneService))]
+[Transient(typeof(RenderingManager3D), Factory = nameof(GetRenderingManager3D))]
+[Transient(typeof(TrackService), Factory = nameof(GetTrackService))]
+public partial class UISceneProvider(GameProvider gameProvider) : ISceneServicesProvider
+{
+    private TerrainRaycastService GetTerrainRaycastService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<TerrainRaycastService>();
+    private CameraSceneService GetCameraSceneService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<CameraSceneService>();
+    private TrackService GetTrackService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackService>();
+    private MouseManager GetMouseManager() => gameProvider.GetRequiredService<MouseManager>();
+    private KeyboardManager GetKeyboardManager() => gameProvider.GetRequiredService<KeyboardManager>();
+    private MeshEntityManager GetMeshEntityManager() => gameProvider.GetRequiredService<MeshEntityManager>();
+    private ShaderEntityManager GetShaderEntityManager() => gameProvider.GetRequiredService<ShaderEntityManager>();
+    private TextureEntityManager GetTextureEntityManager() => gameProvider.GetRequiredService<TextureEntityManager>();
+    private RenderingManager3D GetRenderingManager3D() => gameProvider.GetRequiredService<RenderingManager3D>();
+    private ILoggingManager GetLoggingManager() => gameProvider.GetRequiredService<ILoggingManager>();
+    
+    public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
+    private IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>
+    [
+        provider.GetRequiredService<TrackPlacingService>(),
+        provider.GetRequiredService<TrackArrowRenderingService>(),
+    ];
+}

@@ -1,3 +1,4 @@
+using Olve.Engine3D.Utilities;
 using ControllerCamera = Olve.Engine3D.Camera.Camera<Olve.Engine3D.Camera.Views.FirstPersonView, Olve.Engine3D.Camera.Projections.PerspectiveProjection>;
 
 namespace Olve.Engine3D.Camera.Controllers;

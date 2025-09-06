@@ -4,11 +4,28 @@ namespace Olve.Engine3D.Math;
 
 public readonly record struct AABB(Vector3D<float> Min, Vector3D<float> Max);
 
+public static class AABBExtensions
+{
+    public static bool Intersects(this in AABB a, in AABB b)
+    {
+        return !(a.Max.X < b.Min.X || a.Min.X > b.Max.X ||
+                 a.Max.Y < b.Min.Y || a.Min.Y > b.Max.Y ||
+                 a.Max.Z < b.Min.Z || a.Min.Z > b.Max.Z);
+    }
+
+    public static bool Contains(this in AABB box, in Vector3D<float> p)
+    {
+        return p.X >= box.Min.X && p.X <= box.Max.X &&
+               p.Y >= box.Min.Y && p.Y <= box.Max.Y &&
+               p.Z >= box.Min.Z && p.Z <= box.Max.Z;
+    }
+}
+
 public static class AABBHelper
 {
     public static Result<AABB> ComputeAABBOfMesh(MeshData meshData, float scale = 1f) 
         => ComputeAABBOfMesh(meshData, new Vector3D<float>(scale, scale, scale));
-    
+
     public static Result<AABB> ComputeAABBOfMesh(MeshData meshData, Vector3D<float> scale)
     {
         if (meshData.Positions.Length == 0)
@@ -41,7 +58,7 @@ public static class AABBHelper
             new Vector3D<float>(minX, minY, minZ),
             new Vector3D<float>(maxX, maxY, maxZ));
     }
-    
+
     public static Result<float> GetUniformScaleToFitInside(MeshData meshData, AABB target)
     {
         if (GetHeterogeneousScaleToFitInside(meshData, target).TryPickProblems(out var problems, out var heterogeneousScale))

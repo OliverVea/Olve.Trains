@@ -6,5 +6,5 @@ namespace Olve.Trains.Scenes.Game.Junctions;
 [GenerateOneOf]
 public partial class RuleEvaluationResult : OneOfBase<None, TransferredTracks>
 {
-    public static RuleEvaluationResult None = new None();
+    public static readonly RuleEvaluationResult None = new None();
 }

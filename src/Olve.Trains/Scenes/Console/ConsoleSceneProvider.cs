@@ -21,7 +21,7 @@ public partial class ConsoleSceneProvider(GameProvider gameProvider) : ISceneSer
     private CommandHandlerServiceCollection GetCommandHandlerServiceCollection() =>
         gameProvider.GetRequiredService<CommandHandlerServiceCollection>();
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
-    
+
     private static IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>
     [
         provider.GetRequiredService<WebConsoleService>(),

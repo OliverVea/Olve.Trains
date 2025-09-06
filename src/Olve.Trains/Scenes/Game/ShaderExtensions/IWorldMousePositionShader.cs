@@ -1,6 +1,4 @@
-﻿using Silk.NET.Maths;
-
-namespace Olve.Trains.Scenes.Game.ShaderExtensions;
+﻿namespace Olve.Trains.Scenes.Game.ShaderExtensions;
 
 public interface IWorldMousePositionShader
 {

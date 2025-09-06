@@ -4,7 +4,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Logging;
 using Silk.NET.OpenGL;
 
-namespace Olve.Trains.Scenes;
+namespace Olve.Trains.Scenes.Rendering;
 
 public class GLService(ILoggingManager loggingManager, Provider<GL> glProvider) : SceneService(loggingManager)
 {
