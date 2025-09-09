@@ -33,6 +33,7 @@ namespace Olve.Trains.Scenes.Game;
 [Singleton(typeof(TerrainService))]
 [Singleton(typeof(TrackConnectionService))]
 [Singleton(typeof(TrackService))]
+[Singleton(typeof(TrackPlacingService))]
 [Singleton(typeof(TrackSplineService))]
 [Singleton(typeof(VehicleJunctionCrossingService))]
 [Singleton(typeof(VehicleJunctionService))]

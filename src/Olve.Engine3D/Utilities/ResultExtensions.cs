@@ -15,6 +15,13 @@ public static class ResultExtensions
 
         return mapper(value);
     }
+
+    public static Result<T> WithValueOnSuccess<T>(this Result result, T  value)
+    {
+        return result.TryPickProblems(out var problems)
+            ? problems
+            : value;
+    }
     
     public static Result<TDestination> MapValue<TSource, TDestination>(this Result<TSource> result, Func<TSource, TDestination> mapper)
     {

@@ -7,15 +7,9 @@ public abstract class SceneService
     private const string TemplateBase = ": '{0}' [{1}] => {2}";
     private const string LoadTemplate = nameof(Load) + TemplateBase;
     private const string UnloadTemplate = nameof(Unload) + TemplateBase;
-    private const string InputTemplate = nameof(Input) + TemplateBase;
-    private const string UpdateTemplate = nameof(Update) + TemplateBase;
-    private const string RenderTemplate = nameof(Render) + TemplateBase;
     
     private readonly string[] _loadTags;
     private readonly string[] _unloadTags;
-    private readonly string[] _inputTags;
-    private readonly string[] _updateTags;
-    private readonly string[] _renderTags;
     
     protected readonly ILoggingManager LoggingManager;
     
@@ -28,9 +22,6 @@ public abstract class SceneService
         
         _loadTags = [TypeName, nameof(Load)];
         _unloadTags = [TypeName, nameof(Unload)];
-        _inputTags = [TypeName, nameof(Input)];
-        _updateTags = [TypeName, nameof(Update)];
-        _renderTags = [TypeName, nameof(Render)];
     }
 
     private void LogEvent(string template, object? result, string[] tags)
@@ -69,25 +60,19 @@ public abstract class SceneService
     public Result<Pass> Input(TimeSpan deltaTime)
     {
         _doNotLog = false;
-        var result = OnInput(deltaTime);
-        //LogEvent(InputTemplate, result, _inputTags);
-        return result;
+        return OnInput(deltaTime);
     }
 
     public Result Update(TimeSpan deltaTime)
     {
         _doNotLog = false;
-        var result = OnUpdate(deltaTime);
-        //LogEvent(UpdateTemplate, result, _updateTags);
-        return result;
+        return OnUpdate(deltaTime);
     }
 
     public Result Render(TimeSpan deltaTime)
     {
         _doNotLog = false;
-        var result = OnRender(deltaTime);
-        //LogEvent(RenderTemplate, result, _renderTags);
-        return result;
+        return OnRender(deltaTime);
     }
 
     protected virtual Result OnLoad()

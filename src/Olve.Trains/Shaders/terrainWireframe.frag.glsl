@@ -11,13 +11,8 @@ out vec4 FragColor;
 
 void main()
 {
-    if (gsDistanceToMouse > mouseRadius)
-    {
-        discard;
-    }
-
     float t = clamp(1.0 - gsDistanceToMouse / mouseRadius, 0.0, 1.0);
-    float aMouse = smoothstep(0.0, 1.0, t);
+    float aMouse = smoothstep(0.2, 1.0, t);
 
     if (isNormalLine == 1)
     {

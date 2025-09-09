@@ -8,13 +8,16 @@ using Olve.Logging;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Rendering;
-using Olve.Trains.Scenes.UI.Tracks;
+using Olve.Trains.Scenes.UI.Indicators;
+using Olve.Trains.Scenes.UI.Tools;
 
 namespace Olve.Trains.Scenes.UI;
 
 [ServiceProvider]
-[Singleton(typeof(TrackArrowRenderingService))]
-[Singleton(typeof(TrackPlacingService))]
+[Singleton(typeof(ToolManagementService))]
+[Singleton(typeof(ToolKeyboardService))]
+[Singleton(typeof(TrackPlacingToolService))]
+[Singleton(typeof(TrackArrowIndicatorService))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 [Transient(typeof(ILoggingManager), Factory = nameof(GetLoggingManager))]
 [Transient(typeof(TerrainRaycastService), Factory = nameof(GetTerrainRaycastService))]
@@ -26,11 +29,13 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(CameraSceneService), Factory = nameof(GetCameraSceneService))]
 [Transient(typeof(RenderingManager3D), Factory = nameof(GetRenderingManager3D))]
 [Transient(typeof(TrackService), Factory = nameof(GetTrackService))]
+[Transient(typeof(TrackPlacingService), Factory = nameof(GetTrackPlacingService))]
 public partial class UISceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
     private TerrainRaycastService GetTerrainRaycastService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<TerrainRaycastService>();
     private CameraSceneService GetCameraSceneService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<CameraSceneService>();
     private TrackService GetTrackService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackService>();
+    private TrackPlacingService GetTrackPlacingService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackPlacingService>();
     private MouseManager GetMouseManager() => gameProvider.GetRequiredService<MouseManager>();
     private KeyboardManager GetKeyboardManager() => gameProvider.GetRequiredService<KeyboardManager>();
     private MeshEntityManager GetMeshEntityManager() => gameProvider.GetRequiredService<MeshEntityManager>();
@@ -42,7 +47,8 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
     private IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>
     [
-        provider.GetRequiredService<TrackPlacingService>(),
-        provider.GetRequiredService<TrackArrowRenderingService>(),
+        provider.GetRequiredService<TrackArrowIndicatorService>(),
+        provider.GetRequiredService<TrackPlacingToolService>(),
+        provider.GetRequiredService<ToolKeyboardService>(),
     ];
 }

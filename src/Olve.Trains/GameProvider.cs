@@ -4,6 +4,7 @@ using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
+using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 using Olve.Logging;

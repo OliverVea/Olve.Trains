@@ -10,5 +10,8 @@
       <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
       <ProjectReference Include="..\Olve.Engine3D.DebugServer\Olve.Engine3D.DebugServer.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Scenes\UI\Tracks\" />
+  </ItemGroup>
 
 </Project>
