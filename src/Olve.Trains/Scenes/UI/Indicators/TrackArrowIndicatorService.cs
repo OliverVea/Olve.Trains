@@ -10,18 +10,21 @@ using Olve.Engine3D.Scenes;
 using Olve.Logging;
 using Olve.Trains.Scenes.Rendering;
 
-namespace Olve.Trains.Scenes.UI.Tracks;
+namespace Olve.Trains.Scenes.UI.Indicators;
 
-public class TrackArrowRenderingService(
+public readonly record struct ArrowIndicator;
+
+public class TrackArrowIndicatorService(
     ILoggingManager loggingManager,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
     TextureEntityManager textureEntityManager,
     ShaderEntityManager shaderEntityManager,
-    TrackPlacingService trackPlacingService,
     MeshEntityManager meshEntityManager) : SceneService(loggingManager)
 {
     private float _scale = 1f;
+
+    private readonly HashSet<Id<ArrowIndicator>> _trackArrows = new();
 
     private readonly Shaders.Default _shader = new()
     {
@@ -31,8 +34,6 @@ public class TrackArrowRenderingService(
 
     private RenderingId<MeshData> MeshRenderingId { get; set; }
     private RenderingInstanceId InstanceId { get; set; }
-
-    public override int Priority { get; } = GetPriorityFromDependencies([cameraSceneService, trackPlacingService]);
 
     private Result<Texture2D> LoadTexture(AssetPath<TextureData> texturePath) =>
         RenderingServiceHelper.LoadTexture(texturePath, textureEntityManager);
@@ -84,41 +85,56 @@ public class TrackArrowRenderingService(
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
-    {
-        var worldMatrix = ComputeWorldMatrix();
-        if (renderingManager3D.SetInstanceWorld(InstanceId, worldMatrix).TryPickProblems(out var problems))
-        {
-            return problems.Prepend("Failed to update instance");
-        }
-
-        return Result.Success();
-    }
-
     protected override Result OnRender(TimeSpan deltaTime)
     {
+        if (_trackArrows.Count == 0)
+        {
+            return Result.Success();
+        }
+        
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
 
         return renderingManager3D.Render(_shader);
     }
 
-    private Matrix4X4<float> ComputeWorldMatrix()
+    public Result<Id<ArrowIndicator>> AddArrowIndicator()
     {
-        if (trackPlacingService.CurrentPoint is not { } currentPoint)
-        {
-            return new Matrix4X4<float>();
-        }
+        return new Id<ArrowIndicator>(1);
+    }
 
+    public DeletionResult RemoveArrowIndicator(Id<ArrowIndicator> trackArrowIndicatorId)
+    {
+        return trackArrowIndicatorId.Value == 1
+            ? DeletionResult.Success()
+            : DeletionResult.NotFound();
+    }
+
+    public Result Show(Id<ArrowIndicator> trackArrowIndicatorId)
+    {
+        _trackArrows.Add(trackArrowIndicatorId);
+        return Result.Success();
+    }
+
+    public Result Hide(Id<ArrowIndicator> trackArrowIndicatorId)
+    {
+        _trackArrows.Remove(trackArrowIndicatorId);
+        return Result.Success();
+    }
+
+    public Result SetPosition(Id<ArrowIndicator> trackArrowIndicatorId, Vector3D<float> position, Vector3D<float> direction)
+    {
         var yOffset = Vector3D<float>.UnitY * 0.15f;
 
-        Vector2D<float> currentTangent2d = new(currentPoint.Tangent.X, currentPoint.Tangent.Z);
+        Vector2D<float> currentTangent2d = new(direction.X, direction.Z);
 
         var yRotation = -float.Atan2(currentTangent2d.Y, currentTangent2d.X) + float.Pi / 2f;
 
-        return Matrix4X4.CreateScale(new Vector3D<float>(0.7f, 0.7f, 0.2f) * _scale) *
+        var world = Matrix4X4.CreateScale(new Vector3D<float>(0.7f, 0.7f, 0.2f) * _scale) *
                Matrix4X4.CreateRotationX(float.Pi / 2f) *
                Matrix4X4.CreateRotationY(yRotation) *
-               Matrix4X4.CreateTranslation(currentPoint.Point + yOffset);
+               Matrix4X4.CreateTranslation(position + yOffset);
+
+        return renderingManager3D.SetInstanceWorld(InstanceId, world);
     }
 }

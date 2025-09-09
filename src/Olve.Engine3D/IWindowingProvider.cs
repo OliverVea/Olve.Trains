@@ -1,9 +1,8 @@
 using Jab;
-using Olve.Engine3D;
 using Silk.NET.Input;
 using Silk.NET.Windowing;
 
-namespace Olve.Trains;
+namespace Olve.Engine3D;
 
 [ServiceProviderModule]
 [Singleton(typeof(Provider<IWindow>))]
