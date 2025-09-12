@@ -78,6 +78,14 @@ public class ToolKeyboardService(ILoggingManager loggingManager, ToolManagementS
                 return problems;
             }
         }
+        
+        if (keyboardManager.State.IsKeyPressed(Key.Number2))
+        {
+            if (toolManagementService.ToggleActiveTool(TrainPlacingToolService.ToolId).TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+        }
 
         if (keyboardManager.State.IsKeyPressed(Key.Escape) && toolManagementService.ActiveToolId != null)
         {

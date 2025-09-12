@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Math.Splines;
 using Olve.Engine3D.Systems;
@@ -5,8 +6,7 @@ using Olve.Logging;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 
-public class TrackSplineService(ILoggingManager loggingManager,
-    TrackService trackService) : BaseEntityAuxiliaryService<Track>(loggingManager, trackService)
+public class TrackSplineService(ILoggingManager loggingManager, TrackService trackService) : BaseEntityAuxiliaryService<Track>(loggingManager, trackService)
 {
     private static readonly ResultProblem TimeInvalidProblem = new("Time must be between {0} and {1}", StartTime, EndTime);
     
@@ -147,6 +147,83 @@ public class TrackSplineService(ILoggingManager loggingManager,
         }
 
         return points;
+    }
+
+    public Result<bool> GetClosestTrackPoint(Vector3D<float> position, float maxDistance, out TrackPoint closestPoint)
+    {
+        List<TrackPoint> points = [];
+        
+        foreach (var trackId in _trackSplines.Keys)
+        {
+            if (GetClosestTrackPoint(trackId, position, maxDistance, out var point)
+                .TryPickProblems(out var problems, out var foundPoint))
+            {
+                closestPoint = default;
+                return problems;
+            }
+
+            if (foundPoint)
+            {
+                points.Add(point);
+            }
+        }
+        
+        closestPoint = points.OrderBy(x => float.Abs((x.Point - position).LengthSquared)).FirstOrDefault();
+        return points.Count > 0;
+    }
+
+    public Result<bool> GetClosestTrackPoint(Id<Track> trackId, Vector3D<float> target, float maxDistance, out TrackPoint closestTrackPoint)
+    {
+        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
+        {
+            closestTrackPoint = default;
+            return problems.Prepend("Failed to get spline");
+        }
+
+        var deltaStart = target - spline.Sample(0);
+        var deltaEnd = target - spline.Sample(1);
+        
+        var maxDistanceSquared = maxDistance * maxDistance;
+        var splineLengthSquared = spline.Length * spline.Length;
+
+        if (deltaStart.LengthSquared > maxDistanceSquared + splineLengthSquared &&
+            deltaEnd.LengthSquared > maxDistanceSquared + splineLengthSquared)
+        {
+            closestTrackPoint = default;
+            return false;
+        }
+
+        const int sampleCount = 100;
+        const float sampleDist = 1f / sampleCount;
+
+        var closestLengthSquared = float.MaxValue;
+        var closestT = -1f;
+
+        for (var i = 0; i < sampleCount; i++)
+        {
+            var t = i * sampleDist;
+            var point = spline.Sample(t);
+            
+            var distanceSquared = (point - target).LengthSquared;
+
+            if (distanceSquared < closestLengthSquared)
+            {
+                closestT = t;
+                closestLengthSquared = distanceSquared;
+            }
+        }
+
+        if (closestT < 0)
+        {
+            closestTrackPoint = default;
+            return false;
+        }
+        
+        var closestPoint =  spline.Sample(closestT);
+        var closestTangent =  spline.Tangent(closestT);
+        
+        closestTrackPoint = new TrackPoint(closestPoint, closestTangent);
+        return closestTangent.LengthSquared > closestLengthSquared;
     }
     
     private Result<UniformHermite<Vector3D<float>>> CreateSpline(Id<Track> trackId)
