@@ -100,7 +100,7 @@ public class TrackArrowIndicatorService(
 
     public Result<Id<ArrowIndicator>> AddArrowIndicator()
     {
-        return new Id<ArrowIndicator>(1);
+        return Id<ArrowIndicator>.New();
     }
 
     public DeletionResult RemoveArrowIndicator(Id<ArrowIndicator> trackArrowIndicatorId)

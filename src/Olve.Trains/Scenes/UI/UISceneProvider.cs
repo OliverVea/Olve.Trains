@@ -1,5 +1,6 @@
 ﻿using Jab;
 using Microsoft.Extensions.DependencyInjection;
+using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.EntityManagers;
@@ -8,8 +9,10 @@ using Olve.Logging;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Rendering;
+using Olve.Trains.Scenes.UI.GUI;
 using Olve.Trains.Scenes.UI.Indicators;
 using Olve.Trains.Scenes.UI.Tools;
+using Silk.NET.Windowing;
 
 namespace Olve.Trains.Scenes.UI;
 
@@ -17,7 +20,9 @@ namespace Olve.Trains.Scenes.UI;
 [Singleton(typeof(ToolManagementService))]
 [Singleton(typeof(ToolKeyboardService))]
 [Singleton(typeof(TrackPlacingToolService))]
+[Singleton(typeof(TrainPlacingToolService))]
 [Singleton(typeof(TrackArrowIndicatorService))]
+[Singleton(typeof(ResourceBarService))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 [Transient(typeof(ILoggingManager), Factory = nameof(GetLoggingManager))]
 [Transient(typeof(TerrainRaycastService), Factory = nameof(GetTerrainRaycastService))]
@@ -29,13 +34,19 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(CameraSceneService), Factory = nameof(GetCameraSceneService))]
 [Transient(typeof(RenderingManager3D), Factory = nameof(GetRenderingManager3D))]
 [Transient(typeof(TrackService), Factory = nameof(GetTrackService))]
+[Transient(typeof(ScreenResizedEvent), Factory = nameof(GetScreenResizedEvent))]
+[Transient(typeof(Provider<IWindow>), Factory = nameof(GetWindowProvider))]
 [Transient(typeof(TrackPlacingService), Factory = nameof(GetTrackPlacingService))]
+[Transient(typeof(TrackSplineService), Factory = nameof(GetTrackSplineService))]
 public partial class UISceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
     private TerrainRaycastService GetTerrainRaycastService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<TerrainRaycastService>();
     private CameraSceneService GetCameraSceneService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<CameraSceneService>();
     private TrackService GetTrackService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackService>();
+    private TrackSplineService GetTrackSplineService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackSplineService>();
     private TrackPlacingService GetTrackPlacingService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackPlacingService>();
+    private Provider<IWindow> GetWindowProvider() => gameProvider.GetRequiredService<Provider<IWindow>>();
+    private ScreenResizedEvent GetScreenResizedEvent() => gameProvider.GetRequiredService<ScreenResizedEvent>();
     private MouseManager GetMouseManager() => gameProvider.GetRequiredService<MouseManager>();
     private KeyboardManager GetKeyboardManager() => gameProvider.GetRequiredService<KeyboardManager>();
     private MeshEntityManager GetMeshEntityManager() => gameProvider.GetRequiredService<MeshEntityManager>();
@@ -49,6 +60,8 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     [
         provider.GetRequiredService<TrackArrowIndicatorService>(),
         provider.GetRequiredService<TrackPlacingToolService>(),
+        provider.GetRequiredService<TrainPlacingToolService>(),
         provider.GetRequiredService<ToolKeyboardService>(),
+        provider.GetRequiredService<ResourceBarService>(),
     ];
 }
