@@ -14,8 +14,8 @@ public abstract class BaseEntityService<TEntity> : IEntityService<TEntity> where
     private readonly string[] _loggingTags;
     private readonly Lock _entityLock = new();
 
-    private Lazy<HashSet<Id<TEntity>>> _entityIds = new(() => []);
-    private Lazy<HashSet<TEntity>> _entityValues = new(() => []);
+    private Lazy<HashSet<Id<TEntity>>> _entityIds = new(static () => []);
+    private Lazy<HashSet<TEntity>> _entityValues = new(static () => []);
     
     public IReadOnlyCollection<Id<TEntity>> Ids => _entityIds.Value; 
     public IReadOnlyCollection<TEntity> Entities => _entityValues.Value; 
@@ -70,7 +70,7 @@ public abstract class BaseEntityService<TEntity> : IEntityService<TEntity> where
         return entity.Id;
     }
     
-    public DeletionResult Remove(Id<TEntity> id)
+    public virtual DeletionResult Remove(Id<TEntity> id)
     {
         if (!_entities.ContainsKey(id))
         {

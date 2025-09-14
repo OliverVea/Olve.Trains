@@ -16,9 +16,9 @@ public class StationPlatformService(ILoggingManager loggingManager) : BaseEntity
             return new ResultProblem("Track with id '{0}' already has a platform", trackId);
         }
         
-        var platformId = Id<StationPlatform>.New();
+        var platformId = Id.New<StationPlatform>();
         _platformsByTrack.Add(trackId, platformId);
-        StationPlatform platform = new(platformId, trackId, Id<Station>.New());
+        StationPlatform platform = new(platformId, trackId, Id.New<Station>());
 
         return Add(platform);
     }

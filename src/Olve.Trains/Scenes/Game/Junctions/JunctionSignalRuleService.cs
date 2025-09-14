@@ -14,7 +14,7 @@ public class JunctionSignalRuleService(ILoggingManager loggingManager,
     private readonly ConcurrentDictionary<Id<JunctionSignalRule>, Id<Junction>> _ruleJunctions = new();
     private static readonly Any Any = new();
     private static readonly string[] LoggingTags = [nameof(JunctionSignalRuleService)];
-    private static JunctionSignalRule GetDefaultRule(Id<Junction> junctionId) => new(Id<JunctionSignalRule>.New(), junctionId, [Any], [Any], [Any], new RoundRobin());
+    private static JunctionSignalRule GetDefaultRule(Id<Junction> junctionId) => new(Id.New<JunctionSignalRule>(), junctionId, [Any], [Any], [Any], new RoundRobin());
     private static List<JunctionSignalRule> GetDefaultRules(Id<Junction> junctionId) => [ GetDefaultRule(junctionId) ]; 
         
     protected override (bool SubscribeAdd, bool SubscribeDelete) GetSubscriptions() => (true, true);
@@ -54,7 +54,7 @@ public class JunctionSignalRuleService(ILoggingManager loggingManager,
             return new ResultProblem("Did not find list of signal rules for junction with id '{0}'", junctionId);
         }
         
-        var junctionSignalId = Id<JunctionSignalRule>.New();
+        var junctionSignalId = Id.New<JunctionSignalRule>();
         JunctionSignalRule rule = new(junctionSignalId, junctionId, vehicles, sources, destinations, distribution);
         junctionRules.Add(rule);
 

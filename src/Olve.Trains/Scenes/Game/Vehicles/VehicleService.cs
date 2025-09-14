@@ -7,7 +7,7 @@ public class VehicleService(ILoggingManager loggingManager) : BaseEntityService<
 {
     public Result<Id<Vehicle>> AddVehicle(string name)
     {
-        var vehicleId = Id<Vehicle>.New();
+        var vehicleId = Id.New<Vehicle>();
         Vehicle vehicle = new(vehicleId, name);
         return Add(vehicle);
     }

@@ -19,7 +19,7 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
 {
     public record State(TrackPoint? From = null, CardinalDirection Direction = CardinalDirection.North, bool ActivatedThisFrame = false);
 
-    public static Id<Tool> ToolId { get; } = Id<Tool>.New();
+    public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Place Tracks");
     
     private Id<ArrowIndicator> _arrowIndicatorId;

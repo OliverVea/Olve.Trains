@@ -7,7 +7,7 @@ public class TrackService(ILoggingManager loggingManager) : BaseEntityService<Tr
 {
     public Result<Id<Track>> AddTrack(TrackPoint start, TrackPoint end)
     {
-        var trackId = Id<Track>.New();
+        var trackId = Id.New<Track>();
         Track track = new(trackId, start, end);
         return Add(track);
     }

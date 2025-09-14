@@ -5,10 +5,10 @@ using Olve.Utilities.Lookup;
 
 namespace Olve.Engine3D.Systems;
 
-public abstract class BaseEntityListeningService<TEntity>(ILoggingManager loggingManager, IEntityService<TEntity> junctionService) : SceneService(loggingManager) where TEntity : IHasId<Id<TEntity>>
+public abstract class BaseEntityListeningService<TEntity>(ILoggingManager loggingManager, IEntityService<TEntity> entityService) : SceneService(loggingManager) where TEntity : IHasId<Id<TEntity>>
 {
-    private readonly EventQueue<Id<TEntity>> _addedEventQueue = new(junctionService.OnAdded);
-    private readonly EventQueue<Id<TEntity>> _removedEventQueue = new(junctionService.OnRemoved);
+    private readonly EventQueue<Id<TEntity>> _addedEventQueue = new(entityService.OnAdded);
+    private readonly EventQueue<Id<TEntity>> _removedEventQueue = new(entityService.OnRemoved);
 
     protected abstract (bool SubscribeAdd, bool SubscribeDelete) GetSubscriptions();
     protected virtual Result OnAdded(Id<TEntity> entityId) => Result.Success();

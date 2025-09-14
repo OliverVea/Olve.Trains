@@ -15,14 +15,14 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
     <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.8" />
-    <PackageVersion Include="Olve.Logging" Version="0.32.2" />
-    <PackageVersion Include="Olve.MinimalApi" Version="0.32.2" />
+    <PackageVersion Include="Olve.Logging" Version="0.33.0" />
+    <PackageVersion Include="Olve.MinimalApi" Version="0.33.0" />
     <PackageVersion Include="Olve.OpenRaster" Version="0.1.5" />
-    <PackageVersion Include="Olve.Operations" Version="0.32.2" />
-    <PackageVersion Include="Olve.Paths" Version="0.32.2" />
-    <PackageVersion Include="Olve.Results" Version="0.32.2" />
-    <PackageVersion Include="Olve.Utilities" Version="0.32.2" />
-    <PackageVersion Include="Olve.Validation" Version="0.32.2" />
+    <PackageVersion Include="Olve.Operations" Version="0.33.0" />
+    <PackageVersion Include="Olve.Paths" Version="0.33.0" />
+    <PackageVersion Include="Olve.Results" Version="0.33.0" />
+    <PackageVersion Include="Olve.Utilities" Version="0.33.0" />
+    <PackageVersion Include="Olve.Validation" Version="0.33.0" />
     <PackageVersion Include="OneOf" Version="3.0.271" />
     <PackageVersion Include="OneOf.SourceGenerator" Version="3.0.271" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.14.0" />
