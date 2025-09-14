@@ -7,7 +7,7 @@ public class StationService(ILoggingManager loggingManager) : BaseEntityService<
 {
     public Result<Id<Station>> CreateStation(string name, Vector3D<float> center)
     {
-        var id = Id<Station>.New();
+        var id = Id.New<Station>();
         Station station = new(id, name, center);
 
         return Add(station);

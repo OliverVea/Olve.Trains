@@ -20,7 +20,7 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
     
     private const float SnappingDistance = 1f;
     
-    public static Id<Tool> ToolId { get; } = Id<Tool>.New();
+    public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Place Trains on Tracks");
     
     private Id<ArrowIndicator> _arrowIndicatorId;

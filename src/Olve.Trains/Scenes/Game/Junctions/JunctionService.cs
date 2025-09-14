@@ -16,7 +16,7 @@ public class JunctionService(ILoggingManager loggingManager) : BaseEntityService
     public Result<Id<Junction>> AddJunctionConnection(Id<Track> trackId, TrackPoint trackPoint)
     {
         var tilePosition = ToTilePosition(trackPoint.Point);
-        var junctionId = _junctions.GetOrAdd(tilePosition, Id<Junction>.New);
+        var junctionId = _junctions.GetOrAdd(tilePosition, Id.New<Junction>);
         Junction trackJunction = new(junctionId, tilePosition);
 
         var connections = _junctionConnections.GetOrAdd(junctionId, NewJunctionConnections);

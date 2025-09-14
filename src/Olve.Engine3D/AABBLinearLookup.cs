@@ -14,7 +14,7 @@ public sealed class AABBLinearLookup<T> : IAABBLookup<T>
 
     public Id<AABB> Add(AABB box, T data)
     {
-        var id = Id<AABB>.New();
+        var id = Id.New<AABB>();
         var entry = new Entry { Id = id, Box = box, Data = data };
         _positions.Add(id, _entries.Count);
         _entries.Add(entry);
