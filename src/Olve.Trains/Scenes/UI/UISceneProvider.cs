@@ -9,7 +9,6 @@ using Olve.Logging;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Rendering;
-using Olve.Trains.Scenes.UI.GUI;
 using Olve.Trains.Scenes.UI.Indicators;
 using Olve.Trains.Scenes.UI.Tools;
 using Silk.NET.Windowing;

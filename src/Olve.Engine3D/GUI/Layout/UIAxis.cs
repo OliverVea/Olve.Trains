@@ -1,0 +1,7 @@
+﻿namespace Olve.Engine3D.GUI.Layout;
+
+public enum UIAxis
+{
+    X,
+    Y
+}
