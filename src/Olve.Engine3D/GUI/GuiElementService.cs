@@ -1,19 +1,20 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 using Olve.Logging;
 using Olve.Utilities.CollectionExtensions;
-using Olve.Utilities.Lookup;
+using Olve.Utilities.Collections;
+using Olve.Utilities.Ids;
 
-namespace Olve.Trains.Scenes.UI.GUI;
+namespace Olve.Engine3D.GUI;
 
-public readonly record struct GuiAnchor(Id<GuiAnchor> Id) : IHasId<Id<GuiAnchor>>;
-public readonly record struct GuiElement(Id<GuiElement> Id, string Name) : IHasId<Id<GuiElement>>;
-
+// TODO: consider loop detection on creation.
 public class GuiElementService(ILoggingManager loggingManager) : BaseEntityService<GuiElement>(loggingManager)
 {
     private const int MaxParentRecursionSize = 100_000;
     
+    private readonly OneToManyLookup<Id<GuiAnchor>, Id<GuiElement>> _anchorChildren = [];
     private readonly HashSet<Id<GuiElement>> _disabledGuiElements = [];
     private readonly Dictionary<Id<GuiElement>, UnionId<GuiAnchor, GuiElement>> _guiElementParent = [];
     private readonly Dictionary<Id<GuiElement>, List<Id<GuiElement>>>  _guiElementChildren = [];
@@ -44,6 +45,10 @@ public class GuiElementService(ILoggingManager loggingManager) : BaseEntityServi
         {
             var parentChildren = _guiElementChildren.GetOrAdd(parentGuiElementId, static () => []);
             parentChildren.Add(guiElementId);
+        }
+        else
+        {
+            _anchorChildren.Set(parentId.AsT1(), guiElementId, true);
         }
         
         _guiElementParent[guiElementId] = parentId;
@@ -96,13 +101,40 @@ public class GuiElementService(ILoggingManager loggingManager) : BaseEntityServi
                 }
                 else
                 {
-                    LoggingManager.Log(LogLevel.Warning, "Could not find parent gui element");
+                    LoggingManager.Log(LogLevel.Warning, $"Parent children list missing for '{parentGuiElementId}' when removing child '{guiElementId}'");
                 }
+            }
+            else
+            {
+                _anchorChildren.Set(parentId.AsT1(), guiElementId, false);
             }
         }
         _guiElementParent.Remove(guiElementId);
         
         return DeletionResult.Success();
+    }
+
+    public bool TryGetChildren(Id<GuiElement> guiElementId, [MaybeNullWhen(false)] out IReadOnlyList<Id<GuiElement>> children)
+    {
+        if (_guiElementChildren.TryGetValue(guiElementId, out var mutableChildren))
+        {
+            children = mutableChildren.AsReadOnly();
+            return true;
+        }
+
+        if (Exists(guiElementId))
+        {
+            children = [];
+            return true;
+        }
+
+        children = null;
+        return false;
+    }
+
+    public bool TryGetParent(Id<GuiElement> guiElementId, out UnionId<GuiAnchor, GuiElement> parent)
+    {
+        return  _guiElementParent.TryGetValue(guiElementId, out parent);
     }
 
     public Result SetEnabled(Id<GuiElement> guiElementId, bool enabled)
@@ -140,6 +172,12 @@ public class GuiElementService(ILoggingManager loggingManager) : BaseEntityServi
 
     public IEnumerable<Result<Id<GuiElement>>> GetElementAndParents(Id<GuiElement> guiElementId)
     {
+        if (!Exists(guiElementId))
+        {
+            yield return new ResultProblem("No element with id '{0}' exists", guiElementId);
+            yield break;
+        }
+        
         HashSet<Id<GuiElement>> visited = [];
         var current = guiElementId;
 
@@ -179,33 +217,45 @@ public class GuiElementService(ILoggingManager loggingManager) : BaseEntityServi
             ? parentId
             : new ResultProblem("Could not find parent for GUI element with id '{0}'", guiElementId);
     }
-}
 
-
-public enum LayoutElementSizeType
-{
-    Absolute,
-    RelativeToParent,
-    RelativeToScreen
-}
-
-public readonly record struct LayoutElementSize(float Value, LayoutElementSizeType Type);
-
-public readonly record struct LayoutElementDimensions(LayoutElementSize Width, LayoutElementSize Height);
-
-public readonly record struct LayoutElement(
-    Id<LayoutElement> Id,
-    Id<GuiElement> GuiElementId,
-    LayoutElementDimensions Size);
-
-public class GuiElementLayoutService(ILoggingManager loggingManager, GuiElementService guiElementService) : BaseEntityListeningService<GuiElement>(loggingManager, guiElementService)
-{
-    private readonly Dictionary<Id<GuiElement>, Id<LayoutElement>> _guiToLayoutIdLookup = new();
-    
-    protected override (bool SubscribeAdd, bool SubscribeDelete) GetSubscriptions() => (false, true);
-
-    protected override Result OnRemoved(Id<GuiElement> entityId)
+    public IEnumerable<Result<Id<GuiElement>>> GetElementAndChildren(Id<GuiElement> guiElementId)
     {
-        return base.OnRemoved(entityId);
+        if (!Exists(guiElementId))
+        {
+            yield return new ResultProblem($"No element with id '{guiElementId}' exists");
+            yield break;
+        }
+        
+        HashSet<Id<GuiElement>> visited = [];
+        var queue = new Queue<Id<GuiElement>>();
+        queue.Enqueue(guiElementId);
+
+        while (queue.TryDequeue(out var current))
+        {
+            if (!visited.Add(current))
+            {
+                yield return new ResultProblem("Cycle detected in GUI hierarchy at '{0}' while traversing children for '{1}'", current, guiElementId);
+                yield break;
+            }
+            
+            yield return current;
+
+            if (!_guiElementChildren.TryGetValue(current, out var children))
+            {
+                continue;
+            }
+            
+            foreach (var child in children)
+            {
+                queue.Enqueue(child);
+            }
+        }
     }
+
+    public IEnumerable<Id<GuiElement>> GetRootElements() => _anchorChildren.Rights;
+
+    public IReadOnlyCollection<Id<GuiElement>> GetChildrenForAnchor(Id<GuiAnchor> anchor) =>
+        _anchorChildren.Get(anchor).Match<IReadOnlyCollection<Id<GuiElement>>>(
+            set => set,
+            notFound => []);
 }
