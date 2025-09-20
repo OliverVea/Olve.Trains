@@ -29,4 +29,6 @@ public readonly record struct Dp(float Value) : IFormattable, IComparable<Dp>
 
     public static Dp Max(Dp left, Dp right) => left.Value > right.Value ? left : right;
     public static Dp Min(Dp left, Dp right) => left.Value > right.Value ? right : left;
+    
+    public static implicit operator Dp(float value) => new(value);
 }

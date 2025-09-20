@@ -4,22 +4,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="ScottPlot" />
-      <PackageReference Include="TUnit" />
+        <PackageReference Include="ScottPlot"/>
+        <PackageReference Include="TUnit"/>
+        <PackageReference Include="Olve.Results.TUnit"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="Silk.NET.Maths">
-        <HintPath>..\..\..\..\.nuget\packages\silk.net.maths\2.22.0\lib\net5.0\Silk.NET.Maths.dll</HintPath>
-      </Reference>
+        <Reference Include="Silk.NET.Maths">
+            <HintPath>..\..\..\..\.nuget\packages\silk.net.maths\2.22.0\lib\net5.0\Silk.NET.Maths.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Olve.Engine3D\Olve.Engine3D.csproj" />
+        <ProjectReference Include="..\..\src\Olve.Engine3D\Olve.Engine3D.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="bin\Debug\net9.0\hermite.svg" />
+        <Content Include="bin\Debug\net9.0\hermite.svg"/>
     </ItemGroup>
 
 </Project>

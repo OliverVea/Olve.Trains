@@ -7,7 +7,35 @@ using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI.Layout;
 
-public class GuiElementLayoutService(ILoggingManager loggingManager, GuiElementService guiElementService) : BaseEntityAuxiliaryService<GuiElement>(loggingManager, guiElementService)
+public readonly record struct Px(int Value) : IFormattable, IComparable<Px>
+{
+    public static readonly Px Zero = new(0);
+    
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        FormattableString formattable = $"{nameof(Value)}: {Value}";
+        return formattable.ToString(formatProvider);
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(Value)}: {Value}";
+    }
+
+    public int CompareTo(Px other)
+    {
+        return Value.CompareTo(other.Value);
+    }
+    
+    public static implicit operator Px(int value) => new(value);
+}
+
+public readonly record struct BoxPosition(Vector2D<Px> Position, Vector2D<Px> Size);
+
+public class GuiElementLayoutService(
+    ILoggingManager loggingManager,
+    GuiElementService guiElementService,
+    LayoutContext layoutContext) : BaseEntityAuxiliaryService<GuiElement>(loggingManager, guiElementService)
 {
     private readonly Dictionary<Id<GuiElement>, int> _guiElementIndexLookup = new();
     private readonly List<LayoutData> _layoutData = [];
@@ -34,9 +62,44 @@ public class GuiElementLayoutService(ILoggingManager loggingManager, GuiElementS
             _layoutData[index] = moved;
             _guiElementIndexLookup[moved.GuiElementId] = index;
         }
+
         _layoutData[lastIdx] = default;
         _layoutData.RemoveAt(lastIdx);
 
+    }
+
+    public bool TryGetBoxPosition(Id<GuiElement> guiElementId, out BoxPosition position)
+    {
+        if (!_guiElementIndexLookup.TryGetValue(guiElementId, out var index))
+        {
+            position = default;
+            return false;
+        }
+
+        var dpPosition = _layoutData[index].Position;
+        var dpWidth = _layoutData[index].Width;
+        var dpHeight = _layoutData[index].Height;
+
+        if (!dpWidth.HasValue || !dpHeight.HasValue)
+        {
+            LoggingManager.Log(LogLevel.Warning, $"Tried to get position from unpositioned element with id '{guiElementId}'");
+            position = default;
+            return false;
+        }   
+
+        /*
+        var pxX = new Px((int)float.Round(dpPosition.Value.X.Value * layoutContext.DpToPx));
+        var pxY = new Px((int)float.Round(dpPosition.Value.Y.Value * layoutContext.DpToPx));
+        Vector2D<Px> pxPosition =new(pxX, pxY);
+        */
+        Vector2D<Px> pxPosition = new Vector2D<Px>(Px.Zero, Px.Zero);
+        
+        var pxW = new Px((int)float.Round(dpWidth.Value.Value * layoutContext.DpToPx));
+        var pxH = new Px((int)float.Round(dpHeight.Value.Value * layoutContext.DpToPx));
+        Vector2D<Px> pxSize = new(pxW, pxH);
+        
+        position = new BoxPosition(pxPosition, pxSize);
+        return true;
     }
 
 
@@ -80,7 +143,7 @@ public class GuiElementLayoutService(ILoggingManager loggingManager, GuiElementS
         {
             return problems;
         }
-
+        
         // TODO: Positions
 
         return Result.Success();
@@ -123,7 +186,7 @@ public class GuiElementLayoutService(ILoggingManager loggingManager, GuiElementS
                     return false;
                 }
 
-                if (layoutData.GuiElementBox.LayoutAxis == UIAxis.X)
+                if (layoutData.GuiElementBox.LayoutAxis == axis)
                 {
                     childrenSize += childDimension.Value;
                 }
@@ -180,7 +243,7 @@ public class GuiElementLayoutService(ILoggingManager loggingManager, GuiElementS
         if (!guiElementService.TryGetChildren(parent.GuiElementId, out var childIds) || childIds.Count == 0)
             return true;
 
-        var childIndices = childIds.Count <= 64 ? stackalloc int[childIds.Count] : new int[childIds.Count];
+        var childIndices = new int[childIds.Count];
         for (var i = 0; i < childIds.Count; i++)
         {
             if (!_guiElementIndexLookup.TryGetValue(childIds[i], out var ci))
@@ -191,24 +254,23 @@ public class GuiElementLayoutService(ILoggingManager loggingManager, GuiElementS
             childIndices[i] = ci;
         }
 
-        var span = CollectionsMarshal.AsSpan(_layoutData);
-
         if (isMainAxis)
         {
-            var totalChildOuter = Dp.Zero;
-            for (var i = 0; i < childIndices.Length; i++)
-            {
-                ref readonly var c = ref span[childIndices[i]];
-                var d = axis == UIAxis.X ? c.Width : c.Height;
-                Assert.That(() => d.HasValue, "Child dimension should be known at this point");
-                totalChildOuter += d ?? Dp.Zero;
-            }
+            var totalChildOuter = childIndices
+                .Select(x => _layoutData[x])
+                .Select(x => (axis == UIAxis.X ? x.Width : x.Height) ?? Dp.Zero).Sum();
 
             var gap = parent.GuiElementBox.GetGapForAxis(axis);
             var gaps = GetGapCount(childIndices.Length) * gap;
 
-            var parentOuter = axis == UIAxis.X ? (parent.Width ?? Dp.Zero) : (parent.Height ?? Dp.Zero);
-            var parentChrome = axis == UIAxis.X ? parent.GuiElementBox.HorizontalChrome : parent.GuiElementBox.VerticalChrome;
+            var parentOuter = axis == UIAxis.X
+                ? parent.Width ?? Dp.Zero
+                : parent.Height ?? Dp.Zero;
+            
+            var parentChrome = axis == UIAxis.X
+                ? parent.GuiElementBox.HorizontalChrome
+                : parent.GuiElementBox.VerticalChrome;
+            
             var parentInner = parentOuter - parentChrome;
 
             var targetSum = parentInner - gaps;
@@ -223,21 +285,23 @@ public class GuiElementLayoutService(ILoggingManager loggingManager, GuiElementS
 
                 for (var i = 0; i < childIndices.Length; i++)
                 {
-                    ref readonly var c = ref span[childIndices[i]];
-                    var d = axis == UIAxis.X ? (c.Width ?? Dp.Zero) : (c.Height ?? Dp.Zero);
+                    var c = _layoutData[childIndices[i]];
+                    var d = axis == UIAxis.X
+                        ? c.Width ?? Dp.Zero
+                        : c.Height ?? Dp.Zero;
                     sizes[i] = d;
 
-                    var g = c.GuiElementBox.Size.ResizingWeightWeight;
+                    var g = c.GuiElementBox.Size.ResizingWeight;
                     growW[i] = g;
                     if (g > 0f) totalGrow += g;
 
-                    var s = c.GuiElementBox.Size.ResizingWeightWeight;
+                    var s = c.GuiElementBox.Size.ResizingWeight;
                     if (s <= 0f) s = float.Max(0.0001f, d.Value);
                     shrinkW[i] = s;
                     totalShrink += s;
                 }
 
-                if (float.Abs(remaining.Value) > Epsilon)
+                if (remaining.Value > 0f)
                 {
                     if (totalGrow > 0f)
                     {
@@ -266,9 +330,41 @@ public class GuiElementLayoutService(ILoggingManager loggingManager, GuiElementS
 
                 for (var i = 0; i < childIndices.Length; i++)
                 {
-                    ref var c = ref span[childIndices[i]];
-                    if (axis == UIAxis.X) c = c with { Width = sizes[i] };
-                    else                  c = c with { Height = sizes[i] };
+                    var c = _layoutData[childIndices[i]];
+                    if (axis == UIAxis.X) _layoutData[childIndices[i]] = c with { Width = sizes[i] };
+                    else                  _layoutData[childIndices[i]] = c with { Height = sizes[i] };
+                }
+            }
+        }
+        else
+        {
+            var parentOuter = axis == UIAxis.X
+                ? parent.Width ?? Dp.Zero
+                : parent.Height ?? Dp.Zero;
+
+            var parentChrome = axis == UIAxis.X
+                ? parent.GuiElementBox.HorizontalChrome
+                : parent.GuiElementBox.VerticalChrome;
+
+            var parentInner = parentOuter - parentChrome;
+
+            for (var i = 0; i < childIndices.Length; i++)
+            {
+                var childIndex = childIndices[i];
+                var child = _layoutData[childIndex];
+                if (axis == UIAxis.X)
+                {
+                    if (!child.GuiElementBox.Size.PreferredWidth.HasValue && child.GuiElementBox.Size.ResizingWeight != 0f)
+                    {
+                        _layoutData[childIndex] = child with { Width = parentInner };
+                    }
+                }
+                else
+                {
+                    if (!child.GuiElementBox.Size.PreferredHeight.HasValue && child.GuiElementBox.Size.ResizingWeight != 0f)
+                    {
+                        _layoutData[childIndex] = child with { Height = parentInner };
+                    }
                 }
             }
         }
