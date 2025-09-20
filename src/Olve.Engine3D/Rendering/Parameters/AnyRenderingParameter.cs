@@ -10,12 +10,14 @@ public partial class AnyRenderingParameter : OneOfBase<
     RenderingParameter.Matrix4X4,
     RenderingParameter.Vector2D,
     RenderingParameter.Vector3D,
+    RenderingParameter.Vector4D,
     RenderingParameter.Float,
     RenderingParameter.Bool,
     RenderingParameter.Texture>
 {
     public AnyRenderingParameter(RenderingParameter.Matrix4X4 value) : base(value) { }
     public AnyRenderingParameter(RenderingParameter.Vector3D value) : base(value) { }
+    public AnyRenderingParameter(RenderingParameter.Vector4D value) : base(value) { }
     public AnyRenderingParameter(RenderingParameter.Float value) : base(value) { }
     public AnyRenderingParameter(RenderingParameter.Texture value) : base(value) { }
 
@@ -24,6 +26,7 @@ public partial class AnyRenderingParameter : OneOfBase<
         matrix4X4 => matrix4X4.Name,
         vector2D => vector2D.Name,
         vector3D => vector3D.Name,
+        vector4D => vector4D.Name,
         f => f.Name,
         b => b.Name,
         texture => texture.Name);
@@ -33,6 +36,7 @@ public partial class AnyRenderingParameter : OneOfBase<
         matrix4X4 => $"Matrix4X4 {matrix4X4.Name}",
         vector2D => $"Vector2D {vector2D.Name} (X: {vector2D.Value.X}, Y: {vector2D.Value.Y})",
         vector3D => $"Vector3D {vector3D.Name} (X: {vector3D.Value.X}, Y: {vector3D.Value.Y}, Z: {vector3D.Value.Z})",
+        vector4D => $"Vector3D {vector4D.Name} (X: {vector4D.Value.X}, Y: {vector4D.Value.Y}, Z: {vector4D.Value.Z}, W: {vector4D.Value.W}",
         f => $"Float {f.Name} ({f.Value})",
         b => $"Bool {b.Name} ({b.Value})",
         texture => $"Texture {texture.Name} ({texture.Value})");

@@ -29,6 +29,7 @@ namespace Olve.Trains.Scenes.Rendering;
 [Singleton(typeof(TerrainRaycastService))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory=nameof(GetAllSceneServices))]
 [Transient(typeof(ILoggingManager), Factory=nameof(GetLoggingManager))]
+[Transient(typeof(OpenGLShaderManager), Factory=nameof(GetOpenGLShaderManager))]
 [Transient(typeof(OpenGLModelRenderingManager), Factory=nameof(GetOpenGLModelRenderingManager))]
 [Transient(typeof(TextureEntityManager), Factory=nameof(GetTextureEntityManager))]
 [Transient(typeof(ShaderEntityManager), Factory=nameof(GetShaderEntityManager))]
@@ -54,6 +55,7 @@ public partial class RenderingSceneProvider(GameProvider gameProvider) : ISceneS
 {
     private ILoggingManager GetLoggingManager() => gameProvider.GetRequiredService<ILoggingManager>();
     private OpenGLModelRenderingManager GetOpenGLModelRenderingManager() => gameProvider.GetRequiredService<OpenGLModelRenderingManager>();
+    private OpenGLShaderManager GetOpenGLShaderManager() => gameProvider.GetRequiredService<OpenGLShaderManager>();
     private TextureEntityManager GetTextureEntityManager() => gameProvider.GetRequiredService<TextureEntityManager>();
     private ShaderEntityManager GetShaderEntityManager() => gameProvider.GetRequiredService<ShaderEntityManager>();
     private MeshEntityManager GetMeshEntityManager() => gameProvider.GetRequiredService<MeshEntityManager>();

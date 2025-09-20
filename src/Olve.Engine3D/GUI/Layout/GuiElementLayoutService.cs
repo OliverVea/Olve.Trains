@@ -2,43 +2,19 @@
 using System.Runtime.InteropServices;
 using Olve.Engine3D.Systems;
 using Olve.Logging;
-using Olve.Utilities.Assertions;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI.Layout;
 
-public readonly record struct Px(int Value) : IFormattable, IComparable<Px>
-{
-    public static readonly Px Zero = new(0);
-    
-    public string ToString(string? format, IFormatProvider? formatProvider)
-    {
-        FormattableString formattable = $"{nameof(Value)}: {Value}";
-        return formattable.ToString(formatProvider);
-    }
-
-    public override string ToString()
-    {
-        return $"{nameof(Value)}: {Value}";
-    }
-
-    public int CompareTo(Px other)
-    {
-        return Value.CompareTo(other.Value);
-    }
-    
-    public static implicit operator Px(int value) => new(value);
-}
-
-public readonly record struct BoxPosition(Vector2D<Px> Position, Vector2D<Px> Size);
-
 public class GuiElementLayoutService(
     ILoggingManager loggingManager,
     GuiElementService guiElementService,
-    LayoutContext layoutContext) : BaseEntityAuxiliaryService<GuiElement>(loggingManager, guiElementService)
+    Provider<LayoutContext> layoutContextProvider) : BaseEntityAuxiliaryService<GuiElement>(loggingManager, guiElementService)
 {
     private readonly Dictionary<Id<GuiElement>, int> _guiElementIndexLookup = new();
+
     private readonly List<LayoutData> _layoutData = [];
+    private LayoutContext LayoutContext => layoutContextProvider.Value;
 
     protected override void OnAdded(Id<GuiElement> id)
     {
@@ -80,22 +56,19 @@ public class GuiElementLayoutService(
         var dpWidth = _layoutData[index].Width;
         var dpHeight = _layoutData[index].Height;
 
-        if (!dpWidth.HasValue || !dpHeight.HasValue)
+        if (!dpWidth.HasValue || !dpHeight.HasValue || !dpPosition.HasValue)
         {
             LoggingManager.Log(LogLevel.Warning, $"Tried to get position from unpositioned element with id '{guiElementId}'");
             position = default;
             return false;
         }   
 
-        /*
-        var pxX = new Px((int)float.Round(dpPosition.Value.X.Value * layoutContext.DpToPx));
-        var pxY = new Px((int)float.Round(dpPosition.Value.Y.Value * layoutContext.DpToPx));
+        var pxX = new Px((int)float.Round(dpPosition.Value.X.Value * LayoutContext.DpToPx));
+        var pxY = new Px((int)float.Round(dpPosition.Value.Y.Value * LayoutContext.DpToPx));
         Vector2D<Px> pxPosition =new(pxX, pxY);
-        */
-        Vector2D<Px> pxPosition = new Vector2D<Px>(Px.Zero, Px.Zero);
         
-        var pxW = new Px((int)float.Round(dpWidth.Value.Value * layoutContext.DpToPx));
-        var pxH = new Px((int)float.Round(dpHeight.Value.Value * layoutContext.DpToPx));
+        var pxW = new Px((int)float.Round(dpWidth.Value.Value * LayoutContext.DpToPx));
+        var pxH = new Px((int)float.Round(dpHeight.Value.Value * LayoutContext.DpToPx));
         Vector2D<Px> pxSize = new(pxW, pxH);
         
         position = new BoxPosition(pxPosition, pxSize);
@@ -125,7 +98,12 @@ public class GuiElementLayoutService(
     {
         var rootElementIds = guiElementService.GetRootElements();
         var results = rootElementIds.Select(ComputeLayoutFor);
-        return Result.Concat(results);
+        if (results.TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
+        return Result.Success();
     }
 
     private Result ComputeLayoutFor(Id<GuiElement> rootElement)
@@ -136,6 +114,7 @@ public class GuiElementLayoutService(
         }
         
         // TODO: Text / Image sizes
+        
         if (!TryComputePreferredDimensionFor(guiElementIndex, UIAxis.X, out var problems)
             || !TryComputeActualDimensionFor(guiElementIndex, UIAxis.X, out problems)
             || !TryComputePreferredDimensionFor(guiElementIndex, UIAxis.Y, out problems)
@@ -144,7 +123,13 @@ public class GuiElementLayoutService(
             return problems;
         }
         
-        // TODO: Positions
+        ref var root = ref CollectionsMarshal.AsSpan(_layoutData)[guiElementIndex];
+        root = root with { Position = new Vector2D<Dp>(Dp.Zero, Dp.Zero) };
+
+        if (!TryComputePositionsFor(guiElementIndex, out problems))
+        {
+            return problems;
+        }
 
         return Result.Success();
     }
@@ -377,8 +362,55 @@ public class GuiElementLayoutService(
 
         return true;
     }
+    
+    private bool TryComputePositionsFor(int elementIndex, [MaybeNullWhen(true)] out ResultProblem problem)
+    {
+        problem = null;
+        ref var self = ref CollectionsMarshal.AsSpan(_layoutData)[elementIndex];
+        var selfW = self.Width  ?? Dp.Zero;
+        var selfH = self.Height ?? Dp.Zero;
 
+        var contentOrigin = new Vector2D<Dp>(
+            self.Position!.Value.X + (self.GuiElementBox.HorizontalChrome / 2f),
+            self.Position!.Value.Y + (self.GuiElementBox.VerticalChrome / 2f));
 
+        if (!guiElementService.TryGetChildren(self.GuiElementId, out var childIds) || childIds.Count == 0)
+        {
+            return true;
+        }
+
+        var axis = self.GuiElementBox.LayoutAxis;
+        var gap  = self.GuiElementBox.GetGapForAxis(axis);
+        var cursor = contentOrigin;
+
+        foreach (var childId in childIds)
+        {
+            if (!_guiElementIndexLookup.TryGetValue(childId, out var ci))
+            {
+                problem = new ResultProblem("Missing layout data for child {0}", childId);
+                return false;
+            }
+
+            ref var child = ref CollectionsMarshal.AsSpan(_layoutData)[ci];
+            var cw = child.Width  ?? Dp.Zero;
+            var ch = child.Height ?? Dp.Zero;
+
+            var childPos = axis == UIAxis.X
+                ? new Vector2D<Dp>(cursor.X, contentOrigin.Y)
+                : new Vector2D<Dp>(contentOrigin.X, cursor.Y);
+
+            child = child with { Position = childPos };
+
+            if (!TryComputePositionsFor(ci, out problem))
+                return false;
+
+            cursor = axis == UIAxis.X
+                ? new Vector2D<Dp>(childPos.X + cw + gap, cursor.Y)
+                : new Vector2D<Dp>(cursor.X, childPos.Y + ch + gap);
+        }
+
+        return true;
+    }
 
     private static Dp GetDimensionFromChildren(Dp gap, int childCount, Dp childContentSize)
         => GetGapCount(childCount) * gap + childContentSize;

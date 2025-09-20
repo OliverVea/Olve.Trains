@@ -17,6 +17,9 @@ public static class RenderingParameter
     [DebuggerDisplay("Vector3D {Name} (X: {Value.X}, Y: {Value.Y}, Z: {Value.Z})")]
     public class Vector3D(string name, Vector3D<float> value) : Base<Vector3D<float>>(name, value);
 
+    [DebuggerDisplay("Vector4D {Name} (X: {Value.X}, Y: {Value.Y}, Z: {Value.Z}, W: {Value.W})")]
+    public class Vector4D(string name, Vector4D<float> value) : Base<Vector4D<float>>(name, value);
+
     [DebuggerDisplay("Float {Name} ({Value})")]
     public class Float(string name, float value) : Base<float>(name, value);
 

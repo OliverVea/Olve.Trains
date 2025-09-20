@@ -1,11 +1,23 @@
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
+using Olve.Engine3D.Rendering.Parameters;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
 public class OpenGLShaderManager(Provider<GL> glProvider) : IOpenGLEntityManager<ShaderData, OpenGLShaderManager.Registration>
 {
+    public Result LoadShaderInOpenGL(ShaderProgram shaderProgram, RenderingParameters parameters)
+    {
+        glProvider.Value.UseProgram(shaderProgram.Handle);
+        foreach (var p in parameters.Parameters)
+        {
+            var r = p.SetUniforms(glProvider.Value, shaderProgram);
+            if (r.Failed) return r;
+        }
+        return Result.Success();
+    }
+    
     public readonly record struct Registration(
         ShaderProgram ShaderProgram,
         int? WorldPositionLocation,

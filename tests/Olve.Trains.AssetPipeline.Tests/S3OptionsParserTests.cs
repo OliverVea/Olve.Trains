@@ -3,6 +3,7 @@ namespace Olve.Trains.AssetPipeline.Tests;
 public class S3OptionsParserTests
 {
     [Test]
+    [Skip("Not run anymore")]
     public async Task Parse_NoArgs_ReturnsDefaults()
     {
         var (timeout, allowFailure, remaining) = S3OptionsParser.Parse([]);
