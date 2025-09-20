@@ -2,6 +2,11 @@
 
 public static class DpEnumerableExtensions
 {
+    public static Dp Sum(this IEnumerable<Dp> enumerable)
+    {
+        return enumerable.Aggregate(Dp.Zero, (a, b) => a + b);
+    }
+    
     public static Dp Sum<T>(this IEnumerable<T> enumerable, Func<T, Dp> selector)
     {
         return enumerable.Aggregate(Dp.Zero, (a, b) => a + selector(b));

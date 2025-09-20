@@ -4,7 +4,6 @@ using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 using Olve.Logging;
 using Olve.Utilities.CollectionExtensions;
-using Olve.Utilities.Collections;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI;
@@ -14,7 +13,7 @@ public class GuiElementService(ILoggingManager loggingManager) : BaseEntityServi
 {
     private const int MaxParentRecursionSize = 100_000;
     
-    private readonly OneToManyLookup<Id<GuiAnchor>, Id<GuiElement>> _anchorChildren = [];
+    private readonly Dictionary<Id<GuiAnchor>, HashSet<Id<GuiElement>>> _anchorChildren = new();
     private readonly HashSet<Id<GuiElement>> _disabledGuiElements = [];
     private readonly Dictionary<Id<GuiElement>, UnionId<GuiAnchor, GuiElement>> _guiElementParent = [];
     private readonly Dictionary<Id<GuiElement>, List<Id<GuiElement>>>  _guiElementChildren = [];
@@ -43,12 +42,17 @@ public class GuiElementService(ILoggingManager loggingManager) : BaseEntityServi
 
         if (parentIsGuiElement)
         {
-            var parentChildren = _guiElementChildren.GetOrAdd(parentGuiElementId, static () => []);
+            if (!_guiElementChildren.TryGetValue(parentGuiElementId, out var parentChildren))
+            {
+                parentChildren = new List<Id<GuiElement>>();
+                _guiElementChildren[parentGuiElementId] = parentChildren;
+            }
             parentChildren.Add(guiElementId);
         }
         else
         {
-            _anchorChildren.Set(parentId.AsT1(), guiElementId, true);
+            var set = _anchorChildren.GetOrAdd(parentId.AsT1(), static () => new HashSet<Id<GuiElement>>());
+            set.Add(guiElementId);
         }
         
         _guiElementParent[guiElementId] = parentId;
@@ -106,7 +110,14 @@ public class GuiElementService(ILoggingManager loggingManager) : BaseEntityServi
             }
             else
             {
-                _anchorChildren.Set(parentId.AsT1(), guiElementId, false);
+                if (_anchorChildren.TryGetValue(parentId.AsT1(), out var set))
+                {
+                    set.Remove(guiElementId);
+                    if (set.Count == 0)
+                    {
+                        _anchorChildren.Remove(parentId.AsT1());
+                    }
+                }
             }
         }
         _guiElementParent.Remove(guiElementId);
@@ -252,10 +263,8 @@ public class GuiElementService(ILoggingManager loggingManager) : BaseEntityServi
         }
     }
 
-    public IEnumerable<Id<GuiElement>> GetRootElements() => _anchorChildren.Rights;
+    public IEnumerable<Id<GuiElement>> GetRootElements() => _anchorChildren.Values.SelectMany(s => s);
 
     public IReadOnlyCollection<Id<GuiElement>> GetChildrenForAnchor(Id<GuiAnchor> anchor) =>
-        _anchorChildren.Get(anchor).Match<IReadOnlyCollection<Id<GuiElement>>>(
-            set => set,
-            notFound => []);
+        _anchorChildren.TryGetValue(anchor, out var set) ? (IReadOnlyCollection<Id<GuiElement>>)set : Array.Empty<Id<GuiElement>>();
 }
