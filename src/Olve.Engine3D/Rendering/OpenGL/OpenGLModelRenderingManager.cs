@@ -1,28 +1,11 @@
 using System.Runtime.CompilerServices;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
-using Olve.Engine3D.Rendering.Parameters;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
 public class OpenGLModelRenderingManager(Provider<GL> glProvider)
 {
-    public Result LoadShaderInOpenGL(ShaderProgram shaderProgram, RenderingParameters parameters)
-    {
-        glProvider.Value.UseProgram(shaderProgram.Handle);
-
-        foreach (var parameter in parameters.Parameters)
-        {
-            var result = parameter.SetUniforms(glProvider.Value, shaderProgram);
-            if (result.Failed)
-            {
-                return result;
-            }
-        }
-
-        return Result.Success();
-    }
-
     public Result LoadModelInOpenGL(VAO vao, VBO vbo, EBO ebo)
     {
         glProvider.Value.BindVertexArray(vao.Handle);

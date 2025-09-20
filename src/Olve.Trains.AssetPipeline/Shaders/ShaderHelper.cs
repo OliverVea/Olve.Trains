@@ -72,6 +72,7 @@ public static class ShaderHelper
             "bool" => UniformType.Bool,
             "vec2" => UniformType.Vector2,
             "vec3" => UniformType.Vector3,
+            "vec4" => UniformType.Vector4,
             "float" => UniformType.Float,
             "mat3" => UniformType.Matrix3,
             "mat4" => UniformType.Matrix4,

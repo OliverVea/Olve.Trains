@@ -22,6 +22,7 @@ public readonly record struct Dp(float Value) : IFormattable, IComparable<Dp>
     public static Dp operator-(Dp left, Dp right) => new(left.Value - right.Value);
     public static Dp operator*(int left, Dp right) => new(right.Value * left);
     public static Dp operator*(float left, Dp right) => new(right.Value * left);
+    public static Dp operator/(Dp left, float right) => new(left.Value / right);
     public static bool operator<(Dp left, Dp right) => left.Value < right.Value;
     public static bool operator >(Dp left, Dp right) => left.Value > right.Value;
 

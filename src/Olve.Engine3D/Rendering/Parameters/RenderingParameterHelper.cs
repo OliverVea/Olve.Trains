@@ -55,19 +55,25 @@ public static class RenderingParameterHelper
 
         if (renderingParameter.IsT4)
         {
-            SetFloat(renderingParameter.AsT4, gl, location);
+            SetVector4D(renderingParameter.AsT4, gl, location);
             return true;
         }
 
         if (renderingParameter.IsT5)
         {
-            SetBool(renderingParameter.AsT5, gl, location);
+            SetFloat(renderingParameter.AsT5, gl, location);
             return true;
         }
 
         if (renderingParameter.IsT6)
         {
-            SetTexture(renderingParameter.AsT6, gl, location);
+            SetBool(renderingParameter.AsT6, gl, location);
+            return true;
+        }
+
+        if (renderingParameter.IsT7)
+        {
+            SetTexture(renderingParameter.AsT7, gl, location);
             return true;
         }
 
@@ -100,6 +106,11 @@ public static class RenderingParameterHelper
     private static void SetVector3D(RenderingParameter.Vector3D vector, GL gl, int location)
     {
         gl.Uniform3(location, vector.Value.X, vector.Value.Y, vector.Value.Z);
+    }
+
+    private static void SetVector4D(RenderingParameter.Vector4D vector, GL gl, int location)
+    {
+        gl.Uniform4(location, vector.Value.X, vector.Value.Y, vector.Value.Z, vector.Value.W);
     }
 
     private static void SetFloat(RenderingParameter.Float f, GL gl, int location)

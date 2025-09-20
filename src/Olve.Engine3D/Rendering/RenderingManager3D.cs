@@ -11,6 +11,7 @@ namespace Olve.Engine3D.Rendering;
 public class RenderingManager3D(
     Provider<GL> glProvider,
     OpenGLModelRenderingManager openGLModelRenderingManager,
+    OpenGLShaderManager openGLShaderManager,
     MeshEntityManager meshEntityManager,
     HeightmapEntityManager heightmapEntityManager,
     ShaderEntityManager shaderEntityManager)
@@ -155,7 +156,7 @@ public class RenderingManager3D(
 
         var parameters = shader.MakeParameters();
 
-        if (openGLModelRenderingManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
+        if (openGLShaderManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
             .TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to load shader '{0}' into OpenGL", shader.ShaderData.Name);

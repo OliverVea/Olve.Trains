@@ -18,7 +18,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
     LineStripEntityManager lineStripEntityManager,
     CameraSceneService cameraSceneService,
     ShaderEntityManager shaderEntityManager,
-    OpenGLModelRenderingManager openGLModelRenderingManager,
+    OpenGLShaderManager openGLShaderManager,
     StationPlatformService stationPlatformService,
     TrackSplineService trackSplineService) : SceneService(loggingManager)
 {
@@ -122,7 +122,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
 
         var parameters = _shader.MakeParameters();
         
-        if (openGLModelRenderingManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
+        if (openGLShaderManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
             .TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to load shader into OpenGL");

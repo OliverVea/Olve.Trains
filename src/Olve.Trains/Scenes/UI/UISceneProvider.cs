@@ -1,6 +1,8 @@
 ﻿using Jab;
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
+using Olve.Engine3D.GUI;
+using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.EntityManagers;
@@ -9,6 +11,7 @@ using Olve.Logging;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Rendering;
+using Olve.Trains.Scenes.UI.GUI;
 using Olve.Trains.Scenes.UI.Indicators;
 using Olve.Trains.Scenes.UI.Tools;
 using Silk.NET.Windowing;
@@ -21,7 +24,12 @@ namespace Olve.Trains.Scenes.UI;
 [Singleton(typeof(TrackPlacingToolService))]
 [Singleton(typeof(TrainPlacingToolService))]
 [Singleton(typeof(TrackArrowIndicatorService))]
+[Singleton(typeof(InfoBarService))]
+[Singleton(typeof(GuiElementLayoutService))]
+[Singleton(typeof(GuiElementService))]
+[Singleton(typeof(Provider<LayoutContext>))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
+[Singleton(typeof(RenderingManager2D), Factory = nameof(GetRenderingManager2D))]
 [Transient(typeof(ILoggingManager), Factory = nameof(GetLoggingManager))]
 [Transient(typeof(TerrainRaycastService), Factory = nameof(GetTerrainRaycastService))]
 [Transient(typeof(MouseManager), Factory = nameof(GetMouseManager))]
@@ -51,6 +59,7 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private ShaderEntityManager GetShaderEntityManager() => gameProvider.GetRequiredService<ShaderEntityManager>();
     private TextureEntityManager GetTextureEntityManager() => gameProvider.GetRequiredService<TextureEntityManager>();
     private RenderingManager3D GetRenderingManager3D() => gameProvider.GetRequiredService<RenderingManager3D>();
+    private RenderingManager2D GetRenderingManager2D() => gameProvider.GetRequiredService<RenderingManager2D>();
     private ILoggingManager GetLoggingManager() => gameProvider.GetRequiredService<ILoggingManager>();
     
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
