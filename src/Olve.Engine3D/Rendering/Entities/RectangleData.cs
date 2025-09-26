@@ -17,7 +17,7 @@ public partial class RectangleData
 
     public Result Validate()
     {
-        if (SizePx.X <= 0 || SizePx.Y <= 0)
+        if (SizePx.X < 0 || SizePx.Y < 0)
             return new ResultProblem("Rectangle size must be positive. width={0}, height={1}.", SizePx.X, SizePx.Y);
 
         if (!Is01(ColorRgba.X) || !Is01(ColorRgba.Y) || !Is01(ColorRgba.Z) || !Is01(ColorRgba.W))
