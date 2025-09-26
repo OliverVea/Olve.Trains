@@ -23,38 +23,35 @@ public class RenderingManager2D(
     private const int ErrorCounterThreshold = 20;
     private int _errorCounter;
 
-    // Each instance = one rectangle for a given shader
     protected readonly record struct Instance(
         RenderingInstanceId InstanceId,
         RenderingId<ShaderData> ShaderId,
         VAO VAO,
-        VBO InstanceVBO,
-        uint InstanceCount);
-
-    // ---------- Instance lifecycle ----------
+        VBO InstanceVBO);
 
     public Result<RenderingInstanceId> RegisterRectangle(
         RenderingId<ShaderData> shaderId,
         RectangleData rectangle)
     {
-        // Validate rectangle and shader availability
         if (rectangle.Validate().TryPickProblems(out var problems))
             return problems.Prepend("Invalid RectangleData");
 
         if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
             return problems.Prepend("Failed to get shader data");
 
-        // Create VAO + per-instance VBO (and attach shared unit-quad @ attrib 0 inside)
         if (rectangleGlManager.Register(rectangle).TryPickProblems(out problems, out var reg))
             return problems.Prepend("Failed to create OpenGL registration for rectangle");
 
-        var id = NextInstanceId();
-        var instance = new Instance(id, shaderId, reg.VAO, reg.InstanceVBO, 1);
-        Instances.Add(id, instance);
+        if (openGLQuadRenderingManager.AttachUnitQuad(reg.VAO).TryPickProblems(out problems))
+        {
+            rectangleGlManager.Unregister(reg);
+            return problems.Prepend("Failed to attach unit quad to VAO");
+        }
 
+        var id = NextInstanceId();
+        Instances.Add(id, new Instance(id, shaderId, reg.VAO, reg.InstanceVBO));
         return id;
     }
-
     public Result DeregisterRectangle(RenderingInstanceId instanceId)
     {
         var idx = Instances.IndexOfKey(instanceId);
@@ -77,18 +74,21 @@ public class RenderingManager2D(
         if (idx == -1)
             return new ResultProblem("GUI rectangle with id '{0}' is not registered", instanceId);
 
-        // Simple approach: re-register GPU resources for this rectangle
         var old = Instances.GetValueAtIndex(idx);
         rectangleGlManager.Unregister(new OpenGLRectangleManager.Registration(old.VAO, old.InstanceVBO));
 
         if (rectangleGlManager.Register(rectangle).TryPickProblems(out problems, out var reg))
             return problems.Prepend("Failed to upload updated rectangle data");
 
+        if (openGLQuadRenderingManager.AttachUnitQuad(reg.VAO).TryPickProblems(out problems))
+        {
+            rectangleGlManager.Unregister(reg);
+            return problems.Prepend("Failed to attach unit quad after update");
+        }
+
         Instances.SetValueAtIndex(idx, old with { VAO = reg.VAO, InstanceVBO = reg.InstanceVBO });
         return Result.Success();
     }
-
-    // ---------- Render pass ----------
 
     public Result Render(IShader shader)
     {
@@ -105,7 +105,6 @@ public class RenderingManager2D(
                 shader.ShaderData.Name, shader.RenderingId);
         }
 
-        // Blend/depth state (UI typically Alpha blend and DepthWrite=false)
         switch (shader.BlendState.Blend)
         {
             case BlendMode.None:
@@ -138,7 +137,6 @@ public class RenderingManager2D(
         if (RenderInstances(shader.RenderingId).TryPickProblems(out problems))
             return problems.Prepend("Failed to render GUI rectangles with shader '{0}'", shader.ShaderData.Name);
 
-        // Restore state
         glProvider.Value.DepthMask(true);
         glProvider.Value.Disable(GLEnum.Blend);
 
@@ -154,15 +152,13 @@ public class RenderingManager2D(
                 if (inst.ShaderId != shaderRenderingId)
                     continue;
 
-                // Bind VAO (contains aUnit @ 0 + instance attrs @ 1..6) and instance VBO
-                if (openGLQuadRenderingManager.LoadQuadsInOpenGL(inst.VAO, inst.InstanceVBO)
+                if (openGLQuadRenderingManager.LoadQuadsInOpenGL(inst.VAO)
                     .TryPickProblems(out var problems))
                 {
                     return problems.Prepend("Failed to bind rectangle instance");
                 }
 
-                // Draw one quad for this instance (if you later batch, pass >1)
-                if (openGLQuadRenderingManager.RenderQuads(inst.InstanceCount)
+                if (openGLQuadRenderingManager.RenderQuad(inst.VAO)
                     .TryPickProblems(out problems))
                 {
                     return problems.Prepend("Failed to draw rectangle instance");

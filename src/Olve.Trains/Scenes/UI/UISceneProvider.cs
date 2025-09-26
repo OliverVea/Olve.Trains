@@ -27,6 +27,7 @@ namespace Olve.Trains.Scenes.UI;
 [Singleton(typeof(InfoBarService))]
 [Singleton(typeof(GuiElementLayoutService))]
 [Singleton(typeof(GuiElementService))]
+[Singleton(typeof(GuiLayoutContextUpdater))]
 [Singleton(typeof(Provider<LayoutContext>))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 [Singleton(typeof(RenderingManager2D), Factory = nameof(GetRenderingManager2D))]
@@ -69,5 +70,7 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
         provider.GetRequiredService<TrackPlacingToolService>(),
         provider.GetRequiredService<TrainPlacingToolService>(),
         provider.GetRequiredService<ToolKeyboardService>(),
+        provider.GetRequiredService<InfoBarService>(),
+        provider.GetRequiredService<GuiLayoutContextUpdater>(),
     ];
 }

@@ -21,19 +21,15 @@ public class OpenGLRectangleManager(
 
         var gl = glProvider.Value;
 
-        // VAO
         var vaoHandle = gl.CreateVertexArray();
         gl.BindVertexArray(vaoHandle);
 
-        // Attach shared unit-quad at attrib location 0 (vec2)
-        // After this, VAO has per-vertex quad data; we add per-instance attrs next.
         if (quadRenderingManager.AttachUnitQuad(new VAO(vaoHandle)).TryPickProblems(out problems))
         {
             gl.BindVertexArray(0);
             return problems.Prepend("Failed to attach unit quad to rectangle VAO");
         }
 
-        // Instance VBO (single instance for now)
         var instVboHandle = gl.CreateBuffer();
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, instVboHandle);
 
