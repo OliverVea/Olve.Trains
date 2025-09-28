@@ -13,7 +13,7 @@ public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, MeshFileReader
     {
         logger.LogDebug("Processing mesh assets");
 
-        Directory.CreateDirectory(Paths.MeshOutputFolder);
+        Directory.CreateDirectory(Paths.MeshesOutputFolder);
 
         var meshesResult = meshFileReader.LoadMeshes(request.AssetFiles);
         if (meshesResult.TryPickProblems(out var problems, out var meshAssets))
@@ -30,7 +30,7 @@ public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, MeshFileReader
             }
         }
 
-        var templateOutputPath = Path.Combine(Paths.MeshOutputFolder, "Meshes.cs");
+        var templateOutputPath = Path.Combine(Paths.MeshesOutputFolder, "Meshes.cs");
 
         var templateResult = await templateWriter.WriteTemplateAsync("Meshes", meshAssets, templateOutputPath, ct);
         if (templateResult.TryPickProblems(out var templateProblems))

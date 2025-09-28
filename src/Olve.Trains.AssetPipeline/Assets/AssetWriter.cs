@@ -14,7 +14,7 @@ public class AssetWriter(ILogger<AssetWriter> logger)
 
             await MemoryPackSerializer.SerializeAsync(assetStream, assetData, cancellationToken: ct);
 
-            var assetOutputPath = Path.Combine(Paths.OutputFolder, destination);
+            var assetOutputPath = Path.Combine(Paths.OutputsFolder, destination);
 
             ReadOnlyMemory<byte> assetBytes = assetStream.GetBuffer();
 

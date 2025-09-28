@@ -13,7 +13,7 @@ public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, TerrainF
     {
         logger.LogDebug("Processing terrain assets");
 
-        Directory.CreateDirectory(Paths.TerrainOutputFolder);
+        Directory.CreateDirectory(Paths.TerrainsOutputFolder);
 
         var terrainsResult = terrainFileReader.LoadAssets(request.AssetFiles);
         if (terrainsResult.TryPickProblems(out var problems, out var terrainAssets))
@@ -30,7 +30,7 @@ public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, TerrainF
             }
         }
 
-        var templateOutputPath = Path.Combine(Paths.TerrainOutputFolder, "Terrains.cs");
+        var templateOutputPath = Path.Combine(Paths.TerrainsOutputFolder, "Terrains.cs");
 
         var templateResult = await templateWriter.WriteTemplateAsync("Terrains", terrainAssets, templateOutputPath, ct);
         if (templateResult.TryPickProblems(out var templateProblems))

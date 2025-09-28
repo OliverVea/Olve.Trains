@@ -2,9 +2,9 @@ using Olve.Engine3D.Utilities;
 
 namespace Olve.Engine3D;
 
-public sealed class Provider<T>
+public sealed class Provider<T>(T? initialValue = default)
 {
-    private T? _value;
+    private T? _value = initialValue;
 
     public T Value => _value ?? throw new NotInitializedException<T>();
 
