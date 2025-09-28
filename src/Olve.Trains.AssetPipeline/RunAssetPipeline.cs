@@ -18,9 +18,9 @@ public class RunAssetPipeline(
     {
         logger.LogDebug("Starting asset pipeline");
         logger.LogInformation("Temp folder: {TempFolder}", Paths.TempFolder);
-        logger.LogInformation("Asset output folder: {OutputFolder}", Paths.OutputFolder);
+        logger.LogInformation("Asset output folder: {OutputFolder}", Paths.OutputsFolder);
 
-        IReadOnlyList<FileInfo> assetFiles = Array.Empty<FileInfo>();
+        IReadOnlyList<FileInfo> assetFiles = [];
 
         if (request.Targets.RequiresS3Resources())
         {
@@ -31,7 +31,7 @@ public class RunAssetPipeline(
                 if (request.AllowS3Failure)
                 {
                     logger.LogWarning("Failed to download assets: {Problems}", downloadProblems);
-                    assetFiles = Array.Empty<FileInfo>();
+                    assetFiles = [];
                 }
                 else
                 {

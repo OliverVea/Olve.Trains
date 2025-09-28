@@ -1,4 +1,5 @@
 using Olve.CodeGen;
+using Olve.Engine3D;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Rendering;
@@ -32,7 +33,7 @@ public class InfoBarService(ILoggingManager loggingManager,
         Border = new()
         {
             Width = Thickness.All(1),
-            Color = Color.Black
+            Color = new RGBA(0, 0, 0, 1)
         }
     };
     

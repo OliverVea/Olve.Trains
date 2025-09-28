@@ -17,7 +17,7 @@
             </DockerVolumeBindingImpl>
             <DockerVolumeBindingImpl>
               <option name="containerPath" value="/app/shaders" />
-              <option name="hostPath" value="$PROJECT_DIR$/src/Olve.Trains/Shaders" />
+              <option name="hostPath" value="$PROJECT_DIR$/src/Olve.Trains/resources/shaders" />
               <option name="readOnly" value="true" />
             </DockerVolumeBindingImpl>
           </list>

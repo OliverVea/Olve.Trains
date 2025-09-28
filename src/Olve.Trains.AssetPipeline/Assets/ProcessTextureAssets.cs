@@ -13,7 +13,7 @@ public class ProcessTextureAssets(ILogger<ProcessTextureAssets> logger, TextureF
     {
         logger.LogDebug("Processing texture assets");
 
-        Directory.CreateDirectory(Paths.TextureOutputFolder);
+        Directory.CreateDirectory(Paths.TexturesOutputFolder);
 
         var texturesResult = textureFileReader.LoadTextures(request.AssetFiles);
         if (texturesResult.TryPickProblems(out var problems, out var textureAssets))
@@ -30,7 +30,7 @@ public class ProcessTextureAssets(ILogger<ProcessTextureAssets> logger, TextureF
             }
         }
 
-        var templateOutputPath = Path.Combine(Paths.TextureOutputFolder, "Textures.cs");
+        var templateOutputPath = Path.Combine(Paths.TexturesOutputFolder, "Textures.cs");
 
         var templateResult = await templateWriter.WriteTemplateAsync("Textures", textureAssets, templateOutputPath, ct);
         if (templateResult.TryPickProblems(out var templateProblems))

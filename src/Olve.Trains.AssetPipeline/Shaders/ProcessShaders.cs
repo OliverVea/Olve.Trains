@@ -21,11 +21,11 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
     {
         logger.LogDebug("Processing shader files");
 
-        var shaderRoot = string.IsNullOrWhiteSpace(shaderOptions?.ShadersDirectory) ? Paths.ShaderSourceFolder : shaderOptions.ShadersDirectory;
+        var shaderRoot = string.IsNullOrWhiteSpace(shaderOptions.ShadersDirectory) ? Paths.ShadersSourceFolder : shaderOptions.ShadersDirectory;
         var shaderFiles = Directory.GetFiles(shaderRoot, "*.glsl", SearchOption.AllDirectories);
         var shaders = new List<Shader>(shaderFiles.Length);
 
-        Directory.CreateDirectory(Paths.ShaderOutputFolder);
+        Directory.CreateDirectory(Paths.ShadersOutputFolder);
         
         foreach (var absoluteShaderFile in shaderFiles)
         {
@@ -129,7 +129,7 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
                 }
             }
 
-            var destinationPath = Path.Combine(Paths.ShaderOutputFolder, "Shaders." + programName + ".cs");
+            var destinationPath = Path.Combine(Paths.ShadersOutputFolder, "Shaders." + programName + ".cs");
             
             var shaderProgram = new ShaderProgram
             {

@@ -4,7 +4,7 @@ public static class S3OptionsParser
 {
     public static (TimeSpan Timeout, bool AllowFailure, string[] RemainingArgs) Parse(string[] args)
     {
-        var timeout = TimeSpan.FromMilliseconds(2000);
+        var timeout = TimeSpan.FromMilliseconds(20000);
         var allowFailure = false;
 
         List<string> remaining = new(args);

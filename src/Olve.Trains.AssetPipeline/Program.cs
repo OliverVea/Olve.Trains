@@ -49,7 +49,7 @@ serviceCollection.AddSingleton(heightmapLayerParser);
 var (shadersDir, argsAfterShaders) = ShadersDirParser.Parse(args);
 args = argsAfterShaders;
 
-var shaderOptions = new ShaderOptions { ShadersDirectory = string.IsNullOrWhiteSpace(shadersDir) ? Paths.ShaderSourceFolder : shadersDir };
+var shaderOptions = new ShaderOptions { ShadersDirectory = string.IsNullOrWhiteSpace(shadersDir) ? Paths.ShadersSourceFolder : shadersDir };
 serviceCollection.AddSingleton(shaderOptions);
 
 var serviceProvider = serviceCollection.BuildServiceProvider();

@@ -26,7 +26,8 @@ public class GuiElementLayoutServicePositioningTests
     {
         var log = logging ?? new InMemoryLoggingManager();
         var svc = ge ?? new GuiElementService(log);
-        return new GuiElementLayoutService(log, svc, ctx ?? DefaultContext);
+        Provider<LayoutContext> lcp = new(ctx ?? DefaultContext);
+        return new GuiElementLayoutService(log, svc, lcp);
     }
 
     // Shorthand for creating boxes

@@ -1,114 +1,11 @@
 ﻿using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Logging;
-using Olve.Results;
 using Olve.Results.TUnit;
 using Olve.Utilities.Ids;
 using Silk.NET.Maths;
 
 namespace Olve.Engine3D.Tests.Layout;
-
-public static class GuiElementLayoutServiceTestData
-{
-    public static IEnumerable<Func<(string TestName,
-        GuiElementBox Parent,
-        Vector2D<Px> ExpectedParentSize,
-        IReadOnlyCollection<GuiElementBox> Children,
-        IReadOnlyCollection<Vector2D<Px>> ExpectedChildrenSizes)>> AdditionTestData()
-    {
-        yield return () => (
-            "Single box",
-            Box(prefW: 150, prefH: 100),
-            new Vector2D<Px>(150, 100),
-            [],
-            []);
-        yield return () => (
-            "Single child box",
-            Box(),
-            new Vector2D<Px>(150, 100),
-            [Box(prefW: 150, prefH: 100)],
-            [new Vector2D<Px>(150, 100)]);
-        yield return () => (
-            "Single child box with larger parent",
-            Box(prefW: 400, prefH: 350),
-            new Vector2D<Px>(400, 350),
-            [Box(prefW: 150, prefH: 100)],
-            [new Vector2D<Px>(150, 100)]);
-        yield return () => (
-            "Two child boxes (horizontal)",
-            Box(),
-            new Vector2D<Px>(300, 100),
-            [Box(prefW: 150, prefH: 100), Box(prefW: 150, prefH: 100)],
-            [new Vector2D<Px>(150, 100), new Vector2D<Px>(150, 100)]);
-        yield return () => (
-            "Two child boxes (vertical)",
-            Box(axis: UIAxis.Y),
-            new Vector2D<Px>(150, 200),
-            [Box(prefW: 150, prefH: 100), Box(prefW: 150, prefH: 100)],
-            [new Vector2D<Px>(150, 100), new Vector2D<Px>(150, 100)]);
-        yield return () => (
-            "Child box grows",
-            Box(prefW: 150, prefH: 100),
-            new Vector2D<Px>(150, 100),
-            [Box(resizingWeight: 1f)],
-            [new Vector2D<Px>(150, 100)]);
-        yield return () => (
-            "Two child boxes grow with weight",
-            Box(prefW: 600, prefH: 200),
-            new Vector2D<Px>(600, 200),
-            [Box(resizingWeight: 2f), Box(resizingWeight: 1f)],
-            [new Vector2D<Px>(400, 200), new Vector2D<Px>(200, 200)]);
-        yield return () => (
-            "Two child boxes grow vertically with weight",
-            Box(axis: UIAxis.Y, prefW: 600, prefH: 300),
-            new Vector2D<Px>(600, 300),
-            [Box(resizingWeight: 2f), Box(resizingWeight: 1f)],
-            [new Vector2D<Px>(600, 200), new Vector2D<Px>(600, 100)]);
-        yield return () => (
-            "Mixed preferred + weighted (horizontal)",
-            Box(prefW: 500, prefH: 100),
-            new Vector2D<Px>(500, 100),
-            [
-                Box(prefW: 150, prefH: 100),
-                Box(resizingWeight: 1f),
-                Box(resizingWeight: 2f)
-            ],
-            // leftover = 350; weights 1:2 => 116/234 if rounding, pick a policy (e.g., 117/233)
-            [
-                new Vector2D<Px>(150, 100),
-                new Vector2D<Px>(117, 100),
-                new Vector2D<Px>(233, 100)
-            ]);
-        yield return () => (
-            "Zero-weight child stays preferred",
-            Box(prefW: 300, prefH: 100),
-            new Vector2D<Px>(300, 100),
-            [
-                Box(prefW: 100, prefH: 100),
-                Box(resizingWeight: 1f),
-                Box(resizingWeight: 0f)
-            ],
-            [
-                new Vector2D<Px>(100, 100),
-                new Vector2D<Px>(200, 100),
-                new Vector2D<Px>(0, 0)
-            ]
-        );
-    }
-
-    private static GuiElementBox Box(UIAxis axis = UIAxis.X, Dp? prefW = null, Dp? prefH = null,
-        float resizingWeight = 0f)
-        => new()
-        {
-            LayoutAxis = axis,
-            Size = new SizeSpec
-            {
-                PreferredWidth = prefW,
-                PreferredHeight = prefH,
-                ResizingWeight = resizingWeight,
-            },
-        };
-}
 
 public class GuiElementLayoutServiceTests
 {
@@ -122,19 +19,20 @@ public class GuiElementLayoutServiceTests
 
     private static readonly Id<GuiAnchor> DefaultAnchorId = Id.New<GuiAnchor>();
 
-    private static (InMemoryLoggingManager, GuiElementService, GuiElementLayoutService) BuildSut(LayoutContext? layoutContext = null)
+    private static (InMemoryLoggingManager, GuiElementService, Provider<LayoutContext>, GuiElementLayoutService) BuildSut(LayoutContext? layoutContext = null)
     {
         InMemoryLoggingManager loggingManager = new ();
         GuiElementService guiElementService = new(loggingManager);
-        GuiElementLayoutService guiElementLayoutService = new(loggingManager, guiElementService, layoutContext ?? DefaultContext);
+        Provider<LayoutContext> layoutContextProvider = new(layoutContext ?? DefaultContext);
+        GuiElementLayoutService guiElementLayoutService = new(loggingManager, guiElementService, layoutContextProvider);
 
-        return (loggingManager, guiElementService, guiElementLayoutService);
+        return (loggingManager, guiElementService, layoutContextProvider, guiElementLayoutService);
     }
 
     [Test, NotInParallel]
     public async Task ComputeLayout_EmptyConfiguration_Succeeds()
     {
-        var (_, _, sut) = BuildSut();
+        var (_, _, _, sut) = BuildSut();
         var result = sut.ComputeLayout();
         await Assert.That(result).Succeeded();
     }
@@ -149,7 +47,7 @@ public class GuiElementLayoutServiceTests
         IReadOnlyCollection<Vector2D<Px>> expectedChildrenSizes)
     {
         // Arrange
-        var (_, guiElementService, sut) = BuildSut();
+        var (_, guiElementService, _, sut) = BuildSut();
 
         var parentResult = guiElementService.AddGuiElement("Parent", DefaultAnchorId);
         await Assert.That(parentResult).Succeeded();
@@ -192,10 +90,7 @@ public class GuiElementLayoutServiceTests
     [Test, NotInParallel]
     public async Task TripleNested_Layout_Sizes_And_Positions()
     {
-        // Fresh instances per test for isolation
-        var logging = new InMemoryLoggingManager();
-        var ge = new GuiElementService(logging);
-        var sut = new GuiElementLayoutService(logging, ge, DefaultContext);
+        var (_, ge, _, sut) = BuildSut(DefaultContext);
 
         // Create the tree
         var anchorId = DefaultAnchorId; // Parent anchored to root anchor
@@ -311,48 +206,4 @@ public class GuiElementLayoutServiceTests
             ResizingWeight = weight, // ensure this matches your actual property name
         },
     };
-}
-
-public static class TUnitResultExtensions
-{
-    public static async Task<Result<T>> AssertSuccess<T>(this Task<Result<T>> task)
-    {
-        var r = await task;
-        await Assert.That(r).Succeeded();
-        return r;
-    }
-}
-
-
-internal static class ResultAssertExtensions
-{
-    // --- Generic Result<T> ---
-
-    // For sync Result<T>
-    public static async Task<T> AssertSuccessAndGetAsync<T>(this Result<T> result)
-    {
-        await Assert.That(result).Succeeded();
-        return result.Value!;
-    }
-
-    // For Task<Result<T>>
-    public static async Task<T> AssertSuccessAndGetAsync<T>(this Task<Result<T>> resultTask)
-    {
-        var result = await resultTask;
-        await Assert.That(result).Succeeded();
-        return result.Value!;
-    }
-
-    // --- Non-generic Result ---
-
-    // For sync Result
-    public static async Task AssertSuccessAsync(this Result result)
-        => await Assert.That(result).Succeeded();
-
-    // For Task<Result>
-    public static async Task AssertSuccessAsync(this Task<Result> resultTask)
-    {
-        var result = await resultTask;
-        await Assert.That(result).Succeeded();
-    }
 }
