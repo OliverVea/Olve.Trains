@@ -19,6 +19,7 @@ public static class BuildTargetParser
                 "meshes" => BuildTargets.Meshes,
                 "textures" => BuildTargets.Textures,
                 "terrains" => BuildTargets.Terrains,
+                "layouts" => BuildTargets.Layouts,
                 "all" => BuildTargets.All,
                 _ => BuildTargets.None
             };

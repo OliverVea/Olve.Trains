@@ -6,6 +6,7 @@ using Olve.OpenRaster;
 using Olve.Trains.AssetPipeline;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Shaders;
+using Olve.Trains.AssetPipeline.Layouts;
 
 ServiceCollection serviceCollection = new();
 
@@ -27,6 +28,7 @@ serviceCollection.AddLogging(builder =>
 serviceCollection.AddTransient<RunAssetPipeline>();
 serviceCollection.AddTransient<DownloadAssets>();
 serviceCollection.AddTransient<ProcessShaders>();
+serviceCollection.AddTransient<ProcessLayouts>();
 serviceCollection.AddTransient<ProcessAssets>();
 serviceCollection.AddTransient<ProcessMeshAssets>();
 serviceCollection.AddTransient<ProcessTextureAssets>();
@@ -51,6 +53,17 @@ args = argsAfterShaders;
 
 var shaderOptions = new ShaderOptions { ShadersDirectory = string.IsNullOrWhiteSpace(shadersDir) ? Paths.ShadersSourceFolder : shadersDir };
 serviceCollection.AddSingleton(shaderOptions);
+
+// Parse --layouts-dir and --layouts-namespace options and register LayoutOptions
+var (layoutsDir, layoutsNs, argsAfterLayouts) = LayoutsOptionsParser.Parse(args);
+args = argsAfterLayouts;
+
+var layoutOptions = new LayoutOptions
+{
+    LayoutsDirectory = string.IsNullOrWhiteSpace(layoutsDir) ? Paths.LayoutsSourceFolder : layoutsDir,
+    Namespace = string.IsNullOrWhiteSpace(layoutsNs) ? "Olve.Trains.resources.layouts" : layoutsNs
+};
+serviceCollection.AddSingleton(layoutOptions);
 
 var serviceProvider = serviceCollection.BuildServiceProvider();
 

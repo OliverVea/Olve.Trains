@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-<PropertyGroup>
+    <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <PublishSelfContained>true</PublishSelfContained>
     </PropertyGroup>
     <ItemGroup>
-        <None Update="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="assets\**\*" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
-  <ItemGroup>
-      <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
-      <ProjectReference Include="..\Olve.Engine3D.DebugServer\Olve.Engine3D.DebugServer.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj"/>
+        <ProjectReference Include="..\Olve.Engine3D.DebugServer\Olve.Engine3D.DebugServer.csproj"/>
+    </ItemGroup>
 
 </Project>
