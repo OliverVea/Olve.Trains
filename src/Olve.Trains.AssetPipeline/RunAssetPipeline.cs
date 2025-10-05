@@ -3,6 +3,7 @@ using Olve.Operations;
 using Olve.Results;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Shaders;
+using Olve.Trains.AssetPipeline.Layouts;
 
 namespace Olve.Trains.AssetPipeline;
 
@@ -10,6 +11,7 @@ public class RunAssetPipeline(
     ILogger<RunAssetPipeline> logger,
     DownloadAssets downloadAssets,
     ProcessShaders processShaders,
+    ProcessLayouts processLayouts,
     ProcessAssets processAssets) : IAsyncOperation<RunAssetPipeline.Request>
     {
     public record Request(BuildTargets Targets, TimeSpan InitialS3Timeout, bool AllowS3Failure);
@@ -21,6 +23,16 @@ public class RunAssetPipeline(
         logger.LogInformation("Asset output folder: {OutputFolder}", Paths.OutputsFolder);
 
         IReadOnlyList<FileInfo> assetFiles = [];
+
+        if (request.Targets.HasFlag(BuildTargets.Layouts))
+        {
+            ProcessLayouts.Request processLayoutsRequest = new();
+            var layoutsResult = await processLayouts.ExecuteAsync(processLayoutsRequest, ct);
+            if (layoutsResult.TryPickProblems(out var layoutProblems))
+            {
+                return layoutProblems.Prepend("Failed to process layouts");
+            }
+        }
 
         if (request.Targets.RequiresS3Resources())
         {

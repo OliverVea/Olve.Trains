@@ -1,0 +1,33 @@
+﻿{{- # Layout class template -}}
+
+{{- func render_node(n) -}}
+new {{ n.TypeName }} {
+{{~ for p in n.Properties ~}}
+    {{ p.Name }} = {{ p.ValueLiteral }}{{ if !for.last || (n.Children && n.Children.size > 0) }},{{ end }}
+{{~ end ~}}
+{{~ if n.Children && n.Children.size > 0 ~}}
+{{~ if n.Properties && n.Properties.size > 0 }}
+    
+{{~ end }}
+    Children =
+    [
+{{~ for c in n.Children ~}}
+        {{ render_node c }}{{ if !for.last }},{{ end }}
+{{~ end ~}}
+    ]
+{{~ end ~}}
+}
+{{- end -}}
+
+namespace {{ Namespace }};
+
+// Generated START
+public static class {{ ClassName }}
+{
+    public static {{ RootType }} Build()
+    {
+        var {{ RootVarName }} = {{ render_node RootNode }};
+        return {{ RootVarName }};
+    }
+}
+// Generated END

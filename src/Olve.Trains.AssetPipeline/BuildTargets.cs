@@ -8,7 +8,8 @@ public enum BuildTargets
     Meshes = 1 << 1,
     Textures = 1 << 2,
     Terrains = 1 << 3,
-    All = Shaders | Meshes | Textures | Terrains
+    Layouts = 1 << 4,
+    All = Shaders | Meshes | Textures | Terrains | Layouts
 }
 
 public static class BuildTargetExtensions
