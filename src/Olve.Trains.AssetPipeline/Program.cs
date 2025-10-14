@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+using Microsoft.Extensions.Configuration;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.OpenRaster;
 using Olve.Trains.AssetPipeline;
@@ -10,7 +11,16 @@ using Olve.Trains.AssetPipeline.Layouts;
 
 ServiceCollection serviceCollection = new();
 
-var logLevelString = Environment.GetEnvironmentVariable("LOG_LEVEL") ?? "Information";
+var configurationRoot = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddEnvironmentVariables()
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true)
+    .AddUserSecrets(typeof(RunAssetPipeline).Assembly, optional: true, reloadOnChange: true)
+    .AddCommandLine(args)
+    .Build();
+
+var logLevelString = configurationRoot["Logging:LogLevel:Default"] ?? "Warning";
 var logLevel = Enum.Parse<LogLevel>(logLevelString);
 
 serviceCollection.AddLogging(builder =>
@@ -47,23 +57,20 @@ serviceCollection.AddTransient<ReadLayerAs<HeightmapData>>();
 ILayerParser<HeightmapData> heightmapLayerParser = new HeightmapLayerParser(0.25f, 128, 8);
 serviceCollection.AddSingleton(heightmapLayerParser);
 
-// Parse --shaders-dir option and register ShaderOptions
-var (shadersDir, argsAfterShaders) = ShadersDirParser.Parse(args);
-args = argsAfterShaders;
-
-var shaderOptions = new ShaderOptions { ShadersDirectory = string.IsNullOrWhiteSpace(shadersDir) ? Paths.ShadersSourceFolder : shadersDir };
+var shadersSection = configurationRoot.GetSection("Shaders");
+var shaderOptions = new ShaderOptions();
+shadersSection.Bind(shaderOptions);
 serviceCollection.AddSingleton(shaderOptions);
 
-// Parse --layouts-dir and --layouts-namespace options and register LayoutOptions
-var (layoutsDir, layoutsNs, argsAfterLayouts) = LayoutsOptionsParser.Parse(args);
-args = argsAfterLayouts;
-
-var layoutOptions = new LayoutOptions
-{
-    LayoutsDirectory = string.IsNullOrWhiteSpace(layoutsDir) ? Paths.LayoutsSourceFolder : layoutsDir,
-    Namespace = string.IsNullOrWhiteSpace(layoutsNs) ? "Olve.Trains.resources.layouts" : layoutsNs
-};
+var layoutsSection = configurationRoot.GetSection("Layouts");
+var layoutOptions = new LayoutOptions();
+layoutsSection.Bind(layoutOptions);
 serviceCollection.AddSingleton(layoutOptions);
+
+var s3Section = configurationRoot.GetSection("S3");
+var s3Options = new S3Options();
+s3Section.Bind(s3Options);
+serviceCollection.AddSingleton(s3Options);
 
 var serviceProvider = serviceCollection.BuildServiceProvider();
 
@@ -76,9 +83,26 @@ logger.LogInformation("--------------------------------------");
 
 CancellationTokenSource cts = new();
 
-var (initialTimeout, allowS3Failure, remainingArgs) = S3OptionsParser.Parse(args);
+// Resolve build targets from configuration (with legacy fallback)
+BuildTargets targets;
+var targetsConfig = configurationRoot["Build:Targets"];
+if (!string.IsNullOrWhiteSpace(targetsConfig))
+{
+    var tokens = targetsConfig
+        .Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries)
+        .Select(t => "--" + t.Trim().TrimStart('-'))
+        .ToArray();
+    targets = BuildTargetParser.Parse(tokens);
+}
+else
+{
+    targets = BuildTargetParser.Parse(args);
+}
 
-var targets = BuildTargetParser.Parse(remainingArgs);
+// S3 timeout and failure mode from configuration
+var initialTimeout = TimeSpan.FromMilliseconds(s3Options.TimeoutMs > 0 ? s3Options.TimeoutMs : 20000);
+var allowS3Failure = s3Options.AllowFailure;
+
 var result = await runAssetPipeline.ExecuteAsync(new(targets, initialTimeout, allowS3Failure), cts.Token);
 if (result.TryPickProblems(out var mainProblems))
 {

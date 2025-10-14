@@ -62,6 +62,9 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=E9AF23D0_002DA530_002D4349_002D8482_002D2B144EC672DC_002Fd_003Aassets_002Fd_003Ashaders_002Ff_003ALineStrip_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=E9AF23D0_002DA530_002D4349_002D8482_002D2B144EC672DC_002Fd_003Aassets_002Fd_003Ashaders_002Ff_003ATerrainWireframe_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=E9AF23D0_002DA530_002D4349_002D8482_002D2B144EC672DC_002Fd_003Aassets_002Fd_003Ashaders_002Ff_003ATerrain_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=7ce84f90_002D6ae2_002D4e9e_002D860e_002Deb90f45871f3/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Junie Session" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;Solution /&gt;&#xD;
+&lt;/SessionState&gt;</s:String>
 	
 	
 	

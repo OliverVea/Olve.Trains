@@ -9,6 +9,7 @@
 assets/
 SvelteDist/
 api/
+appsettings.local.json
 
 # dotenv files
 .env
