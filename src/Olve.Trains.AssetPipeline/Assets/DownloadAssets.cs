@@ -5,7 +5,6 @@ using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
 using Olve.Results;
-using Envs = (string Bucket, string Key, string Secret);
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -13,34 +12,31 @@ namespace Olve.Trains.AssetPipeline.Assets;
 ///    Downloads assets from an S3 bucket to the temp directory
 /// </summary>
 /// <param name="logger"></param>
-public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<DownloadAssets.Request, DownloadAssets.Response>
+/// <param name="s3Options"></param>
+public class DownloadAssets(ILogger<DownloadAssets> logger, S3Options s3Options) : IAsyncOperation<DownloadAssets.Request, DownloadAssets.Response>
 {
-    private const string S3Bucket = "S3_BUCKET";
-    private const string S3Key = "S3_KEY";
-    private const string S3Secret = "S3_SECRET";
-
     public record Request(TimeSpan InitialTimeout, bool AllowFailure);
     public record Response(IReadOnlyList<FileInfo> Files);
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
-        logger.LogDebug("Getting S3 configuration from environment variables");
+        logger.LogDebug("Getting S3 configuration");
 
-        var environmentVariableResult = ReadS3EnvironmentVariables();
-        if (environmentVariableResult.TryPickProblems(out var problems, out var envVariables))
+        if (string.IsNullOrWhiteSpace(s3Options.Bucket) || string.IsNullOrWhiteSpace(s3Options.Key) || string.IsNullOrWhiteSpace(s3Options.Secret))
         {
+            var problem = new ResultProblem("S3 configuration is incomplete. Ensure Bucket, Key, and Secret are configured.");
             if (request.AllowFailure)
             {
-                logger.LogWarning("Could not get S3 configuration: {Problems}", problems);
+                logger.LogWarning("Could not get S3 configuration: {Problems}", problem);
                 return new Response([]);
             }
 
-            return problems.Prepend("Could not get S3 configuration");
+            return problem;
         }
 
-        logger.LogInformation("Got configuration - Bucket: {Bucket}", envVariables.Bucket);
+        logger.LogInformation("Got configuration - Bucket: {Bucket}", s3Options.Bucket);
 
-        var retrievalResult = await RetrieveS3BucketAsync(envVariables, request.InitialTimeout, ct);
+        var retrievalResult = await RetrieveS3BucketAsync(s3Options.Bucket!, s3Options.Key!, s3Options.Secret!, request.InitialTimeout, ct);
         if (retrievalResult.TryPickProblems(out var retrievalProblems, out var files))
         {
             if (request.AllowFailure)
@@ -59,16 +55,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         return new Response(files);
     }
 
-    private Result<Envs> ReadS3EnvironmentVariables()
-    {
-        return Result.Concat(
-            EnvHelper.ReadEnvVariable(S3Bucket),
-            EnvHelper.ReadEnvVariable(S3Key),
-            EnvHelper.ReadEnvVariable(S3Secret)
-        );
-    }
-
-    private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(Envs envs, TimeSpan initialTimeout, CancellationToken ct)
+    private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(string bucket, string key, string secret, TimeSpan initialTimeout, CancellationToken ct)
     {
         try
         {
@@ -76,9 +63,9 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
             {
                 RegionEndpoint = RegionEndpoint.APSoutheast2
             };
-            using var s3Client = new AmazonS3Client(envs.Key, envs.Secret, config);
+            using var s3Client = new AmazonS3Client(key, secret, config);
             
-            var listRequest = new ListObjectsV2Request { BucketName = envs.Bucket };
+            var listRequest = new ListObjectsV2Request { BucketName = bucket };
 
             using var initialTimeoutCts = new CancellationTokenSource(initialTimeout);
             using var combinedInitialCts = CancellationTokenSource.CreateLinkedTokenSource(ct, initialTimeoutCts.Token);
@@ -90,12 +77,12 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
             }
             catch (OperationCanceledException) when (initialTimeoutCts.IsCancellationRequested)
             {
-                return new ResultProblem("Timed out after {0}ms when listing objects in bucket '{1}'", initialTimeout.TotalMilliseconds, envs.Bucket);
+                return new ResultProblem("Timed out after {0}ms when listing objects in bucket '{1}'", initialTimeout.TotalMilliseconds, bucket);
             }
 
             if ((listResponse.S3Objects?.Count ?? 0) == 0)
             {
-                return new ResultProblem("No objects found in the S3 bucket '{0}'", envs.Bucket);
+                return new ResultProblem("No objects found in the S3 bucket '{0}'", bucket);
             }
 
             Directory.CreateDirectory(Paths.TempFolder);
@@ -104,7 +91,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
             foreach (var s3Object in listResponse.S3Objects ?? [])
             {
-                logger.LogDebug("Retrieving object '{0}' from S3 bucket '{1}'", s3Object.Key, envs.Bucket);
+                logger.LogDebug("Retrieving object '{0}' from S3 bucket '{1}'", s3Object.Key, bucket);
 
                 var destFilePath = Path.Combine(Paths.TempFolder, s3Object.Key);
                 var destDirectory = Path.GetDirectoryName(destFilePath);
@@ -119,11 +106,11 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
                 var combinedCt = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCt).Token;
 
-                var getRequest = new GetObjectRequest { BucketName = envs.Bucket, Key = s3Object.Key };
+                var getRequest = new GetObjectRequest { BucketName = bucket, Key = s3Object.Key };
                 using var getResponse = await s3Client.GetObjectAsync(getRequest, combinedCt);
                 if (getResponse.HttpStatusCode > (HttpStatusCode)399)
                 {
-                    return new ResultProblem("Got status code '{0}' while retrieving object '{1}' from s3 bucket '{2}'", getResponse.HttpStatusCode, s3Object.Key, envs.Bucket);
+                    return new ResultProblem("Got status code '{0}' while retrieving object '{1}' from s3 bucket '{2}'", getResponse.HttpStatusCode, s3Object.Key, bucket);
                 }
 
                 await using var responseStream = getResponse.ResponseStream;
@@ -133,7 +120,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
 
                 files.Add(new FileInfo(destFilePath));
 
-                logger.LogDebug("Retrieved object '{0}' from S3 bucket '{1}'", s3Object.Key, envs.Bucket);
+                logger.LogDebug("Retrieved object '{0}' from S3 bucket '{1}'", s3Object.Key, bucket);
             }
 
             return files;
@@ -142,11 +129,11 @@ public class DownloadAssets(ILogger<DownloadAssets> logger) : IAsyncOperation<Do
         {
             logger.LogDebug(ex, "Amazon Id: {AmazonId}, Cloudfront Id: {CloudfrontId}, Response body: {ResponseBody}, Message: {Message}", ex.AmazonId2, ex.AmazonCloudFrontId ,ex.ResponseBody, ex.Message);
 
-            return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}'", envs.Bucket);
+            return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}'", bucket);
         }
         catch (Exception ex)
         {
-            return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}', Message: {1}", envs.Bucket,  ex.Message);
+            return new ResultProblem(ex, "Failed to retrieve S3 bucket '{0}', Message: {1}", bucket,  ex.Message);
         }
     }
 }
