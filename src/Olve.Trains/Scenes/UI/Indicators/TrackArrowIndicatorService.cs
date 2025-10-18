@@ -1,4 +1,3 @@
-using Olve.CodeGen;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
@@ -7,6 +6,9 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
+using Olve.Generated.Meshes;
+using Olve.Generated.Shaders;
+using Olve.Generated.Textures;
 using Olve.Logging;
 using Olve.Trains.Scenes.Rendering;
 
@@ -91,7 +93,7 @@ public class TrackArrowIndicatorService(
         {
             return Result.Success();
         }
-        
+
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
 

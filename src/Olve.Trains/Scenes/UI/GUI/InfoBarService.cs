@@ -1,4 +1,3 @@
-using Olve.CodeGen;
 using Olve.Engine3D;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Layout;
@@ -7,9 +6,9 @@ using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
+using Olve.Generated.Layouts;
+using Olve.Generated.Shaders;
 using Olve.Logging;
-using Olve.Utilities.Assertions;
-using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
@@ -26,6 +25,7 @@ public class InfoBarService(ILoggingManager loggingManager,
     };
 
     private Id<GuiElement>? _infoBarId;
+    private readonly Layouts.InfoBar _infoBar = Layouts.BuildInfoBar();
 
     private GuiElementBox _infoBarBox = new()
     {
@@ -36,11 +36,10 @@ public class InfoBarService(ILoggingManager loggingManager,
             Color = new RGBA(0, 0, 0, 1)
         }
     };
-    
+
     protected override Result OnLoad()
     {
         var anchorId = Id.New<GuiAnchor>();
-
         if (guiElementService.AddGuiElement("Info Bar Background", anchorId)
             .TryPickProblems(out var problems, out var infoBarId))
         {
@@ -48,9 +47,9 @@ public class InfoBarService(ILoggingManager loggingManager,
         }
 
         _infoBarId = infoBarId;
-        
+
         guiElementLayoutService.CreateOrSetElementBox(_infoBarId.Value, _infoBarBox);
-        
+
         if (shaderEntityManager.Register(RectangleShader.ShaderData)
             .TryPickProblems(out problems, out var shaderRenderingId))
         {
@@ -65,7 +64,7 @@ public class InfoBarService(ILoggingManager loggingManager,
             SizePx = new Vector2D<float>(1920, 50),
             PositionPx = new Vector2D<float>(0, 0)
         });
-        
+
         if (registrationResult.TryPickProblems(out problems, out var boxInstanceId))
         {
             return problems;

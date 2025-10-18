@@ -9,6 +9,7 @@ namespace Olve.Trains.AssetPipeline;
 
 public class RunAssetPipeline(
     ILogger<RunAssetPipeline> logger,
+    PathProvider pathProvider,
     DownloadAssets downloadAssets,
     ProcessShaders processShaders,
     ProcessLayouts processLayouts,
@@ -19,8 +20,8 @@ public class RunAssetPipeline(
     public async Task<Result> ExecuteAsync(Request request, CancellationToken ct = default)
     {
         logger.LogDebug("Starting asset pipeline");
-        logger.LogInformation("Temp folder: {TempFolder}", Paths.TempFolder);
-        logger.LogInformation("Asset output folder: {OutputFolder}", Paths.OutputsFolder);
+        logger.LogInformation("Build folder: {TempFolder}", pathProvider.BuildPath);
+        logger.LogInformation("Asset output folder: {OutputFolder}", pathProvider.OutputPath);
 
         IReadOnlyList<FileInfo> assetFiles = [];
 

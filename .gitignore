@@ -9,7 +9,7 @@
 assets/
 SvelteDist/
 api/
-appsettings.local.json
+[Aa]ppsettings.local.json
 
 # dotenv files
 .env

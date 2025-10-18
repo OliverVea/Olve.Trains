@@ -11,7 +11,7 @@ using Olve.Engine3D.Rendering.Shaders;
 using Silk.NET.Maths;
 
 // ReSharper disable once CheckNamespace
-namespace Olve.CodeGen;
+namespace {{ Namespace }};
 
 
 public static partial class Shaders
@@ -32,7 +32,7 @@ public static partial class Shaders
             {{ if GeometryShader != null }}GeometryPath = "{{ GeometryShader.SourcePath }}",
             GeometrySource = @"{{ GeometryShader.SourceCode }}",{{ end }}
         };
-    
+
         public override RenderingParameters MakeParameters()
         {
             return new(

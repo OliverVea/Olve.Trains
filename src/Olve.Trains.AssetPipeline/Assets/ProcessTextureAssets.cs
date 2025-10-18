@@ -5,7 +5,7 @@ using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
-public class ProcessTextureAssets(ILogger<ProcessTextureAssets> logger, TextureFileReader textureFileReader, AssetWriter assetWriter, TemplateWriter templateWriter) :  IAsyncOperation<ProcessTextureAssets.Request, IReadOnlyList<Asset<TextureData>>>
+public class ProcessTextureAssets(ILogger<ProcessTextureAssets> logger, NamespaceProvider namespaceProvider, PathProvider pathProvider, TextureFileReader textureFileReader, AssetWriter assetWriter, TemplateWriter templateWriter) :  IAsyncOperation<ProcessTextureAssets.Request, IReadOnlyList<Asset<TextureData>>>
 {
     public record Request(IReadOnlyList<FileInfo> AssetFiles);
 
@@ -13,7 +13,7 @@ public class ProcessTextureAssets(ILogger<ProcessTextureAssets> logger, TextureF
     {
         logger.LogDebug("Processing texture assets");
 
-        Directory.CreateDirectory(Paths.TexturesOutputFolder);
+        pathProvider.TexturesOutputFolder.EnsurePathExists();
 
         var texturesResult = textureFileReader.LoadTextures(request.AssetFiles);
         if (texturesResult.TryPickProblems(out var problems, out var textureAssets))
@@ -30,9 +30,9 @@ public class ProcessTextureAssets(ILogger<ProcessTextureAssets> logger, TextureF
             }
         }
 
-        var templateOutputPath = Path.Combine(Paths.TexturesOutputFolder, "Textures.cs");
+        var templateOutputPath = pathProvider.TexturesOutputFolder / "Textures.cs";
 
-        var templateResult = await templateWriter.WriteTemplateAsync("Textures", textureAssets, templateOutputPath, ct);
+        var templateResult = await templateWriter.WriteTemplateAsync("Textures", namespaceProvider.TextureNamespace, textureAssets, templateOutputPath, ct);
         if (templateResult.TryPickProblems(out var templateProblems))
         {
             return templateProblems.Prepend("Failed to write template");

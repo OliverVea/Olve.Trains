@@ -11,9 +11,3 @@ public enum BuildTargets
     Layouts = 1 << 4,
     All = Shaders | Meshes | Textures | Terrains | Layouts
 }
-
-public static class BuildTargetExtensions
-{
-    public static bool RequiresS3Resources(this BuildTargets targets)
-        => (targets & (BuildTargets.Meshes | BuildTargets.Textures | BuildTargets.Terrains)) != 0;
-}

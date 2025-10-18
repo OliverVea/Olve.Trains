@@ -13,8 +13,4 @@
     <PackageReference Include="Olve.Validation" />
     <EmbeddedResource Include="SvelteDist\**\*.*" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="SvelteDist\" />
-  </ItemGroup>
 </Project>

@@ -3,8 +3,13 @@ using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Olve.Operations;
+using Olve.Paths;
+using Olve.Paths.Glob;
 using Olve.Results;
+using Olve.Trains.AssetPipeline.Options;
+using Path = System.IO.Path;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -13,7 +18,7 @@ namespace Olve.Trains.AssetPipeline.Assets;
 /// </summary>
 /// <param name="logger"></param>
 /// <param name="s3Options"></param>
-public class DownloadAssets(ILogger<DownloadAssets> logger, S3Options s3Options) : IAsyncOperation<DownloadAssets.Request, DownloadAssets.Response>
+public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> s3Options, PathProvider pathProvider) : IAsyncOperation<DownloadAssets.Request, DownloadAssets.Response>
 {
     public record Request(TimeSpan InitialTimeout, bool AllowFailure);
     public record Response(IReadOnlyList<FileInfo> Files);
@@ -22,33 +27,35 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, S3Options s3Options)
     {
         logger.LogDebug("Getting S3 configuration");
 
-        if (string.IsNullOrWhiteSpace(s3Options.Bucket) || string.IsNullOrWhiteSpace(s3Options.Key) || string.IsNullOrWhiteSpace(s3Options.Secret))
+        if (string.IsNullOrWhiteSpace(s3Options.Value.Bucket) || string.IsNullOrWhiteSpace(s3Options.Value.Key) || string.IsNullOrWhiteSpace(s3Options.Value.Secret))
         {
             var problem = new ResultProblem("S3 configuration is incomplete. Ensure Bucket, Key, and Secret are configured.");
-            if (request.AllowFailure)
+            if (!request.AllowFailure)
             {
-                logger.LogWarning("Could not get S3 configuration: {Problems}", problem);
-                return new Response([]);
+                return problem;
             }
 
-            return problem;
+            logger.LogWarning("Could not get S3 configuration: {Problems}", problem);
+            return new Response([]);
+
         }
 
-        logger.LogInformation("Got configuration - Bucket: {Bucket}", s3Options.Bucket);
+        logger.LogInformation("Got configuration - Bucket: {Bucket}", s3Options.Value.Bucket);
 
-        var retrievalResult = await RetrieveS3BucketAsync(s3Options.Bucket!, s3Options.Key!, s3Options.Secret!, request.InitialTimeout, ct);
+        var retrievalResult = await RetrieveS3BucketAsync(s3Options.Value.Bucket, s3Options.Value.Key, s3Options.Value.Secret, request.InitialTimeout, ct);
         if (retrievalResult.TryPickProblems(out var retrievalProblems, out var files))
         {
-            if (request.AllowFailure)
+            if (!request.AllowFailure)
             {
-                logger.LogWarning("Failed to retrieve S3 bucket: {Problems}", retrievalProblems);
-                return new Response([]);
+                return retrievalProblems.Prepend("Failed to retrieve S3 bucket");
             }
 
-            return retrievalProblems.Prepend("Failed to retrieve S3 bucket");
+            logger.LogWarning("Failed to retrieve S3 bucket: {Problems}", retrievalProblems);
+            return new Response([]);
+
         }
 
-        var itemCount = Directory.GetFiles(Paths.TempFolder, "*", SearchOption.AllDirectories).Length;
+        var itemCount = pathProvider.BuildPath.TryGlob("**", out var hits) ? hits.Count(x => x.ElementType == ElementType.File) : 0;
 
         logger.LogInformation("Retrieved {ItemCount} items from S3 bucket", itemCount);
 
@@ -64,7 +71,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, S3Options s3Options)
                 RegionEndpoint = RegionEndpoint.APSoutheast2
             };
             using var s3Client = new AmazonS3Client(key, secret, config);
-            
+
             var listRequest = new ListObjectsV2Request { BucketName = bucket };
 
             using var initialTimeoutCts = new CancellationTokenSource(initialTimeout);
@@ -85,7 +92,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, S3Options s3Options)
                 return new ResultProblem("No objects found in the S3 bucket '{0}'", bucket);
             }
 
-            Directory.CreateDirectory(Paths.TempFolder);
+            Directory.CreateDirectory(pathProvider.BuildPath.Path);
 
             List<FileInfo> files = [];
 
@@ -93,7 +100,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, S3Options s3Options)
             {
                 logger.LogDebug("Retrieving object '{0}' from S3 bucket '{1}'", s3Object.Key, bucket);
 
-                var destFilePath = Path.Combine(Paths.TempFolder, s3Object.Key);
+                var destFilePath = Path.Combine(pathProvider.BuildPath.Path, s3Object.Key);
                 var destDirectory = Path.GetDirectoryName(destFilePath);
 
                 if (!Directory.Exists(destDirectory))
@@ -116,7 +123,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, S3Options s3Options)
                 await using var responseStream = getResponse.ResponseStream;
                 await using var fileStream = File.Create(destFilePath);
 
-                await responseStream.CopyToAsync(fileStream, ct);
+                await responseStream.CopyToAsync(fileStream, CancellationToken.None);
 
                 files.Add(new FileInfo(destFilePath));
 

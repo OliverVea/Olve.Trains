@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Operations;
+using Olve.Paths;
 using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
@@ -8,9 +9,9 @@ namespace Olve.Trains.AssetPipeline.Assets;
 /// <summary>
 ///     Processes game assets and spits them out in /app/output.
 /// </summary>
-public class ProcessAssets(ILogger<ProcessAssets> logger, ProcessMeshAssets processMeshAssets, ProcessTextureAssets processTextureAssets, ProcessTerrainAssets processTerrainAssets) : IAsyncOperation<ProcessAssets.Request, ProcessAssets.Response>
+public class ProcessAssets(ILogger<ProcessAssets> logger, PathProvider pathProvider, ProcessMeshAssets processMeshAssets, ProcessTextureAssets processTextureAssets, ProcessTerrainAssets processTerrainAssets) : IAsyncOperation<ProcessAssets.Request, ProcessAssets.Response>
 {
-    private static readonly string TemplateFilePath = Path.Combine(Paths.TemplatesSourceFolder, "MeshesClass.scriban");
+    private IPath TemplateFilePath => pathProvider.TemplatesSourceFolder / "MeshesClass.scriban";
 
     public record Request(IReadOnlyList<FileInfo> AssetFiles, BuildTargets Targets);
     public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets, IReadOnlyList<Asset<TextureData>> TextureAssets, IReadOnlyList<Asset<TerrainData>> TerrainAssets);

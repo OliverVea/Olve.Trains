@@ -1,9 +1,11 @@
-using Olve.CodeGen;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Systems;
+using Olve.Generated.Meshes;
+using Olve.Generated.Shaders;
+using Olve.Generated.Textures;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.Junctions;
 

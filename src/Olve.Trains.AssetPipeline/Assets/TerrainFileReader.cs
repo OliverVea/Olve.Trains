@@ -1,4 +1,3 @@
-using BigGustave;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.OpenRaster;
@@ -6,41 +5,7 @@ using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
-public class HeightmapLayerParser(float heightPerStep = 0.25f, int zeroHeight = 128, int heightStep = 8) : ILayerParser<HeightmapData>
-{
-    public Result<HeightmapData> ParseLayer(Stream stream)
-    {
-        var png = Png.Open(stream);
-
-        var maxVertexCount = png.Width * png.Height;
-
-        var heights = new int[maxVertexCount];
-
-        for (var j = 0; j < png.Height; ++j)
-        {
-            for (var i = 0; i < png.Width; ++i)
-            {
-                var height = png.GetPixel(i, j).R;
-                heights[j * png.Width + i] = (height - zeroHeight) / heightStep;
-            }
-        }
-
-        return new HeightmapData
-        {
-            Width = png.Width,
-            Length = png.Height,
-            Step = heightPerStep,
-            Heights = heights
-        };
-    }
-}
-
-public interface IAssetReader<T>
-{
-    Result<IReadOnlyList<T>> LoadAssets(IReadOnlyList<FileInfo> files);
-}
-
-public class TerrainFileReader(ILogger<TerrainFileReader> logger, ReadOpenRasterFile readOpenRasterFile, ReadLayerAs<HeightmapData> readLayerAsHeightmap, ILayerParser<HeightmapData> heightmapLayerParser) : IAssetReader<Asset<TerrainData>>
+public class TerrainFileReader(ILogger<TerrainFileReader> logger, ReadOpenRasterFile readOpenRasterFile, ReadLayerAs<HeightmapData> readLayerAsHeightmap, ILayerParser<HeightmapData> heightmapLayerParser)
 {
     private const string HeightmapLayerName = "heightmap";
 
