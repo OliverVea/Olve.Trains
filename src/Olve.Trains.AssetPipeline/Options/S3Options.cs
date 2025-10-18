@@ -1,10 +1,12 @@
-﻿namespace Olve.Trains.AssetPipeline;
+﻿namespace Olve.Trains.AssetPipeline.Options;
 
 /// <summary>
 /// Configuration for S3 asset retrieval.
 /// </summary>
-public class S3Options
+public class S3Options : IAssetOptions
 {
+    public string SectionName => "S3";
+
     /// <summary>
     /// S3 bucket name.
     /// </summary>

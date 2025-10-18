@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
+using Olve.Paths;
 using Olve.Results;
 using Olve.Trains.AssetPipeline.Assets;
 using Scriban.Runtime;
+using Path = System.IO.Path;
 
 namespace Olve.Trains.AssetPipeline.Shaders;
 
@@ -10,10 +12,14 @@ namespace Olve.Trains.AssetPipeline.Shaders;
 ///     Compiles shader slang shaders to GLSL
 /// </summary>
 /// <param name="logger"></param>
-public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templateWriter, ShaderOptions shaderOptions) : IAsyncOperation<ProcessShaders.Request, ProcessShaders.Response>
+public class ProcessShaders(
+    ILogger<ProcessShaders> logger,
+    NamespaceProvider namespaceProvider,
+    TemplateWriter templateWriter,
+    PathProvider pathProvider) : IAsyncOperation<ProcessShaders.Request, ProcessShaders.Response>
 {
     private static readonly string TemplateFileName = "ShaderClass.scriban";
-    
+
     public record Request;
     public record Response(IReadOnlyList<ShaderProgram> Shaders);
 
@@ -21,29 +27,29 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
     {
         logger.LogDebug("Processing shader files");
 
-        var shaderRoot = string.IsNullOrWhiteSpace(shaderOptions.ShadersDirectory) ? Paths.ShadersSourceFolder : shaderOptions.ShadersDirectory;
+        var shaderRoot = pathProvider.ShadersSourceFolder.Path;
         var shaderFiles = Directory.GetFiles(shaderRoot, "*.glsl", SearchOption.AllDirectories);
         var shaders = new List<Shader>(shaderFiles.Length);
 
-        Directory.CreateDirectory(Paths.ShadersOutputFolder);
-        
+        Directory.CreateDirectory(pathProvider.ShadersOutputFolder.Path);
+
         foreach (var absoluteShaderFile in shaderFiles)
         {
             var shaderFile = Path.GetRelativePath(shaderRoot, absoluteShaderFile);
             logger.LogDebug("Reading shader: {ShaderFile}", shaderFile);
-            
+
             // Load shader as string
             var shaderSource = await File.ReadAllTextAsync(absoluteShaderFile, ct);
-            
+
             // Read uniforms
             if (ShaderHelper.GetUniforms(shaderSource).TryPickProblems(out var problems, out var uniforms))
             {
                 return problems.Prepend("Failed to read uniforms in shader file '{0}'", shaderFile);
             }
-            
+
             var uniformNames = string.Join(", ", uniforms.Select(u => u.Name));
             logger.LogDebug("Got uniforms: {UniformNames}", uniformNames);
-            
+
             var fileName = Path.GetFileNameWithoutExtension(shaderFile);
             var fileNameSegments = fileName.Split('.');
 
@@ -60,7 +66,7 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
                 "geom" => ShaderType.Geometry,
                 _ => ShaderType.Unknown
             };
-            
+
             if (shaderType == ShaderType.Unknown)
             {
                 return new ResultProblem("Invalid shader type '{0}' in shader file '{1}'. Shader type should be either 'frag' or 'vert'.", fileNameSegments[1], shaderFile);
@@ -77,23 +83,23 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
             };
 
             shaders.Add(shader);
-            
+
             logger.LogDebug("Finished reading shader: {ShaderFile}", shaderFile);
         }
-        
+
         List<ShaderProgram> shaderPrograms = [];
 
         foreach (var shaderGroup in shaders.GroupBy(x => x.Name))
         {
             var programName = shaderGroup.Key;
-            
+
             var fragmentShaders = shaderGroup.Where(x => x.Type == ShaderType.Fragment).ToList();
             if (fragmentShaders.Count != 1)
             {
                 return new ResultProblem("Expected exactly one fragment shader for program '{0}', but found {1}.", programName, fragmentShaders.Count);
             }
             var fragmentShader = fragmentShaders.First();
-            
+
             var vertexShaders = shaderGroup.Where(x => x.Type == ShaderType.Vertex).ToList();
             if (vertexShaders.Count != 1)
             {
@@ -129,35 +135,28 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
                 }
             }
 
-            var destinationPath = Path.Combine(Paths.ShadersOutputFolder, "Shaders." + programName + ".cs");
-            
+            var destinationPath = pathProvider.ShadersOutputFolder / ("Shaders." + programName + ".cs");
+
             var shaderProgram = new ShaderProgram
             {
                 Name = programName,
+                Namespace = namespaceProvider.ShaderNamespace,
                 Destination = destinationPath,
                 FragmentShader = fragmentShader,
                 VertexShader = vertexShader,
                 GeometryShader = geometryShader,
                 Uniforms = uniforms.Values.ToArray()
             };
-            
+
             shaderPrograms.Add(shaderProgram);
         }
-        
-        // Resolve template path (check container path first, then project-relative fallbacks)
-        var templateCandidates = new[]
-        {
-            Path.Combine(Paths.TemplatesSourceFolder, TemplateFileName),
-            Path.Combine(Directory.GetCurrentDirectory(), "src", "Olve.Trains.AssetPipeline", "Templates", TemplateFileName),
-            Path.Combine(Directory.GetCurrentDirectory(), "Templates", TemplateFileName),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "src", "Olve.Trains.AssetPipeline", "Templates", TemplateFileName)
-        }.Select(Path.GetFullPath).ToArray();
 
-        var templatePath = templateCandidates.FirstOrDefault(File.Exists);
-        if (templatePath == null)
+        if (!Paths.Path.TryGetAssemblyExecutable(out var assemblyPath))
         {
-            return new ResultProblem("Template file '{0}' not found. Searched: {1}", TemplateFileName, string.Join("; ", templateCandidates));
+            return new ResultProblem("Could not find assembly executable.");
         }
+
+        var templatePath = assemblyPath.Parent / "templates" / TemplateFileName;
 
         foreach (var shaderProgram in shaderPrograms)
         {
@@ -167,13 +166,13 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
                 return problems.Prepend("Failed to write shader source file for shader program '{0}'", shaderProgram.Name);
             }
         }
-        
+
         logger.LogInformation("Compiled {ShaderCount} shader programs successfully!", shaderPrograms.Count);
 
         return new Response(shaderPrograms);
     }
 
-    private async Task<Result> WriteShaderSourceFileAsync(ShaderProgram shaderProgram, string templatePath, CancellationToken ct)
+    private async Task<Result> WriteShaderSourceFileAsync(ShaderProgram shaderProgram, IPath templatePath, CancellationToken ct)
     {
         logger.LogDebug("Rendering shader program: {ShaderProgramName}", shaderProgram.Name);
 
@@ -184,10 +183,12 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
 
     private static ScriptObject MapToScriptObject(ShaderProgram shaderProgram)
     {
-        ScriptObject programObject = new() { { "Name", shaderProgram.Name } };
+        ScriptObject programObject = new() {
+            { "Name", shaderProgram.Name },
+            { "Namespace", shaderProgram.Namespace} };
 
         List<ScriptObject> uniformObjects = [];
-        
+
         foreach (var uniform in shaderProgram.Uniforms)
         {
             ScriptObject uniformObject = new()
@@ -204,7 +205,7 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
 
             uniformObjects.Add(uniformObject);
         }
-        
+
         programObject.Add("Uniforms", uniformObjects);
 
         ScriptObject fragmentShaderObject = new()
@@ -236,10 +237,10 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
 
             programObject.Add("GeometryShader", geometryShaderObject);
         }
-        
+
         return programObject;
     }
-    
+
     private static Result AddUniforms(Dictionary<string, Uniform> uniforms, IReadOnlyList<Uniform> newUniforms)
     {
         foreach (var uniform in newUniforms)
@@ -251,7 +252,7 @@ public class ProcessShaders(ILogger<ProcessShaders> logger, TemplateWriter templ
                     return new ResultProblem("Uniform '{0}' already exists with type '{1}', but found type '{2}' in shader.", uniform.Name, existingUniform.Type, uniform.Type);
                 }
             }
-            
+
             uniforms[uniform.Name] = uniform;
         }
 

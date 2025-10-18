@@ -1,33 +1,28 @@
-﻿{{- # Layout class template -}}
+﻿// --------------------------------------------------------------------------------------------------
+// |                                                                                                |
+// |               WARNING: This is a generated file. Do not modify it manually.                    |
+// |                                                                                                |
+// --------------------------------------------------------------------------------------------------
+// ReSharper disable InconsistentNaming
+using Olve.Trains.Scenes.UI.GUI;
 
-{{- func render_node(n) -}}
-new {{ n.TypeName }} {
-{{~ for p in n.Properties ~}}
-    {{ p.Name }} = {{ p.ValueLiteral }}{{ if !for.last || (n.Children && n.Children.size > 0) }},{{ end }}
-{{~ end ~}}
-{{~ if n.Children && n.Children.size > 0 ~}}
-{{~ if n.Properties && n.Properties.size > 0 }}
-    
-{{~ end }}
-    Children =
-    [
-{{~ for c in n.Children ~}}
-        {{ render_node c }}{{ if !for.last }},{{ end }}
-{{~ end ~}}
-    ]
-{{~ end ~}}
-}
-{{- end -}}
-
+// ReSharper disable once CheckNamespace
 namespace {{ Namespace }};
 
-// Generated START
-public static class {{ ClassName }}
+public static partial class Layouts
 {
-    public static {{ RootType }} Build()
-    {
-        var {{ RootVarName }} = {{ render_node RootNode }};
-        return {{ RootVarName }};
+    public record {{ ClassName }}({{ FixedIdsDefinition }}IReadOnlyList<BaseGuiElement> Elements);
+
+    public static {{ ClassName }} Build{{ ClassName }}()
+    { {{ for node in Nodes }}
+        var {{ node.Id }} = new {{ node.TypeName }}()
+        { {{ for property in node.Properties }}
+            {{ property.Name }} = {{ property.Value}},{{end}}
+            Children = [{{ for child in node.Children }}
+                {{child}},{{end}}
+            ]
+        };
+{{ end }}
+        return new {{ ClassName }}({{FixedIds}}[{{ElementList}}]);
     }
 }
-// Generated END

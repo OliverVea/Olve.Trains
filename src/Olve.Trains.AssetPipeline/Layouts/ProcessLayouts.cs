@@ -1,52 +1,37 @@
 ﻿using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
+using Olve.Paths;
+using Olve.Paths.Glob;
 using Olve.Results;
 using Olve.Trains.AssetPipeline.Assets;
 using Scriban.Runtime;
 
 namespace Olve.Trains.AssetPipeline.Layouts;
 
-public class ProcessLayouts(ILogger<ProcessLayouts> logger, TemplateWriter templateWriter, LayoutOptions layoutOptions) : IAsyncOperation<ProcessLayouts.Request, ProcessLayouts.Response>
+public class ProcessLayouts(
+    ILogger<ProcessLayouts> logger,
+    TemplateWriter templateWriter,
+    NamespaceProvider namespaceProvider,
+    PathProvider pathProvider) : IAsyncOperation<ProcessLayouts.Request, ProcessLayouts.Response>
 {
     private static readonly string TemplateFileName = "LayoutClass.scriban";
 
     public record Request;
-    public record Response(IReadOnlyList<string> GeneratedFiles);
+    public record Response(IReadOnlyList<IPath> GeneratedFiles);
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
         logger.LogDebug("Processing layout XML files");
 
-        var layoutsRoot = string.IsNullOrWhiteSpace(layoutOptions.LayoutsDirectory)
-            ? Paths.LayoutsSourceFolder
-            : layoutOptions.LayoutsDirectory;
+        var layoutsRoot = pathProvider.LayoutsSourceFolder;
 
-        if (!Directory.Exists(layoutsRoot))
-        {
-            logger.LogWarning("Layouts directory '{LayoutsRoot}' does not exist. Nothing to process.", layoutsRoot);
-            return new Response([]);
-        }
+        var xmlFiles = layoutsRoot.TryGlob("*.xml", out var files) ? files : [];
+        pathProvider.LayoutsOutputFolder.EnsurePathExists();
 
-        var xmlFiles = Directory.GetFiles(layoutsRoot, "*.xml", SearchOption.AllDirectories);
-        Directory.CreateDirectory(Paths.LayoutsOutputFolder);
+        var templatePath = pathProvider.TemplatesSourceFolder / TemplateFileName;
 
-        // Resolve template path (check container path first, then project-relative fallbacks)
-        var templateCandidates = new[]
-        {
-            Path.Combine(Paths.TemplatesSourceFolder, TemplateFileName),
-            Path.Combine(Directory.GetCurrentDirectory(), "src", "Olve.Trains.AssetPipeline", "Templates", TemplateFileName),
-            Path.Combine(Directory.GetCurrentDirectory(), "Templates", TemplateFileName),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "src", "Olve.Trains.AssetPipeline", "Templates", TemplateFileName)
-        }.Select(Path.GetFullPath).ToArray();
-
-        var templatePath = templateCandidates.FirstOrDefault(File.Exists);
-        if (templatePath == null)
-        {
-            return new ResultProblem("Template file '{0}' not found. Searched: {1}", TemplateFileName, string.Join("; ", templateCandidates));
-        }
-
-        List<string> generatedFiles = [];
+        List<IPath> generatedFiles = [];
 
         foreach (var absoluteXmlPath in xmlFiles)
         {
@@ -56,11 +41,15 @@ public class ProcessLayouts(ILogger<ProcessLayouts> logger, TemplateWriter templ
             try
             {
                 // Preserve whitespace so literal values are not altered by parser
-                doc = XDocument.Load(absoluteXmlPath, LoadOptions.PreserveWhitespace | LoadOptions.SetLineInfo);
+                doc = XDocument.Load(absoluteXmlPath.Absolute.Path,
+                    LoadOptions.PreserveWhitespace | LoadOptions.SetLineInfo);
             }
             catch (Exception e)
             {
-                return new ResultProblem(e, "Failed to parse layout file '{0}' with message: {1}", absoluteXmlPath, e.Message);
+                return new ResultProblem(e,
+                    "Failed to parse layout file '{0}' with message: {1}",
+                    absoluteXmlPath,
+                    e.Message);
             }
 
             var root = doc.Root;
@@ -69,23 +58,59 @@ public class ProcessLayouts(ILogger<ProcessLayouts> logger, TemplateWriter templ
                 return new ResultProblem("Layout file '{0}' has no root element.", absoluteXmlPath);
             }
 
-            var fileName = Path.GetFileNameWithoutExtension(absoluteXmlPath);
-            var className = ToPascalCase(fileName);
-            var rootType = root.Name.LocalName;
-            var rootVarName = ToCamelCase(className);
+            var className = string.Join("",
+                absoluteXmlPath.Name!
+                    .Split(".")
+                    .SkipLast(1));
 
-            var rootNode = BuildNode(root);
+            List<Node> nodes = [];
+            AddNodeAndChildren(root, nodes);
 
-            var scriptObject = new ScriptObject
+            IReadOnlyCollection<ScriptObject> nodeScriptObjects = nodes
+                .Select(node => new ScriptObject()
+                {
+                    { "TypeName", node.TypeName },
+                    {
+                        "Children", node
+                            .Children.Select(x => x.Id)
+                            .ToArray()
+                    },
+                    { "Id", node.Id.Id },
+                    {
+                        "Properties", node
+                            .Properties.Select(nodeProperty =>
+                                new ScriptObject() { { "Name", nodeProperty.Name }, { "Value", nodeProperty.Value }, })
+                            .ToArray()
+                    }
+                })
+                .ToList();
+
+            var fixedIdsDefinition = string.Join(", ",
+                nodes
+                    .Where(x => x.Id.Fixed)
+                    .Select(x => $"{x.TypeName} {x.Id.Id}"));
+
+            var fixedIds = string.Join(", ",
+                nodes
+                    .Where(x => x.Id.Fixed)
+                    .Select(x => $"{x.Id.Id}"));
+
+            fixedIdsDefinition = fixedIdsDefinition.Length == 0 ? fixedIdsDefinition : fixedIdsDefinition + ", ";
+            fixedIds = fixedIds.Length == 0 ? fixedIds : fixedIds + ", ";
+
+        var elementList = string.Join(", ", nodes.Select(x => x.Id.Id).Reverse());
+
+            var scriptObject = new ScriptObject()
             {
-                { "Namespace", string.IsNullOrWhiteSpace(layoutOptions.Namespace) ? "Olve.Trains.resources.layouts" : layoutOptions.Namespace },
+                { "Namespace", namespaceProvider.LayoutNamespace },
                 { "ClassName", className },
-                { "RootType", rootType },
-                { "RootVarName", rootVarName },
-                { "RootNode", MapNodeToScript(rootNode) }
+                { "Nodes", nodeScriptObjects },
+                { "FixedIdsDefinition", fixedIdsDefinition },
+                { "FixedIds", fixedIds },
+                { "ElementList", elementList }
             };
 
-            var destinationPath = Path.Combine(Paths.LayoutsOutputFolder, className + ".cs");
+            var destinationPath = pathProvider.LayoutsOutputFolder / (className + ".cs");
 
             var writeResult = await templateWriter.WriteTemplateAsync(templatePath, scriptObject, destinationPath, ct);
             if (writeResult.TryPickProblems(out var problems))
@@ -102,10 +127,11 @@ public class ProcessLayouts(ILogger<ProcessLayouts> logger, TemplateWriter templ
     }
 
     // Internal node model used to build ScriptObject for Scriban
-    private readonly record struct Node(string TypeName, IReadOnlyList<Property> Properties, IReadOnlyList<Node> Children);
-    private readonly record struct Property(string Name, string ValueLiteral);
+    private readonly record struct Node(NodeId Id, string TypeName, IReadOnlyList<Property> Properties, IReadOnlyList<NodeId> Children);
+    private readonly record struct NodeId(string Id, bool Fixed);
+    private readonly record struct Property(string Name, string Value);
 
-    private static Node BuildNode(XElement element)
+    private static NodeId AddNodeAndChildren(XElement element, List<Node> nodes)
     {
         // Translate attributes directly to property assignments.
         // The XML values are emitted verbatim; user ensures they are valid C# expressions.
@@ -113,39 +139,27 @@ public class ProcessLayouts(ILogger<ProcessLayouts> logger, TemplateWriter templ
             .Select(a => new Property(a.Name.LocalName, a.Value))
             .ToList();
 
-        var children = element.Elements()
-            .Select(BuildNode)
+        var nodeName = element.Name.LocalName;
+        NodeId? nodeId = null;
+
+        var idProperty = properties.Find(x => x.Name.Equals("id", StringComparison.InvariantCultureIgnoreCase));
+        if (idProperty != default)
+        {
+            properties.Remove(idProperty);
+            nodeId = new(idProperty.Value, true);
+        }
+
+        var children = element
+            .Elements()
+            .Select(childElement => AddNodeAndChildren(childElement, nodes))
             .ToList();
 
-        return new Node(element.Name.LocalName, properties, children);
-    }
+        nodeId ??= new(nodeName + "_" + nodes.Count, false);
+        Node node = new(nodeId.Value, nodeName, properties, children);
 
-    private static ScriptObject MapNodeToScript(Node node)
-    {
-        ScriptObject scriptNode = new()
-        {
-            { "TypeName", node.TypeName }
-        };
+        nodes.Add(node);
 
-        List<ScriptObject> propObjects = [];
-        foreach (var p in node.Properties)
-        {
-            propObjects.Add(new ScriptObject
-            {
-                { "Name", p.Name },
-                { "ValueLiteral", p.ValueLiteral }
-            });
-        }
-        scriptNode.Add("Properties", propObjects);
-
-        List<ScriptObject> childObjects = [];
-        foreach (var c in node.Children)
-        {
-            childObjects.Add(MapNodeToScript(c));
-        }
-        scriptNode.Add("Children", childObjects);
-
-        return scriptNode;
+        return nodeId.Value;
     }
 
     private static string ToPascalCase(string input)

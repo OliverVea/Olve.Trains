@@ -2,20 +2,22 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.OpenRaster;
 using Olve.Trains.AssetPipeline;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Shaders;
 using Olve.Trains.AssetPipeline.Layouts;
+using Olve.Trains.AssetPipeline.Options;
 
 ServiceCollection serviceCollection = new();
 
 var configurationRoot = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddEnvironmentVariables()
-    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-    .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("Properties/appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("Properties/appsettings.local.json", optional: true, reloadOnChange: true)
     .AddUserSecrets(typeof(RunAssetPipeline).Assembly, optional: true, reloadOnChange: true)
     .AddCommandLine(args)
     .Build();
@@ -37,6 +39,8 @@ serviceCollection.AddLogging(builder =>
 
 serviceCollection.AddTransient<RunAssetPipeline>();
 serviceCollection.AddTransient<DownloadAssets>();
+serviceCollection.AddTransient<PathProvider>();
+serviceCollection.AddTransient<NamespaceProvider>();
 serviceCollection.AddTransient<ProcessShaders>();
 serviceCollection.AddTransient<ProcessLayouts>();
 serviceCollection.AddTransient<ProcessAssets>();
@@ -51,26 +55,12 @@ serviceCollection.AddTransient<TerrainFileReader>();
 serviceCollection.AddTransient<AssetWriter>();
 serviceCollection.AddTransient<TemplateWriter>();
 
+serviceCollection.AddTransient<ILayerParser<HeightmapData>, HeightmapLayerParser>();
+
 serviceCollection.AddTransient<ReadOpenRasterFile>();
 serviceCollection.AddTransient<ReadLayerAs<HeightmapData>>();
 
-ILayerParser<HeightmapData> heightmapLayerParser = new HeightmapLayerParser(0.25f, 128, 8);
-serviceCollection.AddSingleton(heightmapLayerParser);
-
-var shadersSection = configurationRoot.GetSection("Shaders");
-var shaderOptions = new ShaderOptions();
-shadersSection.Bind(shaderOptions);
-serviceCollection.AddSingleton(shaderOptions);
-
-var layoutsSection = configurationRoot.GetSection("Layouts");
-var layoutOptions = new LayoutOptions();
-layoutsSection.Bind(layoutOptions);
-serviceCollection.AddSingleton(layoutOptions);
-
-var s3Section = configurationRoot.GetSection("S3");
-var s3Options = new S3Options();
-s3Section.Bind(s3Options);
-serviceCollection.AddSingleton(s3Options);
+serviceCollection.AddAssetPipelineConfiguration(configurationRoot);
 
 var serviceProvider = serviceCollection.BuildServiceProvider();
 
@@ -83,35 +73,23 @@ logger.LogInformation("--------------------------------------");
 
 CancellationTokenSource cts = new();
 
-// Resolve build targets from configuration (with legacy fallback)
-BuildTargets targets;
-var targetsConfig = configurationRoot["Build:Targets"];
-if (!string.IsNullOrWhiteSpace(targetsConfig))
-{
-    var tokens = targetsConfig
-        .Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries)
-        .Select(t => "--" + t.Trim().TrimStart('-'))
-        .ToArray();
-    targets = BuildTargetParser.Parse(tokens);
-}
-else
-{
-    targets = BuildTargetParser.Parse(args);
-}
+var buildOptions = serviceProvider.GetRequiredService<IOptions<BuildOptions>>();
+var s3Options = serviceProvider.GetRequiredService<IOptions<S3Options>>();
 
-// S3 timeout and failure mode from configuration
-var initialTimeout = TimeSpan.FromMilliseconds(s3Options.TimeoutMs > 0 ? s3Options.TimeoutMs : 20000);
-var allowS3Failure = s3Options.AllowFailure;
+var targets = buildOptions.Value.Targets
+    .Select(x => Enum.Parse<BuildTargets>(x))
+    .Aggregate(BuildTargets.None, (a,b) => a | b);
+var timeout = TimeSpan.FromMilliseconds(s3Options.Value.TimeoutMs);
 
-var result = await runAssetPipeline.ExecuteAsync(new(targets, initialTimeout, allowS3Failure), cts.Token);
+var result = await runAssetPipeline.ExecuteAsync(new(targets, timeout, s3Options.Value.AllowFailure), cts.Token);
 if (result.TryPickProblems(out var mainProblems))
 {
     foreach (var problem in mainProblems)
     {
         var message = $"{problem.Message} at {{{problem.Args.Length}}}";
-        
+
         var problemArgs = problem.Args.Append(problem.OriginInformation.LinkString).ToArray();
-        
+
         logger.LogError(message, problemArgs);
     }
 

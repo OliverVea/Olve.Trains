@@ -4,7 +4,7 @@ using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
-public class AssetWriter(ILogger<AssetWriter> logger)
+public class AssetWriter(ILogger<AssetWriter> logger, PathProvider pathProvider)
 {
     public async Task<Result> WriteAssetAsync<T>(T assetData, string destination, CancellationToken ct = default)
     {
@@ -14,11 +14,11 @@ public class AssetWriter(ILogger<AssetWriter> logger)
 
             await MemoryPackSerializer.SerializeAsync(assetStream, assetData, cancellationToken: ct);
 
-            var assetOutputPath = Path.Combine(Paths.OutputsFolder, destination);
+            var assetOutputPath = pathProvider.OutputPath / destination;
 
             ReadOnlyMemory<byte> assetBytes = assetStream.GetBuffer();
 
-            await File.WriteAllBytesAsync(assetOutputPath, assetBytes, ct);
+            await File.WriteAllBytesAsync(assetOutputPath.Path, assetBytes, ct);
 
             logger.LogDebug("Wrote asset '{MeshOutputPath} with '{SizeInBytes}' bytes of data.", assetOutputPath,
                 assetBytes.Length);

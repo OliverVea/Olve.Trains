@@ -2,7 +2,7 @@
   "descriptionHash": "F32150B2D24EA8BFD019D817D409B344F23FAF88089C828BDAA99DA198AA83186DC3D12FEE417FAD8EEEF7B7F9751637491F0ECBF4E4A93E0D64218292C5263E",
   "descriptionLocation": "../../../../Olve.Engine3D.DebugServer.Host/api-spec.json",
   "lockFileVersion": "1.0.0",
-  "kiotaVersion": "1.27.0",
+  "kiotaVersion": "1.28.0",
   "clientClassName": "ApiClient",
   "typeAccessModifier": "Public",
   "clientNamespaceName": "Olve.Trains.ApiClient",

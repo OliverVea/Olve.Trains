@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "vite --config src/frontend/vite.config.ts",
     "build": "vite build --config src/frontend/vite.config.ts",
-    "apigen": "dotnet build src/Olve.Engine3D.DebugServer.Host/Olve.Engine3D.DebugServer.Host.csproj -p:OpenApiGenerateDocuments=true && kiota generate --language TypeScript -d src/Olve.Engine3D.DebugServer.Host/api-spec.json -o src/frontend/src/generated/api --class-name ApiClient --namespace-name Olve.Trains.ApiClient"
+    "apigen": "dotnet build src/Olve.Engine3D.DebugServer.Host/Olve.Engine3D.DebugServer.Host.csproj -p:OpenApiGenerateDocuments=true && dotnet tool run kiota generate --language TypeScript -d src/Olve.Engine3D.DebugServer.Host/api-spec.json -o src/frontend/src/generated/api --class-name ApiClient --namespace-name Olve.Trains.ApiClient"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",

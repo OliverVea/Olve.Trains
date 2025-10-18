@@ -5,7 +5,7 @@ using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
-public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, MeshFileReader meshFileReader, AssetWriter assetWriter, TemplateWriter templateWriter) :  IAsyncOperation<ProcessMeshAssets.Request, IReadOnlyList<Asset<MeshData>>>
+public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, NamespaceProvider namespaceProvider, PathProvider pathProvider, MeshFileReader meshFileReader, AssetWriter assetWriter, TemplateWriter templateWriter) :  IAsyncOperation<ProcessMeshAssets.Request, IReadOnlyList<Asset<MeshData>>>
 {
     public record Request(IReadOnlyList<FileInfo> AssetFiles);
 
@@ -13,7 +13,7 @@ public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, MeshFileReader
     {
         logger.LogDebug("Processing mesh assets");
 
-        Directory.CreateDirectory(Paths.MeshesOutputFolder);
+        pathProvider.MeshesOutputFolder.EnsurePathExists();
 
         var meshesResult = meshFileReader.LoadMeshes(request.AssetFiles);
         if (meshesResult.TryPickProblems(out var problems, out var meshAssets))
@@ -30,9 +30,9 @@ public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, MeshFileReader
             }
         }
 
-        var templateOutputPath = Path.Combine(Paths.MeshesOutputFolder, "Meshes.cs");
+        var templateOutputPath = pathProvider.MeshesOutputFolder / "Meshes.cs";
 
-        var templateResult = await templateWriter.WriteTemplateAsync("Meshes", meshAssets, templateOutputPath, ct);
+        var templateResult = await templateWriter.WriteTemplateAsync("Meshes", namespaceProvider.MeshNamespace, meshAssets, templateOutputPath, ct);
         if (templateResult.TryPickProblems(out var templateProblems))
         {
             return templateProblems.Prepend("Failed to write template");

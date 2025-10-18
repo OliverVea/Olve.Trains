@@ -5,7 +5,7 @@ using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
-public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, TerrainFileReader terrainFileReader, AssetWriter assetWriter, TemplateWriter templateWriter) :  IAsyncOperation<ProcessTerrainAssets.Request, IReadOnlyList<Asset<TerrainData>>>
+public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, NamespaceProvider namespaceProvider, PathProvider pathProvider, TerrainFileReader terrainFileReader, AssetWriter assetWriter, TemplateWriter templateWriter) :  IAsyncOperation<ProcessTerrainAssets.Request, IReadOnlyList<Asset<TerrainData>>>
 {
     public record Request(IReadOnlyList<FileInfo> AssetFiles);
 
@@ -13,7 +13,7 @@ public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, TerrainF
     {
         logger.LogDebug("Processing terrain assets");
 
-        Directory.CreateDirectory(Paths.TerrainsOutputFolder);
+        pathProvider.TerrainsOutputFolder.EnsurePathExists();
 
         var terrainsResult = terrainFileReader.LoadAssets(request.AssetFiles);
         if (terrainsResult.TryPickProblems(out var problems, out var terrainAssets))
@@ -30,9 +30,9 @@ public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, TerrainF
             }
         }
 
-        var templateOutputPath = Path.Combine(Paths.TerrainsOutputFolder, "Terrains.cs");
+        var templateOutputPath = pathProvider.TerrainsOutputFolder / "Terrains.cs";
 
-        var templateResult = await templateWriter.WriteTemplateAsync("Terrains", terrainAssets, templateOutputPath, ct);
+        var templateResult = await templateWriter.WriteTemplateAsync("Terrains", namespaceProvider.TerrainNamespace, terrainAssets, templateOutputPath, ct);
         if (templateResult.TryPickProblems(out var templateProblems))
         {
             return templateProblems.Prepend("Failed to write template");

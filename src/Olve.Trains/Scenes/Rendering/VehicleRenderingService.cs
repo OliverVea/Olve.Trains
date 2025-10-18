@@ -1,4 +1,4 @@
-﻿using Olve.CodeGen;
+﻿using Olve.Generated;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
@@ -8,6 +8,9 @@ using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
+using Olve.Generated.Meshes;
+using Olve.Generated.Shaders;
+using Olve.Generated.Textures;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.Light;
 using Olve.Trains.Scenes.Game.Tracks;
@@ -36,7 +39,7 @@ public class VehicleRenderingService(
     private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = new(vehicleService.OnRemoved);
     private readonly Shaders.Default _shader = new();
     private float _scale = 1;
-    
+
     private Result<Texture2D> LoadTexture(AssetPath<TextureData> texturePath) => RenderingServiceHelper.LoadTexture(texturePath, textureEntityManager);
     private Result LoadShader(IShader shader) => RenderingServiceHelper.LoadShader(shader, shaderEntityManager);
 
@@ -58,20 +61,20 @@ public class VehicleRenderingService(
         {
             return problems.Prepend("Failed to load mesh");
         }
-        
+
         var meshRegistrationResult = meshEntityManager.Register(meshData);
         if (meshRegistrationResult.TryPickProblems(out problems, out var meshRenderingId))
         {
             return problems.Prepend("Failed to register mesh");
         }
-        
+
         AABB aabbTarget = new(Vector3D<float>.Zero, Vector3D<float>.One);
         var scaleResult = AABBHelper.GetUniformScaleToFitInside(meshData, aabbTarget);
         if (scaleResult.TryPickProblems(out problems, out _scale))
         {
             return problems.Prepend("Failed to compute scale");
         }
-        
+
         MeshRenderingId = meshRenderingId;
 
         _toAddQueue.SetHandler(AddVehicle).Init();
@@ -94,13 +97,13 @@ public class VehicleRenderingService(
         {
             return new ResultProblem("Tried to add vehicle with id '{0}' twice.", vehicleId);
         }
-        
+
         var registerInstanceResult = renderingManager3D.RegisterInstance(MeshRenderingId, _shader.RenderingId, new Matrix4X4<float>());
         if (registerInstanceResult.TryPickProblems(out var problems, out var meshRenderingId))
         {
             return problems.Prepend("Failed to add vehicle");
         }
-        
+
         _instanceIds[vehicleId] = meshRenderingId;
         return Result.Success();
     }
@@ -120,7 +123,7 @@ public class VehicleRenderingService(
     {
         _toAddQueue.Update();
         _toRemoveQueue.Update();
-        
+
         foreach (var (vehicleId, trackPosition) in vehiclePositionService.TrackPositions)
         {
             if (!_instanceIds.TryGetValue(vehicleId, out var instanceId))
@@ -129,7 +132,7 @@ public class VehicleRenderingService(
                 AddVehicle(vehicleId);
                 continue;
             }
-            
+
             if (trackSplineService.GetPosition(trackPosition.TrackId, trackPosition.Time).TryPickProblems(out var problems, out var position))
             {
                 return problems.Prepend("Failed to sample point with t '{0}' on track with id '{1}' for vehicle with id '{2}'", trackPosition.Time, trackPosition.TrackId, vehicleId);
@@ -140,12 +143,12 @@ public class VehicleRenderingService(
             {
                 worldMatrix *= Matrix4X4.CreateRotationY(float.Pi);
             }
-                              
+
             worldMatrix *= position.ToMatrix4X4();
-            
+
             renderingManager3D.SetInstanceWorld(instanceId, worldMatrix);
         }
-        
+
         return Result.Success();
     }
 
@@ -154,7 +157,7 @@ public class VehicleRenderingService(
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
         sceneLightService.ApplyShaderParameters(_shader);
-        
+
         return renderingManager3D.Render(_shader);
     }
 }

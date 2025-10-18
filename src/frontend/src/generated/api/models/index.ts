@@ -78,6 +78,7 @@ export function createRunCommandRequestFromDiscriminatorValue(parseNode: ParseNo
 }
 /**
  * The deserialization information for the current model
+ * @param Exception The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
 // @ts-ignore
@@ -95,6 +96,7 @@ export function deserializeIntoException(exception: Partial<Exception> | undefin
 }
 /**
  * The deserialization information for the current model
+ * @param Exception_data The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
 // @ts-ignore
@@ -104,6 +106,7 @@ export function deserializeIntoException_data(exception_data: Partial<Exception_
 }
 /**
  * The deserialization information for the current model
+ * @param GetLogsRequest The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
 // @ts-ignore
@@ -117,6 +120,7 @@ export function deserializeIntoGetLogsRequest(getLogsRequest: Partial<GetLogsReq
 }
 /**
  * The deserialization information for the current model
+ * @param GetLogsResponse The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
 // @ts-ignore
@@ -127,6 +131,7 @@ export function deserializeIntoGetLogsResponse(getLogsResponse: Partial<GetLogsR
 }
 /**
  * The deserialization information for the current model
+ * @param LogMessage The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
 // @ts-ignore
@@ -142,6 +147,7 @@ export function deserializeIntoLogMessage(logMessage: Partial<LogMessage> | unde
 }
 /**
  * The deserialization information for the current model
+ * @param ProblemOriginInformation The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
 // @ts-ignore
@@ -154,6 +160,7 @@ export function deserializeIntoProblemOriginInformation(problemOriginInformation
 }
 /**
  * The deserialization information for the current model
+ * @param ResultProblem The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
 // @ts-ignore
@@ -170,6 +177,7 @@ export function deserializeIntoResultProblem(resultProblem: Partial<ResultProble
 }
 /**
  * The deserialization information for the current model
+ * @param RunCommandRequest The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
 // @ts-ignore
@@ -180,10 +188,6 @@ export function deserializeIntoRunCommandRequest(runCommandRequest: Partial<RunC
     }
 }
 export interface Exception extends AdditionalDataHolder, Parsable {
-    /**
-     * Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
-     */
-    additionalData?: Record<string, unknown>;
     /**
      * The data property
      */
@@ -218,16 +222,8 @@ export interface Exception extends AdditionalDataHolder, Parsable {
     targetSite?: UntypedNode | null;
 }
 export interface Exception_data extends AdditionalDataHolder, Parsable {
-    /**
-     * Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
-     */
-    additionalData?: Record<string, unknown>;
 }
 export interface GetLogsRequest extends AdditionalDataHolder, Parsable {
-    /**
-     * Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
-     */
-    additionalData?: Record<string, unknown>;
     /**
      * The count property
      */
@@ -247,20 +243,12 @@ export interface GetLogsRequest extends AdditionalDataHolder, Parsable {
 }
 export interface GetLogsResponse extends AdditionalDataHolder, Parsable {
     /**
-     * Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
-     */
-    additionalData?: Record<string, unknown>;
-    /**
      * The messages property
      */
     messages?: LogMessage[] | null;
 }
 export type LogLevel = (typeof LogLevelObject)[keyof typeof LogLevelObject];
 export interface LogMessage extends AdditionalDataHolder, Parsable {
-    /**
-     * Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
-     */
-    additionalData?: Record<string, unknown>;
     /**
      * The level property
      */
@@ -288,10 +276,6 @@ export interface LogMessage extends AdditionalDataHolder, Parsable {
 }
 export interface ProblemOriginInformation extends AdditionalDataHolder, Parsable {
     /**
-     * Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
-     */
-    additionalData?: Record<string, unknown>;
-    /**
      * The filePath property
      */
     filePath?: UntypedNode | null;
@@ -305,10 +289,6 @@ export interface ProblemOriginInformation extends AdditionalDataHolder, Parsable
     linkString?: string | null;
 }
 export interface ResultProblem extends AdditionalDataHolder, ApiError, Parsable {
-    /**
-     * Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
-     */
-    additionalData?: Record<string, unknown>;
     /**
      * The args property
      */
@@ -340,10 +320,6 @@ export interface ResultProblem extends AdditionalDataHolder, ApiError, Parsable 
 }
 export interface RunCommandRequest extends AdditionalDataHolder, Parsable {
     /**
-     * Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
-     */
-    additionalData?: Record<string, unknown>;
-    /**
      * The command property
      */
     command?: string | null;
@@ -354,114 +330,122 @@ export interface RunCommandRequest extends AdditionalDataHolder, Parsable {
 }
 /**
  * Serializes information the current object
+ * @param Exception The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
  */
 // @ts-ignore
-export function serializeException(writer: SerializationWriter, exception: Partial<Exception> | undefined | null = {}) : void {
-    if (exception) {
-        writer.writeObjectValue<Exception_data>("data", exception.data, serializeException_data);
-        writer.writeStringValue("helpLink", exception.helpLink);
-        writer.writeNumberValue("hResult", exception.hResult);
-        writer.writeObjectValue<Exception>("innerException", exception.innerException, serializeException);
-        writer.writeStringValue("message", exception.message);
-        writer.writeStringValue("source", exception.source);
-        writer.writeStringValue("stackTrace", exception.stackTrace);
-        writer.writeObjectValue("targetSite", exception.targetSite);
-        writer.writeAdditionalData(exception.additionalData);
-    }
+export function serializeException(writer: SerializationWriter, exception: Partial<Exception> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!exception || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<Exception_data>("data", exception.data, serializeException_data);
+    writer.writeStringValue("helpLink", exception.helpLink);
+    writer.writeNumberValue("hResult", exception.hResult);
+    writer.writeObjectValue<Exception>("innerException", exception.innerException, serializeException);
+    writer.writeStringValue("message", exception.message);
+    writer.writeStringValue("source", exception.source);
+    writer.writeStringValue("stackTrace", exception.stackTrace);
+    writer.writeObjectValue("targetSite", exception.targetSite);
+    writer.writeAdditionalData(exception.additionalData);
 }
 /**
  * Serializes information the current object
+ * @param Exception_data The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
  */
 // @ts-ignore
-export function serializeException_data(writer: SerializationWriter, exception_data: Partial<Exception_data> | undefined | null = {}) : void {
-    if (exception_data) {
-        writer.writeAdditionalData(exception_data.additionalData);
-    }
+export function serializeException_data(writer: SerializationWriter, exception_data: Partial<Exception_data> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!exception_data || isSerializingDerivedType) { return; }
+    writer.writeAdditionalData(exception_data.additionalData);
 }
 /**
  * Serializes information the current object
+ * @param GetLogsRequest The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
  */
 // @ts-ignore
-export function serializeGetLogsRequest(writer: SerializationWriter, getLogsRequest: Partial<GetLogsRequest> | undefined | null = {}) : void {
-    if (getLogsRequest) {
-        writer.writeNumberValue("count", getLogsRequest.count);
-        writer.writeEnumValue<LogLevel>("logLevel", getLogsRequest.logLevel);
-        writer.writeStringValue("query", getLogsRequest.query);
-        writer.writeDateValue("since", getLogsRequest.since);
-        writer.writeAdditionalData(getLogsRequest.additionalData);
-    }
+export function serializeGetLogsRequest(writer: SerializationWriter, getLogsRequest: Partial<GetLogsRequest> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!getLogsRequest || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("count", getLogsRequest.count);
+    writer.writeEnumValue<LogLevel>("logLevel", getLogsRequest.logLevel);
+    writer.writeStringValue("query", getLogsRequest.query);
+    writer.writeDateValue("since", getLogsRequest.since);
+    writer.writeAdditionalData(getLogsRequest.additionalData);
 }
 /**
  * Serializes information the current object
+ * @param GetLogsResponse The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
  */
 // @ts-ignore
-export function serializeGetLogsResponse(writer: SerializationWriter, getLogsResponse: Partial<GetLogsResponse> | undefined | null = {}) : void {
-    if (getLogsResponse) {
-        writer.writeCollectionOfObjectValues<LogMessage>("messages", getLogsResponse.messages, serializeLogMessage);
-        writer.writeAdditionalData(getLogsResponse.additionalData);
-    }
+export function serializeGetLogsResponse(writer: SerializationWriter, getLogsResponse: Partial<GetLogsResponse> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!getLogsResponse || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<LogMessage>("messages", getLogsResponse.messages, serializeLogMessage);
+    writer.writeAdditionalData(getLogsResponse.additionalData);
 }
 /**
  * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LogMessage The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
 // @ts-ignore
-export function serializeLogMessage(writer: SerializationWriter, logMessage: Partial<LogMessage> | undefined | null = {}) : void {
-    if (logMessage) {
-        writer.writeEnumValue<LogLevel>("level", logMessage.level);
-        writer.writeStringValue("message", logMessage.message);
-        writer.writeNumberValue("sourceLine", logMessage.sourceLine);
-        writer.writeObjectValue("sourcePath", logMessage.sourcePath);
-        writer.writeCollectionOfPrimitiveValues<string>("tags", logMessage.tags);
-        writer.writeDateValue("time", logMessage.time);
-        writer.writeAdditionalData(logMessage.additionalData);
-    }
+export function serializeLogMessage(writer: SerializationWriter, logMessage: Partial<LogMessage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!logMessage || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<LogLevel>("level", logMessage.level);
+    writer.writeStringValue("message", logMessage.message);
+    writer.writeNumberValue("sourceLine", logMessage.sourceLine);
+    writer.writeObjectValue("sourcePath", logMessage.sourcePath);
+    writer.writeCollectionOfPrimitiveValues<string>("tags", logMessage.tags);
+    writer.writeDateValue("time", logMessage.time);
+    writer.writeAdditionalData(logMessage.additionalData);
 }
 /**
  * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ProblemOriginInformation The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
 // @ts-ignore
-export function serializeProblemOriginInformation(writer: SerializationWriter, problemOriginInformation: Partial<ProblemOriginInformation> | undefined | null = {}) : void {
-    if (problemOriginInformation) {
-        writer.writeObjectValue("filePath", problemOriginInformation.filePath);
-        writer.writeNumberValue("lineNumber", problemOriginInformation.lineNumber);
-        writer.writeStringValue("linkString", problemOriginInformation.linkString);
-        writer.writeAdditionalData(problemOriginInformation.additionalData);
-    }
+export function serializeProblemOriginInformation(writer: SerializationWriter, problemOriginInformation: Partial<ProblemOriginInformation> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!problemOriginInformation || isSerializingDerivedType) { return; }
+    writer.writeObjectValue("filePath", problemOriginInformation.filePath);
+    writer.writeNumberValue("lineNumber", problemOriginInformation.lineNumber);
+    writer.writeStringValue("linkString", problemOriginInformation.linkString);
+    writer.writeAdditionalData(problemOriginInformation.additionalData);
 }
 /**
  * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ResultProblem The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
 // @ts-ignore
-export function serializeResultProblem(writer: SerializationWriter, resultProblem: Partial<ResultProblem> | undefined | null = {}) : void {
-    if (resultProblem) {
-        writer.writeObjectValue("args", resultProblem.args);
-        writer.writeObjectValue<Exception>("exception", resultProblem.exception, serializeException);
-        writer.writeStringValue("message", resultProblem.messageEscaped);
-        writer.writeObjectValue<ProblemOriginInformation>("originInformation", resultProblem.originInformation, serializeProblemOriginInformation);
-        writer.writeNumberValue("severity", resultProblem.severity);
-        writer.writeStringValue("source", resultProblem.source);
-        writer.writeCollectionOfPrimitiveValues<string>("tags", resultProblem.tags);
-        writer.writeAdditionalData(resultProblem.additionalData);
-    }
+export function serializeResultProblem(writer: SerializationWriter, resultProblem: Partial<ResultProblem> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!resultProblem || isSerializingDerivedType) { return; }
+    writer.writeObjectValue("args", resultProblem.args);
+    writer.writeObjectValue<Exception>("exception", resultProblem.exception, serializeException);
+    writer.writeStringValue("message", resultProblem.messageEscaped);
+    writer.writeObjectValue<ProblemOriginInformation>("originInformation", resultProblem.originInformation, serializeProblemOriginInformation);
+    writer.writeNumberValue("severity", resultProblem.severity);
+    writer.writeStringValue("source", resultProblem.source);
+    writer.writeCollectionOfPrimitiveValues<string>("tags", resultProblem.tags);
+    writer.writeAdditionalData(resultProblem.additionalData);
 }
 /**
  * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param RunCommandRequest The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
 // @ts-ignore
-export function serializeRunCommandRequest(writer: SerializationWriter, runCommandRequest: Partial<RunCommandRequest> | undefined | null = {}) : void {
-    if (runCommandRequest) {
-        writer.writeStringValue("command", runCommandRequest.command);
-        writer.writeNumberValue("times", runCommandRequest.times);
-        writer.writeAdditionalData(runCommandRequest.additionalData);
-    }
+export function serializeRunCommandRequest(writer: SerializationWriter, runCommandRequest: Partial<RunCommandRequest> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!runCommandRequest || isSerializingDerivedType) { return; }
+    writer.writeStringValue("command", runCommandRequest.command);
+    writer.writeNumberValue("times", runCommandRequest.times);
+    writer.writeAdditionalData(runCommandRequest.additionalData);
 }
 export const LogLevelObject = {
     None: "None",

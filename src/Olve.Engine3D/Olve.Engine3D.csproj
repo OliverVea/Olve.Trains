@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
         <PackageReference Include="BigGustave" />
-        <PackageReference Include="Facebook.Yoga" />
         <PackageReference Include="Jab" />
         <PackageReference Include="MemoryPack" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
@@ -20,7 +19,7 @@
         <PackageReference Include="StrictId" />
         <PackageReference Include="System.Drawing.Common" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <ProjectReference Include="../Olve.Engine3D.DebugServer/Olve.Engine3D.DebugServer.csproj"/>
     </ItemGroup>

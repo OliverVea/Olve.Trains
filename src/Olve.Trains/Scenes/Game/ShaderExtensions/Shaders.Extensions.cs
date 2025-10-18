@@ -1,7 +1,7 @@
 ﻿using Olve.Trains.Scenes.Game.ShaderExtensions;
 
 // ReSharper disable once CheckNamespace
-namespace Olve.CodeGen;
+namespace Olve.Generated.Shaders;
 
 public partial class Shaders
 {
