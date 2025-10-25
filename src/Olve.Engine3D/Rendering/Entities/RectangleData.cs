@@ -5,15 +5,26 @@ namespace Olve.Engine3D.Rendering.Entities;
 [MemoryPackable]
 public partial class RectangleData
 {
-    public required Vector2D<float> PositionPx { get; set; }
-    public required Vector2D<float> SizePx { get; set; }    
-    public required Vector4D<float> ColorRgba { get; set; } 
-    public float Depth { get; set; } = 0f;                  
+    public static readonly RectangleData Default = new()
+    {
+        ColorRgba = Vector4D<float>.Zero,
+        PositionPx = Vector2D<float>.Zero,
+        SizePx = Vector2D<float>.Zero,
+        BorderColorRgba = Vector4D<float>.Zero,
+        BorderPx = 0,
+        CornerRadiusPx = 0,
+        Depth = 0
+    };
 
-    // TODO 
-    public float CornerRadiusPx { get; set; } = 0f;         
-    public float BorderPx { get; set; } = 0f;               
-    public Vector4D<float>? BorderColorRgba { get; set; }   
+    public required Vector2D<float> PositionPx { get; set; }
+    public required Vector2D<float> SizePx { get; set; }
+    public required Vector4D<float> ColorRgba { get; set; }
+    public float Depth { get; set; } = 0f;
+
+    // TODO
+    public float CornerRadiusPx { get; set; } = 0f;
+    public float BorderPx { get; set; } = 0f;
+    public Vector4D<float>? BorderColorRgba { get; set; }
 
     public Result Validate()
     {
@@ -29,6 +40,6 @@ public partial class RectangleData
 
         return Result.Success();
 
-        static bool Is01(float v) => v >= 0f && v <= 1f;
+        static bool Is01(float v) => v is >= 0f and <= 1f;
     }
 }

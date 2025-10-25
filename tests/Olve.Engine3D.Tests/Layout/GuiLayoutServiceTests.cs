@@ -7,7 +7,7 @@ using Silk.NET.Maths;
 
 namespace Olve.Engine3D.Tests.Layout;
 
-public class GuiElementLayoutServiceTests
+public class GuiLayoutServiceTests
 {
     private static readonly LayoutContext DefaultContext = new()
     {
@@ -19,14 +19,14 @@ public class GuiElementLayoutServiceTests
 
     private static readonly Id<GuiAnchor> DefaultAnchorId = Id.New<GuiAnchor>();
 
-    private static (InMemoryLoggingManager, GuiElementService, Provider<LayoutContext>, GuiElementLayoutService) BuildSut(LayoutContext? layoutContext = null)
+    private static (InMemoryLoggingManager, GuiNodeService, Provider<LayoutContext>, GuiLayoutService) BuildSut(LayoutContext? layoutContext = null)
     {
         InMemoryLoggingManager loggingManager = new ();
-        GuiElementService guiElementService = new(loggingManager);
+        GuiNodeService guiNodeService = new(loggingManager);
         Provider<LayoutContext> layoutContextProvider = new(layoutContext ?? DefaultContext);
-        GuiElementLayoutService guiElementLayoutService = new(loggingManager, guiElementService, layoutContextProvider);
+        GuiLayoutService guiLayoutService = new(loggingManager, guiNodeService, layoutContextProvider);
 
-        return (loggingManager, guiElementService, layoutContextProvider, guiElementLayoutService);
+        return (loggingManager, guiNodeService, layoutContextProvider, guiLayoutService);
     }
 
     [Test, NotInParallel]
@@ -38,28 +38,28 @@ public class GuiElementLayoutServiceTests
     }
 
     [Test, NotInParallel]
-    [MethodDataSource(typeof(GuiElementLayoutServiceTestData),
-        nameof(GuiElementLayoutServiceTestData.AdditionTestData))]
+    [MethodDataSource(typeof(GuiLayoutServiceTestData),
+        nameof(GuiLayoutServiceTestData.AdditionTestData))]
     public async Task NestedWidthTest(string testName,
-        GuiElementBox parent,
+        LayoutBox parent,
         Vector2D<Px> expectedParentSize,
-        IReadOnlyCollection<GuiElementBox> children,
+        IReadOnlyCollection<LayoutBox> children,
         IReadOnlyCollection<Vector2D<Px>> expectedChildrenSizes)
     {
         // Arrange
-        var (_, guiElementService, _, sut) = BuildSut();
+        var (_, guiNodeService, _, sut) = BuildSut();
 
-        var parentResult = guiElementService.AddGuiElement("Parent", DefaultAnchorId);
+        var parentResult = guiNodeService.AddNode("Parent", DefaultAnchorId);
         await Assert.That(parentResult).Succeeded();
         var parentId = parentResult.Value;
         sut.CreateOrSetElementBox(parentId, parent);
 
-        var childIds = new Id<GuiElement>[children.Count];
+        var childIds = new Id<GuiNode>[children.Count];
 
         var i = 0;
         foreach (var child in children)
         {
-            var childResult = guiElementService.AddGuiElement("Child_" + (i + 1), parentId);
+            var childResult = guiNodeService.AddNode("Child_" + (i + 1), parentId);
             await Assert.That(childResult).Succeeded();
             sut.CreateOrSetElementBox(childResult.Value, child);
 
@@ -95,35 +95,35 @@ public class GuiElementLayoutServiceTests
         // Create the tree
         var anchorId = DefaultAnchorId; // Parent anchored to root anchor
 
-        var parentId = await ge.AddGuiElement("Parent", anchorId).AssertSuccessAndGetAsync();
+        var parentId = await ge.AddNode("Parent", anchorId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(parentId, Box(UIAxis.X, prefW: 600, prefH: 300)); // 600x300 parent
 
         // Left panel (fixed W=200, fills height=300 via parent)
-        var leftPanelId = await ge.AddGuiElement("LeftPanel", parentId).AssertSuccessAndGetAsync();
+        var leftPanelId = await ge.AddNode("LeftPanel", parentId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(leftPanelId, Box(UIAxis.Y, prefW: 200)); // width 200, vertical stack
 
         // Top row inside left panel (200x100)
-        var topRowId = await ge.AddGuiElement("TopRow", leftPanelId).AssertSuccessAndGetAsync();
+        var topRowId = await ge.AddNode("TopRow", leftPanelId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(topRowId, Box(UIAxis.X, prefW: 200, prefH: 100));
 
-        var leaf1Id = await ge.AddGuiElement("Leaf1", topRowId).AssertSuccessAndGetAsync();
+        var leaf1Id = await ge.AddNode("Leaf1", topRowId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(leaf1Id, Box(prefW: 100, prefH: 100));
 
-        var leaf2Id = await ge.AddGuiElement("Leaf2", topRowId).AssertSuccessAndGetAsync();
+        var leaf2Id = await ge.AddNode("Leaf2", topRowId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(leaf2Id, Box(prefW: 100, prefH: 100));
 
         // Bottom box inside left panel (200x200)
-        var bottomBoxId = await ge.AddGuiElement("BottomBox", leftPanelId).AssertSuccessAndGetAsync();
+        var bottomBoxId = await ge.AddNode("BottomBox", leftPanelId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(bottomBoxId, Box(prefW: 200, prefH: 200));
 
         // Right panel (takes remaining width 400, fills height 300)
-        var rightPanelId = await ge.AddGuiElement("RightPanel", parentId).AssertSuccessAndGetAsync();
+        var rightPanelId = await ge.AddNode("RightPanel", parentId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(rightPanelId, Box(UIAxis.X, weight: 1f)); // width determined by leftover
 
-        var grow1Id = await ge.AddGuiElement("Grow1", rightPanelId).AssertSuccessAndGetAsync();
+        var grow1Id = await ge.AddNode("Grow1", rightPanelId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(grow1Id, Box(weight: 1f));
 
-        var grow2Id = await ge.AddGuiElement("Grow2", rightPanelId).AssertSuccessAndGetAsync();
+        var grow2Id = await ge.AddNode("Grow2", rightPanelId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(grow2Id, Box(weight: 1f));
 
         // Act
@@ -191,12 +191,12 @@ public class GuiElementLayoutServiceTests
         await Assert.That(g2.Size.Y.Value).IsEqualTo(300);
         await Assert.That(g2.Position.X.Value).IsEqualTo(400);
         await Assert.That(g2.Position.Y.Value).IsEqualTo(0);
-        
+
         return;
     }
-    
+
     // Helper to reduce noise
-    private static GuiElementBox Box(UIAxis axis = UIAxis.X, Dp? prefW = null, Dp? prefH = null, float weight = 0f) => new()
+    private static LayoutBox Box(UIAxis axis = UIAxis.X, Dp? prefW = null, Dp? prefH = null, float weight = 0f) => new()
     {
         LayoutAxis = axis,
         Size = new SizeSpec

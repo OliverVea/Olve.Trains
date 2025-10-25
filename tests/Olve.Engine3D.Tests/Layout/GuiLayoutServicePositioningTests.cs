@@ -7,7 +7,7 @@ using Silk.NET.Maths;
 
 namespace Olve.Engine3D.Tests.Layout;
 
-public class GuiElementLayoutServicePositioningTests
+public class GuiLayoutServicePositioningTests
 {
     private static readonly LayoutContext DefaultContext = new()
     {
@@ -19,19 +19,19 @@ public class GuiElementLayoutServicePositioningTests
 
     private static readonly Id<GuiAnchor> DefaultAnchorId = Id.New<GuiAnchor>();
 
-    private static GuiElementLayoutService BuildSut(
+    private static GuiLayoutService BuildSut(
         InMemoryLoggingManager? logging = null,
-        GuiElementService? ge = null,
+        GuiNodeService? ge = null,
         LayoutContext? ctx = null)
     {
         var log = logging ?? new InMemoryLoggingManager();
-        var svc = ge ?? new GuiElementService(log);
+        var svc = ge ?? new GuiNodeService(log);
         Provider<LayoutContext> lcp = new(ctx ?? DefaultContext);
-        return new GuiElementLayoutService(log, svc, lcp);
+        return new GuiLayoutService(log, svc, lcp);
     }
 
     // Shorthand for creating boxes
-    private static GuiElementBox Box(
+    private static LayoutBox Box(
         UIAxis axis = UIAxis.X,
         Dp? prefW = null,
         Dp? prefH = null,
@@ -55,13 +55,13 @@ public class GuiElementLayoutServicePositioningTests
     {
         // Arrange
         var logging = new InMemoryLoggingManager();
-        var ge = new GuiElementService(logging);
+        var ge = new GuiNodeService(logging);
         var sut = BuildSut(logging, ge);
 
-        var parentId = await ge.AddGuiElement("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
+        var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(parentId, Box(prefW: 300, prefH: 100)); // parent 300x100
 
-        var childId = await ge.AddGuiElement("Child", parentId).AssertSuccessAndGetAsync();
+        var childId = await ge.AddNode("Child", parentId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(childId, Box(prefW: 100, prefH: 100));  // child 100x100
 
         // Act
@@ -87,14 +87,14 @@ public class GuiElementLayoutServicePositioningTests
     {
         // Arrange
         var logging = new InMemoryLoggingManager();
-        var ge = new GuiElementService(logging);
+        var ge = new GuiNodeService(logging);
         var sut = BuildSut(logging, ge);
 
-        var parentId = await ge.AddGuiElement("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
+        var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(parentId, Box(prefW: 300, prefH: 100)); // 300x100
 
-        var c1 = await ge.AddGuiElement("C1", parentId).AssertSuccessAndGetAsync();
-        var c2 = await ge.AddGuiElement("C2", parentId).AssertSuccessAndGetAsync();
+        var c1 = await ge.AddNode("C1", parentId).AssertSuccessAndGetAsync();
+        var c2 = await ge.AddNode("C2", parentId).AssertSuccessAndGetAsync();
 
         sut.CreateOrSetElementBox(c1, Box(prefW: 120, prefH: 100));
         sut.CreateOrSetElementBox(c2, Box(prefW: 180, prefH: 100));
@@ -118,14 +118,14 @@ public class GuiElementLayoutServicePositioningTests
     {
         // Arrange
         var logging = new InMemoryLoggingManager();
-        var ge = new GuiElementService(logging);
+        var ge = new GuiNodeService(logging);
         var sut = BuildSut(logging, ge);
 
-        var parentId = await ge.AddGuiElement("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
+        var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(parentId, Box(axis: UIAxis.Y, prefW: 100, prefH: 300)); // vertical parent
 
-        var c1 = await ge.AddGuiElement("C1", parentId).AssertSuccessAndGetAsync();
-        var c2 = await ge.AddGuiElement("C2", parentId).AssertSuccessAndGetAsync();
+        var c1 = await ge.AddNode("C1", parentId).AssertSuccessAndGetAsync();
+        var c2 = await ge.AddNode("C2", parentId).AssertSuccessAndGetAsync();
 
         sut.CreateOrSetElementBox(c1, Box(prefW: 100, prefH: 120));
         sut.CreateOrSetElementBox(c2, Box(prefW: 100, prefH: 180));
@@ -149,14 +149,14 @@ public class GuiElementLayoutServicePositioningTests
     {
         // Arrange
         var logging = new InMemoryLoggingManager();
-        var ge = new GuiElementService(logging);
+        var ge = new GuiNodeService(logging);
         var sut = BuildSut(logging, ge);
 
-        var parentId = await ge.AddGuiElement("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
+        var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(parentId, Box(prefW: 600, prefH: 300));
 
-        var leftId  = await ge.AddGuiElement("Left",  parentId).AssertSuccessAndGetAsync();
-        var rightId = await ge.AddGuiElement("Right", parentId).AssertSuccessAndGetAsync();
+        var leftId  = await ge.AddNode("Left",  parentId).AssertSuccessAndGetAsync();
+        var rightId = await ge.AddNode("Right", parentId).AssertSuccessAndGetAsync();
 
         // left fixed width, full height (due to sizing pass cross-axis fill)
         sut.CreateOrSetElementBox(leftId, Box(axis: UIAxis.Y, prefW: 200, prefH: 180));
@@ -165,8 +165,8 @@ public class GuiElementLayoutServicePositioningTests
         sut.CreateOrSetElementBox(rightId, Box(weight: 1f));
 
         // Two children inside right; split space evenly (weights 1:1)
-        var r1 = await ge.AddGuiElement("R1", rightId).AssertSuccessAndGetAsync();
-        var r2 = await ge.AddGuiElement("R2", rightId).AssertSuccessAndGetAsync();
+        var r1 = await ge.AddNode("R1", rightId).AssertSuccessAndGetAsync();
+        var r2 = await ge.AddNode("R2", rightId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(r1, Box(weight: 1f));
         sut.CreateOrSetElementBox(r2, Box(weight: 1f));
 
@@ -215,14 +215,14 @@ public class GuiElementLayoutServicePositioningTests
     {
         // Arrange: parent has chrome (total) that reduces content area by 40x20 and shifts origin by 20x10
         var logging = new InMemoryLoggingManager();
-        var ge = new GuiElementService(logging);
+        var ge = new GuiNodeService(logging);
         var sut = BuildSut(logging, ge);
 
-        var parentId = await ge.AddGuiElement("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
+        var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(parentId, Box(prefW: 300, prefH: 200, horizontalChrome: new Dp(40), verticalChrome: new Dp(20)));
 
-        var c1 = await ge.AddGuiElement("C1", parentId).AssertSuccessAndGetAsync();
-        var c2 = await ge.AddGuiElement("C2", parentId).AssertSuccessAndGetAsync();
+        var c1 = await ge.AddNode("C1", parentId).AssertSuccessAndGetAsync();
+        var c2 = await ge.AddNode("C2", parentId).AssertSuccessAndGetAsync();
 
         sut.CreateOrSetElementBox(c1, Box(prefW: 100, prefH: 80));
         sut.CreateOrSetElementBox(c2, Box(prefW: 60,  prefH: 80));
@@ -246,10 +246,10 @@ public class GuiElementLayoutServicePositioningTests
     public async Task TryGetBoxPosition_Fails_Before_ComputeLayout()
     {
         var logging = new InMemoryLoggingManager();
-        var ge = new GuiElementService(logging);
+        var ge = new GuiNodeService(logging);
         var sut = BuildSut(logging, ge);
 
-        var parentId = await ge.AddGuiElement("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
+        var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.CreateOrSetElementBox(parentId, Box(prefW: 100, prefH: 50));
 
         var ok = sut.TryGetBoxPosition(parentId, out _);

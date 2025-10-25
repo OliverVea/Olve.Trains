@@ -6,7 +6,7 @@ namespace Olve.Engine3D.Rendering.OpenGL;
 
 public class OpenGLRectangleManager(
     Provider<GL> glProvider,
-    OpenGLQuadRenderingManager quadRenderingManager) // <-- inject the unit-quad owner
+    OpenGLQuadRenderingManager quadRenderingManager)
     : IOpenGLEntityManager<RectangleData, OpenGLRectangleManager.Registration>
 {
     // pos2, size2, color4, depth1, radius1, borderColor4
@@ -70,7 +70,7 @@ public class OpenGLRectangleManager(
         gl.BindVertexArray(0);
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
 
-        return new Registration(new VAO(vaoHandle), new VBO(instVboHandle, 1));
+        return new Registration(new VAO(vaoHandle), new VBO(instVboHandle, 6));
     }
 
     public Result Unregister(Registration r)

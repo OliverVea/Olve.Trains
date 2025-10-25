@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System.Security.Cryptography;
+using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
 using Olve.Paths;
@@ -16,6 +17,7 @@ public class ProcessLayouts(
     PathProvider pathProvider) : IAsyncOperation<ProcessLayouts.Request, ProcessLayouts.Response>
 {
     private static readonly string TemplateFileName = "LayoutClass.scriban";
+    private static readonly MD5 Md5 = MD5.Create();
 
     public record Request;
     public record Response(IReadOnlyList<IPath> GeneratedFiles);
@@ -76,6 +78,7 @@ public class ProcessLayouts(
                             .ToArray()
                     },
                     { "Id", node.Id.Id },
+                    { "ElementId", GetMd5Hash($"{className}/{node.TypeName}/{node.Id.Id}")},
                     {
                         "Properties", node
                             .Properties.Select(nodeProperty =>
@@ -146,7 +149,7 @@ public class ProcessLayouts(
         if (idProperty != default)
         {
             properties.Remove(idProperty);
-            nodeId = new(idProperty.Value, true);
+            nodeId = new NodeId(idProperty.Value, true);
         }
 
         var children = element
@@ -162,21 +165,20 @@ public class ProcessLayouts(
         return nodeId.Value;
     }
 
-    private static string ToPascalCase(string input)
+    private static uint GetMd5Hash(string s)
     {
-        if (string.IsNullOrWhiteSpace(input))
-            return input;
+        var bytes = System.Text.Encoding.UTF8.GetBytes(s);
 
-        var parts = input.Split(['-', '_', '.', ' '], StringSplitOptions.RemoveEmptyEntries);
-        var result = string.Concat(parts.Select(p => char.ToUpperInvariant(p[0]) + (p.Length > 1 ? p[1..] : string.Empty)));
-        return result;
-    }
+        byte[] hash;
+        lock (Md5) // MD5 instances are not thread-safe
+        {
+            hash = Md5.ComputeHash(bytes);
+        }
 
-    private static string ToCamelCase(string input)
-    {
-        if (string.IsNullOrEmpty(input))
-            return input;
-
-        return char.ToLowerInvariant(input[0]) + (input.Length > 1 ? input[1..] : string.Empty);
+        // Use first 4 bytes of the MD5 digest in big-endian order to be consistent across architectures
+        return ((uint)hash[0] << 24) |
+               ((uint)hash[1] << 16) |
+               ((uint)hash[2] << 8)  |
+               (uint)hash[3];
     }
 }

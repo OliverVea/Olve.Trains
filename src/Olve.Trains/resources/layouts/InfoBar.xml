@@ -1,3 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<Box Width="null" Height="50" Weight="1" BackgroundColor="(255, 255, 255)" >
+<Box id="BarBackground" Width="1920" Height="50" BackgroundColor="(0, 0, 0)" Alpha="0.3f" Padding="4" Gap="4">
+    <Box id="Red" Width="60"  BackgroundColor="(255, 0, 0)" />
+    <Box id="Green" Width="60" BackgroundColor="(0, 255, 0)" />
+    <Box id="Blue" Width="60" BackgroundColor="(0, 0, 255)" />
 </Box>

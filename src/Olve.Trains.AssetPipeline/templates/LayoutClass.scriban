@@ -4,19 +4,22 @@
 // |                                                                                                |
 // --------------------------------------------------------------------------------------------------
 // ReSharper disable InconsistentNaming
-using Olve.Trains.Scenes.UI.GUI;
+using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Layout;
 
 // ReSharper disable once CheckNamespace
 namespace {{ Namespace }};
 
 public static partial class Layouts
 {
-    public record {{ ClassName }}({{ FixedIdsDefinition }}IReadOnlyList<BaseGuiElement> Elements);
+    public record {{ ClassName }}({{ FixedIdsDefinition }}IReadOnlyList<GuiElement> Elements);
 
     public static {{ ClassName }} Build{{ ClassName }}()
     { {{ for node in Nodes }}
         var {{ node.Id }} = new {{ node.TypeName }}()
-        { {{ for property in node.Properties }}
+        {
+            Name = "{{node.Id}}",
+            Id = new Id<GuiElement>({{ node.ElementId }}),{{ for property in node.Properties }}
             {{ property.Name }} = {{ property.Value}},{{end}}
             Children = [{{ for child in node.Children }}
                 {{child}},{{end}}
