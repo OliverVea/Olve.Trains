@@ -169,17 +169,4 @@ public class GuiDepthService(GuiNodeService nodeService)
 
         return Result.Success();
     }
-
-    /// <summary>
-    /// Optional: call this before removing a node from GuiNodeService so we clear cache for that subtree.
-    /// </summary>
-    public void OnNodeRemoved(Id<GuiNode> rootBeingRemoved)
-    {
-        var descendants = nodeService.GetNodeAndDescendants(rootBeingRemoved);
-        foreach (var res in descendants)
-        {
-            if (res.TryPickProblems(out _, out var id)) continue;// or whatever helper you use to get the value
-            _depths.Remove(id);
-        }
-    }
 }

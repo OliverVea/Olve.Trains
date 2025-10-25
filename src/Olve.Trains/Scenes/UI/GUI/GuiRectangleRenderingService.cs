@@ -149,8 +149,9 @@ public class GuiRectangleRenderingService(ILoggingManager loggingManager,
             PositionPx = new Vector2D<float>(boxPosition.Position.X.Value, boxPosition.Position.Y.Value),
             SizePx = new Vector2D<float>(boxPosition.Size.X.Value, boxPosition.Size.Y.Value),
             ColorRgba = renderableAsRectangle.RectangleData.Color,
-            Depth = -depth / (float)100,
+            Depth = -depth
         };
+
         return true;
     }
 }

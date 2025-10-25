@@ -14,7 +14,7 @@ public class Box : GuiElement, IRenderableAsRectangle
     public float Alpha { get; set; } = 1f;
     public Justify Justify { get; set; } = Justify.Start;
     public Align Align { get; set; } = Align.Start;
-    public (byte R, byte G, byte B) BackgroundColor { get; set; }
+    public (float R, float G, float B)? BackgroundColor { get; set; }
 
     public override LayoutBox? LayoutBox => new LayoutBox()
     {
@@ -29,7 +29,7 @@ public class Box : GuiElement, IRenderableAsRectangle
 
     public IRenderableAsRectangle.Data RectangleData => new()
     {
-        Color = new Vector4D<float>(BackgroundColor.R / 255f,  BackgroundColor.G / 255f, BackgroundColor.B / 255f, Alpha),
+        Color = BackgroundColor is {} bg ? new Vector4D<float>(bg.R,  bg.G, bg.B, Alpha) : Vector4D<float>.Zero,
     };
 }
 
