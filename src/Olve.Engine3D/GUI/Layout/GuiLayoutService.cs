@@ -6,28 +6,28 @@ using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI.Layout;
 
-public class GuiElementLayoutService(
+public class GuiLayoutService(
     ILoggingManager loggingManager,
-    GuiElementService guiElementService,
-    Provider<LayoutContext> layoutContextProvider) : BaseEntityAuxiliaryService<GuiElement>(loggingManager, guiElementService)
+    GuiNodeService guiNodeService,
+    Provider<LayoutContext> layoutContextProvider) : BaseEntityAuxiliaryService<GuiNode>(loggingManager, guiNodeService)
 {
-    private readonly Dictionary<Id<GuiElement>, int> _guiElementIndexLookup = new();
+    private readonly Dictionary<Id<GuiNode>, int> _nodeIndexById = new();
 
     private readonly List<LayoutData> _layoutData = [];
     private LayoutContext LayoutContext => layoutContextProvider.Value;
 
-    protected override void OnAdded(Id<GuiElement> id)
+    protected override void OnAdded(Id<GuiNode> id)
     {
         var index = _layoutData.Count;
-        _guiElementIndexLookup.Add(id, index);
+        _nodeIndexById.Add(id, index);
         _layoutData.Add(new LayoutData(id));
     }
 
-    protected override void OnRemoved(Id<GuiElement> id)
+    protected override void OnRemoved(Id<GuiNode> id)
     {
-        if (!_guiElementIndexLookup.Remove(id, out var index))
+        if (!_nodeIndexById.Remove(id, out var index))
         {
-            LoggingManager.Log(LogLevel.Warning, $"GuiElement with id '{id}' and no layout element was removed");
+            LoggingManager.Log(LogLevel.Warning, $"GUI node with id '{id}' and no layout entry was removed");
             return;
         }
 
@@ -36,17 +36,16 @@ public class GuiElementLayoutService(
         {
             var moved = _layoutData[lastIdx];
             _layoutData[index] = moved;
-            _guiElementIndexLookup[moved.GuiElementId] = index;
+            _nodeIndexById[moved.NodeId] = index;
         }
 
         _layoutData[lastIdx] = default;
         _layoutData.RemoveAt(lastIdx);
-
     }
 
-    public bool TryGetBoxPosition(Id<GuiElement> guiElementId, out BoxPosition position)
+    public bool TryGetBoxPosition(Id<GuiNode> nodeId, out BoxPosition position)
     {
-        if (!_guiElementIndexLookup.TryGetValue(guiElementId, out var index))
+        if (!_nodeIndexById.TryGetValue(nodeId, out var index))
         {
             position = default;
             return false;
@@ -58,36 +57,36 @@ public class GuiElementLayoutService(
 
         if (!dpWidth.HasValue || !dpHeight.HasValue || !dpPosition.HasValue)
         {
-            LoggingManager.Log(LogLevel.Warning, $"Tried to get position from unpositioned element with id '{guiElementId}'");
+            LoggingManager.Log(LogLevel.Warning, $"Tried to get position from unpositioned node with id '{nodeId}'");
             position = default;
             return false;
-        }   
+        }
 
         var pxX = new Px((int)float.Round(dpPosition.Value.X.Value * LayoutContext.DpToPx));
         var pxY = new Px((int)float.Round(dpPosition.Value.Y.Value * LayoutContext.DpToPx));
-        Vector2D<Px> pxPosition =new(pxX, pxY);
-        
+        Vector2D<Px> pxPosition = new(pxX, pxY);
+
         var pxW = new Px((int)float.Round(dpWidth.Value.Value * LayoutContext.DpToPx));
         var pxH = new Px((int)float.Round(dpHeight.Value.Value * LayoutContext.DpToPx));
         Vector2D<Px> pxSize = new(pxW, pxH);
-        
+
         position = new BoxPosition(pxPosition, pxSize);
         return true;
     }
 
-
-    public void CreateOrSetElementBox(Id<GuiElement> guiElementId, GuiElementBox guiElementBox)
+    // Consider renaming to CreateOrSetBox and renaming LayoutBox → GuiBox in a future pass.
+    public void CreateOrSetNodeBox(Id<GuiNode> nodeId, LayoutBox layoutBox)
     {
-        if (!_guiElementIndexLookup.TryGetValue(guiElementId, out var index))
+        if (!_nodeIndexById.TryGetValue(nodeId, out var index))
         {
             index = _layoutData.Count;
-            _guiElementIndexLookup.Add(guiElementId, index);
-            _layoutData.Add(new LayoutData(guiElementId));
+            _nodeIndexById.Add(nodeId, index);
+            _layoutData.Add(new LayoutData(nodeId));
         }
 
         _layoutData[index] = _layoutData[index] with
         {
-            GuiElementBox = guiElementBox,
+            LayoutBox = layoutBox,
             Width = null,
             Height = null,
             Position = null
@@ -96,8 +95,8 @@ public class GuiElementLayoutService(
 
     public Result ComputeLayout()
     {
-        var rootElementIds = guiElementService.GetRootElements();
-        var results = rootElementIds.Select(ComputeLayoutFor);
+        var rootNodeIds = guiNodeService.GetRootNodes();
+        var results = rootNodeIds.Select(ComputeLayoutFor);
         if (results.TryPickProblems(out var problems))
         {
             return problems;
@@ -106,27 +105,27 @@ public class GuiElementLayoutService(
         return Result.Success();
     }
 
-    private Result ComputeLayoutFor(Id<GuiElement> rootElement)
+    private Result ComputeLayoutFor(Id<GuiNode> rootNode)
     {
-        if (!_guiElementIndexLookup.TryGetValue(rootElement, out var guiElementIndex))
+        if (!_nodeIndexById.TryGetValue(rootNode, out var nodeIndex))
         {
-            return new ResultProblem("Could not find element box spec for element with id '{0}'", rootElement);
+            return new ResultProblem("Could not find node box spec for node with id '{0}'", rootNode);
         }
-        
+
         // TODO: Text / Image sizes
-        
-        if (!TryComputePreferredDimensionFor(guiElementIndex, UIAxis.X, out var problems)
-            || !TryComputeActualDimensionFor(guiElementIndex, UIAxis.X, out problems)
-            || !TryComputePreferredDimensionFor(guiElementIndex, UIAxis.Y, out problems)
-            || !TryComputeActualDimensionFor(guiElementIndex, UIAxis.Y, out problems))
+
+        if (!TryComputePreferredDimensionFor(nodeIndex, UIAxis.X, out var problems)
+            || !TryComputeActualDimensionFor(nodeIndex, UIAxis.X, out problems)
+            || !TryComputePreferredDimensionFor(nodeIndex, UIAxis.Y, out problems)
+            || !TryComputeActualDimensionFor(nodeIndex, UIAxis.Y, out problems))
         {
             return problems;
         }
-        
-        ref var root = ref CollectionsMarshal.AsSpan(_layoutData)[guiElementIndex];
+
+        ref var root = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
         root = root with { Position = new Vector2D<Dp>(Dp.Zero, Dp.Zero) };
 
-        if (!TryComputePositionsFor(guiElementIndex, out problems))
+        if (!TryComputePositionsFor(nodeIndex, out problems))
         {
             return problems;
         }
@@ -134,27 +133,27 @@ public class GuiElementLayoutService(
         return Result.Success();
     }
 
-    private bool TryComputePreferredDimensionFor(int elementIndex, UIAxis axis, [MaybeNullWhen(true)] out ResultProblem problem)
+    private bool TryComputePreferredDimensionFor(int nodeIndex, UIAxis axis, [MaybeNullWhen(true)] out ResultProblem problem)
     {
         problem = null;
-        
-        ref var layoutData = ref CollectionsMarshal.AsSpan(_layoutData)[elementIndex];
+
+        ref var layoutData = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
         var dimension = axis == UIAxis.X ? layoutData.Width : layoutData.Height;
         if (dimension.HasValue)
         {
             return true;
         }
-        
+
         var childrenSize = Dp.Zero;
         var childrenCount = 0;
-        
-        if (guiElementService.TryGetChildren(layoutData.GuiElementId, out var children))
+
+        if (guiNodeService.TryGetChildren(layoutData.NodeId, out var children))
         {
             foreach (var childId in children)
             {
-                if (!_guiElementIndexLookup.TryGetValue(childId, out var childIndex))
+                if (!_nodeIndexById.TryGetValue(childId, out var childIndex))
                 {
-                    problem = new ResultProblem("Could not find element box spec for element with id '{0}'", childId);
+                    problem = new ResultProblem("Could not find node box spec for node with id '{0}'", childId);
                     return false;
                 }
 
@@ -162,16 +161,16 @@ public class GuiElementLayoutService(
                 {
                     return false;
                 }
-                
+
                 var childLayoutData = _layoutData[childIndex];
                 var childDimension = axis == UIAxis.X ? childLayoutData.Width : childLayoutData.Height;
                 if (!childDimension.HasValue)
                 {
-                    problem = new ResultProblem("Child element with id '{0}' does not have a '{1}'", childId, axis == UIAxis.X ? "width" : "height");
+                    problem = new ResultProblem("Child node with id '{0}' does not have a '{1}'", childId, axis == UIAxis.X ? "width" : "height");
                     return false;
                 }
 
-                if (layoutData.GuiElementBox.LayoutAxis == axis)
+                if (layoutData.LayoutBox.LayoutAxis == axis)
                 {
                     childrenSize += childDimension.Value;
                 }
@@ -179,61 +178,61 @@ public class GuiElementLayoutService(
                 {
                     childrenSize = Dp.Max(childrenSize, childDimension.Value);
                 }
-                
+
                 childrenCount += 1;
             }
         }
 
-        var guiElementDimensions = GetSizeForAxis(layoutData.GuiElementBox, childrenCount, childrenSize, axis);
+        var nodeDimensions = GetSizeForAxis(layoutData.LayoutBox, childrenCount, childrenSize, axis);
 
         if (axis == UIAxis.X)
         {
-            layoutData = layoutData with { Width = guiElementDimensions };
+            layoutData = layoutData with { Width = nodeDimensions };
         }
         else
         {
-            layoutData = layoutData with { Height = guiElementDimensions };
+            layoutData = layoutData with { Height = nodeDimensions };
         }
 
         return true;
     }
 
-    private static Dp GetSizeForAxis(GuiElementBox guiElementBox, int childCount, Dp childContentSize, UIAxis axis)
+    private static Dp GetSizeForAxis(LayoutBox layoutBox, int childCount, Dp childContentSize, UIAxis axis)
     {
-        var (preferred, chrome) = GetDimensionsForAxis(guiElementBox, axis);
+        var (preferred, chrome) = GetDimensionsForAxis(layoutBox, axis);
         if (preferred.HasValue)
         {
             return preferred.Value + chrome;
         }
 
-        var gap = guiElementBox.GetGapForAxis(axis);
+        var gap = layoutBox.GetGapForAxis(axis);
         return GetDimensionFromChildren(gap, childCount, childContentSize) + chrome;
     }
 
-    private static (Dp? Preferred, Dp Chrome) GetDimensionsForAxis(GuiElementBox box, UIAxis axis)
+    private static (Dp? Preferred, Dp Chrome) GetDimensionsForAxis(LayoutBox box, UIAxis axis)
     {
         var isHorizontal = axis == UIAxis.X;
-        return (isHorizontal ? box.Size.PreferredWidth : box.Size.PreferredHeight, 
+        return (isHorizontal ? box.Size.PreferredWidth : box.Size.PreferredHeight,
                 isHorizontal ? box.HorizontalChrome : box.VerticalChrome);
     }
 
     private static int GetGapCount(int childCount) => childCount > 0 ? childCount - 1 : 0;
 
-    private bool TryComputeActualDimensionFor(int elementIndex, UIAxis axis, [MaybeNullWhen(true)] out ResultProblem problem)
+    private bool TryComputeActualDimensionFor(int nodeIndex, UIAxis axis, [MaybeNullWhen(true)] out ResultProblem problem)
     {
         problem = null;
-        ref var parent = ref CollectionsMarshal.AsSpan(_layoutData)[elementIndex];
+        ref var parent = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
 
-        var isMainAxis = parent.GuiElementBox.LayoutAxis == axis;
-        if (!guiElementService.TryGetChildren(parent.GuiElementId, out var childIds) || childIds.Count == 0)
+        var isMainAxis = parent.LayoutBox.LayoutAxis == axis;
+        if (!guiNodeService.TryGetChildren(parent.NodeId, out var childIds) || childIds.Count == 0)
             return true;
 
         var childIndices = new int[childIds.Count];
         for (var i = 0; i < childIds.Count; i++)
         {
-            if (!_guiElementIndexLookup.TryGetValue(childIds[i], out var ci))
+            if (!_nodeIndexById.TryGetValue(childIds[i], out var ci))
             {
-                problem = new ResultProblem("Could not find element box spec for element with id '{0}'", childIds[i]);
+                problem = new ResultProblem("Could not find node box spec for node with id '{0}'", childIds[i]);
                 return false;
             }
             childIndices[i] = ci;
@@ -245,17 +244,17 @@ public class GuiElementLayoutService(
                 .Select(x => _layoutData[x])
                 .Select(x => (axis == UIAxis.X ? x.Width : x.Height) ?? Dp.Zero).Sum();
 
-            var gap = parent.GuiElementBox.GetGapForAxis(axis);
+            var gap = parent.LayoutBox.GetGapForAxis(axis);
             var gaps = GetGapCount(childIndices.Length) * gap;
 
             var parentOuter = axis == UIAxis.X
                 ? parent.Width ?? Dp.Zero
                 : parent.Height ?? Dp.Zero;
-            
+
             var parentChrome = axis == UIAxis.X
-                ? parent.GuiElementBox.HorizontalChrome
-                : parent.GuiElementBox.VerticalChrome;
-            
+                ? parent.LayoutBox.HorizontalChrome
+                : parent.LayoutBox.VerticalChrome;
+
             var parentInner = parentOuter - parentChrome;
 
             var targetSum = parentInner - gaps;
@@ -276,11 +275,11 @@ public class GuiElementLayoutService(
                         : c.Height ?? Dp.Zero;
                     sizes[i] = d;
 
-                    var g = c.GuiElementBox.Size.ResizingWeight;
+                    var g = c.LayoutBox.Size.ResizingWeight;
                     growW[i] = g;
                     if (g > 0f) totalGrow += g;
 
-                    var s = c.GuiElementBox.Size.ResizingWeight;
+                    var s = c.LayoutBox.Size.ResizingWeight;
                     if (s <= 0f) s = float.Max(0.0001f, d.Value);
                     shrinkW[i] = s;
                     totalShrink += s;
@@ -328,8 +327,8 @@ public class GuiElementLayoutService(
                 : parent.Height ?? Dp.Zero;
 
             var parentChrome = axis == UIAxis.X
-                ? parent.GuiElementBox.HorizontalChrome
-                : parent.GuiElementBox.VerticalChrome;
+                ? parent.LayoutBox.HorizontalChrome
+                : parent.LayoutBox.VerticalChrome;
 
             var parentInner = parentOuter - parentChrome;
 
@@ -337,22 +336,28 @@ public class GuiElementLayoutService(
             {
                 var childIndex = childIndices[i];
                 var child = _layoutData[childIndex];
+
                 if (axis == UIAxis.X)
                 {
-                    if (!child.GuiElementBox.Size.PreferredWidth.HasValue && child.GuiElementBox.Size.ResizingWeight != 0f)
+                    // Stretch child width to parent width on cross-axis of a vertical stack.
+                    // Only do it if child didn't set PreferredWidth.
+                    if (!child.LayoutBox.Size.PreferredWidth.HasValue)
                     {
                         _layoutData[childIndex] = child with { Width = parentInner };
                     }
                 }
                 else
                 {
-                    if (!child.GuiElementBox.Size.PreferredHeight.HasValue && child.GuiElementBox.Size.ResizingWeight != 0f)
+                    // Stretch child height to parent height on cross-axis of a horizontal stack.
+                    // Only do it if child didn't set PreferredHeight.
+                    if (!child.LayoutBox.Size.PreferredHeight.HasValue)
                     {
                         _layoutData[childIndex] = child with { Height = parentInner };
                     }
                 }
             }
         }
+
 
         foreach (var childIndex in childIndices)
         {
@@ -362,30 +367,28 @@ public class GuiElementLayoutService(
 
         return true;
     }
-    
-    private bool TryComputePositionsFor(int elementIndex, [MaybeNullWhen(true)] out ResultProblem problem)
+
+    private bool TryComputePositionsFor(int nodeIndex, [MaybeNullWhen(true)] out ResultProblem problem)
     {
         problem = null;
-        ref var self = ref CollectionsMarshal.AsSpan(_layoutData)[elementIndex];
-        var selfW = self.Width  ?? Dp.Zero;
-        var selfH = self.Height ?? Dp.Zero;
+        ref var self = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
 
         var contentOrigin = new Vector2D<Dp>(
-            self.Position!.Value.X + (self.GuiElementBox.HorizontalChrome / 2f),
-            self.Position!.Value.Y + (self.GuiElementBox.VerticalChrome / 2f));
+            self.Position!.Value.X + (self.LayoutBox.HorizontalChrome / 2f),
+            self.Position!.Value.Y + (self.LayoutBox.VerticalChrome / 2f));
 
-        if (!guiElementService.TryGetChildren(self.GuiElementId, out var childIds) || childIds.Count == 0)
+        if (!guiNodeService.TryGetChildren(self.NodeId, out var childIds) || childIds.Count == 0)
         {
             return true;
         }
 
-        var axis = self.GuiElementBox.LayoutAxis;
-        var gap  = self.GuiElementBox.GetGapForAxis(axis);
+        var axis = self.LayoutBox.LayoutAxis;
+        var gap  = self.LayoutBox.GetGapForAxis(axis);
         var cursor = contentOrigin;
 
         foreach (var childId in childIds)
         {
-            if (!_guiElementIndexLookup.TryGetValue(childId, out var ci))
+            if (!_nodeIndexById.TryGetValue(childId, out var ci))
             {
                 problem = new ResultProblem("Missing layout data for child {0}", childId);
                 return false;

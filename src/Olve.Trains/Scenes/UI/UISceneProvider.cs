@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
 using Olve.Engine3D.GUI;
+using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Rendering;
@@ -25,9 +26,14 @@ namespace Olve.Trains.Scenes.UI;
 [Singleton(typeof(TrainPlacingToolService))]
 [Singleton(typeof(TrackArrowIndicatorService))]
 [Singleton(typeof(InfoBarService))]
-[Singleton(typeof(GuiElementLayoutService))]
-[Singleton(typeof(GuiElementService))]
+[Singleton(typeof(GuiLayoutService))]
+[Singleton(typeof(GuiLayoutUpdateService))]
+[Singleton(typeof(GuiNodeService))]
 [Singleton(typeof(GuiLayoutContextUpdater))]
+[Singleton(typeof(GuiElementService))]
+[Singleton(typeof(GuiDepthService))]
+[Singleton(typeof(GuiRectangleRenderingService))]
+[Singleton(typeof(GuiRectangleUpdateService))]
 [Singleton(typeof(Provider<LayoutContext>))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 [Singleton(typeof(RenderingManager2D), Factory = nameof(GetRenderingManager2D))]
@@ -62,7 +68,7 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private RenderingManager3D GetRenderingManager3D() => gameProvider.GetRequiredService<RenderingManager3D>();
     private RenderingManager2D GetRenderingManager2D() => gameProvider.GetRequiredService<RenderingManager2D>();
     private ILoggingManager GetLoggingManager() => gameProvider.GetRequiredService<ILoggingManager>();
-    
+
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
     private IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>
     [
@@ -72,5 +78,8 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
         provider.GetRequiredService<ToolKeyboardService>(),
         provider.GetRequiredService<InfoBarService>(),
         provider.GetRequiredService<GuiLayoutContextUpdater>(),
+        provider.GetRequiredService<GuiLayoutUpdateService>(),
+        provider.GetRequiredService<GuiRectangleRenderingService>(),
+        provider.GetRequiredService<GuiRectangleUpdateService>(),
     ];
 }

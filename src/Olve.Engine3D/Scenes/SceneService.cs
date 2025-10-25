@@ -7,19 +7,19 @@ public abstract class SceneService
     private const string TemplateBase = ": '{0}' [{1}] => {2}";
     private const string LoadTemplate = nameof(Load) + TemplateBase;
     private const string UnloadTemplate = nameof(Unload) + TemplateBase;
-    
+
     private readonly string[] _loadTags;
     private readonly string[] _unloadTags;
-    
+
     protected readonly ILoggingManager LoggingManager;
-    
+
     private string TypeName => GetType().Name;
     private bool _doNotLog;
 
     protected SceneService(ILoggingManager loggingManager)
     {
         LoggingManager = loggingManager;
-        
+
         _loadTags = [TypeName, nameof(Load)];
         _unloadTags = [TypeName, nameof(Unload)];
     }
@@ -30,7 +30,7 @@ public abstract class SceneService
         {
             return;
         }
-        
+
         LoggingManager.Log(
             LogLevel.Debug,
             string.Format(template, TypeName, Priority, result),
@@ -108,5 +108,10 @@ public abstract class SceneService
     protected static int GetPriorityFromDependencies(IReadOnlyCollection<SceneService> dependencies)
     {
         return dependencies.Max(service => service.Priority) + 1;
+    }
+
+    protected static int GetPriorityFromDependents(IReadOnlyCollection<SceneService> dependents)
+    {
+        return dependents.Min(service => service.Priority) - 1;
     }
 }

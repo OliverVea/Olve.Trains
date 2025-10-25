@@ -8,27 +8,27 @@ namespace Olve.Trains.Scenes.UI.GUI;
 
 public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
     Provider<IWindow> windowProvider,
-    Provider<LayoutContext> layoutContextProvider, 
-    GuiElementLayoutService guiElementLayoutService,
+    Provider<LayoutContext> layoutContextProvider,
+    GuiLayoutService guiLayoutService,
     ScreenResizedEvent screenResizedEvent) : SceneService(loggingManager)
 {
     private const float UIScale = 1f;
     private const int DesignWidth = 1920;
 
     private bool _screenResized = true;
-    
+
     protected override Result OnLoad()
     {
         screenResizedEvent.OnWindowResize.Subscribe(OnScreenResized);
         return Result.Success();
     }
-    
+
     protected override Result OnUnload()
     {
         screenResizedEvent.OnWindowResize.Unsubscribe(OnScreenResized);
         return Result.Success();
     }
-    
+
     private void OnScreenResized(Vector2D<int> size) =>  _screenResized = true;
 
     protected override Result OnUpdate(TimeSpan deltaTime)
@@ -53,6 +53,6 @@ public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
             UIScale
         ));
 
-        return guiElementLayoutService.ComputeLayout();
+        return guiLayoutService.ComputeLayout();
     }
 }

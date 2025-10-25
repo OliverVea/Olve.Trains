@@ -1,6 +1,6 @@
 ﻿namespace Olve.Engine3D.GUI.Layout;
 
-public readonly record struct GuiElementBox()
+public readonly record struct LayoutBox()
 {
     public SizeSpec Size { get; init; } = SizeSpec.None;
     public Thickness Padding { get; init; } = Thickness.Zero;

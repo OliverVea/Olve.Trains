@@ -3,12 +3,12 @@ using Silk.NET.Maths;
 
 namespace Olve.Engine3D.Tests.Layout;
 
-public static class GuiElementLayoutServiceTestData
+public static class GuiLayoutServiceTestData
 {
     public static IEnumerable<Func<(string TestName,
-        GuiElementBox Parent,
+        LayoutBox Parent,
         Vector2D<Px> ExpectedParentSize,
-        IReadOnlyCollection<GuiElementBox> Children,
+        IReadOnlyCollection<LayoutBox> Children,
         IReadOnlyCollection<Vector2D<Px>> ExpectedChildrenSizes)>> AdditionTestData()
     {
         yield return () => (
@@ -91,7 +91,7 @@ public static class GuiElementLayoutServiceTestData
         );
     }
 
-    private static GuiElementBox Box(UIAxis axis = UIAxis.X, Dp? prefW = null, Dp? prefH = null,
+    private static LayoutBox Box(UIAxis axis = UIAxis.X, Dp? prefW = null, Dp? prefH = null,
         float resizingWeight = 0f)
         => new()
         {
