@@ -7,7 +7,6 @@ layout(location = 0) in vec2 aUnit;
 layout(location = 1) in vec2 iPosPx;
 layout(location = 2) in vec2 iSizePx;
 layout(location = 3) in vec4 iColor;
-layout(location = 4) in float iDepth;
 layout(location = 5) in float iRadiusPx;     // not used yet
 layout(location = 6) in vec4 iBorderColor;   // not used yet
 
@@ -29,7 +28,7 @@ void main()
         1.0 - (posPx.y / uResolution.y) * 2.0
     );
 
-    gl_Position = vec4(ndc, iDepth, 1.0);
+    gl_Position = vec4(ndc, 0.0, 1.0);
 
     vs_out.local01 = aUnit; // pass [0..1] coords if fragment wants border/roundness later
     vs_out.color   = iColor;

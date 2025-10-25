@@ -9,8 +9,8 @@ public class OpenGLRectangleManager(
     OpenGLQuadRenderingManager quadRenderingManager)
     : IOpenGLEntityManager<RectangleData, OpenGLRectangleManager.Registration>
 {
-    // pos2, size2, color4, depth1, radius1, borderColor4
-    private const int InstFields = 2 + 2 + 4 + 1 + 1 + 4;
+    // pos2, size2, color4, radius1, borderColor4
+    private const int InstFields = 2 + 2 + 4 + 1 + 4;
 
     public readonly record struct Registration(VAO VAO, VBO InstanceVBO);
 
@@ -39,7 +39,6 @@ public class OpenGLRectangleManager(
         instance[i++] = entityData.SizePx.X;     instance[i++] = entityData.SizePx.Y;     // size2
         instance[i++] = entityData.ColorRgba.X;  instance[i++] = entityData.ColorRgba.Y;
         instance[i++] = entityData.ColorRgba.Z;  instance[i++] = entityData.ColorRgba.W;  // color4
-        instance[i++] = entityData.Depth;                                          // depth1
         instance[i++] = entityData.CornerRadiusPx;                                 // radius1
         var bc = entityData.BorderColorRgba ?? new Vector4D<float>(0, 0, 0, 0);    // borderColor4
         instance[i++] = bc.X; instance[i++] = bc.Y; instance[i++] = bc.Z; instance[i++] = bc.W;
@@ -61,9 +60,8 @@ public class OpenGLRectangleManager(
             Attr(1, 2); // iPosPx
             Attr(2, 2); // iSizePx
             Attr(3, 4); // iColor
-            Attr(4, 1); // iDepth
-            Attr(5, 1); // iRadiusPx
-            Attr(6, 4); // iBorderColor
+            Attr(4, 1); // iRadiusPx
+            Attr(5, 4); // iBorderColor
         }
 
         // Unbind
