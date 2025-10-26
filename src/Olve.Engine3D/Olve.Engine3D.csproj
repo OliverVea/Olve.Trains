@@ -24,4 +24,8 @@
         <ProjectReference Include="../Olve.Engine3D.DebugServer/Olve.Engine3D.DebugServer.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="GUI\Layout\ContentFit.cs" />
+    </ItemGroup>
+
 </Project>

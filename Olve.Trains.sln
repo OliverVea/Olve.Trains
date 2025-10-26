@@ -12,7 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "repo", "repo", "{E216E70C-0
 		Directory.Packages.props = Directory.Packages.props
 		package.json = package.json
 		.config\dotnet-tools.json = .config\dotnet-tools.json
-		README.md.txt = README.md.txt
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olve.Trains.AssetPipeline", "src\Olve.Trains.AssetPipeline\Olve.Trains.AssetPipeline.csproj", "{B87ED8C2-DA0E-4CC2-A042-6D5C56D2113C}"

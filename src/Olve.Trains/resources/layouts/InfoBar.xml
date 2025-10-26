@@ -12,4 +12,5 @@
     </Box>
     <Box id="Green" Width="60" BackgroundColor="(0, 1, 0)" />
     <Box id="Blue" Width="60" BackgroundColor="(0, 0, 1)" />
+    <Image Id="Img" Texture="Textures.Textures.SimpleTrains_Texture_01" />
 </Box>

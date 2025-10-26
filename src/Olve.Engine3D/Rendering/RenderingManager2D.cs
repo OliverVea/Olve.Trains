@@ -11,9 +11,10 @@
     public class RenderingManager2D(
         Provider<GL> glProvider,
         OpenGLQuadRenderingManager openGLQuadRenderingManager,
-        OpenGLRectangleManager rectangleGlManager,
+        OpenGLRectangleManager rectangleGLManager,
         OpenGLShaderManager openGLShaderManager,
-        ShaderEntityManager shaderEntityManager)
+        ShaderEntityManager shaderEntityManager,
+        TextureEntityManager textureEntityManager)
     {
         private readonly ThreadSafeUintGenerator _instanceUintGenerator = new();
         private RenderingInstanceId NextInstanceId() => new(_instanceUintGenerator.Next());
@@ -28,39 +29,44 @@
             RenderingId<ShaderData> ShaderId,
             float Depth,
             VAO VAO,
-            VBO InstanceVBO);
+            VBO InstanceVBO,
+            RenderingId<TextureData>? TextureId = null);
 
         public Result<RenderingInstanceId> RegisterRectangle(
             RenderingId<ShaderData> shaderId,
             RectangleData rectangle)
         {
             if (rectangle.Validate().TryPickProblems(out var problems))
-                return problems.Prepend("Invalid RectangleData");
+                return problems.Prepend("Invalid TexturedRectangleData");
 
             if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
                 return problems.Prepend("Failed to get shader data");
 
-            if (rectangleGlManager.Register(rectangle).TryPickProblems(out problems, out var reg))
-                return problems.Prepend("Failed to create OpenGL registration for rectangle");
+            if (textureEntityManager.GetRegistration(rectangle.TextureId).TryPickProblems(out problems, out _))
+                return problems.Prepend("Failed to get texture data for TextureId '{0}'", rectangle.TextureId);
+
+            if (rectangleGLManager.Register(rectangle).TryPickProblems(out problems, out var reg))
+                return problems.Prepend("Failed to create OpenGL registration for textured rectangle");
 
             if (openGLQuadRenderingManager.AttachUnitQuad(reg.VAO).TryPickProblems(out problems))
             {
-                rectangleGlManager.Unregister(reg);
+                rectangleGLManager.Unregister(reg);
                 return problems.Prepend("Failed to attach unit quad to VAO");
             }
 
             var id = NextInstanceId();
-            Instances.Add(id, new Instance(id, shaderId, rectangle.Depth, reg.VAO,reg.InstanceVBO));
+            Instances.Add(id, new Instance(id, shaderId, rectangle.Depth, reg.VAO, reg.InstanceVBO, rectangle.TextureId));
             return id;
         }
+
         public Result DeregisterRectangle(RenderingInstanceId instanceId)
         {
             var idx = Instances.IndexOfKey(instanceId);
             if (idx == -1)
-                return new ResultProblem("GUI rectangle with id '{0}' is not registered", instanceId);
+                return new ResultProblem("Textured rectangle with id '{0}' is not registered", instanceId);
 
             var inst = Instances.GetValueAtIndex(idx);
-            _ = rectangleGlManager.Unregister(new OpenGLRectangleManager.Registration(inst.VAO, inst.InstanceVBO));
+            _ = rectangleGLManager.Unregister(new OpenGLRectangleManager.Registration(inst.VAO, inst.InstanceVBO));
 
             Instances.RemoveAt(idx);
             return Result.Success();
@@ -69,25 +75,28 @@
         public Result UpdateRectangle(RenderingInstanceId instanceId, RectangleData rectangle)
         {
             if (rectangle.Validate().TryPickProblems(out var problems))
-                return problems.Prepend("Invalid RectangleData");
+                return problems.Prepend("Invalid TexturedRectangleData");
 
             var idx = Instances.IndexOfKey(instanceId);
             if (idx == -1)
-                return new ResultProblem("GUI rectangle with id '{0}' is not registered", instanceId);
+                return new ResultProblem("Textured rectangle with id '{0}' is not registered", instanceId);
+
+            if (textureEntityManager.GetRegistration(rectangle.TextureId).TryPickProblems(out problems, out _))
+                return problems.Prepend("Failed to get texture data for TextureId '{0}'", rectangle.TextureId);
 
             var old = Instances.GetValueAtIndex(idx);
-            rectangleGlManager.Unregister(new OpenGLRectangleManager.Registration(old.VAO, old.InstanceVBO));
+            rectangleGLManager.Unregister(new OpenGLRectangleManager.Registration(old.VAO, old.InstanceVBO));
 
-            if (rectangleGlManager.Register(rectangle).TryPickProblems(out problems, out var reg))
-                return problems.Prepend("Failed to upload updated rectangle data");
+            if (rectangleGLManager.Register(rectangle).TryPickProblems(out problems, out var reg))
+                return problems.Prepend("Failed to upload updated textured rectangle data");
 
             if (openGLQuadRenderingManager.AttachUnitQuad(reg.VAO).TryPickProblems(out problems))
             {
-                rectangleGlManager.Unregister(reg);
+                rectangleGLManager.Unregister(reg);
                 return problems.Prepend("Failed to attach unit quad after update");
             }
 
-            Instances.SetValueAtIndex(idx, old with { VAO = reg.VAO, InstanceVBO = reg.InstanceVBO, Depth = rectangle.Depth});
+            Instances.SetValueAtIndex(idx, old with { VAO = reg.VAO, InstanceVBO = reg.InstanceVBO, Depth = rectangle.Depth, TextureId = rectangle.TextureId });
             return Result.Success();
         }
 
@@ -143,6 +152,7 @@
 
         private Result RenderInstances(RenderingId<ShaderData> shaderRenderingId)
         {
+            ResultProblemCollection? problems;
             try
             {
                 foreach (var inst in Instances.Values.OrderByDescending(x => x.Depth))
@@ -150,8 +160,21 @@
                     if (inst.ShaderId != shaderRenderingId)
                         continue;
 
+                    // Bind texture if this is a textured rectangle
+                    if (inst.TextureId.HasValue)
+                    {
+                        if (textureEntityManager.GetRegistration(inst.TextureId.Value)
+                            .TryPickProblems(out problems, out var textureReg))
+                        {
+                            return problems.Prepend("Failed to get texture registration for instance");
+                        }
+
+                        glProvider.Value.ActiveTexture(TextureUnit.Texture0);
+                        glProvider.Value.BindTexture(TextureTarget.Texture2D, textureReg.Texture.Handle);
+                    }
+
                     if (openGLQuadRenderingManager.LoadQuadsInOpenGL(inst.VAO)
-                        .TryPickProblems(out var problems))
+                        .TryPickProblems(out problems))
                     {
                         return problems.Prepend("Failed to bind rectangle instance");
                     }
@@ -162,7 +185,11 @@
                         return problems.Prepend("Failed to draw rectangle instance");
                     }
 
-                    // Unbind VAO
+                    // Unbind texture and VAO
+                    if (inst.TextureId.HasValue)
+                    {
+                        glProvider.Value.BindTexture(TextureTarget.Texture2D, 0);
+                    }
                     glProvider.Value.BindVertexArray(0);
                 }
             }

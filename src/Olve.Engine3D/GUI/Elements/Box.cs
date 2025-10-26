@@ -2,7 +2,7 @@
 
 namespace Olve.Engine3D.GUI.Elements;
 
-public class Box : GuiElement, IRenderableAsRectangle
+public class Box : GuiElement, IRenderableAsTexturedRectangle
 {
     public int? Width { get; set; }
     public int? Height { get; set; }
@@ -27,7 +27,7 @@ public class Box : GuiElement, IRenderableAsRectangle
         Margin = Thickness.All(Margin),
     };
 
-    public IRenderableAsRectangle.Data RectangleData => new()
+    public IRenderableAsTexturedRectangle.Data TexturedRectangleData => new()
     {
         Color = BackgroundColor is {} bg ? new Vector4D<float>(bg.R,  bg.G, bg.B, Alpha) : Vector4D<float>.Zero,
     };

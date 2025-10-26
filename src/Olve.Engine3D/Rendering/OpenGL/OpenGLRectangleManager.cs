@@ -9,8 +9,8 @@ public class OpenGLRectangleManager(
     OpenGLQuadRenderingManager quadRenderingManager)
     : IOpenGLEntityManager<RectangleData, OpenGLRectangleManager.Registration>
 {
-    // pos2, size2, color4, radius1, borderColor4
-    private const int InstFields = 2 + 2 + 4 + 1 + 4;
+    // pos2, size2, tint4
+    private const int InstFields = 2 + 2 + 4;
 
     public readonly record struct Registration(VAO VAO, VBO InstanceVBO);
 
@@ -27,7 +27,7 @@ public class OpenGLRectangleManager(
         if (quadRenderingManager.AttachUnitQuad(new VAO(vaoHandle)).TryPickProblems(out problems))
         {
             gl.BindVertexArray(0);
-            return problems.Prepend("Failed to attach unit quad to rectangle VAO");
+            return problems.Prepend("Failed to attach unit quad to textured rectangle VAO");
         }
 
         var instVboHandle = gl.CreateBuffer();
@@ -37,11 +37,8 @@ public class OpenGLRectangleManager(
         int i = 0;
         instance[i++] = entityData.PositionPx.X; instance[i++] = entityData.PositionPx.Y; // pos2
         instance[i++] = entityData.SizePx.X;     instance[i++] = entityData.SizePx.Y;     // size2
-        instance[i++] = entityData.ColorRgba.X;  instance[i++] = entityData.ColorRgba.Y;
-        instance[i++] = entityData.ColorRgba.Z;  instance[i++] = entityData.ColorRgba.W;  // color4
-        instance[i++] = entityData.CornerRadiusPx;                                 // radius1
-        var bc = entityData.BorderColorRgba ?? new Vector4D<float>(0, 0, 0, 0);    // borderColor4
-        instance[i++] = bc.X; instance[i++] = bc.Y; instance[i++] = bc.Z; instance[i++] = bc.W;
+        instance[i++] = entityData.TintRgba.X;   instance[i++] = entityData.TintRgba.Y;
+        instance[i++] = entityData.TintRgba.Z;   instance[i++] = entityData.TintRgba.W;   // tint4
 
         gl.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)instance, BufferUsageARB.DynamicDraw);
 
@@ -59,9 +56,7 @@ public class OpenGLRectangleManager(
 
             Attr(1, 2); // iPosPx
             Attr(2, 2); // iSizePx
-            Attr(3, 4); // iColor
-            Attr(4, 1); // iRadiusPx
-            Attr(5, 4); // iBorderColor
+            Attr(3, 4); // iTint
         }
 
         // Unbind

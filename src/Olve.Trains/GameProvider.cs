@@ -1,6 +1,7 @@
 using Jab;
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
+using Olve.Engine3D.Assets;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
@@ -23,6 +24,7 @@ namespace Olve.Trains;
 [Singleton(typeof(DayTimeManager))]
 [Singleton(typeof(DaylightManager))]
 [Singleton(typeof(ScreenResizedEvent))]
+[Singleton(typeof(TextureLoadingService))]
 [Singleton(typeof(CommandHandlerServiceCollection))]
 [Singleton(typeof(GameSceneProvider))]
 [Singleton(typeof(UISceneProvider))]
@@ -30,16 +32,24 @@ namespace Olve.Trains;
 [Singleton(typeof(RenderingSceneProvider))]
 [Singleton(typeof(IEnumerable<IScene>), Factory = nameof(GetAllScenes))]
 [Singleton(typeof(GameProvider), Factory = nameof(GetGameProvider))]
-[Singleton(typeof(ILoggingManager), typeof(InMemoryLoggingManager))]
+[Singleton(typeof(InMemoryLoggingManager))]
+[Singleton(typeof(ILoggingManager), Factory = nameof(GetLoggingManager))]
 [Import(typeof(IWindowingProvider))]
 [Import(typeof(IOpenGLProvider))]
 public partial class GameProvider
 {
     public GameProvider GetGameProvider() => this;
+
+    private ILoggingManager GetLoggingManager(IServiceProvider provider)
+    {
+        var inMemoryLogger = provider.GetRequiredService<InMemoryLoggingManager>();
+        return new ConsoleLoggingManager(inMemoryLogger);
+    }
+
     private IEnumerable<IScene> GetAllScenes(IServiceProvider provider)
     {
         var loggingManager = provider.GetRequiredService<ILoggingManager>();
-        
+
         return
         [
             new Scene<GameSceneProvider>(loggingManager, provider.GetRequiredService<GameSceneProvider>(), SceneIds.GameScene),
