@@ -5,6 +5,7 @@ public readonly record struct SizeSpec(
     Dp? PreferredHeight = null,
     float ResizingWeight = 1f)
 {
-    public static SizeSpec None { get; } = new();
+    public static SizeSpec Default { get; } = new(null, null, 1f);
+    public static SizeSpec None { get; } = new(null, null, 0f);
     public static SizeSpec Zero { get; } = new(Dp.Zero, Dp.Zero);
 }

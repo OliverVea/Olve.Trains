@@ -1,3 +1,4 @@
+using Olve.Engine3D.Assets;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
@@ -22,7 +23,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
     {
         _initialScenes = initialScenes;
         windowProvider.Set(window);
-        
+
         window.Load += OnLoad;
         window.Render += OnRender;
         window.Update += OnUpdate;
@@ -61,7 +62,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
         {
             return problems.Prepend("Error while initializing input");
         }
-        
+
         foreach (var sceneId in _initialScenes)
         {
             var result = sceneManager.LoadScene(sceneId);
@@ -69,7 +70,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
             {
                 return problems.Prepend("Error while loading scene with id '{0}'", sceneId);
             }
-            
+
             result = sceneManager.ActivateScene(sceneId);
             if (result.TryPickProblems(out problems))
             {

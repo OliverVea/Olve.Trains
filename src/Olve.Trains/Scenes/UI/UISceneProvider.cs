@@ -1,6 +1,7 @@
 ﻿using Jab;
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
+using Olve.Engine3D.Assets;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
@@ -32,12 +33,13 @@ namespace Olve.Trains.Scenes.UI;
 [Singleton(typeof(GuiLayoutContextUpdater))]
 [Singleton(typeof(GuiElementService))]
 [Singleton(typeof(GuiDepthService))]
-[Singleton(typeof(GuiRectangleRenderingService))]
-[Singleton(typeof(GuiRectangleUpdateService))]
+[Singleton(typeof(GuiTexturedRectangleRenderingService))]
+[Singleton(typeof(GuiTexturedRectangleUpdateService))]
 [Singleton(typeof(Provider<LayoutContext>))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 [Singleton(typeof(RenderingManager2D), Factory = nameof(GetRenderingManager2D))]
 [Transient(typeof(ILoggingManager), Factory = nameof(GetLoggingManager))]
+[Transient(typeof(TextureLoadingService), Factory = nameof(GetTextureLoadingService))]
 [Transient(typeof(TerrainRaycastService), Factory = nameof(GetTerrainRaycastService))]
 [Transient(typeof(MouseManager), Factory = nameof(GetMouseManager))]
 [Transient(typeof(KeyboardManager), Factory = nameof(GetKeyboardManager))]
@@ -68,6 +70,7 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private RenderingManager3D GetRenderingManager3D() => gameProvider.GetRequiredService<RenderingManager3D>();
     private RenderingManager2D GetRenderingManager2D() => gameProvider.GetRequiredService<RenderingManager2D>();
     private ILoggingManager GetLoggingManager() => gameProvider.GetRequiredService<ILoggingManager>();
+    private TextureLoadingService GetTextureLoadingService() => gameProvider.GetRequiredService<TextureLoadingService>();
 
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
     private IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>
@@ -79,7 +82,8 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
         provider.GetRequiredService<InfoBarService>(),
         provider.GetRequiredService<GuiLayoutContextUpdater>(),
         provider.GetRequiredService<GuiLayoutUpdateService>(),
-        provider.GetRequiredService<GuiRectangleRenderingService>(),
-        provider.GetRequiredService<GuiRectangleUpdateService>(),
+        provider.GetRequiredService<GuiTexturedRectangleRenderingService>(),
+        provider.GetRequiredService<GuiTexturedRectangleUpdateService>(),
+        provider.GetRequiredService<TextureLoadingService>()
     ];
 }

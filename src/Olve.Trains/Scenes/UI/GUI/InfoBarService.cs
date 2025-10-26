@@ -16,6 +16,7 @@ public class InfoBarService(ILoggingManager loggingManager, GuiElementService gu
 
     protected override Result OnLoad()
     {
+        LoggingManager.Log(LogLevel.Warning, "InfoBarService.OnLoad() - Starting element registration");
         var anchorId = Id.New<GuiAnchor>();
 
         if (guiElementService
@@ -25,6 +26,7 @@ public class InfoBarService(ILoggingManager loggingManager, GuiElementService gu
             return problems;
         }
 
+        LoggingManager.Log(LogLevel.Warning, "InfoBarService.OnLoad() - Element registration complete");
         return Result.Success();
     }
 }

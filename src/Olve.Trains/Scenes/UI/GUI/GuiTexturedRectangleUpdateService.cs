@@ -1,4 +1,7 @@
-﻿using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.Assets;
+using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.Rendering;
+using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
@@ -6,9 +9,11 @@ using Olve.Logging;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
-public class GuiRectangleUpdateService(ILoggingManager loggingManager,
+public class GuiTexturedRectangleUpdateService(
+    ILoggingManager loggingManager,
     GuiElementService guiElementService,
-    GuiRectangleRenderingService rectangleRenderingService) : SceneService(loggingManager)
+    TextureLoadingService textureLoadingService,
+    GuiTexturedRectangleRenderingService texturedRectangleRenderingService) : SceneService(loggingManager)
 {
     private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
     private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
@@ -33,14 +38,25 @@ public class GuiRectangleUpdateService(ILoggingManager loggingManager,
             return new ResultProblem("Could not find element with id: {0}", addedEvent.NodeId);
         }
 
-        return element is IRenderableAsRectangle
-            ? rectangleRenderingService.RegisterRectangle(addedEvent.NodeId)
-            : Result.Success();
+        if (element is not IRenderableAsTexturedRectangle renderableAsTexturedRectangle)
+        {
+            return Result.Success();
+        }
+
+        if (textureLoadingService.LoadTextureOrFallbackIfNull(renderableAsTexturedRectangle.TexturedRectangleData.TexturePath)
+            .TryPickProblems(out var problems, out var textureRenderingId))
+        {
+            return problems.Prepend("Failed to load texture '{0}' for GuiElement: {1}",
+                renderableAsTexturedRectangle.TexturedRectangleData,
+                addedEvent);
+        }
+
+        return texturedRectangleRenderingService.RegisterTexturedRectangle(addedEvent.NodeId, textureRenderingId);
     }
 
     private Result OnGuiElementRemoved(GuiElementArgs removedEvent)
     {
-        return rectangleRenderingService.DeregisterRectangle(removedEvent.NodeId)
+        return texturedRectangleRenderingService.DeregisterTexturedRectangle(removedEvent.NodeId)
 #if DEBUG
             .MapToResult(allowNotFound: false);
 #else

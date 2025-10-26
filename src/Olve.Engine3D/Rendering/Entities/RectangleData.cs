@@ -1,42 +1,28 @@
 using MemoryPack;
+using Olve.Engine3D.Rendering.EntityManagers;
 
 namespace Olve.Engine3D.Rendering.Entities;
 
 [MemoryPackable]
 public partial class RectangleData
 {
-    public static readonly RectangleData Default = new()
-    {
-        ColorRgba = Vector4D<float>.Zero,
-        PositionPx = Vector2D<float>.Zero,
-        SizePx = Vector2D<float>.Zero,
-        BorderColorRgba = Vector4D<float>.Zero,
-        BorderPx = 0,
-        CornerRadiusPx = 0,
-        Depth = 0
-    };
-
     public required Vector2D<float> PositionPx { get; set; }
     public required Vector2D<float> SizePx { get; set; }
-    public required Vector4D<float> ColorRgba { get; set; }
+    public required Vector4D<float> TintRgba { get; set; }
+    public required RenderingId<TextureData> TextureId { get; set; }
     public float Depth { get; set; } = 0f;
-
-    // TODO
-    public float CornerRadiusPx { get; set; } = 0f;
-    public float BorderPx { get; set; } = 0f;
-    public Vector4D<float>? BorderColorRgba { get; set; }
 
     public Result Validate()
     {
         if (SizePx.X < 0 || SizePx.Y < 0)
-            return new ResultProblem("Rectangle size must be positive. width={0}, height={1}.", SizePx.X, SizePx.Y);
+            return new ResultProblem("Textured rectangle size must be positive. width={0}, height={1}.", SizePx.X, SizePx.Y);
 
-        if (!Is01(ColorRgba.X) || !Is01(ColorRgba.Y) || !Is01(ColorRgba.Z) || !Is01(ColorRgba.W))
-            return new ResultProblem("Color channels must be in [0,1]. RGBA=({0},{1},{2},{3})",
-                ColorRgba.X, ColorRgba.Y, ColorRgba.Z, ColorRgba.W);
+        if (!Is01(TintRgba.X) || !Is01(TintRgba.Y) || !Is01(TintRgba.Z) || !Is01(TintRgba.W))
+            return new ResultProblem("Tint color channels must be in [0,1]. RGBA=({0},{1},{2},{3})",
+                TintRgba.X, TintRgba.Y, TintRgba.Z, TintRgba.W);
 
-        if (BorderPx < 0 || CornerRadiusPx < 0)
-            return new ResultProblem("Border and corner radius must be >= 0. border={0}, radius={1}.", BorderPx, CornerRadiusPx);
+        if (TextureId.Id == 0)
+            return new ResultProblem("TextureId must be set (non-zero)");
 
         return Result.Success();
 
