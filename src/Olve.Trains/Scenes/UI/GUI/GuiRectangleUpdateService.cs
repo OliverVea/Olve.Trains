@@ -1,7 +1,5 @@
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.GUI.Elements;
-using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
@@ -9,11 +7,11 @@ using Olve.Logging;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
-public class GuiTexturedRectangleUpdateService(
+public class GuiRectangleUpdateService(
     ILoggingManager loggingManager,
     GuiElementService guiElementService,
     TextureLoadingService textureLoadingService,
-    GuiTexturedRectangleRenderingService texturedRectangleRenderingService) : SceneService(loggingManager)
+    GuiRectangleRenderingService rectangleRenderingService) : SceneService(loggingManager)
 {
     private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
     private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
@@ -38,7 +36,7 @@ public class GuiTexturedRectangleUpdateService(
             return new ResultProblem("Could not find element with id: {0}", addedEvent.NodeId);
         }
 
-        if (element is not IRenderableAsTexturedRectangle renderableAsTexturedRectangle)
+        if (element is not IRenderableAsRectangle renderableAsTexturedRectangle)
         {
             return Result.Success();
         }
@@ -51,12 +49,12 @@ public class GuiTexturedRectangleUpdateService(
                 addedEvent);
         }
 
-        return texturedRectangleRenderingService.RegisterTexturedRectangle(addedEvent.NodeId, textureRenderingId);
+        return rectangleRenderingService.RegisterTexturedRectangle(addedEvent.NodeId, textureRenderingId);
     }
 
     private Result OnGuiElementRemoved(GuiElementArgs removedEvent)
     {
-        return texturedRectangleRenderingService.DeregisterTexturedRectangle(removedEvent.NodeId)
+        return rectangleRenderingService.DeregisterTexturedRectangle(removedEvent.NodeId)
 #if DEBUG
             .MapToResult(allowNotFound: false);
 #else

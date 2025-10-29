@@ -147,6 +147,10 @@
             if (RenderInstances(shader.RenderingId).TryPickProblems(out problems))
                 return problems.Prepend("Failed to render GUI rectangles with shader '{0}'", shader.ShaderData.Name);
 
+            // Restore depth testing state
+            glProvider.Value.Enable(GLEnum.DepthTest);
+            glProvider.Value.DepthMask(true);
+
             return Result.Success();
         }
 

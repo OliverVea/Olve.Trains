@@ -20,6 +20,8 @@
     <option name="PROJECT_TFM" value="net9.0" />
     <method v="2">
       <option name="CleanSolution" enabled="true" />
+      <option name="Build" default="false" projectName="Olve.Trains.AssetPipeline" projectPath="$PROJECT_DIR$/src/Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Olve.Trains.AssetPipeline" run_configuration_type="DotNetProject" />
       <option name="Build" default="false" projectName="Olve.Trains" projectPath="$PROJECT_DIR$/src/Olve.Trains/Olve.Trains.csproj" />
     </method>
   </configuration>
