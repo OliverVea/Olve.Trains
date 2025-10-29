@@ -14,7 +14,7 @@ using Olve.Logging;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
-public class GuiTexturedRectangleRenderingService(
+public class GuiRectangleRenderingService(
     ILoggingManager loggingManager,
     RenderingManager2D renderingManager2D,
     ShaderEntityManager shaderEntityManager,
@@ -128,7 +128,7 @@ public class GuiTexturedRectangleRenderingService(
 
         _renderingInstanceIds[nodeId] = renderingInstanceId;
 
-        LoggingManager.Log(LogLevel.Debug, $"Registered textured rectangle rendering for node {nodeId}");
+        LoggingManager.Log(LogLevel.Debug, $"Registered rectangle rendering for node {nodeId}");
 
         return Result.Success();
     }
@@ -147,7 +147,7 @@ public class GuiTexturedRectangleRenderingService(
             return DeletionResult.Error(problems);
         }
 
-        LoggingManager.Log(LogLevel.Debug, $"Deregistered textured rectangle rendering for node {nodeId}");
+        LoggingManager.Log(LogLevel.Debug, $"Deregistered rectangle rendering for node {nodeId}");
 
         return DeletionResult.Success();
     }
@@ -157,7 +157,7 @@ public class GuiTexturedRectangleRenderingService(
         if (!guiLayoutService.TryGetBoxPosition(nodeId, out var boxPosition) ||
             !guiElementService.TryGetElement(nodeId, out var element) ||
             !guiDepthService.GetDepth(nodeId).TryPickValue(out var depth) ||
-            element is not IRenderableAsTexturedRectangle renderableAsTexturedRectangle ||
+            element is not IRenderableAsRectangle renderableAsTexturedRectangle ||
             textureLoadingService.LoadTextureOrFallbackIfNull(renderableAsTexturedRectangle.TexturedRectangleData.TexturePath)
                 .TryPickProblems(out var problems, out var textureId))
         {

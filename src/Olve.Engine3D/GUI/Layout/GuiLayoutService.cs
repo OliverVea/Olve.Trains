@@ -340,19 +340,47 @@ public class GuiLayoutService(
                 if (axis == UIAxis.X)
                 {
                     // Stretch child width to parent width on cross-axis of a vertical stack.
-                    // Only do it if child didn't set PreferredWidth.
                     if (!child.LayoutBox.Size.PreferredWidth.HasValue)
                     {
-                        _layoutData[childIndex] = child with { Width = parentInner };
+                        var aspectRatio = child.LayoutBox.Size.AspectRatio;
+                        if (aspectRatio.HasValue && aspectRatio.Value > 0f && child.Height.HasValue)
+                        {
+                            var fitMode = child.LayoutBox.Size.FitMode;
+                            var computedSize = ComputeSizeWithAspectRatio(
+                                aspectRatio.Value,
+                                fitMode,
+                                parentInner,
+                                child.Height.Value);
+
+                            _layoutData[childIndex] = child with { Width = computedSize.Width, Height = computedSize.Height };
+                        }
+                        else
+                        {
+                            _layoutData[childIndex] = child with { Width = parentInner };
+                        }
                     }
                 }
                 else
                 {
                     // Stretch child height to parent height on cross-axis of a horizontal stack.
-                    // Only do it if child didn't set PreferredHeight.
                     if (!child.LayoutBox.Size.PreferredHeight.HasValue)
                     {
-                        _layoutData[childIndex] = child with { Height = parentInner };
+                        var aspectRatio = child.LayoutBox.Size.AspectRatio;
+                        if (aspectRatio.HasValue && aspectRatio.Value > 0f && child.Width.HasValue)
+                        {
+                            var fitMode = child.LayoutBox.Size.FitMode;
+                            var computedSize = ComputeSizeWithAspectRatio(
+                                aspectRatio.Value,
+                                fitMode,
+                                child.Width.Value,
+                                parentInner);
+
+                            _layoutData[childIndex] = child with { Width = computedSize.Width, Height = computedSize.Height };
+                        }
+                        else
+                        {
+                            _layoutData[childIndex] = child with { Height = parentInner };
+                        }
                     }
                 }
             }
@@ -361,11 +389,98 @@ public class GuiLayoutService(
 
         foreach (var childIndex in childIndices)
         {
+            // Apply aspect ratio constraints before recursing
+            ApplyAspectRatioConstraint(childIndex);
+
             if (!TryComputeActualDimensionFor(childIndex, axis, out problem))
                 return false;
         }
 
         return true;
+    }
+
+    private void ApplyAspectRatioConstraint(int nodeIndex)
+    {
+        ref var layoutData = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
+        var aspectRatio = layoutData.LayoutBox.Size.AspectRatio;
+
+        if (!aspectRatio.HasValue || aspectRatio.Value <= 0f)
+            return;
+
+        var width = layoutData.Width;
+        var height = layoutData.Height;
+
+        // If both dimensions are already set, don't override
+        if (width.HasValue && height.HasValue)
+            return;
+
+        // If width is set, compute height from aspect ratio (aspectRatio = width / height)
+        if (width.HasValue && !height.HasValue)
+        {
+            var computedHeight = new Dp(width.Value.Value / aspectRatio.Value);
+            layoutData = layoutData with { Height = computedHeight };
+        }
+        // If height is set, compute width from aspect ratio
+        else if (!width.HasValue && height.HasValue)
+        {
+            var computedWidth = new Dp(height.Value.Value * aspectRatio.Value);
+            layoutData = layoutData with { Width = computedWidth };
+        }
+    }
+
+    private static (Dp Width, Dp Height) ComputeSizeWithAspectRatio(
+        float aspectRatio,
+        FitMode fitMode,
+        Dp availableWidth,
+        Dp availableHeight)
+    {
+        // aspectRatio = width / height
+
+        switch (fitMode)
+        {
+            case FitMode.Contain:
+            {
+                // Fit within both bounds (maintain aspect ratio, may have empty space)
+                var widthFromHeight = new Dp(availableHeight.Value * aspectRatio);
+                var heightFromWidth = new Dp(availableWidth.Value / aspectRatio);
+
+                if (widthFromHeight.Value <= availableWidth.Value)
+                {
+                    // Height is the limiting factor, use full height
+                    return (widthFromHeight, availableHeight);
+                }
+                else
+                {
+                    // Width is the limiting factor, use full width
+                    return (availableWidth, heightFromWidth);
+                }
+            }
+
+            case FitMode.Cover:
+            {
+                // Fill both bounds (maintain aspect ratio, may crop)
+                var widthFromHeight = new Dp(availableHeight.Value * aspectRatio);
+                var heightFromWidth = new Dp(availableWidth.Value / aspectRatio);
+
+                if (widthFromHeight.Value >= availableWidth.Value)
+                {
+                    // Use full height, width exceeds
+                    return (widthFromHeight, availableHeight);
+                }
+                else
+                {
+                    // Use full width, height exceeds
+                    return (availableWidth, heightFromWidth);
+                }
+            }
+
+            case FitMode.Fill:
+            default:
+            {
+                // Ignore aspect ratio, fill bounds
+                return (availableWidth, availableHeight);
+            }
+        }
     }
 
     private bool TryComputePositionsFor(int nodeIndex, [MaybeNullWhen(true)] out ResultProblem problem)

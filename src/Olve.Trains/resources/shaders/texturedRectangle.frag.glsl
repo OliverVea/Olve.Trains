@@ -13,5 +13,12 @@ void main()
 {
     // Sample texture and multiply by tint color
     vec4 texColor = texture(uTexture, fs_in.texCoord);
-    fragColor = texColor * fs_in.tint;
+    vec4 result = texColor * fs_in.tint;
+
+    // Discard fully transparent pixels (don't render boxes without background color)
+    if (result.a < 0.01) {
+        discard;
+    }
+
+    fragColor = result;
 }

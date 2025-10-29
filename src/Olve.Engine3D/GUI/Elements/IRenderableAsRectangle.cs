@@ -3,7 +3,7 @@ using Olve.Engine3D.Rendering.Entities;
 
 namespace Olve.Engine3D.GUI.Elements;
 
-public interface IRenderableAsTexturedRectangle
+public interface IRenderableAsRectangle
 {
     record Data()
     {

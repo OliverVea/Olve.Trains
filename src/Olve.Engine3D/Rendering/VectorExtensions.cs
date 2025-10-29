@@ -21,7 +21,7 @@ public static class VectorExtensions
             buffer[j] = vertices[i].X;
             buffer[j + 1] = vertices[i].Y;
             buffer[j + 2] = vertices[i].Z;
-            buffer[j + 3] = vertices[i].Z;
+            buffer[j + 3] = vertices[i].W;
         }
     }
 

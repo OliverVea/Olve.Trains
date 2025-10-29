@@ -33,8 +33,8 @@ namespace Olve.Trains.Scenes.UI;
 [Singleton(typeof(GuiLayoutContextUpdater))]
 [Singleton(typeof(GuiElementService))]
 [Singleton(typeof(GuiDepthService))]
-[Singleton(typeof(GuiTexturedRectangleRenderingService))]
-[Singleton(typeof(GuiTexturedRectangleUpdateService))]
+[Singleton(typeof(GuiRectangleRenderingService))]
+[Singleton(typeof(GuiRectangleUpdateService))]
 [Singleton(typeof(Provider<LayoutContext>))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 [Singleton(typeof(RenderingManager2D), Factory = nameof(GetRenderingManager2D))]
@@ -82,8 +82,8 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
         provider.GetRequiredService<InfoBarService>(),
         provider.GetRequiredService<GuiLayoutContextUpdater>(),
         provider.GetRequiredService<GuiLayoutUpdateService>(),
-        provider.GetRequiredService<GuiTexturedRectangleRenderingService>(),
-        provider.GetRequiredService<GuiTexturedRectangleUpdateService>(),
+        provider.GetRequiredService<GuiRectangleRenderingService>(),
+        provider.GetRequiredService<GuiRectangleUpdateService>(),
         provider.GetRequiredService<TextureLoadingService>()
     ];
 }
