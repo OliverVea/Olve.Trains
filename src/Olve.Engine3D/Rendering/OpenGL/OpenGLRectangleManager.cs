@@ -9,8 +9,8 @@ public class OpenGLRectangleManager(
     OpenGLQuadRenderingManager quadRenderingManager)
     : IOpenGLEntityManager<RectangleData, OpenGLRectangleManager.Registration>
 {
-    // pos2, size2, tint4
-    private const int InstFields = 2 + 2 + 4;
+    // pos2, size2, tint4, uvMin2, uvMax2
+    private const int InstFields = 2 + 2 + 4 + 2 + 2;
 
     public readonly record struct Registration(VAO VAO, VBO InstanceVBO);
 

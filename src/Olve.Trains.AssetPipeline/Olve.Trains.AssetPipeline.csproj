@@ -18,6 +18,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
         <PackageReference Include="Microsoft.Extensions.Logging"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
+        <PackageReference Include="Olve.MsdfAtlasGen" />
         <PackageReference Include="Olve.Operations"/>
         <PackageReference Include="Olve.Paths.Glob"/>
         <PackageReference Include="Scriban"/>
@@ -41,6 +42,9 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="templates\LayoutClass.scriban">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="templates\FontClass.scriban">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>

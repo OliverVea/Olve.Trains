@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Olve.Operations;
 using Olve.Results;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Shaders;
 using Olve.Trains.AssetPipeline.Layouts;
+using Olve.Trains.AssetPipeline.Options;
 
 namespace Olve.Trains.AssetPipeline;
 
@@ -11,9 +13,11 @@ public class RunAssetPipeline(
     ILogger<RunAssetPipeline> logger,
     PathProvider pathProvider,
     DownloadAssets downloadAssets,
+    LoadLocalAssets loadLocalAssets,
     ProcessShaders processShaders,
     ProcessLayouts processLayouts,
-    ProcessAssets processAssets) : IAsyncOperation<RunAssetPipeline.Request>
+    ProcessAssets processAssets,
+    IOptions<S3Options> s3Options) : IAsyncOperation<RunAssetPipeline.Request>
     {
     public record Request(BuildTargets Targets, TimeSpan InitialS3Timeout, bool AllowS3Failure);
 
@@ -37,23 +41,38 @@ public class RunAssetPipeline(
 
         if (request.Targets.RequiresS3Resources())
         {
-            DownloadAssets.Request downloadAssetsRequest = new(request.InitialS3Timeout, request.AllowS3Failure);
-            var downloadAssetsResult = await downloadAssets.ExecuteAsync(downloadAssetsRequest, ct);
-            if (downloadAssetsResult.TryPickProblems(out var downloadProblems, out var downloadResponse))
+            if (s3Options.Value.UseLocalAssets)
             {
-                if (request.AllowS3Failure)
+                logger.LogInformation("Using local assets from build directory (S3 download skipped)");
+                LoadLocalAssets.Request loadLocalAssetsRequest = new();
+                var loadLocalAssetsResult = await loadLocalAssets.ExecuteAsync(loadLocalAssetsRequest, ct);
+                if (loadLocalAssetsResult.TryPickProblems(out var loadProblems, out var loadResponse))
                 {
-                    logger.LogWarning("Failed to download assets: {Problems}", downloadProblems);
-                    assetFiles = [];
+                    return loadProblems.Prepend("Failed to load local assets");
                 }
-                else
-                {
-                    return downloadProblems.Prepend("Failed to download assets");
-                }
+
+                assetFiles = loadResponse.Files;
             }
             else
             {
-                assetFiles = downloadResponse.Files;
+                DownloadAssets.Request downloadAssetsRequest = new(request.InitialS3Timeout, request.AllowS3Failure);
+                var downloadAssetsResult = await downloadAssets.ExecuteAsync(downloadAssetsRequest, ct);
+                if (downloadAssetsResult.TryPickProblems(out var downloadProblems, out var downloadResponse))
+                {
+                    if (request.AllowS3Failure)
+                    {
+                        logger.LogWarning("Failed to download assets: {Problems}", downloadProblems);
+                        assetFiles = [];
+                    }
+                    else
+                    {
+                        return downloadProblems.Prepend("Failed to download assets");
+                    }
+                }
+                else
+                {
+                    assetFiles = downloadResponse.Files;
+                }
             }
         }
 

@@ -9,5 +9,6 @@ public enum BuildTargets
     Textures = 1 << 2,
     Terrains = 1 << 3,
     Layouts = 1 << 4,
-    All = Shaders | Meshes | Textures | Terrains | Layouts
+    Fonts = 1 << 5,
+    All = Shaders | Meshes | Textures | Terrains | Layouts | Fonts
 }

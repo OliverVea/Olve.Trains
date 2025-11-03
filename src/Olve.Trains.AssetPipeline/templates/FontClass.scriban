@@ -1,0 +1,54 @@
+﻿// --------------------------------------------------------------------------------------------------
+// |                                                                                                |
+// |               WARNING: This is a generated file. Do not modify it manually.                    |
+// |                                                                                                |
+// --------------------------------------------------------------------------------------------------
+// ReSharper disable InconsistentNaming
+using System.Collections.Frozen;
+using System.Text;
+using Olve.Engine3D.Assets;
+using Olve.Engine3D.Rendering.Entities;
+using Olve.Utilities.Ids;
+
+// ReSharper disable once CheckNamespace
+namespace {{ Namespace }};
+
+public static partial class Fonts
+{
+    public static FontData {{Font.Name}} { get; } = new()
+    {
+        Atlas = new FontAtlasData
+        {
+            DistanceRange = {{ Font.Atlas.DistanceRange }},
+            DistanceRangeMiddle = {{ Font.Atlas.DistanceRangeMiddle }},
+            GlyphSize = {{ Font.Atlas.GlyphSize }},
+            FontAtlas = new AssetPath<TextureData>("{{ Font.Atlas.Path.Name }}", "{{ Font.Atlas.Path.Path }}"),
+            FontAtlasSize = new Vector2D<int>({{ Font.Atlas.Size.X }}, {{ Font.Atlas.Size.Y }}),
+            FontAtlasType = FontAtlasType.{{ Font.Atlas.Type }},
+        },
+        Metrics = new FontMetricsData()
+        {
+            Ascender = {{ Font.Metrics.Ascender }}f,
+            Descender = {{ Font.Metrics.Descender }}f,
+            UnderlineY = {{ Font.Metrics.UnderlineY }}f,
+            UnderlineThickness = {{ Font.Metrics.UnderlineThickness }}f,
+            YPointsDown = {{ Font.Metrics.YPointsDown }},
+            EmSize = {{ Font.Metrics.EmSize }}f,
+            LineHeight = {{ Font.Metrics.LineHeight }}f
+        },
+        KerningAdjustments = FrozenDictionary<GlyphIndexPair, float>.Empty,
+        GlyphData = new Dictionary<Rune, FontGlyphData>
+            { {{ for glyph in Font.Glyphs }}
+                {new Rune({{ glyph.Rune }}), new FontGlyphData()
+                {
+                    Index = new GlyphIndex({{ glyph.Index }}),
+                    Advance = {{ glyph.Advance }}f,
+                    Bounds = {{ if glyph.Bounds }}new FontGlyphBoundsData()
+                    {
+                        AtlasBounds = new Rectangle<float>({{ glyph.Bounds.Atlas.Origin.X }}f, {{ glyph.Bounds.Atlas.Origin.Y }}f, {{ glyph.Bounds.Atlas.Size.X }}f, {{ glyph.Bounds.Atlas.Size.Y }}f),
+                        PlaneBounds = new Rectangle<float>({{ glyph.Bounds.Plane.Origin.X }}f, {{ glyph.Bounds.Plane.Origin.Y }}f, {{ glyph.Bounds.Plane.Size.X }}f, {{ glyph.Bounds.Plane.Size.Y }}f)
+                    }{{ else }}null{{ end }}
+                }},{{ end }}
+            }.ToFrozenDictionary(),
+    };
+}
