@@ -8,7 +8,7 @@ public partial class TextureData
     public required Vector4D<byte>[] Pixels { get; set; }
     public required int Width { get; set; }
     public required int Height { get; set; }
-    public int Slot { get; set; } = 0;
+    public Slot Slot { get; set; } = Slot.Default;
 
     public Result Validate()
     {

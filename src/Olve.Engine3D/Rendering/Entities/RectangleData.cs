@@ -10,6 +10,8 @@ public partial class RectangleData
     public required Vector2D<float> SizePx { get; set; }
     public required Vector4D<float> TintRgba { get; set; }
     public required RenderingId<TextureData> TextureId { get; set; }
+    public Vector2D<float> UvMin { get; set; } = new(0f, 0f);
+    public Vector2D<float> UvMax { get; set; } = new(1f, 1f);
     public float Depth { get; set; } = 0f;
 
     public Result Validate()

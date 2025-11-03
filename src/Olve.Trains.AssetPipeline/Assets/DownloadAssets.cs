@@ -55,7 +55,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
 
         }
 
-        var itemCount = pathProvider.BuildPath.TryGlob("**", out var hits) ? hits.Count(x => x.ElementType == ElementType.File) : 0;
+        var itemCount = pathProvider.BuildS3CachePath.TryGlob("**", out var hits) ? hits.Count(x => x.ElementType == ElementType.File) : 0;
 
         logger.LogInformation("Retrieved {ItemCount} items from S3 bucket", itemCount);
 
@@ -92,7 +92,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
                 return new ResultProblem("No objects found in the S3 bucket '{0}'", bucket);
             }
 
-            Directory.CreateDirectory(pathProvider.BuildPath.Path);
+            Directory.CreateDirectory(pathProvider.BuildS3CachePath.Path);
 
             List<FileInfo> files = [];
 
@@ -100,7 +100,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
             {
                 logger.LogDebug("Retrieving object '{0}' from S3 bucket '{1}'", s3Object.Key, bucket);
 
-                var destFilePath = Path.Combine(pathProvider.BuildPath.Path, s3Object.Key);
+                var destFilePath = Path.Combine(pathProvider.BuildS3CachePath.Path, s3Object.Key);
                 var destDirectory = Path.GetDirectoryName(destFilePath);
 
                 if (!Directory.Exists(destDirectory))

@@ -31,4 +31,10 @@ public class S3Options : IAssetOptions
     /// If true, pipeline continues even if S3 operations fail.
     /// </summary>
     public bool AllowFailure { get; set; } = false;
+
+    /// <summary>
+    /// If true, skips S3 download and loads assets directly from the build directory.
+    /// Useful for local development without S3 credentials.
+    /// </summary>
+    public bool UseLocalAssets { get; set; } = false;
 }

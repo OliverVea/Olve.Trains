@@ -9,6 +9,7 @@ using Olve.Trains.AssetPipeline;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Shaders;
 using Olve.Trains.AssetPipeline.Layouts;
+using Olve.Trains.AssetPipeline.Fonts;
 using Olve.Trains.AssetPipeline.Options;
 
 ServiceCollection serviceCollection = new();
@@ -39,10 +40,12 @@ serviceCollection.AddLogging(builder =>
 
 serviceCollection.AddTransient<RunAssetPipeline>();
 serviceCollection.AddTransient<DownloadAssets>();
+serviceCollection.AddTransient<LoadLocalAssets>();
 serviceCollection.AddTransient<PathProvider>();
 serviceCollection.AddTransient<NamespaceProvider>();
 serviceCollection.AddTransient<ProcessShaders>();
 serviceCollection.AddTransient<ProcessLayouts>();
+serviceCollection.AddTransient<ProcessFonts>();
 serviceCollection.AddTransient<ProcessAssets>();
 serviceCollection.AddTransient<ProcessMeshAssets>();
 serviceCollection.AddTransient<ProcessTextureAssets>();

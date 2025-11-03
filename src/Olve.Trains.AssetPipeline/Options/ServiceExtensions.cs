@@ -15,6 +15,7 @@ public static class ServiceExtensions
     {
         AddOptions<BuildOptions>(services, configuration);
         AddOptions<LayoutOptions>(services, configuration);
+        AddOptions<FontOptions>(services, configuration);
         AddOptions<MeshOptions>(services, configuration);
         AddOptions<S3Options>(services, configuration);
         AddOptions<ShaderOptions>(services, configuration);

@@ -9,12 +9,12 @@ namespace Olve.Trains.AssetPipeline.Assets;
 /// <summary>
 ///     Processes game assets and spits them out in /app/output.
 /// </summary>
-public class ProcessAssets(ILogger<ProcessAssets> logger, PathProvider pathProvider, ProcessMeshAssets processMeshAssets, ProcessTextureAssets processTextureAssets, ProcessTerrainAssets processTerrainAssets) : IAsyncOperation<ProcessAssets.Request, ProcessAssets.Response>
+public class ProcessAssets(ILogger<ProcessAssets> logger, PathProvider pathProvider, ProcessMeshAssets processMeshAssets, ProcessTextureAssets processTextureAssets, ProcessTerrainAssets processTerrainAssets, Fonts.ProcessFonts processFonts, TextureFileReader textureFileReader, AssetWriter assetWriter) : IAsyncOperation<ProcessAssets.Request, ProcessAssets.Response>
 {
     private IPath TemplateFilePath => pathProvider.TemplatesSourceFolder / "MeshesClass.scriban";
 
     public record Request(IReadOnlyList<FileInfo> AssetFiles, BuildTargets Targets);
-    public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets, IReadOnlyList<Asset<TextureData>> TextureAssets, IReadOnlyList<Asset<TerrainData>> TerrainAssets);
+    public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets, IReadOnlyList<Asset<TextureData>> TextureAssets, IReadOnlyList<Asset<TerrainData>> TerrainAssets, IReadOnlyList<IPath> FontFiles);
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
@@ -23,6 +23,7 @@ public class ProcessAssets(ILogger<ProcessAssets> logger, PathProvider pathProvi
         IReadOnlyList<Asset<MeshData>> meshAssets = [];
         IReadOnlyList<Asset<TextureData>> textureAssets = [];
         IReadOnlyList<Asset<TerrainData>> terrainAssets = [];
+        IReadOnlyList<IPath> fontFiles = [];
 
         if (request.Targets.HasFlag(BuildTargets.Meshes))
         {
@@ -60,12 +61,55 @@ public class ProcessAssets(ILogger<ProcessAssets> logger, PathProvider pathProvi
             terrainAssets = terrains;
         }
 
+        if (request.Targets.HasFlag(BuildTargets.Fonts))
+        {
+            Fonts.ProcessFonts.Request fontRequest = new(request.AssetFiles);
+            var fontResponse = await processFonts.ExecuteAsync(fontRequest, ct);
+            if (fontResponse.TryPickProblems(out var fontProblems, out var fonts))
+            {
+                return fontProblems.Prepend("Failed to process font assets");
+            }
+
+            fontFiles = fonts.GeneratedFiles;
+
+            // Process font atlases as textures and output to fonts folder
+            foreach (var fontAtlas in fonts.FontAtlases)
+            {
+                var atlasFile = new FileInfo(fontAtlas.Atlas.Absolute.Path);
+                if (!atlasFile.Exists)
+                {
+                    return new ResultProblem("Font atlas file not found: {0}", fontAtlas.Atlas.Path);
+                }
+
+                var textureResult = textureFileReader.LoadTextures([atlasFile]);
+                if (textureResult.TryPickProblems(out var textureProblems, out var textureAssetsList))
+                {
+                    return textureProblems.Prepend("Failed to load font atlas texture");
+                }
+
+                var textureAsset = textureAssetsList.First();
+
+                // Override destination to fonts folder
+                var fontName = System.IO.Path.GetFileNameWithoutExtension(textureAsset.Name);
+                var fontAtlasDestination = $"fonts/{fontName}.texture";
+
+                var writeResult = await assetWriter.WriteAssetAsync(textureAsset.Data, fontAtlasDestination, ct);
+                if (writeResult.TryPickProblems(out var writeProblems))
+                {
+                    return writeProblems.Prepend("Failed to write font atlas texture");
+                }
+
+                logger.LogDebug("Processed font atlas texture: {Name}", fontName);
+            }
+        }
+
         logger.LogInformation(
-            "Processed {MeshCount} mesh(es), {TextureCount} texture(s), and {TerrainCount} terrain(s) successfully!",
+            "Processed {MeshCount} mesh(es), {TextureCount} texture(s), {TerrainCount} terrain(s), and {FontCount} font(s) successfully!",
             meshAssets.Count,
             textureAssets.Count,
-            terrainAssets.Count);
+            terrainAssets.Count,
+            fontFiles.Count);
 
-        return new Response(meshAssets, textureAssets, terrainAssets);
+        return new Response(meshAssets, textureAssets, terrainAssets, fontFiles);
     }
 }
