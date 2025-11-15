@@ -59,10 +59,10 @@ public class GuiLayoutServicePositioningTests
         var sut = BuildSut(logging, ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(parentId, Box(prefW: 300, prefH: 100)); // parent 300x100
+        sut.CreateOrSetNodeBox(parentId, Box(prefW: 300, prefH: 100)); // parent 300x100
 
         var childId = await ge.AddNode("Child", parentId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(childId, Box(prefW: 100, prefH: 100));  // child 100x100
+        sut.CreateOrSetNodeBox(childId, Box(prefW: 100, prefH: 100));  // child 100x100
 
         // Act
         var result = sut.ComputeLayout();
@@ -91,13 +91,13 @@ public class GuiLayoutServicePositioningTests
         var sut = BuildSut(logging, ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(parentId, Box(prefW: 300, prefH: 100)); // 300x100
+        sut.CreateOrSetNodeBox(parentId, Box(prefW: 300, prefH: 100)); // 300x100
 
         var c1 = await ge.AddNode("C1", parentId).AssertSuccessAndGetAsync();
         var c2 = await ge.AddNode("C2", parentId).AssertSuccessAndGetAsync();
 
-        sut.CreateOrSetElementBox(c1, Box(prefW: 120, prefH: 100));
-        sut.CreateOrSetElementBox(c2, Box(prefW: 180, prefH: 100));
+        sut.CreateOrSetNodeBox(c1, Box(prefW: 120, prefH: 100));
+        sut.CreateOrSetNodeBox(c2, Box(prefW: 180, prefH: 100));
 
         // Act
         var r = sut.ComputeLayout();
@@ -122,13 +122,13 @@ public class GuiLayoutServicePositioningTests
         var sut = BuildSut(logging, ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(parentId, Box(axis: UIAxis.Y, prefW: 100, prefH: 300)); // vertical parent
+        sut.CreateOrSetNodeBox(parentId, Box(axis: UIAxis.Y, prefW: 100, prefH: 300)); // vertical parent
 
         var c1 = await ge.AddNode("C1", parentId).AssertSuccessAndGetAsync();
         var c2 = await ge.AddNode("C2", parentId).AssertSuccessAndGetAsync();
 
-        sut.CreateOrSetElementBox(c1, Box(prefW: 100, prefH: 120));
-        sut.CreateOrSetElementBox(c2, Box(prefW: 100, prefH: 180));
+        sut.CreateOrSetNodeBox(c1, Box(prefW: 100, prefH: 120));
+        sut.CreateOrSetNodeBox(c2, Box(prefW: 100, prefH: 180));
 
         // Act
         var r = sut.ComputeLayout();
@@ -153,22 +153,22 @@ public class GuiLayoutServicePositioningTests
         var sut = BuildSut(logging, ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(parentId, Box(prefW: 600, prefH: 300));
+        sut.CreateOrSetNodeBox(parentId, Box(prefW: 600, prefH: 300));
 
         var leftId  = await ge.AddNode("Left",  parentId).AssertSuccessAndGetAsync();
         var rightId = await ge.AddNode("Right", parentId).AssertSuccessAndGetAsync();
 
         // left fixed width, full height (due to sizing pass cross-axis fill)
-        sut.CreateOrSetElementBox(leftId, Box(axis: UIAxis.Y, prefW: 200, prefH: 180));
+        sut.CreateOrSetNodeBox(leftId, Box(axis: UIAxis.Y, prefW: 200, prefH: 180));
 
         // right gets remaining width by weight=1
-        sut.CreateOrSetElementBox(rightId, Box(weight: 1f));
+        sut.CreateOrSetNodeBox(rightId, Box(weight: 1f));
 
         // Two children inside right; split space evenly (weights 1:1)
         var r1 = await ge.AddNode("R1", rightId).AssertSuccessAndGetAsync();
         var r2 = await ge.AddNode("R2", rightId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(r1, Box(weight: 1f));
-        sut.CreateOrSetElementBox(r2, Box(weight: 1f));
+        sut.CreateOrSetNodeBox(r1, Box(weight: 1f));
+        sut.CreateOrSetNodeBox(r2, Box(weight: 1f));
 
         // Act
         var res = sut.ComputeLayout();
@@ -219,13 +219,13 @@ public class GuiLayoutServicePositioningTests
         var sut = BuildSut(logging, ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(parentId, Box(prefW: 300, prefH: 200, horizontalChrome: new Dp(40), verticalChrome: new Dp(20)));
+        sut.CreateOrSetNodeBox(parentId, Box(prefW: 300, prefH: 200, horizontalChrome: new Dp(40), verticalChrome: new Dp(20)));
 
         var c1 = await ge.AddNode("C1", parentId).AssertSuccessAndGetAsync();
         var c2 = await ge.AddNode("C2", parentId).AssertSuccessAndGetAsync();
 
-        sut.CreateOrSetElementBox(c1, Box(prefW: 100, prefH: 80));
-        sut.CreateOrSetElementBox(c2, Box(prefW: 60,  prefH: 80));
+        sut.CreateOrSetNodeBox(c1, Box(prefW: 100, prefH: 80));
+        sut.CreateOrSetNodeBox(c2, Box(prefW: 60,  prefH: 80));
 
         // Act
         var res = sut.ComputeLayout();
@@ -250,7 +250,7 @@ public class GuiLayoutServicePositioningTests
         var sut = BuildSut(logging, ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(parentId, Box(prefW: 100, prefH: 50));
+        sut.CreateOrSetNodeBox(parentId, Box(prefW: 100, prefH: 50));
 
         var ok = sut.TryGetBoxPosition(parentId, out _);
         await Assert.That(ok).IsFalse(); // no sizes/position yet

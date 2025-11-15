@@ -107,7 +107,7 @@ public class TrackArrowIndicatorService(
 
     public DeletionResult RemoveArrowIndicator(Id<ArrowIndicator> trackArrowIndicatorId)
     {
-        return trackArrowIndicatorId.Value == 1
+        return trackArrowIndicatorId.Value != default
             ? DeletionResult.Success()
             : DeletionResult.NotFound();
     }

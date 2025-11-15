@@ -28,8 +28,7 @@ public static class ApplicationConfiguration
                     CancellationToken ct) => handler.RunAsync(request, ct))
             .WithResultMapping()
             .WithName("RunCommand")
-            .WithValidation<RunCommandRequest, RunCommandValidator>()
-            .WithOpenApi();
+            .WithValidation<RunCommandRequest, RunCommandValidator>();
 
         app.MapPost("/logs", (
                 [FromBody] GetLogsRequest request,
@@ -37,14 +36,12 @@ public static class ApplicationConfiguration
                 CancellationToken ct) => handler.HandleAsync(request, ct))
             .WithResultMapping<GetLogsResponse>()
             .WithName("GetLogs")
-            .WithValidation<GetLogsRequest, GetLogsValidator>()
-            .WithOpenApi();
+            .WithValidation<GetLogsRequest, GetLogsValidator>();
 
         app.MapGet("/health", () => TypedResults.Ok("healthy"))
             .Produces<string>()
-            .WithName("GetHealth")
-            .WithOpenApi();
-        
+            .WithName("GetHealth");
+
         var embeddedProvider = new ManifestEmbeddedFileProvider(
             typeof(ApplicationConfiguration).Assembly,
             "SvelteDist"
@@ -54,10 +51,10 @@ public static class ApplicationConfiguration
             FileProvider = embeddedProvider,
             RequestPath  = ""
         });
-        
+
         app.UseStaticFiles(new StaticFileOptions {
             FileProvider = embeddedProvider,
-            RequestPath  = "" 
+            RequestPath  = ""
         });
 
         // optional SPA fallback for client-routing

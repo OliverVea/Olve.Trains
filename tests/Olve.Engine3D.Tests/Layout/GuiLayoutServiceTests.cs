@@ -52,7 +52,7 @@ public class GuiLayoutServiceTests
         var parentResult = guiNodeService.AddNode("Parent", DefaultAnchorId);
         await Assert.That(parentResult).Succeeded();
         var parentId = parentResult.Value;
-        sut.CreateOrSetElementBox(parentId, parent);
+        sut.CreateOrSetNodeBox(parentId, parent);
 
         var childIds = new Id<GuiNode>[children.Count];
 
@@ -61,7 +61,7 @@ public class GuiLayoutServiceTests
         {
             var childResult = guiNodeService.AddNode("Child_" + (i + 1), parentId);
             await Assert.That(childResult).Succeeded();
-            sut.CreateOrSetElementBox(childResult.Value, child);
+            sut.CreateOrSetNodeBox(childResult.Value, child);
 
             childIds[i] = childResult.Value;
             i++;
@@ -96,35 +96,35 @@ public class GuiLayoutServiceTests
         var anchorId = DefaultAnchorId; // Parent anchored to root anchor
 
         var parentId = await ge.AddNode("Parent", anchorId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(parentId, Box(UIAxis.X, prefW: 600, prefH: 300)); // 600x300 parent
+        sut.CreateOrSetNodeBox(parentId, Box(UIAxis.X, prefW: 600, prefH: 300)); // 600x300 parent
 
         // Left panel (fixed W=200, fills height=300 via parent)
         var leftPanelId = await ge.AddNode("LeftPanel", parentId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(leftPanelId, Box(UIAxis.Y, prefW: 200)); // width 200, vertical stack
+        sut.CreateOrSetNodeBox(leftPanelId, Box(UIAxis.Y, prefW: 200)); // width 200, vertical stack
 
         // Top row inside left panel (200x100)
         var topRowId = await ge.AddNode("TopRow", leftPanelId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(topRowId, Box(UIAxis.X, prefW: 200, prefH: 100));
+        sut.CreateOrSetNodeBox(topRowId, Box(UIAxis.X, prefW: 200, prefH: 100));
 
         var leaf1Id = await ge.AddNode("Leaf1", topRowId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(leaf1Id, Box(prefW: 100, prefH: 100));
+        sut.CreateOrSetNodeBox(leaf1Id, Box(prefW: 100, prefH: 100));
 
         var leaf2Id = await ge.AddNode("Leaf2", topRowId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(leaf2Id, Box(prefW: 100, prefH: 100));
+        sut.CreateOrSetNodeBox(leaf2Id, Box(prefW: 100, prefH: 100));
 
         // Bottom box inside left panel (200x200)
         var bottomBoxId = await ge.AddNode("BottomBox", leftPanelId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(bottomBoxId, Box(prefW: 200, prefH: 200));
+        sut.CreateOrSetNodeBox(bottomBoxId, Box(prefW: 200, prefH: 200));
 
         // Right panel (takes remaining width 400, fills height 300)
         var rightPanelId = await ge.AddNode("RightPanel", parentId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(rightPanelId, Box(UIAxis.X, weight: 1f)); // width determined by leftover
+        sut.CreateOrSetNodeBox(rightPanelId, Box(UIAxis.X, weight: 1f)); // width determined by leftover
 
         var grow1Id = await ge.AddNode("Grow1", rightPanelId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(grow1Id, Box(weight: 1f));
+        sut.CreateOrSetNodeBox(grow1Id, Box(weight: 1f));
 
         var grow2Id = await ge.AddNode("Grow2", rightPanelId).AssertSuccessAndGetAsync();
-        sut.CreateOrSetElementBox(grow2Id, Box(weight: 1f));
+        sut.CreateOrSetNodeBox(grow2Id, Box(weight: 1f));
 
         // Act
         var result = sut.ComputeLayout();

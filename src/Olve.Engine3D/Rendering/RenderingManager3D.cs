@@ -16,8 +16,7 @@ public class RenderingManager3D(
     HeightmapEntityManager heightmapEntityManager,
     ShaderEntityManager shaderEntityManager)
 {
-    private readonly ThreadSafeUintGenerator _instanceUintGenerator = new();
-    private RenderingInstanceId NextInstanceId() => new(_instanceUintGenerator.Next());
+    private RenderingInstanceId NextInstanceId() => new(Id.New());
 
     // Dictionary on shader?
     protected readonly SortedList<RenderingInstanceId, Instance> Instances = new();
@@ -32,7 +31,7 @@ public class RenderingManager3D(
         VBO VBO,
         EBO EBO,
         Matrix4X4<float> Transform);
-    
+
     public Result<RenderingInstanceId> RegisterInstance(
         RenderingId<MeshData> meshId,
         RenderingId<ShaderData> shaderId,
@@ -117,7 +116,7 @@ public class RenderingManager3D(
 
     public Result Render(IShader shader)
     {
-        if (shader.RenderingId.Id == 0)
+        if (shader.RenderingId == default)
         {
             return new ResultProblem("Shader ID is not set");
         }
@@ -132,7 +131,7 @@ public class RenderingManager3D(
         {
             return problems.Prepend("Failed to get shader registration for shader '{0}' ('{1}').", shader.ShaderData.Name, shader.RenderingId);
         }
-        
+
         switch (shader.BlendState.Blend)
         {
             case BlendMode.None:
@@ -165,8 +164,8 @@ public class RenderingManager3D(
         if (RenderInstances(shader.RenderingId, shaderRegistration).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to render entity instances with shader '{0}'", shader.ShaderData.Name);
-        }   
-        
+        }
+
         glProvider.Value.DepthMask(true);
         glProvider.Value.Disable(GLEnum.Blend);
 
@@ -184,7 +183,7 @@ public class RenderingManager3D(
                 {
                     continue;
                 }
-                
+
                 if (openGLModelRenderingManager.LoadModelInOpenGL(
                         instance.VAO,
                         instance.VBO,
@@ -226,10 +225,10 @@ public class RenderingManager3D(
             {
                 return new ResultProblem("OpenGL error: {0}", error);
             }
-            
+
             _errorCounter = 0;
         }
-        
+
         return Result.Success();
     }
 }
