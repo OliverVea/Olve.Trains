@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.1",
+  "openapi": "3.1.1",
   "info": {
     "title": "Olve.Engine3D.DebugServer.Host | v1",
     "version": "1.0.0"
@@ -114,34 +114,47 @@
             "$ref": "#/components/schemas/MethodBase"
           },
           "message": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "data": {
-            "type": "object",
-            "nullable": true
+            "type": [
+              "null",
+              "object"
+            ]
           },
           "innerException": {
             "$ref": "#/components/schemas/Exception"
           },
           "helpLink": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "source": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "hResult": {
-            "type": "integer",
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "stackTrace": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "null",
+              "string"
+            ]
           }
-        },
-        "nullable": true
+        }
       },
       "GetLogsRequest": {
         "type": "object",
@@ -150,7 +163,11 @@
             "type": "string"
           },
           "count": {
-            "type": "integer",
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "logLevel": {
@@ -174,9 +191,6 @@
         }
       },
       "IPath": { },
-      "IPath2": {
-        "nullable": true
-      },
       "LogLevel": {
         "enum": [
           "None",
@@ -206,29 +220,40 @@
             "type": "string"
           },
           "sourcePath": {
-            "$ref": "#/components/schemas/IPath2"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IPath"
+              }
+            ]
           },
           "sourceLine": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "time": {
             "type": "string",
             "format": "date-time"
           },
           "tags": {
-            "type": "array",
+            "type": [
+              "null",
+              "array"
+            ],
             "items": {
               "type": "string"
-            },
-            "nullable": true
+            }
           }
         }
       },
-      "MethodBase": {
-        "nullable": true
-      },
+      "MethodBase": { },
       "ProblemOriginInformation": {
         "type": "object",
         "properties": {
@@ -236,12 +261,18 @@
             "$ref": "#/components/schemas/IPath"
           },
           "lineNumber": {
-            "type": "integer",
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "linkString": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -249,8 +280,10 @@
         "type": "object",
         "properties": {
           "message": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "tags": {
             "type": "array",
@@ -259,16 +292,24 @@
             }
           },
           "severity": {
-            "type": "integer",
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "args": {
-            "type": "array",
-            "nullable": true
+            "type": [
+              "null",
+              "array"
+            ]
           },
           "source": {
-            "type": "string",
-            "nullable": true
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "exception": {
             "$ref": "#/components/schemas/Exception"
@@ -285,7 +326,11 @@
             "type": "string"
           },
           "times": {
-            "type": "integer",
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
             "format": "int32"
           }
         }

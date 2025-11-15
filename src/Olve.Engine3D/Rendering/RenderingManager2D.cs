@@ -16,8 +16,7 @@
         ShaderEntityManager shaderEntityManager,
         TextureEntityManager textureEntityManager)
     {
-        private readonly ThreadSafeUintGenerator _instanceUintGenerator = new();
-        private RenderingInstanceId NextInstanceId() => new(_instanceUintGenerator.Next());
+        private RenderingInstanceId NextInstanceId() => new(Id.New());
 
         protected readonly SortedList<RenderingInstanceId, Instance> Instances = new();
 
@@ -102,7 +101,7 @@
 
         public Result Render(IShader shader)
         {
-            if (shader.RenderingId.Id == 0)
+            if (shader.RenderingId == default)
                 return new ResultProblem("Shader ID is not set");
 
             if (Instances.Count == 0)

@@ -23,7 +23,7 @@ public partial class RectangleData
             return new ResultProblem("Tint color channels must be in [0,1]. RGBA=({0},{1},{2},{3})",
                 TintRgba.X, TintRgba.Y, TintRgba.Z, TintRgba.W);
 
-        if (TextureId.Id == 0)
+        if (TextureId.Id == default)
             return new ResultProblem("TextureId must be set (non-zero)");
 
         return Result.Success();
