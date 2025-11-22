@@ -4,11 +4,9 @@
 ## Get latest from `dotnet new gitignore`
 
 # User-specific files
-[Oo]utput/
-[Tt]emp/
-assets/
-SvelteDist/
-api/
+src/Olve.Engine3D.DebugServer/SvelteDist/
+src/Olve.Trains/assets/
+src/Olve.Trains.AssetPipeline/temp/
 [Aa]ppsettings.local.json
 
 # dotenv files
@@ -47,9 +45,6 @@ bld/
 .vs/
 # Uncomment if you have tasks that create the project's static files in wwwroot
 #wwwroot/
-
-# Visual Studio 2017 auto generated files
-Generated\ Files/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -412,40 +407,11 @@ FodyWeavers.xsd
 *.sln.iml
 .idea/
 
-##
-## Visual studio for Mac
-##
-
-
-# globs
-Makefile.in
-*.userprefs
-*.usertasks
-config.make
-config.status
-aclocal.m4
-install-sh
-autom4te.cache/
-*.tar.gz
-tarballs/
-test-results/
-
-# Mac bundle stuff
-*.dmg
-*.app
-
 # content below from: https://github.com/github/gitignore/blob/main/Global/macOS.gitignore
 # General
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Icon must end with two \r
-Icon
-
-
-# Thumbnails
-._*
 
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100

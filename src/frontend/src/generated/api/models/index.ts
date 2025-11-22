@@ -43,6 +43,33 @@ export function createGetLogsResponseFromDiscriminatorValue(parseNode: ParseNode
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {IPath}
+ */
+// @ts-ignore
+export function createIPathFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoIPath;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {IPath | LogMessage_sourcePathMember1}
+ */
+// @ts-ignore
+export function createLogMessage_sourcePathFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLogMessage_sourcePath;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LogMessage_sourcePathMember1}
+ */
+// @ts-ignore
+export function createLogMessage_sourcePathMember1FromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLogMessage_sourcePathMember1;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {LogMessage}
  */
 // @ts-ignore
@@ -86,7 +113,7 @@ export function deserializeIntoException(exception: Partial<Exception> | undefin
     return {
         "data": n => { exception.data = n.getObjectValue<Exception_data>(createException_dataFromDiscriminatorValue); },
         "helpLink": n => { exception.helpLink = n.getStringValue(); },
-        "hResult": n => { exception.hResult = n.getNumberValue(); },
+        "hResult": n => { exception.hResult = n.getObjectValue<UntypedNode>(createUntypedNodeFromDiscriminatorValue); },
         "innerException": n => { exception.innerException = n.getObjectValue<Exception>(createExceptionFromDiscriminatorValue); },
         "message": n => { exception.message = n.getStringValue(); },
         "source": n => { exception.source = n.getStringValue(); },
@@ -112,7 +139,7 @@ export function deserializeIntoException_data(exception_data: Partial<Exception_
 // @ts-ignore
 export function deserializeIntoGetLogsRequest(getLogsRequest: Partial<GetLogsRequest> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
-        "count": n => { getLogsRequest.count = n.getNumberValue(); },
+        "count": n => { getLogsRequest.count = n.getObjectValue<UntypedNode>(createUntypedNodeFromDiscriminatorValue); },
         "logLevel": n => { getLogsRequest.logLevel = n.getEnumValue<LogLevel>(LogLevelObject); },
         "query": n => { getLogsRequest.query = n.getStringValue(); },
         "since": n => { getLogsRequest.since = n.getDateValue(); },
@@ -131,6 +158,16 @@ export function deserializeIntoGetLogsResponse(getLogsResponse: Partial<GetLogsR
 }
 /**
  * The deserialization information for the current model
+ * @param IPath The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoIPath(iPath: Partial<IPath> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param LogMessage The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -139,10 +176,32 @@ export function deserializeIntoLogMessage(logMessage: Partial<LogMessage> | unde
     return {
         "level": n => { logMessage.level = n.getEnumValue<LogLevel>(LogLevelObject); },
         "message": n => { logMessage.message = n.getStringValue(); },
-        "sourceLine": n => { logMessage.sourceLine = n.getNumberValue(); },
-        "sourcePath": n => { logMessage.sourcePath = n.getObjectValue<UntypedNode>(createUntypedNodeFromDiscriminatorValue); },
+        "sourceLine": n => { logMessage.sourceLine = n.getObjectValue<UntypedNode>(createUntypedNodeFromDiscriminatorValue); },
+        "sourcePath": n => { logMessage.sourcePath = n.getObjectValue<IPath>(createIPathFromDiscriminatorValue) ?? n.getObjectValue<LogMessage_sourcePathMember1>(createLogMessage_sourcePathMember1FromDiscriminatorValue); },
         "tags": n => { logMessage.tags = n.getCollectionOfPrimitiveValues<string>(); },
         "time": n => { logMessage.time = n.getDateValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LogMessage_sourcePath The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLogMessage_sourcePath(logMessage_sourcePath: Partial<IPath | LogMessage_sourcePathMember1> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        ...deserializeIntoIPath(logMessage_sourcePath as IPath),
+        ...deserializeIntoLogMessage_sourcePathMember1(logMessage_sourcePath as LogMessage_sourcePathMember1),
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LogMessage_sourcePathMember1 The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLogMessage_sourcePathMember1(logMessage_sourcePathMember1: Partial<LogMessage_sourcePathMember1> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
     }
 }
 /**
@@ -154,7 +213,7 @@ export function deserializeIntoLogMessage(logMessage: Partial<LogMessage> | unde
 export function deserializeIntoProblemOriginInformation(problemOriginInformation: Partial<ProblemOriginInformation> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "filePath": n => { problemOriginInformation.filePath = n.getObjectValue<UntypedNode>(createUntypedNodeFromDiscriminatorValue); },
-        "lineNumber": n => { problemOriginInformation.lineNumber = n.getNumberValue(); },
+        "lineNumber": n => { problemOriginInformation.lineNumber = n.getObjectValue<UntypedNode>(createUntypedNodeFromDiscriminatorValue); },
         "linkString": n => { problemOriginInformation.linkString = n.getStringValue(); },
     }
 }
@@ -170,7 +229,7 @@ export function deserializeIntoResultProblem(resultProblem: Partial<ResultProble
         "exception": n => { resultProblem.exception = n.getObjectValue<Exception>(createExceptionFromDiscriminatorValue); },
         "message": n => { resultProblem.messageEscaped = n.getStringValue(); },
         "originInformation": n => { resultProblem.originInformation = n.getObjectValue<ProblemOriginInformation>(createProblemOriginInformationFromDiscriminatorValue); },
-        "severity": n => { resultProblem.severity = n.getNumberValue(); },
+        "severity": n => { resultProblem.severity = n.getObjectValue<UntypedNode>(createUntypedNodeFromDiscriminatorValue); },
         "source": n => { resultProblem.source = n.getStringValue(); },
         "tags": n => { resultProblem.tags = n.getCollectionOfPrimitiveValues<string>(); },
     }
@@ -184,7 +243,7 @@ export function deserializeIntoResultProblem(resultProblem: Partial<ResultProble
 export function deserializeIntoRunCommandRequest(runCommandRequest: Partial<RunCommandRequest> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "command": n => { runCommandRequest.command = n.getStringValue(); },
-        "times": n => { runCommandRequest.times = n.getNumberValue(); },
+        "times": n => { runCommandRequest.times = n.getObjectValue<UntypedNode>(createUntypedNodeFromDiscriminatorValue); },
     }
 }
 export interface Exception extends AdditionalDataHolder, Parsable {
@@ -199,7 +258,7 @@ export interface Exception extends AdditionalDataHolder, Parsable {
     /**
      * The hResult property
      */
-    hResult?: number | null;
+    hResult?: UntypedNode | null;
     /**
      * The innerException property
      */
@@ -227,7 +286,7 @@ export interface GetLogsRequest extends AdditionalDataHolder, Parsable {
     /**
      * The count property
      */
-    count?: number | null;
+    count?: UntypedNode | null;
     /**
      * The logLevel property
      */
@@ -247,6 +306,8 @@ export interface GetLogsResponse extends AdditionalDataHolder, Parsable {
      */
     messages?: LogMessage[] | null;
 }
+export interface IPath extends AdditionalDataHolder, Parsable {
+}
 export type LogLevel = (typeof LogLevelObject)[keyof typeof LogLevelObject];
 export interface LogMessage extends AdditionalDataHolder, Parsable {
     /**
@@ -260,11 +321,11 @@ export interface LogMessage extends AdditionalDataHolder, Parsable {
     /**
      * The sourceLine property
      */
-    sourceLine?: number | null;
+    sourceLine?: UntypedNode | null;
     /**
      * The sourcePath property
      */
-    sourcePath?: UntypedNode | null;
+    sourcePath?: IPath | LogMessage_sourcePathMember1 | null;
     /**
      * The tags property
      */
@@ -274,6 +335,9 @@ export interface LogMessage extends AdditionalDataHolder, Parsable {
      */
     time?: Date | null;
 }
+export type LogMessage_sourcePath = IPath | LogMessage_sourcePathMember1;
+export interface LogMessage_sourcePathMember1 extends AdditionalDataHolder, Parsable {
+}
 export interface ProblemOriginInformation extends AdditionalDataHolder, Parsable {
     /**
      * The filePath property
@@ -282,7 +346,7 @@ export interface ProblemOriginInformation extends AdditionalDataHolder, Parsable
     /**
      * The lineNumber property
      */
-    lineNumber?: number | null;
+    lineNumber?: UntypedNode | null;
     /**
      * The linkString property
      */
@@ -308,7 +372,7 @@ export interface ResultProblem extends AdditionalDataHolder, ApiError, Parsable 
     /**
      * The severity property
      */
-    severity?: number | null;
+    severity?: UntypedNode | null;
     /**
      * The source property
      */
@@ -326,7 +390,7 @@ export interface RunCommandRequest extends AdditionalDataHolder, Parsable {
     /**
      * The times property
      */
-    times?: number | null;
+    times?: UntypedNode | null;
 }
 /**
  * Serializes information the current object
@@ -339,7 +403,7 @@ export function serializeException(writer: SerializationWriter, exception: Parti
     if (!exception || isSerializingDerivedType) { return; }
     writer.writeObjectValue<Exception_data>("data", exception.data, serializeException_data);
     writer.writeStringValue("helpLink", exception.helpLink);
-    writer.writeNumberValue("hResult", exception.hResult);
+    writer.writeObjectValue("hResult", exception.hResult);
     writer.writeObjectValue<Exception>("innerException", exception.innerException, serializeException);
     writer.writeStringValue("message", exception.message);
     writer.writeStringValue("source", exception.source);
@@ -367,7 +431,7 @@ export function serializeException_data(writer: SerializationWriter, exception_d
 // @ts-ignore
 export function serializeGetLogsRequest(writer: SerializationWriter, getLogsRequest: Partial<GetLogsRequest> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!getLogsRequest || isSerializingDerivedType) { return; }
-    writer.writeNumberValue("count", getLogsRequest.count);
+    writer.writeObjectValue("count", getLogsRequest.count);
     writer.writeEnumValue<LogLevel>("logLevel", getLogsRequest.logLevel);
     writer.writeStringValue("query", getLogsRequest.query);
     writer.writeDateValue("since", getLogsRequest.since);
@@ -387,6 +451,17 @@ export function serializeGetLogsResponse(writer: SerializationWriter, getLogsRes
 }
 /**
  * Serializes information the current object
+ * @param IPath The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeIPath(writer: SerializationWriter, iPath: Partial<IPath> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!iPath || isSerializingDerivedType) { return; }
+    writer.writeAdditionalData(iPath.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param LogMessage The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
@@ -396,11 +471,33 @@ export function serializeLogMessage(writer: SerializationWriter, logMessage: Par
     if (!logMessage || isSerializingDerivedType) { return; }
     writer.writeEnumValue<LogLevel>("level", logMessage.level);
     writer.writeStringValue("message", logMessage.message);
-    writer.writeNumberValue("sourceLine", logMessage.sourceLine);
-    writer.writeObjectValue("sourcePath", logMessage.sourcePath);
+    writer.writeObjectValue("sourceLine", logMessage.sourceLine);
+    writer.writeObjectValue<IPath | LogMessage_sourcePathMember1>("sourcePath", logMessage.sourcePath, serializeLogMessage_sourcePath);
     writer.writeCollectionOfPrimitiveValues<string>("tags", logMessage.tags);
     writer.writeDateValue("time", logMessage.time);
     writer.writeAdditionalData(logMessage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LogMessage_sourcePath The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLogMessage_sourcePath(writer: SerializationWriter, logMessage_sourcePath: Partial<IPath | LogMessage_sourcePathMember1> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    serializeIPath(writer, logMessage_sourcePath as IPath);
+    serializeLogMessage_sourcePathMember1(writer, logMessage_sourcePath as LogMessage_sourcePathMember1);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LogMessage_sourcePathMember1 The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLogMessage_sourcePathMember1(writer: SerializationWriter, logMessage_sourcePathMember1: Partial<LogMessage_sourcePathMember1> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!logMessage_sourcePathMember1 || isSerializingDerivedType) { return; }
+    writer.writeAdditionalData(logMessage_sourcePathMember1.additionalData);
 }
 /**
  * Serializes information the current object
@@ -412,7 +509,7 @@ export function serializeLogMessage(writer: SerializationWriter, logMessage: Par
 export function serializeProblemOriginInformation(writer: SerializationWriter, problemOriginInformation: Partial<ProblemOriginInformation> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!problemOriginInformation || isSerializingDerivedType) { return; }
     writer.writeObjectValue("filePath", problemOriginInformation.filePath);
-    writer.writeNumberValue("lineNumber", problemOriginInformation.lineNumber);
+    writer.writeObjectValue("lineNumber", problemOriginInformation.lineNumber);
     writer.writeStringValue("linkString", problemOriginInformation.linkString);
     writer.writeAdditionalData(problemOriginInformation.additionalData);
 }
@@ -429,7 +526,7 @@ export function serializeResultProblem(writer: SerializationWriter, resultProble
     writer.writeObjectValue<Exception>("exception", resultProblem.exception, serializeException);
     writer.writeStringValue("message", resultProblem.messageEscaped);
     writer.writeObjectValue<ProblemOriginInformation>("originInformation", resultProblem.originInformation, serializeProblemOriginInformation);
-    writer.writeNumberValue("severity", resultProblem.severity);
+    writer.writeObjectValue("severity", resultProblem.severity);
     writer.writeStringValue("source", resultProblem.source);
     writer.writeCollectionOfPrimitiveValues<string>("tags", resultProblem.tags);
     writer.writeAdditionalData(resultProblem.additionalData);
@@ -444,7 +541,7 @@ export function serializeResultProblem(writer: SerializationWriter, resultProble
 export function serializeRunCommandRequest(writer: SerializationWriter, runCommandRequest: Partial<RunCommandRequest> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!runCommandRequest || isSerializingDerivedType) { return; }
     writer.writeStringValue("command", runCommandRequest.command);
-    writer.writeNumberValue("times", runCommandRequest.times);
+    writer.writeObjectValue("times", runCommandRequest.times);
     writer.writeAdditionalData(runCommandRequest.additionalData);
 }
 export const LogLevelObject = {
