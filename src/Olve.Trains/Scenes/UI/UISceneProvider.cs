@@ -9,6 +9,7 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Time;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Game.Tracks;
@@ -57,6 +58,7 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(TrackSplineService), Factory = nameof(GetTrackSplineService))]
 [Transient(typeof(AssetLoader), Factory = nameof(GetAssetLoader))]
 [Transient(typeof(RenderingServiceHelper), Factory = nameof(GetRenderingServiceHelper))]
+[Transient(typeof(DayTimeManager), Factory = nameof(GetDayTimeManager))]
 public partial class UISceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
     private TerrainRaycastService GetTerrainRaycastService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<TerrainRaycastService>();
@@ -77,6 +79,7 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private TextureLoadingService GetTextureLoadingService() => gameProvider.GetRequiredService<TextureLoadingService>();
     private AssetLoader GetAssetLoader() => gameProvider.GetRequiredService<AssetLoader>();
     private RenderingServiceHelper GetRenderingServiceHelper() => gameProvider.GetRequiredService<RenderingServiceHelper>();
+    private DayTimeManager GetDayTimeManager() => gameProvider.GetRequiredService<DayTimeManager>();
 
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
     private IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>

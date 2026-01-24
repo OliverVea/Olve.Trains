@@ -1,28 +1,28 @@
 #version 330 core
 
-// Per-vertex from unit quad [0..1] (two triangles)
+// Per-vertex from unit quad [0..1]
 layout(location = 0) in vec2 aUnit;
 
 // Per-instance attributes
-layout(location = 1) in vec2 iPosPx;
-layout(location = 2) in vec2 iSizePx;
-layout(location = 3) in vec4 iTint;
-layout(location = 4) in vec2 iUvMin;
-layout(location = 5) in vec2 iUvMax;
+layout(location = 1) in vec2 iPosPx;    // top-left position in pixels
+layout(location = 2) in vec2 iSizePx;   // glyph size in pixels
+layout(location = 3) in vec4 iTint;     // RGBA tint
+layout(location = 4) in vec2 iUvMin;    // atlas UV min
+layout(location = 5) in vec2 iUvMax;    // atlas UV max
 
 out VS_OUT {
     vec2 texCoord;
     vec4 tint;
 } vs_out;
 
-uniform vec2 uResolution;
+uniform vec2 uResolution; // framebuffer size in pixels
 
 void main()
 {
-    // Position in screen space (pixels)
+    // Glyph position in pixel space
     vec2 posPx = iPosPx + aUnit * iSizePx;
 
-    // Convert to NDC [-1,1]
+    // Convert to NDC [-1, 1]
     vec2 ndc = vec2(
         (posPx.x / uResolution.x) * 2.0 - 1.0,
         1.0 - (posPx.y / uResolution.y) * 2.0
@@ -30,7 +30,7 @@ void main()
 
     gl_Position = vec4(ndc, 0.0, 1.0);
 
-    // Interpolate UV coordinates from per-instance uvMin/uvMax
+    // Interpolate UVs
     vs_out.texCoord = mix(iUvMin, iUvMax, aUnit);
     vs_out.tint = iTint;
 }
