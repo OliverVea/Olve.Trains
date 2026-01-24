@@ -35,6 +35,8 @@ namespace Olve.Trains.Scenes.UI;
 [Singleton(typeof(GuiDepthService))]
 [Singleton(typeof(GuiRectangleRenderingService))]
 [Singleton(typeof(GuiRectangleUpdateService))]
+[Singleton(typeof(GuiTextRenderingService))]
+[Singleton(typeof(GuiTextUpdateService))]
 [Singleton(typeof(Provider<LayoutContext>))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 [Singleton(typeof(RenderingManager2D), Factory = nameof(GetRenderingManager2D))]
@@ -53,6 +55,8 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(Provider<IWindow>), Factory = nameof(GetWindowProvider))]
 [Transient(typeof(TrackPlacingService), Factory = nameof(GetTrackPlacingService))]
 [Transient(typeof(TrackSplineService), Factory = nameof(GetTrackSplineService))]
+[Transient(typeof(AssetLoader), Factory = nameof(GetAssetLoader))]
+[Transient(typeof(RenderingServiceHelper), Factory = nameof(GetRenderingServiceHelper))]
 public partial class UISceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
     private TerrainRaycastService GetTerrainRaycastService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<TerrainRaycastService>();
@@ -71,6 +75,8 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private RenderingManager2D GetRenderingManager2D() => gameProvider.GetRequiredService<RenderingManager2D>();
     private ILoggingManager GetLoggingManager() => gameProvider.GetRequiredService<ILoggingManager>();
     private TextureLoadingService GetTextureLoadingService() => gameProvider.GetRequiredService<TextureLoadingService>();
+    private AssetLoader GetAssetLoader() => gameProvider.GetRequiredService<AssetLoader>();
+    private RenderingServiceHelper GetRenderingServiceHelper() => gameProvider.GetRequiredService<RenderingServiceHelper>();
 
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
     private IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>
@@ -84,6 +90,8 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
         provider.GetRequiredService<GuiLayoutUpdateService>(),
         provider.GetRequiredService<GuiRectangleRenderingService>(),
         provider.GetRequiredService<GuiRectangleUpdateService>(),
+        provider.GetRequiredService<GuiTextRenderingService>(),
+        provider.GetRequiredService<GuiTextUpdateService>(),
         provider.GetRequiredService<TextureLoadingService>()
     ];
 }

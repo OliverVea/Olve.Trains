@@ -5,19 +5,33 @@ using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
-public class OpenGLShaderManager(Provider<GL> glProvider) : IOpenGLEntityManager<ShaderData, OpenGLShaderManager.Registration>
+public class OpenGLShaderManager(Provider<GL> glProvider, TextureSlotManager textureSlotManager) : IOpenGLEntityManager<ShaderData, OpenGLShaderManager.Registration>
 {
     public Result LoadShaderInOpenGL(ShaderProgram shaderProgram, RenderingParameters parameters)
     {
         glProvider.Value.UseProgram(shaderProgram.Handle);
         foreach (var p in parameters.Parameters)
         {
-            var r = p.SetUniforms(glProvider.Value, shaderProgram);
+            var r = p.SetUniforms(glProvider.Value, shaderProgram, textureSlotManager);
             if (r.Failed) return r;
         }
         return Result.Success();
     }
-    
+
+    /// <summary>
+    /// Applies additional rendering parameters to an already-bound shader.
+    /// Used for per-entity parameter overrides.
+    /// </summary>
+    public Result ApplyParameters(ShaderProgram shaderProgram, RenderingParameters parameters)
+    {
+        foreach (var p in parameters.Parameters)
+        {
+            var r = p.SetUniforms(glProvider.Value, shaderProgram, textureSlotManager);
+            if (r.Failed) return r;
+        }
+        return Result.Success();
+    }
+
     public readonly record struct Registration(
         ShaderProgram ShaderProgram,
         int? WorldPositionLocation,

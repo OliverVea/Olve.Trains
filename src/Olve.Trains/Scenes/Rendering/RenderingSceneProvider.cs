@@ -1,10 +1,12 @@
 ﻿using Jab;
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
+using Olve.Engine3D.Assets;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game;
@@ -51,6 +53,11 @@ namespace Olve.Trains.Scenes.Rendering;
 [Transient(typeof(ScreenResizedEvent), Factory=nameof(GetScreenResizedEvent))]
 [Transient(typeof(Provider<GL>), Factory=nameof(GetGLProvider))]
 [Transient(typeof(Provider<IWindow>), Factory=nameof(GetWindowProvider))]
+[Transient(typeof(AssetLoader), Factory=nameof(GetAssetLoader))]
+[Transient(typeof(TextureLoadingService), Factory=nameof(GetTextureLoadingService))]
+[Transient(typeof(RenderingServiceHelper), Factory=nameof(GetRenderingServiceHelper))]
+[Transient(typeof(TextureRenderingManager), Factory=nameof(GetTextureRenderingManager))]
+[Transient(typeof(TextureManager), Factory=nameof(GetTextureManager))]
 public partial class RenderingSceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
     private ILoggingManager GetLoggingManager() => gameProvider.GetRequiredService<ILoggingManager>();
@@ -76,9 +83,14 @@ public partial class RenderingSceneProvider(GameProvider gameProvider) : ISceneS
     private ScreenResizedEvent GetScreenResizedEvent() => gameProvider.GetRequiredService<ScreenResizedEvent>();
     private Provider<GL> GetGLProvider() => gameProvider.GetRequiredService<Provider<GL>>();
     private Provider<IWindow> GetWindowProvider() => gameProvider.GetRequiredService<Provider<IWindow>>();
-    
+    private AssetLoader GetAssetLoader() => gameProvider.GetRequiredService<AssetLoader>();
+    private TextureLoadingService GetTextureLoadingService() => gameProvider.GetRequiredService<TextureLoadingService>();
+    private RenderingServiceHelper GetRenderingServiceHelper() => gameProvider.GetRequiredService<RenderingServiceHelper>();
+    private TextureRenderingManager GetTextureRenderingManager() => gameProvider.GetRequiredService<TextureRenderingManager>();
+    private TextureManager GetTextureManager() => gameProvider.GetRequiredService<TextureManager>();
+
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
-    
+
     private IEnumerable<SceneService> GetAllSceneServices(IServiceProvider provider) =>
     [
         provider.GetRequiredService<GLService>(),

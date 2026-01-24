@@ -78,7 +78,7 @@ public class ProcessLayouts(
                             .ToArray()
                     },
                     { "Id", node.Id.Id },
-                    { "ElementId", GetMd5Hash($"{className}/{node.TypeName}/{node.Id.Id}")},
+                    { "ElementId", $"{className}/{node.TypeName}/{node.Id.Id}"},
                     {
                         "Properties", node
                             .Properties.Select(nodeProperty =>
@@ -163,22 +163,5 @@ public class ProcessLayouts(
         nodes.Add(node);
 
         return nodeId.Value;
-    }
-
-    private static uint GetMd5Hash(string s)
-    {
-        var bytes = System.Text.Encoding.UTF8.GetBytes(s);
-
-        byte[] hash;
-        lock (Md5) // MD5 instances are not thread-safe
-        {
-            hash = Md5.ComputeHash(bytes);
-        }
-
-        // Use first 4 bytes of the MD5 digest in big-endian order to be consistent across architectures
-        return ((uint)hash[0] << 24) |
-               ((uint)hash[1] << 16) |
-               ((uint)hash[2] << 8)  |
-               (uint)hash[3];
     }
 }

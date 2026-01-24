@@ -13,7 +13,7 @@ public static class UniformTypeExtensions
             UniformType.Vector4  => "Vector4D<float>",
             UniformType.Matrix3 => "Matrix3X3<float>",
             UniformType.Matrix4 => "Matrix4X4<float>",
-            UniformType.Sampler2D => "Texture2D",
+            UniformType.Sampler2D => "Id<Texture>",
             _ => "Unknown"
         };
     }

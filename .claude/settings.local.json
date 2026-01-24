@@ -3,7 +3,8 @@
     "allow": [
       "Bash(dotnet run:*)",
       "Bash(dotnet build:*)",
-      "Bash(dotnet clean:*)"
+      "Bash(dotnet clean:*)",
+      "Bash(npx @fsmiamoto/reagent:*)"
     ],
     "deny": [],
     "ask": []

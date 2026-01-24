@@ -5,9 +5,10 @@
 // --------------------------------------------------------------------------------------------------
 // ReSharper disable RedundantUsingDirective
 using Olve.Engine3D.Rendering.Entities;
-using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Parameters;
 using Olve.Engine3D.Rendering.Shaders;
+using Olve.Engine3D.Rendering.Textures;
+using Olve.Utilities.Ids;
 using Silk.NET.Maths;
 
 // ReSharper disable once CheckNamespace
@@ -19,8 +20,35 @@ public static partial class Shaders
 
     public partial class {{ Name }} : BaseWorldShader
     {
-        {{ for x in 0..(Uniforms.size - 1) }}public {{Uniforms[x].DataType}} {{Uniforms[x].PropertyName}} { get; set; }{{Uniforms[x].Initializer}}
+        {{ for x in 0..(Uniforms.size - 1) }}public {{Uniforms[x].DataType}}? {{Uniforms[x].PropertyName}} { get; set; }{{Uniforms[x].Initializer}}
 {{ end }}
+
+        /// <summary>
+        /// Per-entity shader parameters. All uniforms are available as nullable overrides.
+        /// Only non-null properties override the shader-level defaults.
+        /// </summary>
+        public readonly record struct EntityParameters(
+            {{ for x in 0..(Uniforms.size - 1) }}{{Uniforms[x].DataType}}? {{Uniforms[x].PropertyName}} = null{{ if x < Uniforms.size - 1 }},{{ end }}
+{{ end }}        ) : IShaderParameters
+        {
+            public RenderingParameters ToRenderingParameters()
+            {
+                var parameters = new List<AnyRenderingParameter>();
+                {{ for x in 0..(Uniforms.size - 1) }}if ({{Uniforms[x].PropertyName}} is { } {{Uniforms[x].VariableName}})
+                    parameters.Add(new {{Uniforms[x].RenderParameterType}}("{{Uniforms[x].Name}}", {{Uniforms[x].VariableName}}));
+{{ end }}
+                return new(parameters);
+            }
+
+            public IReadOnlyList<Id<Texture>> GetTextureIds()
+            {
+                var ids = new List<Id<Texture>>();
+                {{ for x in 0..(Uniforms.size - 1) }}{{ if Uniforms[x].UniformType == "Sampler2D" }}if ({{Uniforms[x].PropertyName}} is { } {{Uniforms[x].VariableName}})
+                    ids.Add({{Uniforms[x].VariableName}});
+{{ end }}{{ end }}
+                return ids;
+            }
+        }
 
         public override ShaderData ShaderData { get; } = new()
         {
@@ -35,11 +63,12 @@ public static partial class Shaders
 
         public override RenderingParameters MakeParameters()
         {
-            return new(
-            [
-                {{ for x in 0..(Uniforms.size - 1) }}new {{Uniforms[x].RenderParameterType}}("{{Uniforms[x].Name}}", {{Uniforms[x].PropertyName}}),
+            var parameters = new List<AnyRenderingParameter>();
+
+            {{ for x in 0..(Uniforms.size - 1) }}if ({{Uniforms[x].PropertyName}} is { } {{Uniforms[x].VariableName}})
+            parameters.Add(new {{Uniforms[x].RenderParameterType}}("{{Uniforms[x].Name}}", {{Uniforms[x].VariableName}}));
 {{ end }}
-            ]);
+            return new(parameters);
         }
     }
 }

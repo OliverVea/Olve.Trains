@@ -1,10 +1,8 @@
-﻿using Olve.Generated;
-using Olve.Engine3D.Assets;
+﻿using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
-using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
@@ -21,10 +19,11 @@ namespace Olve.Trains.Scenes.Rendering;
 
 public class VehicleRenderingService(
     ILoggingManager loggingManager,
+    AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
+    RenderingServiceHelper renderingServiceHelper,
     RenderingManager3D renderingManager3D,
-    TextureEntityManager textureEntityManager,
-    ShaderEntityManager shaderEntityManager,
+    TextureLoadingService textureLoadingService,
     SceneLightService sceneLightService,
     MeshEntityManager meshEntityManager,
     VehicleService vehicleService,
@@ -40,12 +39,13 @@ public class VehicleRenderingService(
     private readonly Shaders.Default _shader = new();
     private float _scale = 1;
 
-    private Result<Texture2D> LoadTexture(AssetPath<TextureData> texturePath) => RenderingServiceHelper.LoadTexture(texturePath, textureEntityManager);
-    private Result LoadShader(IShader shader) => RenderingServiceHelper.LoadShader(shader, shaderEntityManager);
+    private Result LoadShader(IShader shader) => renderingServiceHelper.LoadShader(shader);
 
     protected override Result OnLoad()
     {
-        if (LoadTexture(Textures.SimpleTrains_Texture_01).TryPickProblems(out var problems, out var textureId))
+        // Load texture and get its Id
+        if (textureLoadingService.LoadTexture(Textures.SimpleTrains_Texture_01)
+            .TryPickProblems(out var problems, out var textureId))
         {
             return problems.Prepend("Failed to load texture");
         }
@@ -57,7 +57,7 @@ public class VehicleRenderingService(
             return problems.Prepend("Failed to load shader");
         }
 
-        if (AssetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01).TryPickProblems(out problems, out var meshData))
+        if (assetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01).TryPickProblems(out problems, out var meshData))
         {
             return problems.Prepend("Failed to load mesh");
         }
