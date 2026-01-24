@@ -196,7 +196,7 @@ public class ProcessShaders(
                 { "Name", uniform.Name },
                 { "VariableName", uniform.Name },
                 { "PropertyName", char.ToUpper(uniform.Name[0]) + uniform.Name[1..] },
-                { "UniformType", uniform.Type },
+                { "UniformType", uniform.Type.ToString() },
                 { "DataType", uniform.Type.GetDataType() },
                 { "RenderParameterType", uniform.Type.GetRenderParameterType() },
                 { "LayoutLocation", uniform.LayoutLocation },

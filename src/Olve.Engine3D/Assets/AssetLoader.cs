@@ -1,18 +1,20 @@
 using MemoryPack;
+using Olve.Logging;
 using Olve.Paths;
 
 namespace Olve.Engine3D.Assets;
 
-public static class AssetLoader
+public class AssetLoader(ILoggingManager loggingManager)
 {
-    public static readonly IPath AssetFolder = Paths.Path.Create("assets");
+    public IPath AssetFolder { get; } = Paths.Path.Create("assets");
 
-    private static IPath GetAssetLocation<T>(AssetPath<T> assetPath) => Olve.Paths.Path.TryGetAssemblyExecutable(out var assemblyFile)
+    private IPath GetAssetLocation<T>(AssetPath<T> assetPath) => Paths.Path.TryGetAssemblyExecutable(out var assemblyFile)
         ? assemblyFile.Parent / AssetFolder / assetPath.Path
         : throw new InvalidOperationException("Could not get assembly executable path");
 
-    public static Result<T> LoadAsset<T>(AssetPath<T> assetPath)
+    public Result<T> LoadAsset<T>(AssetPath<T> assetPath)
     {
+        loggingManager.Log(LogLevel.Info, $"Loading asset '{assetPath.Path.Path}' of type '{typeof(T).Name}'");
         var location = GetAssetLocation(assetPath);
 
         if (!location.Exists())

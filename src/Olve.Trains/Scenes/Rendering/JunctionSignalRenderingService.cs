@@ -13,11 +13,12 @@ namespace Olve.Trains.Scenes.Rendering;
 
 public class JunctionSignalRenderingService(
     ILoggingManager loggingManager,
+    AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     MeshEntityManager meshEntityManager,
     RenderingManager3D renderingManager3D,
-    TextureEntityManager textureEntityManager,
-    ShaderEntityManager shaderEntityManager,
+    TextureLoadingService textureLoadingService,
+    RenderingServiceHelper renderingServiceHelper,
     JunctionService junctionService,
     JunctionSignalService junctionSignalService)
     : BaseEntityListeningService<Junction>(loggingManager, junctionSignalService)
@@ -30,7 +31,8 @@ public class JunctionSignalRenderingService(
 
     protected override Result OnLoad()
     {
-        if (RenderingServiceHelper.LoadTexture(Textures.SimpleTrains_Texture_01, textureEntityManager)
+        // Load texture and get its Id
+        if (textureLoadingService.LoadTexture(Textures.SimpleTrains_Texture_01)
             .TryPickProblems(out var problems, out var textureId))
         {
             return problems.Prepend("Failed to load texture");
@@ -38,12 +40,12 @@ public class JunctionSignalRenderingService(
 
         _shader.TextureSampler = textureId;
 
-        if (RenderingServiceHelper.LoadShader(_shader, shaderEntityManager).TryPickProblems(out problems))
+        if (renderingServiceHelper.LoadShader(_shader).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to load shader");
         }
 
-        if (AssetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01).TryPickProblems(out problems, out var meshData))
+        if (assetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01).TryPickProblems(out problems, out var meshData))
         {
             return problems.Prepend("Failed to load mesh");
         }

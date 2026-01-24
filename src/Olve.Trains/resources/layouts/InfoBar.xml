@@ -12,5 +12,6 @@
     </Box>
     <Box id="Green" Width="60" BackgroundColor="(0, 1, 0)" />
     <Box id="Blue" Width="60" BackgroundColor="(0, 0, 1)" />
+    <Text id="HelloText" Content='"Hello, World!"' FontSize="32f" Color="(1f, 1f, 1f)" Weight="1f" />
     <Image Id="Img" Texture="Textures.Textures.SimpleTrains_Texture_01" AspectRatio="1f" Tint="(0.3f, 0.3f, 0.3f)" Fit="FitMode.Contain"/>
 </Box>

@@ -8,9 +8,11 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Logging;
+using Olve.Utilities.Ids;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
@@ -18,16 +20,16 @@ public class GuiRectangleRenderingService(
     ILoggingManager loggingManager,
     RenderingManager2D renderingManager2D,
     ShaderEntityManager shaderEntityManager,
-    TextureEntityManager textureEntityManager,
     Provider<LayoutContext> layoutContext,
     GuiDepthService guiDepthService,
-    TextureLoadingService textureLoadingService,
     GuiElementService guiElementService,
     GuiLayoutService guiLayoutService) : SceneService(loggingManager)
 {
     public override int Priority => GetPriorityFromDependencies([guiLayoutService]);
 
-    private readonly Dictionary<Id<GuiNode>, RenderingInstanceId> _renderingInstanceIds = new();
+    private readonly record struct InstanceData(RenderingInstanceId InstanceId, Id<Texture> TextureId);
+
+    private readonly Dictionary<Id<GuiNode>, InstanceData> _instances = new();
     private readonly List<Id<GuiNode>> _nodesToDelete = [];
     private readonly List<ResultProblem> _updateProblems = [];
     private readonly Shaders.TexturedRectangle _shader = new()
@@ -55,15 +57,18 @@ public class GuiRectangleRenderingService(
         _nodesToDelete.Clear();
         _updateProblems.Clear();
 
-        foreach (var (nodeId, instanceId) in _renderingInstanceIds)
+        foreach (var (nodeId, instanceData) in _instances)
         {
-            if (!TryBuildTexturedRectangleData(nodeId, out var texturedRectangleData))
+            if (!TryBuildRectangleData(nodeId, out var rectangleData))
             {
                 _nodesToDelete.Add(nodeId);
                 continue;
             }
 
-            if (renderingManager2D.UpdateRectangle(instanceId, texturedRectangleData)
+            // Create entity parameters with the texture Id
+            var entityParams = new Shaders.TexturedRectangle.EntityParameters(UTexture: instanceData.TextureId);
+
+            if (renderingManager2D.UpdateRectangle(instanceData.InstanceId, rectangleData, entityParams)
                 .TryPickProblems(out var problems))
             {
                 _nodesToDelete.Add(nodeId);
@@ -82,7 +87,7 @@ public class GuiRectangleRenderingService(
         if (_updateProblems.Any())
         {
             return Result.Failure(_updateProblems.Prepend(
-                new ResultProblem("Failed while updating GUI textured rectangle elements")));
+                new ResultProblem("Failed while updating GUI rectangle elements")));
         }
 
         return Result.Success();
@@ -90,7 +95,7 @@ public class GuiRectangleRenderingService(
 
     protected override Result OnRender(TimeSpan deltaTime)
     {
-        if (_renderingInstanceIds.Count == 0)
+        if (_instances.Count == 0)
         {
             return Result.Success();
         }
@@ -98,13 +103,13 @@ public class GuiRectangleRenderingService(
         return renderingManager2D.Render(_shader);
     }
 
-    public Result RegisterTexturedRectangle(Id<GuiNode> nodeId, RenderingId<TextureData> renderingId)
+    public Result RegisterTexturedRectangle(Id<GuiNode> nodeId, Id<Texture> textureId)
     {
         ResultProblemCollection? problems;
-        if (_renderingInstanceIds.Remove(nodeId, out var oldInstanceId))
+        if (_instances.Remove(nodeId, out var oldInstance))
         {
             if (renderingManager2D
-                .DeregisterRectangle(oldInstanceId)
+                .DeregisterRectangle(oldInstance.InstanceId)
                 .TryPickProblems(out problems))
             {
                 return problems;
@@ -116,17 +121,19 @@ public class GuiRectangleRenderingService(
             PositionPx = Vector2D<float>.Zero,
             SizePx = Vector2D<float>.One,
             TintRgba = Vector4D<float>.One,
-            TextureId = renderingId,
             Depth = 0
         };
 
-        if (renderingManager2D.RegisterRectangle(_shader.RenderingId, initialData)
+        // Create entity parameters with the texture Id
+        var entityParams = new Shaders.TexturedRectangle.EntityParameters(UTexture: textureId);
+
+        if (renderingManager2D.RegisterRectangle(_shader.RenderingId, initialData, entityParams)
             .TryPickProblems(out problems, out var renderingInstanceId))
         {
-            return problems.Prepend("Failed to register rectangle: nodeId={0}, textureId={1}", nodeId, renderingInstanceId);
+            return problems.Prepend("Failed to register rectangle: nodeId={0}, textureId={1}", nodeId, textureId);
         }
 
-        _renderingInstanceIds[nodeId] = renderingInstanceId;
+        _instances[nodeId] = new InstanceData(renderingInstanceId, textureId);
 
         LoggingManager.Log(LogLevel.Debug, $"Registered rectangle rendering for node {nodeId}");
 
@@ -135,13 +142,13 @@ public class GuiRectangleRenderingService(
 
     public DeletionResult DeregisterTexturedRectangle(Id<GuiNode> nodeId)
     {
-        if (!_renderingInstanceIds.Remove(nodeId, out var instanceId))
+        if (!_instances.Remove(nodeId, out var instanceData))
         {
             return DeletionResult.NotFound();
         }
 
         if (renderingManager2D
-            .DeregisterRectangle(instanceId)
+            .DeregisterRectangle(instanceData.InstanceId)
             .TryPickProblems(out var problems))
         {
             return DeletionResult.Error(problems);
@@ -152,38 +159,22 @@ public class GuiRectangleRenderingService(
         return DeletionResult.Success();
     }
 
-    private bool TryBuildTexturedRectangleData(Id<GuiNode> nodeId, [MaybeNullWhen(false)] out RectangleData rectangleData)
+    private bool TryBuildRectangleData(Id<GuiNode> nodeId, [MaybeNullWhen(false)] out RectangleData rectangleData)
     {
         if (!guiLayoutService.TryGetBoxPosition(nodeId, out var boxPosition) ||
             !guiElementService.TryGetElement(nodeId, out var element) ||
             !guiDepthService.GetDepth(nodeId).TryPickValue(out var depth) ||
-            element is not IRenderableAsRectangle renderableAsTexturedRectangle ||
-            textureLoadingService.LoadTextureOrFallbackIfNull(renderableAsTexturedRectangle.TexturedRectangleData.TexturePath)
-                .TryPickProblems(out var problems, out var textureId))
+            element is not IRenderableAsRectangle renderableAsRectangle)
         {
             rectangleData = null;
             return false;
         }
-
-        // Retrieve texture handle for shader
-        if (textureEntityManager.GetRegistration(textureId)
-            .TryPickProblems(out problems, out var textureReg))
-        {
-            LoggingManager.Log(LogLevel.Error,
-                $"Failed to get texture registration for node {nodeId}: {Result.Failure(problems)}");
-            rectangleData = null;
-            return false;
-        }
-
-        // Set texture uniform on shader
-        _shader.UTexture = textureReg.Texture;
 
         rectangleData = new RectangleData
         {
             PositionPx = new Vector2D<float>(boxPosition.Position.X.Value, boxPosition.Position.Y.Value),
             SizePx = new Vector2D<float>(boxPosition.Size.X.Value, boxPosition.Size.Y.Value),
-            TintRgba = renderableAsTexturedRectangle.TexturedRectangleData.Color,
-            TextureId = textureId,
+            TintRgba = renderableAsRectangle.TexturedRectangleData.Color,
             Depth = -depth
         };
 

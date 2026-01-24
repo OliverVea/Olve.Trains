@@ -3,9 +3,9 @@ using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
-using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
@@ -18,10 +18,11 @@ public readonly record struct ArrowIndicator;
 
 public class TrackArrowIndicatorService(
     ILoggingManager loggingManager,
+    AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
-    TextureEntityManager textureEntityManager,
-    ShaderEntityManager shaderEntityManager,
+    RenderingServiceHelper renderingServiceHelper,
+    TextureLoadingService textureLoadingService,
     MeshEntityManager meshEntityManager) : SceneService(loggingManager)
 {
     private float _scale = 1f;
@@ -37,14 +38,12 @@ public class TrackArrowIndicatorService(
     private RenderingId<MeshData> MeshRenderingId { get; set; }
     private RenderingInstanceId InstanceId { get; set; }
 
-    private Result<Texture2D> LoadTexture(AssetPath<TextureData> texturePath) =>
-        RenderingServiceHelper.LoadTexture(texturePath, textureEntityManager);
-
-    private Result LoadShader(IShader shader) => RenderingServiceHelper.LoadShader(shader, shaderEntityManager);
+    private Result LoadShader(IShader shader) => renderingServiceHelper.LoadShader(shader);
 
     protected override Result OnLoad()
     {
-        if (LoadTexture(Textures.PolygonPrototype_Texture_01).TryPickProblems(out var problems, out var textureId))
+        if (textureLoadingService.LoadTexture(Textures.PolygonPrototype_Texture_01)
+            .TryPickProblems(out var problems, out var textureId))
         {
             return problems.Prepend("Failed to load texture");
         }
@@ -56,7 +55,7 @@ public class TrackArrowIndicatorService(
             return problems.Prepend("Failed to load shader");
         }
 
-        if (AssetLoader.LoadAsset(Meshes.SM_Icon_Arrow_Small_01).TryPickProblems(out problems, out var meshData))
+        if (assetLoader.LoadAsset(Meshes.SM_Icon_Arrow_Small_01).TryPickProblems(out problems, out var meshData))
         {
             return problems.Prepend("Failed to load mesh");
         }

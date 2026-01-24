@@ -1,8 +1,8 @@
-using Olve.Generated;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Logging;
@@ -15,6 +15,8 @@ public class TerrainRenderingService(ILoggingManager loggingManager,
     TerrainService terrainService,
     ShaderEntityManager shaderEntityManager,
     HeightmapEntityManager heightmapEntityManager,
+    TextureManager textureManager,
+    TextureRenderingManager textureRenderingManager,
     RenderingManager3D renderingManager3D,
     CameraSceneService cameraSceneService,
     TerrainRaycastService terrainRaycastService,
@@ -51,12 +53,16 @@ public class TerrainRenderingService(ILoggingManager loggingManager,
             return problems.Prepend("Failed to get heightmap registration");
         }
 
+        var heightmapTextureId = textureManager.ReserveExternalTextureId("terrain_heightmap");
+        var heightmapTextureRenderingId = textureRenderingManager.AdoptExternalTexture(heightmapRegistration.Texture);
+        textureRenderingManager.RegisterExternalTexture(heightmapTextureId, heightmapTextureRenderingId);
+
         Vector2D<float> textureSize = new(1f / terrain.Heightmap.Width, 1f / terrain.Heightmap.Length);
         _terrainShader.TexelSize = textureSize;
         _terrainWireframe.TexelSize = textureSize;
 
-        _terrainShader.HeightMap = heightmapRegistration.Texture;
-        _terrainWireframe.HeightMap = heightmapRegistration.Texture;
+        _terrainShader.HeightMap = heightmapTextureId;
+        _terrainWireframe.HeightMap = heightmapTextureId;
 
         if (RegisterShader(heightmapId, _terrainShader.ShaderData).TryPickProblems(out problems, out var terrainShaderIds))
         {

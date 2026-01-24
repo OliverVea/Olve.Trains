@@ -13,6 +13,16 @@ public class Text : GuiElement, IRenderableAsText
     public float Alpha { get; set; } = 1f;
     public Align Align { get; set; } = Align.Start;
 
+    // Layout properties
+    public int? Width { get; set; }
+    public int? Height { get; set; }
+    public float Weight { get; set; } = 0f;
+
+    public override LayoutBox? LayoutBox => new LayoutBox()
+    {
+        Size = new SizeSpec(Dp.FromNullable(Width), Dp.FromNullable(Height), Weight),
+    };
+
     public TextRenderData TextRenderData => new(
         Font,
         Content,

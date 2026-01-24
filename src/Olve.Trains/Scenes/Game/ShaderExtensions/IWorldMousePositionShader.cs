@@ -2,5 +2,5 @@
 
 public interface IWorldMousePositionShader
 {
-    Vector3D<float> MousePosition { get; set; }
+    Vector3D<float>? MousePosition { get; set; }
 }

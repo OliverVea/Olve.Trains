@@ -1,3 +1,4 @@
+using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.OpenGL;
 
@@ -6,8 +7,8 @@ namespace Olve.Engine3D.Rendering.Parameters;
 public static class RenderingParameterHelper
 {
     private static readonly Dictionary<(uint, string), int> UniformLocationCache = new();
-    
-    public static Result SetUniforms(this AnyRenderingParameter renderingParameter, GL gl, ShaderProgram shaderProgram)
+
+    public static Result SetUniforms(this AnyRenderingParameter renderingParameter, GL gl, ShaderProgram shaderProgram, TextureSlotManager? textureSlotManager = null)
     {
         if (!UniformLocationCache.TryGetValue((shaderProgram.Handle, renderingParameter.Name), out var location))
         {
@@ -16,18 +17,18 @@ public static class RenderingParameterHelper
             {
                 return new ResultProblem("Could not find location for rendering parameter '{0}'", renderingParameter.Name);
             }
-            
+
             UniformLocationCache.Add((shaderProgram.Handle, renderingParameter.Name), location);
         }
 
-        if (!ApplyUniform(renderingParameter, gl, location))
+        if (!ApplyUniform(renderingParameter, gl, location, textureSlotManager))
         {
-            return new ResultProblem("Could not apply uniform '{0}'", renderingParameter.Name);
+            return new ResultProblem("Could not apply uniform '{0}' of type '{1}' with value: {2}", renderingParameter.Name, renderingParameter.Value.GetType().Name, renderingParameter.Value);
         }
 
         return Result.Success();
     }
-    private static bool ApplyUniform(in AnyRenderingParameter renderingParameter, GL gl, int location)
+    private static bool ApplyUniform(in AnyRenderingParameter renderingParameter, GL gl, int location, TextureSlotManager? textureSlotManager)
     {
         if (renderingParameter.IsT0)
         {
@@ -73,8 +74,7 @@ public static class RenderingParameterHelper
 
         if (renderingParameter.IsT7)
         {
-            SetTexture(renderingParameter.AsT7, gl, location);
-            return true;
+            return SetTexture(renderingParameter.AsT7, gl, location, textureSlotManager);
         }
 
         return false;
@@ -118,13 +118,20 @@ public static class RenderingParameterHelper
         gl.Uniform1(location, f.Value);
     }
 
-    private static void SetTexture(RenderingParameter.Texture texture, GL gl, int location)
+    private static bool SetTexture(RenderingParameter.Texture texture, GL gl, int location, TextureSlotManager? textureSlotManager)
     {
-        //int textureUnitIndex = 0; // Adjust based on usage
-        //gl.ActiveTexture(TextureUnit.Texture0 + textureUnitIndex);
-        gl.ActiveTexture(TextureUnit.Texture0);
-        gl.BindTexture(TextureTarget.Texture2D, texture.Value.Handle);
-        //gl.Uniform1(location, textureUnitIndex);
-        gl.Uniform1(location, 0);
+        if (textureSlotManager == null)
+        {
+            return false;
+        }
+
+        // Bind texture by Id - TextureSlotManager resolves to OpenGL handle internally
+        if (textureSlotManager.BindTexture(texture.Value).TryPickProblems(out var problems, out var slot))
+        {
+            return false;
+        }
+
+        gl.Uniform1(location, (int)slot.Unit);
+        return true;
     }
 }

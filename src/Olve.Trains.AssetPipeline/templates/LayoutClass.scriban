@@ -19,7 +19,7 @@ public static partial class Layouts
         var {{ node.Id }} = new {{ node.TypeName }}()
         {
             Name = "{{node.Id}}",
-            Id = new Id<GuiElement>({{ node.ElementId }}),{{ for property in node.Properties }}
+            Id = Id.FromName<GuiElement>("{{ node.ElementId }}"),{{ for property in node.Properties }}
             {{ property.Name }} = {{ property.Value}},{{end}}
             Children = [{{ for child in node.Children }}
                 {{child}},{{end}}

@@ -3,15 +3,20 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
+using Olve.Generated.Fonts;
 using Olve.Logging;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
-public class GuiRectangleUpdateService(
+/// <summary>
+/// Handles lifecycle for text elements: loads font atlases and registers/deregisters
+/// text with GuiTextRenderingService when GUI elements are added/removed.
+/// </summary>
+public class GuiTextUpdateService(
     ILoggingManager loggingManager,
     GuiElementService guiElementService,
     TextureLoadingService textureLoadingService,
-    GuiRectangleRenderingService rectangleRenderingService) : SceneService(loggingManager)
+    GuiTextRenderingService textRenderingService) : SceneService(loggingManager)
 {
     private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
     private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
@@ -36,27 +41,34 @@ public class GuiRectangleUpdateService(
             return new ResultProblem("Could not find element with id: {0}", addedEvent.NodeId);
         }
 
-        if (element is not IRenderableAsRectangle renderableAsRectangle)
+        if (element is not IRenderableAsText textElement)
         {
             return Result.Success();
         }
 
-        var texturePath = renderableAsRectangle.TexturedRectangleData.TexturePath;
+        var textData = textElement.TextRenderData;
+        var font = textData.Font ?? Fonts.RobotoRegular;  // Default font
 
-        if (textureLoadingService.LoadTextureOrFallbackIfNull(texturePath)
+        // Load font atlas texture
+        if (textureLoadingService.LoadTexture(font.Atlas.FontAtlas)
             .TryPickProblems(out var problems, out var textureId))
         {
-            return problems.Prepend("Failed to load texture '{0}' for GuiElement: {1}",
-                texturePath?.Path.Path!,
-                addedEvent);
+            return problems.Prepend("Failed to load font atlas for text element: {0}", addedEvent.NodeId);
         }
 
-        return rectangleRenderingService.RegisterTexturedRectangle(addedEvent.NodeId, textureId);
+        // Register with rendering service
+        return textRenderingService.RegisterText(
+            addedEvent.NodeId,
+            font,
+            textureId,
+            textData.Content,
+            textData.FontSize
+        );
     }
 
     private Result OnGuiElementRemoved(GuiElementArgs removedEvent)
     {
-        return rectangleRenderingService.DeregisterTexturedRectangle(removedEvent.NodeId)
+        return textRenderingService.DeregisterText(removedEvent.NodeId)
 #if DEBUG
             .MapToResult(allowNotFound: false);
 #else
@@ -64,4 +76,3 @@ public class GuiRectangleUpdateService(
 #endif
     }
 }
-
