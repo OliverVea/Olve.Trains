@@ -11,7 +11,6 @@ using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Logging;
-using Olve.Utilities.Ids;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
@@ -49,10 +48,6 @@ public class GuiTextRenderingService(
     {
         BlendState = RenderState.AlphaBlend,
     };
-
-    // ─────────────────────────────────────────────────────────────────
-    // LIFECYCLE
-    // ─────────────────────────────────────────────────────────────────
 
     protected override Result OnLoad()
     {
@@ -109,10 +104,6 @@ public class GuiTextRenderingService(
         return renderingManager2D.Render(_shader);
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // REGISTRATION
-    // ─────────────────────────────────────────────────────────────────
-
     public Result RegisterText(
         Id<GuiNode> nodeId,
         FontData font,
@@ -120,27 +111,21 @@ public class GuiTextRenderingService(
         string content,
         float fontSize)
     {
-        // Deregister existing if any
         DeregisterText(nodeId);
 
-        // Compute glyph layout
         var layout = TextLayoutEngine.ComputeLayout(content, font, fontSize);
         var glyphIds = new List<RenderingInstanceId>();
 
-        // Set shader parameters
-        _shader.UPxRange = font.Atlas.DistanceRange;
-
-        // Create a rendering instance for each glyph
         foreach (var glyph in layout)
         {
             var rectData = new RectangleData
             {
-                PositionPx = glyph.PositionPx,  // Will be offset in OnUpdate
+                PositionPx = glyph.PositionPx,
                 SizePx = glyph.SizePx,
-                TintRgba = Vector4D<float>.One,  // Will be set from element
+                TintRgba = Vector4D<float>.One,
                 UvMin = glyph.UvMin,
                 UvMax = glyph.UvMax,
-                Depth = 0  // Will be set in OnUpdate
+                Depth = 0
             };
 
             var entityParams = new Shaders.MsdfText.EntityParameters(
@@ -150,7 +135,6 @@ public class GuiTextRenderingService(
             if (renderingManager2D.RegisterGlyph(_shader.RenderingId, rectData, entityParams)
                 .TryPickProblems(out var problems, out var instanceId))
             {
-                // Cleanup on failure
                 foreach (var id in glyphIds)
                     renderingManager2D.DeregisterRectangle(id);
                 return problems.Prepend("Failed to register glyph for text: nodeId={0}", nodeId);
@@ -184,13 +168,8 @@ public class GuiTextRenderingService(
         return DeletionResult.Success();
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // UPDATE HELPERS
-    // ─────────────────────────────────────────────────────────────────
-
     private bool TryUpdateTextGlyphs(Id<GuiNode> nodeId, TextInstanceData instanceData)
     {
-        // Get layout position, element data, and depth
         if (!guiLayoutService.TryGetBoxPosition(nodeId, out var boxPosition) ||
             !guiElementService.TryGetElement(nodeId, out var element) ||
             !guiDepthService.GetDepth(nodeId).TryPickValue(out var depth) ||
@@ -205,19 +184,13 @@ public class GuiTextRenderingService(
             boxPosition.Position.Y.Value
         );
 
-        // The baseline offset: place text so baseline aligns with the box
-        // For top-aligned text, we offset by the ascender
         var baselineOffset = instanceData.Font.Metrics.Ascender * instanceData.CachedFontSize;
 
-        // Update each glyph's position (text origin + glyph offset)
-        for (int i = 0; i < instanceData.GlyphInstanceIds.Count; i++)
+        for (var i = 0; i < instanceData.GlyphInstanceIds.Count; i++)
         {
             var glyphId = instanceData.GlyphInstanceIds[i];
             var glyphLayout = instanceData.CachedLayout[i];
 
-            // Glyph position: text origin + glyph offset
-            // Note: PlaneBounds.Y is typically negative (below baseline) for most glyphs
-            // We need to flip the Y positioning since screen Y goes down
             var glyphPos = new Vector2D<float>(
                 textOrigin.X + glyphLayout.PositionPx.X,
                 textOrigin.Y + baselineOffset - glyphLayout.PositionPx.Y - glyphLayout.SizePx.Y

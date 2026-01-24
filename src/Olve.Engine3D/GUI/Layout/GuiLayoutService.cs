@@ -513,18 +513,24 @@ public class GuiLayoutService(
             var cw = child.Width  ?? Dp.Zero;
             var ch = child.Height ?? Dp.Zero;
 
+            var margin = child.LayoutBox.Margin;
+
             var childPos = axis == UIAxis.X
-                ? new Vector2D<Dp>(cursor.X, contentOrigin.Y)
-                : new Vector2D<Dp>(contentOrigin.X, cursor.Y);
+                ? new Vector2D<Dp>(cursor.X + margin.Left, contentOrigin.Y + margin.Top)
+                : new Vector2D<Dp>(contentOrigin.X + margin.Left, cursor.Y + margin.Top);
+
 
             child = child with { Position = childPos };
 
             if (!TryComputePositionsFor(ci, out problem))
                 return false;
 
+            var outerWidth  = margin.Left + cw + margin.Right;
+            var outerHeight = margin.Top  + ch + margin.Bottom;
+
             cursor = axis == UIAxis.X
-                ? new Vector2D<Dp>(childPos.X + cw + gap, cursor.Y)
-                : new Vector2D<Dp>(cursor.X, childPos.Y + ch + gap);
+                ? new Vector2D<Dp>(cursor.X + outerWidth + gap, cursor.Y)
+                : new Vector2D<Dp>(cursor.X, cursor.Y + outerHeight + gap);
         }
 
         return true;

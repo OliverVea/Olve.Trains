@@ -39,6 +39,7 @@ namespace Olve.Trains.Scenes.Game;
 [Singleton(typeof(VehicleJunctionService))]
 [Singleton(typeof(VehicleMovementService))]
 [Singleton(typeof(VehiclePositionService))]
+[Singleton(typeof(DayTimeSteppingService))]
 [Singleton(typeof(VehicleService))]
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 [Transient(typeof(CommandHandlerServiceCollection), Factory= nameof(GetCommandHandlerServiceCollection))]
@@ -52,7 +53,7 @@ public partial class GameSceneProvider(GameProvider gameProvider) : ISceneServic
     private DayTimeManager GetDayTimeManager() => gameProvider.GetRequiredService<DayTimeManager>();
     private ILoggingManager GetLoggingManager() => gameProvider.GetRequiredService<ILoggingManager>();
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();
-    
+
     private IEnumerable<SceneService> GetAllSceneServices() =>
     [
         this.GetRequiredService<AddJunctionRuleHandlerService>(),
@@ -69,6 +70,7 @@ public partial class GameSceneProvider(GameProvider gameProvider) : ISceneServic
         this.GetRequiredService<TrackSplineService>(),
         this.GetRequiredService<VehicleJunctionCrossingService>(),
         this.GetRequiredService<VehicleMovementService>(),
+        this.GetRequiredService<DayTimeSteppingService>(),
     ];
 
 }
