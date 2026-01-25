@@ -23,8 +23,12 @@ public class GuiLayoutServiceTests
     {
         InMemoryLoggingManager loggingManager = new ();
         GuiNodeService guiNodeService = new(loggingManager);
+        GuiAnchorService guiAnchorService = new();
         Provider<LayoutContext> layoutContextProvider = new(layoutContext ?? DefaultContext);
-        GuiLayoutService guiLayoutService = new(loggingManager, guiNodeService, layoutContextProvider);
+        GuiLayoutService guiLayoutService = new(loggingManager, guiNodeService, guiAnchorService, layoutContextProvider);
+
+        // Register the default anchor
+        guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight);
 
         return (loggingManager, guiNodeService, layoutContextProvider, guiLayoutService);
     }

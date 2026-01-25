@@ -28,11 +28,8 @@ namespace Olve.Trains.Scenes.UI;
 [Singleton(typeof(TrainPlacingToolService))]
 [Singleton(typeof(TrackArrowIndicatorService))]
 [Singleton(typeof(InfoBarService))]
-[Singleton(typeof(GuiLayoutService))]
 [Singleton(typeof(GuiLayoutUpdateService))]
-[Singleton(typeof(GuiNodeService))]
 [Singleton(typeof(GuiLayoutContextUpdater))]
-[Singleton(typeof(GuiElementService))]
 [Singleton(typeof(GuiDepthService))]
 [Singleton(typeof(GuiRectangleRenderingService))]
 [Singleton(typeof(GuiRectangleUpdateService))]
@@ -59,6 +56,7 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(AssetLoader), Factory = nameof(GetAssetLoader))]
 [Transient(typeof(RenderingServiceHelper), Factory = nameof(GetRenderingServiceHelper))]
 [Transient(typeof(DayTimeManager), Factory = nameof(GetDayTimeManager))]
+[Import(typeof(IGuiProvider))]
 public partial class UISceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
     private TerrainRaycastService GetTerrainRaycastService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<TerrainRaycastService>();

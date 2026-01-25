@@ -26,8 +26,13 @@ public class GuiLayoutServicePositioningTests
     {
         var log = logging ?? new InMemoryLoggingManager();
         var svc = ge ?? new GuiNodeService(log);
+        GuiAnchorService guiAnchorService = new();
         Provider<LayoutContext> lcp = new(ctx ?? DefaultContext);
-        return new GuiLayoutService(log, svc, lcp);
+
+        // Register the default anchor
+        guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight);
+
+        return new GuiLayoutService(log, svc, guiAnchorService, lcp);
     }
 
     // Shorthand for creating boxes

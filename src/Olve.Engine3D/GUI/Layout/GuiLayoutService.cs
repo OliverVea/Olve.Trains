@@ -9,6 +9,7 @@ namespace Olve.Engine3D.GUI.Layout;
 public class GuiLayoutService(
     ILoggingManager loggingManager,
     GuiNodeService guiNodeService,
+    GuiAnchorService guiAnchorService,
     Provider<LayoutContext> layoutContextProvider) : BaseEntityAuxiliaryService<GuiNode>(loggingManager, guiNodeService)
 {
     private readonly Dictionary<Id<GuiNode>, int> _nodeIndexById = new();
@@ -89,7 +90,27 @@ public class GuiLayoutService(
     public Result ComputeLayout()
     {
         var rootNodeIds = guiNodeService.GetRootNodes();
-        var results = rootNodeIds.Select(ComputeLayoutFor);
+        var results = new List<Result>();
+
+        foreach (var rootNodeId in rootNodeIds)
+        {
+            // Get the anchor for this root node
+            if (!guiNodeService.TryGetParent(rootNodeId, out var parentUnion)
+                || !parentUnion.TryGetT1(out var anchorId, out _))
+            {
+                results.Add(new ResultProblem("Root node '{0}' has no anchor parent", rootNodeId));
+                continue;
+            }
+
+            if (!guiAnchorService.TryGetAnchor(anchorId, out var anchor))
+            {
+                results.Add(new ResultProblem("Anchor '{0}' not found", anchorId));
+                continue;
+            }
+
+            results.Add(ComputeLayoutFor(rootNodeId, anchor));
+        }
+
         if (results.TryPickProblems(out var problems))
         {
             return problems;
@@ -98,15 +119,34 @@ public class GuiLayoutService(
         return Result.Success();
     }
 
-    private Result ComputeLayoutFor(Id<GuiNode> rootNode)
+    private Result ComputeLayoutFor(Id<GuiNode> rootNode, GuiAnchor anchor)
     {
         if (!_nodeIndexById.TryGetValue(rootNode, out var nodeIndex))
         {
             return new ResultProblem("Could not find node box spec for node with id '{0}'", rootNode);
         }
 
-        // TODO: Text / Image sizes
+        // Calculate ghost box bounds based on anchor position and growth direction
+        var screenSize = LayoutContext.DesignSize;
+        var ghostBox = CalculateGhostBox(anchor, screenSize);
 
+        // Temporarily set ghost box size constraints on root
+        ref var root = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
+        var originalBox = root.LayoutBox;
+
+        root = root with
+        {
+            LayoutBox = originalBox with
+            {
+                Size = originalBox.Size with
+                {
+                    PreferredWidth = originalBox.Size.PreferredWidth ?? ghostBox.Width,
+                    PreferredHeight = originalBox.Size.PreferredHeight ?? ghostBox.Height
+                }
+            }
+        };
+
+        // Compute sizes with ghost box constraints
         if (!TryComputePreferredDimensionFor(nodeIndex, UIAxis.X, out var problems)
             || !TryComputeActualDimensionFor(nodeIndex, UIAxis.X, out problems)
             || !TryComputePreferredDimensionFor(nodeIndex, UIAxis.Y, out problems)
@@ -115,8 +155,31 @@ public class GuiLayoutService(
             return problems;
         }
 
-        ref var root = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
-        root = root with { Position = new Vector2D<Dp>(Dp.Zero, Dp.Zero) };
+        // Restore original layout box
+        root = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
+        root = root with { LayoutBox = originalBox };
+
+        // Calculate position based on ghost box and growth direction
+        var elementWidth = root.Width ?? Dp.Zero;
+        var elementHeight = root.Height ?? Dp.Zero;
+
+        var xPos = anchor.Growth.Horizontal switch
+        {
+            HorizontalGrowth.Left => ghostBox.Position.X + ghostBox.Width - elementWidth, // Align right within ghost box
+            HorizontalGrowth.Right => ghostBox.Position.X,                                 // Align left within ghost box
+            HorizontalGrowth.Both => ghostBox.Position.X + (ghostBox.Width - elementWidth) / 2f, // Center within ghost box
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var yPos = anchor.Growth.Vertical switch
+        {
+            VerticalGrowth.Up => ghostBox.Position.Y + ghostBox.Height - elementHeight, // Align bottom within ghost box
+            VerticalGrowth.Down => ghostBox.Position.Y,                                  // Align top within ghost box
+            VerticalGrowth.Both => ghostBox.Position.Y + (ghostBox.Height - elementHeight) / 2f, // Center within ghost box
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        root = root with { Position = new Vector2D<Dp>(xPos, yPos) };
 
         if (!TryComputePositionsFor(nodeIndex, out problems))
         {
@@ -467,4 +530,41 @@ public class GuiLayoutService(
 
     private static Dp GetDimensionFromChildren(Dp gap, int childCount, Dp childContentSize)
         => GetGapCount(childCount) * gap + childContentSize;
+
+    private static BoxBounds CalculateGhostBox(GuiAnchor anchor, Vector2D<Dp> screenSize)
+    {
+        var anchorNormalized = anchor.Position.ToNormalized();
+        var anchorPosDp = new Vector2D<Dp>(
+            anchorNormalized.X * screenSize.X,
+            anchorNormalized.Y * screenSize.Y
+        );
+
+        // Calculate ghost box position and size based on growth direction
+        var (xStart, width) = anchor.Growth.Horizontal switch
+        {
+            HorizontalGrowth.Left => (Dp.Zero, anchorPosDp.X),                  // [0, anchor.X]
+            HorizontalGrowth.Right => (anchorPosDp.X, screenSize.X - anchorPosDp.X), // [anchor.X, screen.X]
+            HorizontalGrowth.Both => (Dp.Zero, screenSize.X),                   // [0, screen.X]
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var (yStart, height) = anchor.Growth.Vertical switch
+        {
+            VerticalGrowth.Up => (Dp.Zero, anchorPosDp.Y),                      // [0, anchor.Y]
+            VerticalGrowth.Down => (anchorPosDp.Y, screenSize.Y - anchorPosDp.Y), // [anchor.Y, screen.Y]
+            VerticalGrowth.Both => (Dp.Zero, screenSize.Y),                     // [0, screen.Y]
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var ghostPosition = new Vector2D<Dp>(xStart, yStart);
+        var ghostSize = new Vector2D<Dp>(width, height);
+
+        return new BoxBounds(ghostPosition, ghostSize);
+    }
+}
+
+public readonly record struct BoxBounds(Vector2D<Dp> Position, Vector2D<Dp> Size)
+{
+    public Dp Width => Size.X;
+    public Dp Height => Size.Y;
 }
