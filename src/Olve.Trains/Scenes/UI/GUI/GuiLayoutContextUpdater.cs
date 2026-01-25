@@ -13,7 +13,6 @@ public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
     ScreenResizedEvent screenResizedEvent) : SceneService(loggingManager)
 {
     private const float UIScale = 1f;
-    private const int DesignWidth = 1920;
 
     private bool _screenResized = true;
 
@@ -37,21 +36,24 @@ public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
         _screenResized = false;
 
         var window = windowProvider.Value;
-        var windowSize = window.Size;                 // logical units
-        var framebufferSize = window.FramebufferSize; // physical pixels
+        var aspectRatio = (float) window.Size.X / window.Size.Y;
 
-        float dprX = (float)framebufferSize.X / windowSize.X;
-        float dprY = (float)framebufferSize.Y / windowSize.Y;
-        float devicePixelRatio = (dprX + dprY) * 0.5f; // usually equal; assert if not
+        var designWidth = MathF.Round(window.Size.X * UIScale);
+        var designHeight = designWidth /  aspectRatio;
+        
+        var designSize = new Vector2D<Dp>(designWidth, designHeight);
+        DpPxRatio designPixelRatio = new(designWidth / window.Size.X);
 
-        var designSize = new Vector2D<int>(1920, 1080); // fixed design space
-
-        layoutContextProvider.Set(new LayoutContext(
-            windowSize,         // ViewportSize in logical units
-            designSize,         // fixed
-            devicePixelRatio,
+        LayoutContext newLayoutContext = new(
+            designSize,
+            aspectRatio,
+            designPixelRatio,
             UIScale
-        ));
+        );
+        
+        layoutContextProvider.Set(newLayoutContext);
+        
+        LoggingManager.Log(LogLevel.Debug, $"Updated layout context: {newLayoutContext}");
 
         return guiLayoutService.ComputeLayout();
     }

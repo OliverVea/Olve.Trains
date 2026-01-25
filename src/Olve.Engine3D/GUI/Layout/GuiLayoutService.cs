@@ -51,26 +51,19 @@ public class GuiLayoutService(
             return false;
         }
 
-        var dpPosition = _layoutData[index].Position;
-        var dpWidth = _layoutData[index].Width;
-        var dpHeight = _layoutData[index].Height;
-
-        if (!dpWidth.HasValue || !dpHeight.HasValue || !dpPosition.HasValue)
+        if (_layoutData[index].Width is not { } dpWidth
+            || _layoutData[index].Height is not { } dpHeight
+            || _layoutData[index].Position is not { } dpPosition)
         {
             LoggingManager.Log(LogLevel.Warning, $"Tried to get position from unpositioned node with id '{nodeId}'");
             position = default;
             return false;
         }
 
-        var pxX = new Px((int)float.Round(dpPosition.Value.X.Value * LayoutContext.DpToPx));
-        var pxY = new Px((int)float.Round(dpPosition.Value.Y.Value * LayoutContext.DpToPx));
-        Vector2D<Px> pxPosition = new(pxX, pxY);
+        var dpSize = new Vector2D<Dp>(dpWidth, dpHeight);
 
-        var pxW = new Px((int)float.Round(dpWidth.Value.Value * LayoutContext.DpToPx));
-        var pxH = new Px((int)float.Round(dpHeight.Value.Value * LayoutContext.DpToPx));
-        Vector2D<Px> pxSize = new(pxW, pxH);
+        position = new BoxPosition(LayoutContext.ToPx(dpPosition), LayoutContext.ToPx(dpSize));
 
-        position = new BoxPosition(pxPosition, pxSize);
         return true;
     }
 
@@ -133,12 +126,13 @@ public class GuiLayoutService(
         return Result.Success();
     }
 
-    private bool TryComputePreferredDimensionFor(int nodeIndex, UIAxis axis, [MaybeNullWhen(true)] out ResultProblem problem)
+    private bool TryComputePreferredDimensionFor(int nodeIndex, UIAxis axis,
+        [MaybeNullWhen(true)] out ResultProblem problem)
     {
         problem = null;
 
         ref var layoutData = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
-        var dimension = axis == UIAxis.X ? layoutData.Width : layoutData.Height;
+        var dimension = layoutData.GetSizeForAxis(axis);
         if (dimension.HasValue)
         {
             return true;
@@ -163,10 +157,11 @@ public class GuiLayoutService(
                 }
 
                 var childLayoutData = _layoutData[childIndex];
-                var childDimension = axis == UIAxis.X ? childLayoutData.Width : childLayoutData.Height;
+                var childDimension = childLayoutData.GetSizeForAxis(axis);
                 if (!childDimension.HasValue)
                 {
-                    problem = new ResultProblem("Child node with id '{0}' does not have a '{1}'", childId, axis == UIAxis.X ? "width" : "height");
+                    problem = new ResultProblem("Child node with id '{0}' does not have a '{1}'", childId,
+                        axis == UIAxis.X ? "width" : "height");
                     return false;
                 }
 
@@ -184,15 +179,7 @@ public class GuiLayoutService(
         }
 
         var nodeDimensions = GetSizeForAxis(layoutData.LayoutBox, childrenCount, childrenSize, axis);
-
-        if (axis == UIAxis.X)
-        {
-            layoutData = layoutData with { Width = nodeDimensions };
-        }
-        else
-        {
-            layoutData = layoutData with { Height = nodeDimensions };
-        }
+        layoutData = layoutData.WithSize(axis, nodeDimensions);
 
         return true;
     }
@@ -213,12 +200,13 @@ public class GuiLayoutService(
     {
         var isHorizontal = axis == UIAxis.X;
         return (isHorizontal ? box.Size.PreferredWidth : box.Size.PreferredHeight,
-                isHorizontal ? box.HorizontalChrome : box.VerticalChrome);
+            isHorizontal ? box.HorizontalChrome : box.VerticalChrome);
     }
 
-    private static int GetGapCount(int childCount) => childCount > 0 ? childCount - 1 : 0;
+    private static int GetGapCount(int childCount) => int.Max(0, childCount - 1);
 
-    private bool TryComputeActualDimensionFor(int nodeIndex, UIAxis axis, [MaybeNullWhen(true)] out ResultProblem problem)
+    private bool TryComputeActualDimensionFor(int nodeIndex, UIAxis axis,
+        [MaybeNullWhen(true)] out ResultProblem problem)
     {
         problem = null;
         ref var parent = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
@@ -235,111 +223,51 @@ public class GuiLayoutService(
                 problem = new ResultProblem("Could not find node box spec for node with id '{0}'", childIds[i]);
                 return false;
             }
+
             childIndices[i] = ci;
         }
 
+        var parentOuter = parent.GetSizeForAxis(axis) ?? Dp.Zero;
+        var parentChrome = parent.LayoutBox.GetChromeForAxis(axis);
+        var parentInner = parentOuter - parentChrome;
+
         if (isMainAxis)
         {
+            var gap = parent.LayoutBox.GetGapForAxis(axis);
+            var totalGapSize = GetGapCount(childIndices.Length) * gap;
             var totalChildOuter = childIndices
                 .Select(x => _layoutData[x])
                 .Select(x => (axis == UIAxis.X ? x.Width : x.Height) ?? Dp.Zero).Sum();
 
-            var gap = parent.LayoutBox.GetGapForAxis(axis);
-            var gaps = GetGapCount(childIndices.Length) * gap;
-
-            var parentOuter = axis == UIAxis.X
-                ? parent.Width ?? Dp.Zero
-                : parent.Height ?? Dp.Zero;
-
-            var parentChrome = axis == UIAxis.X
-                ? parent.LayoutBox.HorizontalChrome
-                : parent.LayoutBox.VerticalChrome;
-
-            var parentInner = parentOuter - parentChrome;
-
-            var targetSum = parentInner - gaps;
-            var remaining = targetSum - totalChildOuter;
+            var remaining = parentInner - totalGapSize - totalChildOuter;
 
             if (float.Abs(remaining.Value) > Epsilon)
             {
-                float totalGrow = 0f, totalShrink = 0f;
-                var sizes = new Dp[childIndices.Length];
-                var growW = new float[childIndices.Length];
-                var shrinkW = new float[childIndices.Length];
+                var totalWeight = childIndices.Select(x => _layoutData[x].LayoutBox.Size.ResizingWeight).Sum();
 
-                for (var i = 0; i < childIndices.Length; i++)
+                foreach (var childIndex in childIndices)
                 {
-                    var c = _layoutData[childIndices[i]];
-                    var d = axis == UIAxis.X
-                        ? c.Width ?? Dp.Zero
-                        : c.Height ?? Dp.Zero;
-                    sizes[i] = d;
-
-                    var g = c.LayoutBox.Size.ResizingWeight;
-                    growW[i] = g;
-                    if (g > 0f) totalGrow += g;
-
-                    var s = c.LayoutBox.Size.ResizingWeight;
-                    if (s <= 0f) s = float.Max(0.0001f, d.Value);
-                    shrinkW[i] = s;
-                    totalShrink += s;
-                }
-
-                if (remaining.Value > 0f)
-                {
-                    if (totalGrow > 0f)
+                    var weight = _layoutData[childIndex].LayoutBox.Size.ResizingWeight;
+                    if (weight < Epsilon)
                     {
-                        for (var i = 0; i < childIndices.Length; i++)
-                        {
-                            if (growW[i] <= 0f) continue;
-                            var add = new Dp((growW[i] / totalGrow) * remaining.Value);
-                            sizes[i] = new Dp(sizes[i].Value + add.Value);
-                        }
+                        continue;
                     }
-                }
-                else
-                {
-                    var deficit = -remaining.Value;
-                    if (totalShrink > 0f)
-                    {
-                        for (var i = 0; i < childIndices.Length; i++)
-                        {
-                            var sub = new Dp((shrinkW[i] / totalShrink) * deficit);
-                            var newSize = sizes[i].Value - sub.Value;
-                            if (newSize < 0f) newSize = 0f;
-                            sizes[i] = new Dp(newSize);
-                        }
-                    }
-                }
 
-                for (var i = 0; i < childIndices.Length; i++)
-                {
-                    var c = _layoutData[childIndices[i]];
-                    if (axis == UIAxis.X) _layoutData[childIndices[i]] = c with { Width = sizes[i] };
-                    else                  _layoutData[childIndices[i]] = c with { Height = sizes[i] };
+                    var delta = weight / totalWeight * remaining;
+                    var size = _layoutData[childIndex].GetSizeForAxis(axis) ?? Dp.Zero;
+                    var newSize = size + delta;
+                    _layoutData[childIndex] = _layoutData[childIndex].WithSize(axis, newSize);
                 }
             }
         }
         else
         {
-            var parentOuter = axis == UIAxis.X
-                ? parent.Width ?? Dp.Zero
-                : parent.Height ?? Dp.Zero;
-
-            var parentChrome = axis == UIAxis.X
-                ? parent.LayoutBox.HorizontalChrome
-                : parent.LayoutBox.VerticalChrome;
-
-            var parentInner = parentOuter - parentChrome;
-
-            for (var i = 0; i < childIndices.Length; i++)
+            foreach (var childIndex in childIndices)
             {
-                var childIndex = childIndices[i];
                 var child = _layoutData[childIndex];
 
                 if (axis == UIAxis.X)
                 {
-                    // Stretch child width to parent width on cross-axis of a vertical stack.
                     if (!child.LayoutBox.Size.PreferredWidth.HasValue)
                     {
                         var aspectRatio = child.LayoutBox.Size.AspectRatio;
@@ -352,7 +280,10 @@ public class GuiLayoutService(
                                 parentInner,
                                 child.Height.Value);
 
-                            _layoutData[childIndex] = child with { Width = computedSize.Width, Height = computedSize.Height };
+                            _layoutData[childIndex] = child with
+                            {
+                                Width = computedSize.Width, Height = computedSize.Height
+                            };
                         }
                         else
                         {
@@ -362,7 +293,6 @@ public class GuiLayoutService(
                 }
                 else
                 {
-                    // Stretch child height to parent height on cross-axis of a horizontal stack.
                     if (!child.LayoutBox.Size.PreferredHeight.HasValue)
                     {
                         var aspectRatio = child.LayoutBox.Size.AspectRatio;
@@ -375,7 +305,10 @@ public class GuiLayoutService(
                                 child.Width.Value,
                                 parentInner);
 
-                            _layoutData[childIndex] = child with { Width = computedSize.Width, Height = computedSize.Height };
+                            _layoutData[childIndex] = child with
+                            {
+                                Width = computedSize.Width, Height = computedSize.Height
+                            };
                         }
                         else
                         {
@@ -389,7 +322,6 @@ public class GuiLayoutService(
 
         foreach (var childIndex in childIndices)
         {
-            // Apply aspect ratio constraints before recursing
             ApplyAspectRatioConstraint(childIndex);
 
             if (!TryComputeActualDimensionFor(childIndex, axis, out problem))
@@ -404,23 +336,20 @@ public class GuiLayoutService(
         ref var layoutData = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
         var aspectRatio = layoutData.LayoutBox.Size.AspectRatio;
 
-        if (!aspectRatio.HasValue || aspectRatio.Value <= 0f)
+        if (aspectRatio is null or <= 0f)
             return;
 
         var width = layoutData.Width;
         var height = layoutData.Height;
 
-        // If both dimensions are already set, don't override
         if (width.HasValue && height.HasValue)
             return;
 
-        // If width is set, compute height from aspect ratio (aspectRatio = width / height)
         if (width.HasValue && !height.HasValue)
         {
             var computedHeight = new Dp(width.Value.Value / aspectRatio.Value);
             layoutData = layoutData with { Height = computedHeight };
         }
-        // If height is set, compute width from aspect ratio
         else if (!width.HasValue && height.HasValue)
         {
             var computedWidth = new Dp(height.Value.Value * aspectRatio.Value);
@@ -498,7 +427,7 @@ public class GuiLayoutService(
         }
 
         var axis = self.LayoutBox.LayoutAxis;
-        var gap  = self.LayoutBox.GetGapForAxis(axis);
+        var gap = self.LayoutBox.GetGapForAxis(axis);
         var cursor = contentOrigin;
 
         foreach (var childId in childIds)
@@ -510,7 +439,7 @@ public class GuiLayoutService(
             }
 
             ref var child = ref CollectionsMarshal.AsSpan(_layoutData)[ci];
-            var cw = child.Width  ?? Dp.Zero;
+            var cw = child.Width ?? Dp.Zero;
             var ch = child.Height ?? Dp.Zero;
 
             var margin = child.LayoutBox.Margin;
@@ -525,8 +454,8 @@ public class GuiLayoutService(
             if (!TryComputePositionsFor(ci, out problem))
                 return false;
 
-            var outerWidth  = margin.Left + cw + margin.Right;
-            var outerHeight = margin.Top  + ch + margin.Bottom;
+            var outerWidth = margin.Left + cw + margin.Right;
+            var outerHeight = margin.Top + ch + margin.Bottom;
 
             cursor = axis == UIAxis.X
                 ? new Vector2D<Dp>(cursor.X + outerWidth + gap, cursor.Y)

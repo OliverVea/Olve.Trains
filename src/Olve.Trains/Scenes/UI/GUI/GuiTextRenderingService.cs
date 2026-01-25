@@ -64,7 +64,8 @@ public class GuiTextRenderingService(
 
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
-        _shader.UResolution = layoutContext.Value.ViewportSize.As<float>();
+        var designSize = layoutContext.Value.ToPx(layoutContext.Value.DesignSize);
+        _shader.UResolution = new Vector2D<float>(designSize.X.Value, designSize.Y.Value);
 
         _nodesToDelete.Clear();
         _updateProblems.Clear();

@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Olve.Engine3D;
-using Olve.Engine3D.Assets;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
@@ -12,7 +11,6 @@ using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Logging;
-using Olve.Utilities.Ids;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
@@ -52,7 +50,8 @@ public class GuiRectangleRenderingService(
 
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
-        _shader.UResolution = layoutContext.Value.ViewportSize.As<float>();
+        var designSize = layoutContext.Value.ToPx(layoutContext.Value.DesignSize);
+        _shader.UResolution = new Vector2D<float>(designSize.X.Value, designSize.Y.Value);
 
         _nodesToDelete.Clear();
         _updateProblems.Clear();
