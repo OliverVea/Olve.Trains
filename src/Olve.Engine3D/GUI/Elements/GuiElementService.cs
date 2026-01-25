@@ -33,7 +33,6 @@ public class GuiElementService
     public Result<Id<GuiElementRegistrations>> RegisterElementAndChildren(UnionId<GuiAnchor, GuiNode> parentId, GuiElement guiElement)
     {
         var registrationId = Id.New<GuiElementRegistrations>();
-        List<GuiElementArgs> added = [];
 
         if (RegisterElementAndChildren(registrationId, parentId, guiElement)
             .TryPickProblems(out var problems))

@@ -14,7 +14,7 @@ public class GuiLayoutServicePositioningTests
         DesignSize = new Vector2D<int>(1920, 1080),
         ViewportSize = new Vector2D<int>(1920, 1080),
         UiScale = 1,
-        DevicePixelRatio = 1
+        DpToPx = 1
     };
 
     private static readonly Id<GuiAnchor> DefaultAnchorId = Id.New<GuiAnchor>();

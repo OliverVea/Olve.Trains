@@ -80,7 +80,7 @@ var buildOptions = serviceProvider.GetRequiredService<IOptions<BuildOptions>>();
 var s3Options = serviceProvider.GetRequiredService<IOptions<S3Options>>();
 
 var targets = buildOptions.Value.Targets
-    .Select(x => Enum.Parse<BuildTargets>(x))
+    .Select(Enum.Parse<BuildTargets>)
     .Aggregate(BuildTargets.None, (a,b) => a | b);
 var timeout = TimeSpan.FromMilliseconds(s3Options.Value.TimeoutMs);
 

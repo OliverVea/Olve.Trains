@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<Box id="BarBackground" Width="1920" Height="80" BackgroundColor="(0, 0, 0)" Alpha="0.3f" Padding="4" Gap="4">
+<Box id="BarBackground" Weight="1" Height="32" BackgroundColor="(0, 0, 0)" Alpha="0.3f" Padding="2" Gap="2">
     <Box id="Red" Width="100" BackgroundColor="(1, 1, 1)" Alpha="1f"  Padding="0" Gap="6" >
         <Box Vertical="true" Weight="0.4f" Gap="6">
             <Box BackgroundColor="(1, 0, 0)" Weight="1" />
@@ -10,8 +10,10 @@
             <Box BackgroundColor="(1, 0, 0)" Weight="1" />
         </Box>
     </Box>
-    <Box id="Green" Width="60" BackgroundColor="(0, 1, 0)" />
-    <Box id="Blue" Width="60" BackgroundColor="(0, 0, 1)" />
-    <Text id="HelloText" Content='"Hello, World!"' FontSize="32f" Color="(1f, 1f, 1f)" Weight="1f" />
-    <Image Id="Img" Texture="Textures.Textures.SimpleTrains_Texture_01" AspectRatio="1f" Tint="(0.3f, 0.3f, 0.3f)" Fit="FitMode.Contain"/>
+    <Box id="Green" BackgroundColor="(0, 1, 0)" Weight="1f" Padding="1">
+        <Text id="HelloText" Content='"Hello, World!"' FontSize="16" Color="(1f, 1f, 1f)" Weight="1f" />
+    </Box>
+    <Box id="Blue" Weight="1f" BackgroundColor="(0, 0, 1)" Padding="1">
+        <Image Id="Img" Texture="Textures.Textures.SimpleTrains_Texture_01" AspectRatio="1f" Tint="(0.3f, 0.3f, 0.3f)" Fit="FitMode.Contain"/>
+    </Box>
 </Box>

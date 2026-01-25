@@ -13,10 +13,8 @@ public readonly record struct LayoutBox()
     
     public Dp HorizontalChrome => Margin.Horizontal + Border.Width.Horizontal +  Padding.Horizontal;
     public Dp VerticalChrome => Margin.Vertical + Border.Width.Vertical +  Padding.Vertical;
+    public Vector2D<Dp> Chrome => new(HorizontalChrome, VerticalChrome);
 
-    public Dp GetGapForAxis(UIAxis axis)
-    {
-        if (axis == LayoutAxis) return Gap;
-        return Dp.Zero;
-    }
+    public Dp GetGapForAxis(UIAxis axis) => axis == LayoutAxis ? Gap : Dp.Zero;
+    public Dp GetChromeForAxis(UIAxis axis) => axis == UIAxis.X ? HorizontalChrome : VerticalChrome;
 }
