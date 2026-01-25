@@ -7,10 +7,18 @@ layout(location = 0) in vec2 aUnit;
 layout(location = 1) in vec2 iPosPx;
 layout(location = 2) in vec2 iSizePx;
 layout(location = 3) in vec4 iTint;
+layout(location = 4) in vec4 iBorderWidthPx;  // left, top, right, bottom
+layout(location = 5) in vec4 iBorderColor;    // RGBA
+layout(location = 6) in vec4 iBorderRadiusPx; // topLeft, topRight, bottomRight, bottomLeft
 
 out VS_OUT {
     vec2 texCoord;
     vec4 tint;
+    vec2 fragPosPx;        // Fragment position in box space
+    vec2 boxSizePx;        // Box size
+    vec4 borderWidthPx;
+    vec4 borderColor;
+    vec4 borderRadiusPx;
 } vs_out;
 
 uniform vec2 uResolution;
@@ -28,7 +36,12 @@ void main()
 
     gl_Position = vec4(ndc, 0.0, 1.0);
 
-    // Pass texture coordinates (aUnit is already [0..1])
+    // Pass data to fragment shader
     vs_out.texCoord = aUnit;
     vs_out.tint = iTint;
+    vs_out.fragPosPx = aUnit * iSizePx; // Position within the box
+    vs_out.boxSizePx = iSizePx;
+    vs_out.borderWidthPx = iBorderWidthPx;
+    vs_out.borderColor = iBorderColor;
+    vs_out.borderRadiusPx = iBorderRadiusPx;
 }

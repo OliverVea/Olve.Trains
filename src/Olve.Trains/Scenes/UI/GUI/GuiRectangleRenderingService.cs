@@ -169,12 +169,33 @@ public class GuiRectangleRenderingService(
             return false;
         }
 
+        var rectData = renderableAsRectangle.TexturedRectangleData;
+
+        // Convert border from Dp to Px
+        var border = rectData.Border ?? Border.None;
+        var borderWidthPx = new Vector4D<float>(
+            layoutContext.Value.ToPx(border.Width.Left).Value,
+            layoutContext.Value.ToPx(border.Width.Top).Value,
+            layoutContext.Value.ToPx(border.Width.Right).Value,
+            layoutContext.Value.ToPx(border.Width.Bottom).Value
+        );
+
+        var borderRadiusPx = new Vector4D<float>(
+            layoutContext.Value.ToPx(border.Radius.TopLeft).Value,
+            layoutContext.Value.ToPx(border.Radius.TopRight).Value,
+            layoutContext.Value.ToPx(border.Radius.BottomRight).Value,
+            layoutContext.Value.ToPx(border.Radius.BottomLeft).Value
+        );
+
         rectangleData = new RectangleData
         {
             PositionPx = new Vector2D<float>(boxPosition.Position.X.Value, boxPosition.Position.Y.Value),
             SizePx = new Vector2D<float>(boxPosition.Size.X.Value, boxPosition.Size.Y.Value),
-            TintRgba = renderableAsRectangle.TexturedRectangleData.Color,
-            Depth = -depth
+            TintRgba = rectData.Color,
+            Depth = -depth,
+            BorderWidthPx = borderWidthPx,
+            BorderColor = border.Color.ToVector(),
+            BorderRadiusPx = borderRadiusPx
         };
 
         return true;

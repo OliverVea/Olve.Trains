@@ -12,6 +12,11 @@ public class RectangleData
     public Vector2D<float> UvMax { get; set; } = new(1f, 1f);
     public float Depth { get; set; } = 0f;
 
+    // Border rendering data
+    public Vector4D<float> BorderWidthPx { get; set; } = Vector4D<float>.Zero; // left, top, right, bottom
+    public Vector4D<float> BorderColor { get; set; } = Vector4D<float>.Zero;   // RGBA
+    public Vector4D<float> BorderRadiusPx { get; set; } = Vector4D<float>.Zero; // topLeft, topRight, bottomRight, bottomLeft
+
     public Result Validate()
     {
         if (SizePx.X < 0 || SizePx.Y < 0)
@@ -20,6 +25,10 @@ public class RectangleData
         if (!Is01(TintRgba.X) || !Is01(TintRgba.Y) || !Is01(TintRgba.Z) || !Is01(TintRgba.W))
             return new ResultProblem("Tint color channels must be in [0,1]. RGBA=({0},{1},{2},{3})",
                 TintRgba.X, TintRgba.Y, TintRgba.Z, TintRgba.W);
+
+        if (!Is01(BorderColor.X) || !Is01(BorderColor.Y) || !Is01(BorderColor.Z) || !Is01(BorderColor.W))
+            return new ResultProblem("Border color channels must be in [0,1]. RGBA=({0},{1},{2},{3})",
+                BorderColor.X, BorderColor.Y, BorderColor.Z, BorderColor.W);
 
         return Result.Success();
 
