@@ -1,6 +1,10 @@
-﻿using Olve.Utilities.Ids;
+﻿using Olve.Engine3D.GUI.Layout;
+using Olve.Utilities.Ids;
 using Olve.Utilities.Lookup;
 
 namespace Olve.Engine3D.GUI;
 
-public readonly record struct GuiAnchor(Id<GuiAnchor> Id) : IHasId<Id<GuiAnchor>>;
+public readonly record struct GuiAnchor(
+    Id<GuiAnchor> Id,
+    AnchorPosition Position,
+    GrowthDirection Growth) : IHasId<Id<GuiAnchor>>;

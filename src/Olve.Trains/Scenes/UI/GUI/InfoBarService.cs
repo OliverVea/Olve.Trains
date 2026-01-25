@@ -11,7 +11,7 @@ namespace Olve.Trains.Scenes.UI.GUI;
 public class InfoBarService(
     ILoggingManager loggingManager,
     GuiElementService guiElementService,
-    Provider<LayoutContext> layoutContextProvider,
+    GuiAnchorService guiAnchorService,
     GuiLayoutService guiLayoutService) : SceneService(loggingManager)
 {
     public override int Priority => 100;
@@ -23,11 +23,15 @@ public class InfoBarService(
 
     protected override Result OnLoad()
     {
-        var anchorId = Id.New<GuiAnchor>();
+        if (guiAnchorService.RegisterAnchor(AnchorPosition.MiddleRight, GrowthDirection.Left)
+            .TryPickProblems(out var problems, out var anchorId))
+        {
+            return problems;
+        }
 
         return guiElementService
             .RegisterElementAndChildren(anchorId, InfoBar.BarBackground)
-            .TryPickProblems(out var problems, out _registrationId) ? problems : Result.Success();
+            .TryPickProblems(out problems, out _registrationId) ? problems : Result.Success();
     }
 
     protected override Result OnUpdate(TimeSpan deltaTime)
@@ -36,9 +40,7 @@ public class InfoBarService(
         var dx = new Dp((float) (1 - Math.Cos(_t)) * 50f);
         var left = dx;
 
-        if (Result.Concat(
-                UpdateElementLayoutBox(InfoBar.BarBackground, b => b with {Size = b.Size with {PreferredWidth = layoutContextProvider.Value.DesignSize.X}}),
-                UpdateElementLayoutBox(InfoBar.HelloText, b => b with { Margin = b.Margin with { Left = left } }))
+        if (UpdateElementLayoutBox(InfoBar.HelloText, b => b with { Margin = b.Margin with { Left = left } })
             .TryPickProblems(out var problems))
         {
             return problems;
