@@ -9,8 +9,8 @@ public class OpenGLRectangleManager(
     OpenGLQuadRenderingManager quadRenderingManager)
     : IOpenGLEntityManager<RectangleData, OpenGLRectangleManager.Registration>
 {
-    // pos2, size2, tint4, uvMin2, uvMax2
-    private const int InstFields = 2 + 2 + 4 + 2 + 2;
+    // pos2, size2, tint4, borderWidth4, borderColor4, borderRadius4
+    private const int InstFields = 2 + 2 + 4 + 4 + 4 + 4;
 
     public readonly record struct Registration(VAO VAO, VBO InstanceVBO);
 
@@ -35,10 +35,16 @@ public class OpenGLRectangleManager(
 
         Span<float> instance = stackalloc float[InstFields];
         int i = 0;
-        instance[i++] = entityData.PositionPx.X; instance[i++] = entityData.PositionPx.Y; // pos2
-        instance[i++] = entityData.SizePx.X;     instance[i++] = entityData.SizePx.Y;     // size2
-        instance[i++] = entityData.TintRgba.X;   instance[i++] = entityData.TintRgba.Y;
-        instance[i++] = entityData.TintRgba.Z;   instance[i++] = entityData.TintRgba.W;   // tint4
+        instance[i++] = entityData.PositionPx.X;       instance[i++] = entityData.PositionPx.Y;       // pos2
+        instance[i++] = entityData.SizePx.X;           instance[i++] = entityData.SizePx.Y;           // size2
+        instance[i++] = entityData.TintRgba.X;         instance[i++] = entityData.TintRgba.Y;
+        instance[i++] = entityData.TintRgba.Z;         instance[i++] = entityData.TintRgba.W;         // tint4
+        instance[i++] = entityData.BorderWidthPx.X;    instance[i++] = entityData.BorderWidthPx.Y;
+        instance[i++] = entityData.BorderWidthPx.Z;    instance[i++] = entityData.BorderWidthPx.W;    // borderWidth4
+        instance[i++] = entityData.BorderColor.X;      instance[i++] = entityData.BorderColor.Y;
+        instance[i++] = entityData.BorderColor.Z;      instance[i++] = entityData.BorderColor.W;      // borderColor4
+        instance[i++] = entityData.BorderRadiusPx.X;   instance[i++] = entityData.BorderRadiusPx.Y;
+        instance[i++] = entityData.BorderRadiusPx.Z;   instance[i++] = entityData.BorderRadiusPx.W;   // borderRadius4
 
         gl.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)instance, BufferUsageARB.DynamicDraw);
 
@@ -57,6 +63,9 @@ public class OpenGLRectangleManager(
             Attr(1, 2); // iPosPx
             Attr(2, 2); // iSizePx
             Attr(3, 4); // iTint
+            Attr(4, 4); // iBorderWidthPx
+            Attr(5, 4); // iBorderColor
+            Attr(6, 4); // iBorderRadiusPx
         }
 
         // Unbind
