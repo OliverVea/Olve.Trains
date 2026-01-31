@@ -25,7 +25,7 @@ public class GuiLayoutUpdateService(
 
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
-        return Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update);
+        return Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update, guiLayoutService.ComputeLayout);
     }
 
     private Result OnAdded(GuiElementArgs args)

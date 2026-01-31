@@ -1,4 +1,5 @@
 ﻿using Olve.Engine3D.GUI.Layout;
+using Olve.Engine3D.GUI.Styling;
 using Olve.Utilities.Ids;
 using Olve.Utilities.Lookup;
 
@@ -9,7 +10,7 @@ public abstract class GuiElement : IHasId<Id<GuiElement>>
     public required Id<GuiElement> Id { get; set; }
     public required string Name { get; set; }
     public GuiElement[] Children { get; set; } = [];
-
+    public StyleKey? StyleKey { get; set; }
 
     public virtual LayoutBox? LayoutBox => null;
 }
