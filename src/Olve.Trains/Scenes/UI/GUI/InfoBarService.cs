@@ -1,7 +1,7 @@
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
-using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
 using Olve.Logging;
@@ -13,7 +13,9 @@ public class InfoBarService(
     ILoggingManager loggingManager,
     ToolManagementService toolManagementService,
     GuiElementService guiElementService,
-    GuiElementStateService stateService,
+    GuiNodeStateService stateService,
+    GuiNodeService guiNodeService,
+    GuiActivationService guiActivationService,
     GuiAnchorService guiAnchorService) : SceneService(loggingManager)
 {
     public override int Priority => 100;
@@ -30,6 +32,7 @@ public class InfoBarService(
             return problems;
         }
 
+        guiActivationService.GuiElementActivated.Subscribe(OnGuiElementActivated);
         toolManagementService.ActiveToolChanged.Subscribe(OnActiveToolChanged);
 
         return guiElementService
@@ -37,21 +40,59 @@ public class InfoBarService(
             .TryPickProblems(out problems, out _registrationId) ? problems : Result.Success();
     }
 
-    private void OnActiveToolChanged(ToolManagementService.ActiveToolChangedMessage message)
+    private void OnGuiElementActivated(GuiActivationService.GuiElementActivatedMessage message)
     {
-        // Clear focus from previous tool
-        if (GetToolElement(message.CurrentTool) is { } currentElement
-            && guiElementService.TryGetGuiNodeId(currentElement.Id, _registrationId, out var currentNodeId))
+        if (NodeIdMatches(ToolBar.PlaceTrack, message.NodeId))
         {
-            stateService.UpdateState(currentNodeId, s => s & ~GuiElementState.Focused);
+            toolManagementService.ToggleActiveTool(TrackPlacingToolService.ToolId);
         }
 
-        // Set focus on new tool
-        if (GetToolElement(message.NewTool) is { } newElement
-            && guiElementService.TryGetGuiNodeId(newElement.Id, _registrationId, out var newNodeId))
+        if (NodeIdMatches(ToolBar.PlaceTrain, message.NodeId))
         {
-            stateService.UpdateState(newNodeId, s => s | GuiElementState.Focused);
+            toolManagementService.ToggleActiveTool(TrainPlacingToolService.ToolId);
         }
+    }
+
+    private bool NodeIdMatches(GuiElement guiElement, Id<GuiNode> nodeId)
+    {
+        if (!guiElementService.TryGetGuiNodeId(guiElement.Id, _registrationId, out var guiElementNodeId))
+        {
+            return false;
+        }
+
+        return nodeId == guiElementNodeId;
+    }
+
+    private void OnActiveToolChanged(ToolManagementService.ActiveToolChangedMessage message)
+    {
+        if (GetNodeAndDescendants(message.CurrentTool) is { } currentNodeIds)
+        {
+            stateService.UpdateAll(currentNodeIds, s => s & ~GuiNodeState.Active);
+        }
+
+        if (GetNodeAndDescendants(message.NewTool) is { } newNodeIds)
+        {
+            stateService.UpdateAll(newNodeIds, s => s | GuiNodeState.Active);
+        }
+    }
+
+    private IEnumerable<Id<GuiNode>>? GetNodeAndDescendants(Id<Tool>? toolId)
+    {
+        if (GetToolElement(toolId) is { } currentElement && guiElementService.TryGetGuiNodeId(currentElement.Id, _registrationId, out var currentNodeId))
+        {
+            if (guiNodeService
+                .GetNodeAndDescendants(currentNodeId)
+                .TryPickProblems(out var problems, out var nodeIds))
+            {
+                LoggingManager.Log(problems.Prepend("Failed to get node and descendants for node with id '{0}'", currentNodeId));
+                return null;
+            }
+
+            return nodeIds;
+
+        }
+
+        return null;
     }
 
     private Box? GetToolElement(Id<Tool>? toolId)

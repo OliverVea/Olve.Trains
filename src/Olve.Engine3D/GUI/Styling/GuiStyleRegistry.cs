@@ -15,7 +15,7 @@ public class GuiStyleRegistry(ILoggingManager loggingManager)
         loggingManager.Log(LogLevel.Debug, $"Registered style of type '{typeof(T).Name}' and key '{styling.StyleKey.Value}'");
     }
 
-    public Result ApplyState(GuiElement guiElement, GuiElementState state)
+    public Result ApplyState(GuiElement guiElement, GuiNodeState state)
     {
         if (guiElement.StyleKey is not { } styleKey)
         {

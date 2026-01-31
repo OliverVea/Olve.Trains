@@ -28,7 +28,7 @@ public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
         return Result.Success();
     }
 
-    private void OnScreenResized(Vector2D<int> size) =>  _screenResized = true;
+    private void OnScreenResized(Vector2D<int> size) => _screenResized = true;
 
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
@@ -40,7 +40,7 @@ public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
 
         var designWidth = MathF.Round(window.Size.X * UIScale);
         var designHeight = designWidth /  aspectRatio;
-        
+
         var designSize = new Vector2D<Dp>(designWidth, designHeight);
         DpPxRatio designPixelRatio = new(designWidth / window.Size.X);
 
@@ -50,11 +50,12 @@ public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
             designPixelRatio,
             UIScale
         );
-        
+
         layoutContextProvider.Set(newLayoutContext);
-        
+        guiLayoutService.SetDirty();
+
         LoggingManager.Log(LogLevel.Debug, $"Updated layout context: {newLayoutContext}");
 
-        return guiLayoutService.ComputeLayout();
+        return Result.Success();
     }
 }

@@ -691,7 +691,7 @@ public class GuiLayoutService(
     }
 
 
-    private void SetDirty()
+    public void SetDirty()
     {
         _isDirty = true;
         _nodePositions = null;

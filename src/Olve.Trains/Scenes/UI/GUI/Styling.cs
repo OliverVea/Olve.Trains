@@ -1,3 +1,4 @@
+using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
@@ -6,42 +7,63 @@ namespace Olve.Trains.Scenes.UI.GUI;
 
 public static class Styles
 {
-    private static readonly (float R, float G, float B, float A) DefaultBorder = (0.2f, 0.2f, 0.2f, 0.3f);
-    private static readonly (float R, float G, float B, float A) HoverBorder = (0.6f, 0.6f, 0.6f, 1f);
-    private static readonly (float R, float G, float B, float A) FocusBorder = (0f, 1f, 0f, 1f);
+    public const float DefaultBorderRadius = 6;
+    public const float DefaultPadding = 2;
+    public const float DefaultBorderWidth = 1.5f;
+
+    public static readonly (float R, float G, float B, float A) DefaultBorder = (0.2f, 0.2f, 0.2f, 0.3f);
+    public static readonly (float R, float G, float B, float A) PanelBackground = (0.35f, 0.35f, 0.35f, 0.3f);
+    public static readonly (float R, float G, float B, float A) FocusBorder = (1, 1, 1, 1);
 
     public static readonly GuiElementStyling<Box> MenuButtonStyle = new()
     {
         StyleKey = new StyleKey(nameof(MenuButtonStyle)),
         OnStateChanged = (b, state) =>
         {
-            // Base setup
-            b.BackgroundColor = DefaultBorder;
+            b.Height = 40;
             b.AspectRatio = 1;
-            b.Justify = Justify.Center;
-            b.Align = Align.Center;
-            b.BorderRadius = 6f;
+            b.BorderRadius = DefaultBorderRadius;
+            b.BorderColor = DefaultBorder;
+            b.BorderWidth = DefaultBorderWidth;
+            b.Padding = DefaultPadding;
 
-            // Priority: Focused > Hovered > Default
-            if (state.HasFlag(GuiElementState.Focused))
+            if (state.HasFlag(GuiNodeState.Focused))
             {
                 b.BorderColor = FocusBorder;
-                b.BorderWidth = 2f;
             }
-            else if (state.HasFlag(GuiElementState.Hovered))
+
+            if (state.HasFlag(GuiNodeState.Pressed))
             {
-                b.BorderColor = HoverBorder;
-                b.BorderWidth = 1f;
-            }
-            else
-            {
-                b.BorderColor = DefaultBorder;
-                b.BorderWidth = 1f;
+                b.Padding = 8;
             }
         }
     };
 
-    public static IReadOnlyCollection<IGuiElementStyling> All { get; } = [
-        MenuButtonStyle
-    ];
+    public static readonly GuiElementStyling<Box> MenuBarBackground = new()
+    {
+        StyleKey = new StyleKey(nameof(MenuBarBackground)),
+        OnStateChanged = (b, state) =>
+        {
+            b.BackgroundColor = PanelBackground;
+            b.Padding = DefaultPadding;
+            b.BorderColor = DefaultBorder;
+            b.BorderWidth = DefaultBorderWidth;
+            b.BorderRadius = DefaultBorderRadius;
+        }
+    };
+
+    public static readonly GuiElementStyling<Image> ToolIconStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(ToolIconStyle)),
+        OnStateChanged = (img, state) =>
+        {
+            img.Tint = (0.75f, 0.75f, 0.75f);
+            img.AspectRatio = 1;
+
+            if (state.HasFlag(GuiNodeState.Active))
+            {
+                img.Tint = null;
+            }
+        }
+    };
 }

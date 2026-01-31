@@ -6,9 +6,9 @@ public class GuiElementStyling<T> : IGuiElementStyling  where T : GuiElement
 {
     public required StyleKey StyleKey { get; init; }
 
-    public Action<T, GuiElementState>? OnStateChanged { get; init; }
+    public Action<T, GuiNodeState>? OnStateChanged { get; init; }
 
-    public bool TryApplyState(GuiElement guiElement, GuiElementState state)
+    public bool TryApplyState(GuiElement guiElement, GuiNodeState state)
     {
         if (guiElement is not T t)
         {
@@ -24,5 +24,5 @@ public interface IGuiElementStyling
 {
     StyleKey StyleKey { get; }
 
-    bool TryApplyState(GuiElement guiElement, GuiElementState state);
+    bool TryApplyState(GuiElement guiElement, GuiNodeState state);
 }
