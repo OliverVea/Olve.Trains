@@ -6,7 +6,8 @@
       "Bash(dotnet clean:*)",
       "Bash(npx @fsmiamoto/reagent:*)",
       "Bash(pushd:*)",
-      "Bash(popd)"
+      "Bash(popd)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

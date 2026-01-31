@@ -82,6 +82,7 @@ public class GuiElementService
         }
 
         _guiElements[nodeId] = guiElement;
+
         OnAdded.Invoke(new GuiElementArgs(guiElement.Id, registrationId, nodeId));
 
         return Result.Success();

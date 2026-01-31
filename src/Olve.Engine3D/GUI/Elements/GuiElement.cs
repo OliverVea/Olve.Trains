@@ -11,6 +11,8 @@ public abstract class GuiElement : IHasId<Id<GuiElement>>
     public required string Name { get; set; }
     public GuiElement[] Children { get; set; } = [];
     public StyleKey? StyleKey { get; set; }
+    public bool Interactive { get; init; }
+    public bool InheritParentState { get; init; }
 
     public virtual LayoutBox? LayoutBox => null;
 }

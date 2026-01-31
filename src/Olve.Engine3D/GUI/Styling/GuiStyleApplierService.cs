@@ -9,11 +9,11 @@ namespace Olve.Engine3D.GUI.Styling;
 public class GuiStyleApplierService(
     ILoggingManager loggingManager,
     GuiElementService guiElementService,
-    GuiElementStateService stateService,
+    GuiNodeStateService stateService,
     GuiLayoutService guiLayoutService,
     GuiStyleRegistry styleRegistry) : SceneService(loggingManager)
 {
-    private readonly EventQueue<GuiElementStateService.GuiElementStateChanged> _stateChangedQueue = new(stateService.OnStateChanged);
+    private readonly EventQueue<GuiNodeStateService.GuiNodeStateChanged> _stateChangedQueue = new(stateService.OnStateChanged);
 
     protected override Result OnLoad()
     {
@@ -26,7 +26,7 @@ public class GuiStyleApplierService(
         return _stateChangedQueue.Update();
     }
 
-    private Result OnStateChanged(GuiElementStateService.GuiElementStateChanged args)
+    private Result OnStateChanged(GuiNodeStateService.GuiNodeStateChanged args)
     {
         if (!guiElementService.TryGetElement(args.NodeId, out var element))
         {

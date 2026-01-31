@@ -14,6 +14,8 @@ public class GameStyleService(
     protected override Result OnLoad()
     {
         styleRegistry.Register(Styles.MenuButtonStyle);
+        styleRegistry.Register(Styles.MenuBarBackground);
+        styleRegistry.Register(Styles.ToolIconStyle);
 
         return Result.Success();
     }
