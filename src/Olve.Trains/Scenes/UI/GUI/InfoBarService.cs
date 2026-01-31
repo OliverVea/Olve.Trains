@@ -1,10 +1,9 @@
-using Olve.Engine3D;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
+using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
-using Olve.Generated.Textures;
 using Olve.Logging;
 using Olve.Trains.Scenes.UI.Tools;
 
@@ -14,6 +13,7 @@ public class InfoBarService(
     ILoggingManager loggingManager,
     ToolManagementService toolManagementService,
     GuiElementService guiElementService,
+    GuiElementStateService stateService,
     GuiAnchorService guiAnchorService) : SceneService(loggingManager)
 {
     public override int Priority => 100;
@@ -30,8 +30,6 @@ public class InfoBarService(
             return problems;
         }
 
-
-
         toolManagementService.ActiveToolChanged.Subscribe(OnActiveToolChanged);
 
         return guiElementService
@@ -41,11 +39,19 @@ public class InfoBarService(
 
     private void OnActiveToolChanged(ToolManagementService.ActiveToolChangedMessage message)
     {
-        var currentBox = GetToolElement(message.CurrentTool);
-        currentBox?.BorderColor = (0.2f, 0.2f, 0.2f, 0.3f);
+        // Clear focus from previous tool
+        if (GetToolElement(message.CurrentTool) is { } currentElement
+            && guiElementService.TryGetGuiNodeId(currentElement.Id, _registrationId, out var currentNodeId))
+        {
+            stateService.UpdateState(currentNodeId, s => s & ~GuiElementState.Focused);
+        }
 
-        var newBox = GetToolElement(message.NewTool);
-        newBox?.BorderColor = (1, 1, 1, 1);
+        // Set focus on new tool
+        if (GetToolElement(message.NewTool) is { } newElement
+            && guiElementService.TryGetGuiNodeId(newElement.Id, _registrationId, out var newNodeId))
+        {
+            stateService.UpdateState(newNodeId, s => s | GuiElementState.Focused);
+        }
     }
 
     private Box? GetToolElement(Id<Tool>? toolId)

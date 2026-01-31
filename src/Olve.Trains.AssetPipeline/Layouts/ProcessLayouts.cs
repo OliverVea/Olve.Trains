@@ -79,6 +79,7 @@ public class ProcessLayouts(
                     },
                     { "Id", node.Id.Id },
                     { "ElementId", $"{className}/{node.TypeName}/{node.Id.Id}"},
+                    { "StyleKey", node.StyleKey },
                     {
                         "Properties", node
                             .Properties.Select(nodeProperty =>
@@ -130,7 +131,7 @@ public class ProcessLayouts(
     }
 
     // Internal node model used to build ScriptObject for Scriban
-    private readonly record struct Node(NodeId Id, string TypeName, IReadOnlyList<Property> Properties, IReadOnlyList<NodeId> Children);
+    private readonly record struct Node(NodeId Id, string TypeName, string? StyleKey, IReadOnlyList<Property> Properties, IReadOnlyList<NodeId> Children);
     private readonly record struct NodeId(string Id, bool Fixed);
     private readonly record struct Property(string Name, string Value);
 
@@ -144,6 +145,7 @@ public class ProcessLayouts(
 
         var nodeName = element.Name.LocalName;
         NodeId? nodeId = null;
+        string? styleKey = null;
 
         var idProperty = properties.Find(x => x.Name.Equals("id", StringComparison.InvariantCultureIgnoreCase));
         if (idProperty != default)
@@ -152,13 +154,20 @@ public class ProcessLayouts(
             nodeId = new NodeId(idProperty.Value, true);
         }
 
+        var styleProperty = properties.Find(x => x.Name.Equals("style", StringComparison.InvariantCultureIgnoreCase));
+        if (styleProperty != default)
+        {
+            properties.Remove(styleProperty);
+            styleKey = styleProperty.Value;
+        }
+
         var children = element
             .Elements()
             .Select(childElement => AddNodeAndChildren(childElement, nodes))
             .ToList();
 
         nodeId ??= new(nodeName + "_" + nodes.Count, false);
-        Node node = new(nodeId.Value, nodeName, properties, children);
+        Node node = new(nodeId.Value, nodeName, styleKey, properties, children);
 
         nodes.Add(node);
 

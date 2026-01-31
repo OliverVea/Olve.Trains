@@ -695,6 +695,17 @@ public class GuiLayoutService(
     {
         _isDirty = true;
         _nodePositions = null;
+
+        // Clear all computed sizes so layout is fully recomputed
+        for (var i = 0; i < _layoutData.Count; i++)
+        {
+            _layoutData[i] = _layoutData[i] with
+            {
+                Width = null,
+                Height = null,
+                Position = null
+            };
+        }
     }
 }
 

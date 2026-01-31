@@ -4,7 +4,9 @@
       "Bash(dotnet run:*)",
       "Bash(dotnet build:*)",
       "Bash(dotnet clean:*)",
-      "Bash(npx @fsmiamoto/reagent:*)"
+      "Bash(npx @fsmiamoto/reagent:*)",
+      "Bash(pushd:*)",
+      "Bash(popd)"
     ],
     "deny": [],
     "ask": []

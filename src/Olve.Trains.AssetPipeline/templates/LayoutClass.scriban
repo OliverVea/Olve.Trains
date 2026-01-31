@@ -6,6 +6,7 @@
 // ReSharper disable InconsistentNaming
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
+using Olve.Engine3D.GUI.Styling;
 
 // ReSharper disable once CheckNamespace
 namespace {{ Namespace }};
@@ -19,7 +20,8 @@ public static partial class Layouts
         var {{ node.Id }} = new {{ node.TypeName }}()
         {
             Name = "{{node.Id}}",
-            Id = Id.FromName<GuiElement>("{{ node.ElementId }}"),{{ for property in node.Properties }}
+            Id = Id.FromName<GuiElement>("{{ node.ElementId }}"),{{ if node.StyleKey }}
+            StyleKey = new StyleKey("{{ node.StyleKey }}"),{{ end }}{{ for property in node.Properties }}
             {{ property.Name }} = {{ property.Value}},{{end}}
             Children = [{{ for child in node.Children }}
                 {{child}},{{end}}
