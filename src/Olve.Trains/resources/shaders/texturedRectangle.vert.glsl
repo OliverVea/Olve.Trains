@@ -37,7 +37,8 @@ void main()
     gl_Position = vec4(ndc, 0.0, 1.0);
 
     // Pass data to fragment shader
-    vs_out.texCoord = aUnit;
+    // Flip Y for texture coordinates (OpenGL has Y=0 at bottom, screen has Y=0 at top)
+    vs_out.texCoord = vec2(aUnit.x, 1.0 - aUnit.y);
     vs_out.tint = iTint;
     vs_out.fragPosPx = aUnit * iSizePx; // Position within the box
     vs_out.boxSizePx = iSizePx;

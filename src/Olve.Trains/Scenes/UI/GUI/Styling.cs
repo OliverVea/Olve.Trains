@@ -1,4 +1,4 @@
-﻿using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
 
@@ -6,37 +6,38 @@ namespace Olve.Trains.Scenes.UI.GUI;
 
 public static class Styles
 {
+    private static readonly (float R, float G, float B, float A) DefaultBorder = (0.2f, 0.2f, 0.2f, 0.3f);
+    private static readonly (float R, float G, float B, float A) HoverBorder = (0.6f, 0.6f, 0.6f, 1f);
+    private static readonly (float R, float G, float B, float A) FocusBorder = (0f, 1f, 0f, 1f);
 
     public static readonly GuiElementStyling<Box> MenuButtonStyle = new()
     {
         StyleKey = new StyleKey(nameof(MenuButtonStyle)),
-        OnSetup = b =>
+        OnStateChanged = (b, state) =>
         {
-            b.BackgroundColor = (0.2f, 0.2f, 0.2f, 0.3f);
+            // Base setup
+            b.BackgroundColor = DefaultBorder;
             b.AspectRatio = 1;
             b.Justify = Justify.Center;
             b.Align = Align.Center;
-            b.BorderWidth = 1f;
             b.BorderRadius = 6f;
-            b.BorderColor = (0.2f, 0.2f, 0.2f, 0.3f);
-        },
-        OnHoverEnter = b =>
-        {
-            b.BorderColor = (0.6f, 0.6f, 0.6f, 1f);
-        },
-        OnHoverExit = b =>
-        {
-            b.BorderColor = (0.2f, 0.2f, 0.2f, 0.3f);
-        },
-        OnFocusEnter = b =>
-        {
-            b.BorderColor = (0f, 1f, 0f, 1f);
-            b.BorderWidth = 2f;
-        },
-        OnFocusExit = b =>
-        {
-            b.BorderColor = (0.2f, 0.2f, 0.2f, 0.3f);
-            b.BorderWidth = 1f;
+
+            // Priority: Focused > Hovered > Default
+            if (state.HasFlag(GuiElementState.Focused))
+            {
+                b.BorderColor = FocusBorder;
+                b.BorderWidth = 2f;
+            }
+            else if (state.HasFlag(GuiElementState.Hovered))
+            {
+                b.BorderColor = HoverBorder;
+                b.BorderWidth = 1f;
+            }
+            else
+            {
+                b.BorderColor = DefaultBorder;
+                b.BorderWidth = 1f;
+            }
         }
     };
 
