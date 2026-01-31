@@ -40,9 +40,7 @@ public class GuiLayoutUpdateService(
             return Result.Success();
         }
 
-        guiLayoutService.CreateOrSetNodeBox(args.NodeId, layoutBox);
-
-        return Result.Success();
+        return guiLayoutService.SetNodeBox(args.NodeId, layoutBox);
     }
 
     private Result OnRemoved(GuiElementArgs args)

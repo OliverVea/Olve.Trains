@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.GUI;
-using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Rendering;
@@ -93,6 +92,8 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
         provider.GetRequiredService<GuiRectangleUpdateService>(),
         provider.GetRequiredService<GuiTextRenderingService>(),
         provider.GetRequiredService<GuiTextUpdateService>(),
-        provider.GetRequiredService<TextureLoadingService>()
+        provider.GetRequiredService<TextureLoadingService>(),
+
+        ..IGuiProvider.GetAllSceneServices(provider)
     ];
 }
