@@ -33,12 +33,12 @@ public class GuiStyleApplierService(
             return new ResultProblem("Could not find GUI element with node id '{0}'", args.NodeId);
         }
 
-        if (element.StyleKey is not { } styleKey)
+        if (element.StyleKey is null)
         {
             return Result.Success();
         }
 
-        if (ApplyStyleChanges(args, styleKey, element).TryPickProblems(out var problems))
+        if (styleRegistry.ApplyState(element, args.After).TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed to apply style to GUI element '{0}'", args.NodeId);
         }
@@ -51,60 +51,5 @@ public class GuiStyleApplierService(
 
         return guiLayoutService.SetNodeBox(args.NodeId, layoutBox)
             .IfProblem(p => p.Prepend("Failed to update LayoutBox following GUI element state change '{0}'", args));
-    }
-
-    private Result ApplyStyleChanges(
-        GuiElementStateService.GuiElementStateChanged change,
-        StyleKey styleKey,
-        GuiElement element)
-    {
-        var (showChanged, showEnabled) = change.GetChangeFor(GuiElementState.Show);
-        if (showChanged && showEnabled)
-        {
-            if (styleRegistry.ApplySetup(styleKey, element).TryPickProblems(out var problems))
-            {
-                return problems;
-            }
-        }
-
-        var (hoverChanged, hoverEnabled) = change.GetChangeFor(GuiElementState.Hovered);
-        if (hoverChanged)
-        {
-            if (hoverEnabled)
-            {
-                if (styleRegistry.ApplyHoverEnter(styleKey, element).TryPickProblems(out var problems))
-                {
-                    return problems;
-                }
-            }
-            else
-            {
-                if (styleRegistry.ApplyHoverExit(styleKey, element).TryPickProblems(out var problems))
-                {
-                    return problems;
-                }
-            }
-        }
-
-        var (focusChanged, focusEnabled) = change.GetChangeFor(GuiElementState.Focused);
-        if (focusChanged)
-        {
-            if (focusEnabled)
-            {
-                if (styleRegistry.ApplyFocusEnter(styleKey, element).TryPickProblems(out var problems))
-                {
-                    return problems;
-                }
-            }
-            else
-            {
-                if (styleRegistry.ApplyFocusExit(styleKey, element).TryPickProblems(out var problems))
-                {
-                    return problems;
-                }
-            }
-        }
-
-        return Result.Success();
     }
 }

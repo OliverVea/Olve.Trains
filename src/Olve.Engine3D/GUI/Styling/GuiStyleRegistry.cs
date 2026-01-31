@@ -15,13 +15,7 @@ public class GuiStyleRegistry(ILoggingManager loggingManager)
         loggingManager.Log(LogLevel.Debug, $"Registered style of type '{typeof(T).Name}' and key '{styling.StyleKey.Value}'");
     }
 
-    public Result ApplySetup(StyleKey styleKey, GuiElement guiElement) => Apply(guiElement, s => s.TryOnSetup);
-    public Result ApplyHoverEnter(StyleKey styleKey, GuiElement guiElement) => Apply(guiElement, s => s.TryOnHoverEnter);
-    public Result ApplyHoverExit(StyleKey styleKey, GuiElement guiElement) => Apply(guiElement, s => s.TryOnHoverExit);
-    public Result ApplyFocusEnter(StyleKey styleKey, GuiElement guiElement) => Apply(guiElement, s => s.TryOnFocusEnter);
-    public Result ApplyFocusExit(StyleKey styleKey, GuiElement guiElement) => Apply(guiElement, s => s.TryOnFocusExit);
-
-    private Result Apply(GuiElement guiElement, Func<IGuiElementStyling, Func<GuiElement, bool>> updateSelector)
+    public Result ApplyState(GuiElement guiElement, GuiElementState state)
     {
         if (guiElement.StyleKey is not { } styleKey)
         {
@@ -35,8 +29,7 @@ public class GuiStyleRegistry(ILoggingManager loggingManager)
             return new ResultProblem("No style found with key '{0}' and type '{1}'", registryKey.Item1.Value, registryKey.Item2.Name);
         }
 
-        var update = updateSelector(style);
-        if (!update(guiElement))
+        if (!style.TryApplyState(guiElement, state))
         {
             return new ResultProblem("Failed to apply style of type '{0}' to element of type '{1}'", registryKey.Item2.Name, guiElement.GetType().Name);
         }
