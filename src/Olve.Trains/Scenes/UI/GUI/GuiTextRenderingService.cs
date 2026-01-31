@@ -173,7 +173,6 @@ public class GuiTextRenderingService(
     {
         if (!guiLayoutService.TryGetBoxPosition(nodeId, out var boxPosition) ||
             !guiElementService.TryGetElement(nodeId, out var element) ||
-            !guiDepthService.GetDepth(nodeId).TryPickValue(out var depth) ||
             element is not IRenderableAsText textElement)
         {
             return false;
@@ -184,6 +183,7 @@ public class GuiTextRenderingService(
             boxPosition.Position.X.Value,
             boxPosition.Position.Y.Value
         );
+        var depth = guiDepthService.GetDepth(nodeId);
 
         var baselineOffset = instanceData.Font.Metrics.Ascender * instanceData.CachedFontSize;
 

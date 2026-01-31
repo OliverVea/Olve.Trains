@@ -1,19 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<Box id="BarBackground" Width="400" Height="32" BackgroundColor="(0, 0, 0)" Alpha="0.3f" Padding="2" Gap="2" BorderWidth="2" BorderColor="(1, 1, 1, 0.5f)" BorderRadius="8">
-    <Box id="Red" Width="100" BackgroundColor="(1f, 1f, 1f)" Alpha="1f" Padding="0" Gap="6" BorderWidth="1" BorderColor="(1, 0, 0, 1)" BorderRadius="4">
+<Box id="BarBackground" Width="600" Height="32" BackgroundColor="(0, 0, 0, 0.3f)" Padding="2" Gap="2" BorderWidth="1" BorderColor="(1, 1, 1, 0.5f)" BorderRadius="8">
+    <Box id="Red" Width="100" BackgroundColor="(1, 1, 1, 1)" Padding="0" Gap="6" BorderWidth="1" BorderColor="(1, 0, 0, 1)" BorderRadius="4">
         <Box Vertical="true" Weight="0.4f" Gap="6">
-            <Box BackgroundColor="(1, 0, 0)" Weight="1" BorderWidth="1" BorderColor="(1, 0.5f, 0.5f, 1)" BorderRadius="2" />
-            <Box BackgroundColor="(1, 0, 0)" Weight="1" BorderWidth="1" BorderColor="(1, 0.5f, 0.5f, 1)" BorderRadius="2" />
+            <Box BackgroundColor="(1, 0, 0, 1)" Weight="1" BorderWidth="1" BorderColor="(1, 0.5f, 0.5f, 1)" BorderRadius="2" />
+            <Box BackgroundColor="(1, 0, 0, 1)" Weight="1" BorderWidth="1" BorderColor="(1, 0.5f, 0.5f, 1)" BorderRadius="2" />
         </Box>
         <Box Vertical="true" Weight="0.6f" Gap="6">
-            <Box BackgroundColor="(1, 0, 0)" Weight="1" BorderWidth="1" BorderColor="(1, 0.5f, 0.5f, 1)" BorderRadius="2" />
-            <Box BackgroundColor="(1, 0, 0)" Weight="1" BorderWidth="1" BorderColor="(1, 0.5f, 0.5f, 1)" BorderRadius="2" />
+            <Box BackgroundColor="(1, 0, 0, 1)" Weight="1" BorderWidth="1" BorderColor="(1, 0.5f, 0.5f, 1)" BorderRadius="2" />
+            <Box BackgroundColor="(1, 0, 0, 1)" Weight="1" BorderWidth="1" BorderColor="(1, 0.5f, 0.5f, 1)" BorderRadius="2" />
         </Box>
     </Box>
-    <Box id="Green" BackgroundColor="(0.2f, 0.8f, 0.2f)" Weight="1f" Padding="1" BorderWidth="2" BorderColor="(0, 1, 0, 1)" BorderRadius="6">
-        <Text id="HelloText" Content='"Hello, World!"' FontSize="16" Color="(1f, 1f, 1f)" Weight="1f" />
+    <Box id="Green" BackgroundColor="(0.2f, 0.8f, 0.2f, 1)" Weight="1f" Padding="1" BorderWidth="1" BorderColor="(0, 1, 0, 1)" BorderRadius="6">
+        <Text id="HelloText" Content='"Hello, World!"' FontSize="16" Color="(1, 1, 1, 1)" Weight="1f" />
     </Box>
-    <Box id="Blue" Weight="1f" BackgroundColor="(0.2f, 0.2f, 0.8f)" Padding="1" BorderWidth="2" BorderColor="(0.3f, 0.5f, 1, 1)" BorderRadius="12">
+    <Box id="Blue" Weight="1f" BackgroundColor="(0.2f, 0.2f, 0.8f, 1)" Padding="1" BorderWidth="1" BorderColor="(0.3f, 0.5f, 1, 1)" BorderRadius="12">
         <Image Id="Img" Texture="Textures.Textures.SimpleTrains_Texture_01" AspectRatio="1f" Tint="(0.3f, 0.3f, 0.3f)" Fit="FitMode.Contain"/>
     </Box>
 </Box>

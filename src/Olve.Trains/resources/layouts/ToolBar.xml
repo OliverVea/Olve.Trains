@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Box Id="Root">
+    <Box id="BarBackground" BackgroundColor="(0, 0, 0, 0.3f)" Padding="2" Gap="2" BorderWidth="1" BorderColor="(0.2f, 0.2f, 0.2f, 0.5f)" BorderRadius="6">
+        <Box id="PlaceTrack" BackgroundColor="(0.2f, 0.8f, 0.2f, 0.3f)" Height="40" Padding="1" BorderWidth="1" BorderColor="(0, 1, 0, 1)" BorderRadius="6">
+            <Image Texture="Textures.Textures.icons_tracks" AspectRatio="1" />
+        </Box>
+        <Box id="PlaceTrain" BackgroundColor="(0.2f, 0.8f, 0.2f, 0.3f)" Height="40" Padding="1" BorderWidth="1" BorderColor="(0.2f, 0.2f, 0.2f, 0.5f)" BorderRadius="6">
+            <Image Texture="Textures.Textures.icons_train" AspectRatio="1" />
+        </Box>
+        <Box id="PlaceStation" BackgroundColor="(0.2f, 0.8f, 0.2f, 0.3f)" Justify="Justify.Center" Align="Align.Center" Height="40" Padding="1" BorderWidth="1" BorderColor="(0, 1, 0, 1)" BorderRadius="6">
+            <Text Content='"Station"' Align="Align.Center" FontSize="20" Color="(1f, 1f, 1f, 1f)" Weight="1f" />
+        </Box>
+    </Box>
+</Box>

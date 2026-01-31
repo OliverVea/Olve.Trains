@@ -18,12 +18,15 @@ public class GuiNodeService(ILoggingManager loggingManager) : BaseEntityService<
     private readonly Dictionary<Id<GuiNode>, UnionId<GuiAnchor, GuiNode>> _parent = [];
     private readonly Dictionary<Id<GuiNode>, List<Id<GuiNode>>> _children = [];
 
+    public Event<Id<GuiNode>> OnEnabled { get; } = new();
+    public Event<Id<GuiNode>> OnDisabled { get; } = new();
+
     public Result<Id<GuiNode>> AddNode(string name, UnionId<GuiAnchor, GuiNode> parentId, bool enabled = true)
     {
         var nodeId = Id.New<GuiNode>();
         GuiNode node = new(nodeId, name);
 
-        var parentIsNode = parentId.TryGetT2(out var parentNodeId, out _);
+        var parentIsNode = parentId.TryGetT2(out var parentNodeId, out var parentGuiAnchor);
         if (parentIsNode && !Exists(parentNodeId))
         {
             return new ResultProblem("GUI node with id '{0}' cannot be an ancestor because it does not exist", parentNodeId);
@@ -34,28 +37,19 @@ public class GuiNodeService(ILoggingManager loggingManager) : BaseEntityService<
             _disabledNodes.Add(nodeId);
         }
 
+        if (parentIsNode) _children.GetOrAdd(parentNodeId, () => []).Add(nodeId);
+        else _anchorChildren.GetOrAdd(parentGuiAnchor, () => []).Add(nodeId);
+
+        _parent[nodeId] = parentId;
+
         if (Add(node).TryPickProblems(out var problems, out _))
         {
             _disabledNodes.Remove(nodeId);
+            _parent.Remove(nodeId);
+            if (parentIsNode)  _children[parentNodeId].Remove(nodeId);
+            else _anchorChildren[parentGuiAnchor].Remove(nodeId);
             return problems;
         }
-
-        if (parentIsNode)
-        {
-            if (!_children.TryGetValue(parentNodeId, out var parentChildren))
-            {
-                parentChildren = new List<Id<GuiNode>>();
-                _children[parentNodeId] = parentChildren;
-            }
-            parentChildren.Add(nodeId);
-        }
-        else
-        {
-            var set = _anchorChildren.GetOrAdd(parentId.AsT1(), static () => new HashSet<Id<GuiNode>>());
-            set.Add(nodeId);
-        }
-
-        _parent[nodeId] = parentId;
 
         return nodeId;
     }
@@ -156,7 +150,10 @@ public class GuiNodeService(ILoggingManager loggingManager) : BaseEntityService<
                 nodeId, enabled);
         }
 
-        _disabledNodes.Set(nodeId, !enabled);
+        if (_disabledNodes.Set(nodeId, !enabled))
+        {
+            (enabled ? OnEnabled : OnDisabled).Invoke(nodeId);
+        }
 
         return Result.Success();
     }

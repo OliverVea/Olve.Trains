@@ -4,62 +4,55 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
+using Olve.Generated.Textures;
 using Olve.Logging;
+using Olve.Trains.Scenes.UI.Tools;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
 public class InfoBarService(
     ILoggingManager loggingManager,
+    ToolManagementService toolManagementService,
     GuiElementService guiElementService,
-    GuiAnchorService guiAnchorService,
-    GuiLayoutService guiLayoutService) : SceneService(loggingManager)
+    GuiAnchorService guiAnchorService) : SceneService(loggingManager)
 {
     public override int Priority => 100;
-    private double _t;
 
-    private static readonly Layouts.InfoBar InfoBar = Layouts.BuildInfoBar();
+    private static readonly Layouts.ToolBar ToolBar = Layouts.BuildToolBar();
 
     private Id<GuiElementRegistrations> _registrationId;
 
     protected override Result OnLoad()
     {
-        if (guiAnchorService.RegisterAnchor(AnchorPosition.MiddleRight, GrowthDirection.Left)
+        if (guiAnchorService.RegisterAnchor(AnchorPosition.BottomCenter, GrowthDirection.Up)
             .TryPickProblems(out var problems, out var anchorId))
         {
             return problems;
         }
 
+
+
+        toolManagementService.ActiveToolChanged.Subscribe(OnActiveToolChanged);
+
         return guiElementService
-            .RegisterElementAndChildren(anchorId, InfoBar.BarBackground)
+            .RegisterElementAndChildren(anchorId, ToolBar.Root)
             .TryPickProblems(out problems, out _registrationId) ? problems : Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    private void OnActiveToolChanged(ToolManagementService.ActiveToolChangedMessage message)
     {
-        _t += deltaTime.TotalSeconds;
-        var dx = new Dp((float) (1 - Math.Cos(_t)) * 50f);
-        var left = dx;
+        var currentBox = GetToolElement(message.CurrentTool);
+        currentBox?.BorderColor = (0.2f, 0.2f, 0.2f, 0.3f);
 
-        if (UpdateElementLayoutBox(InfoBar.HelloText, b => b with { Margin = b.Margin with { Left = left } })
-            .TryPickProblems(out var problems))
-        {
-            return problems;
-        }
-
-        //TODO: Optimize this :)
-        return guiLayoutService.ComputeLayout();
+        var newBox = GetToolElement(message.NewTool);
+        newBox?.BorderColor = (1, 1, 1, 1);
     }
 
-    private Result UpdateElementLayoutBox(GuiElement guiElement, Func<LayoutBox, LayoutBox> update)
+    private Box? GetToolElement(Id<Tool>? toolId)
     {
-        if (!guiElementService.TryGetGuiNodeId(guiElement.Id, _registrationId, out var nodeId))
-        {
-            return new ResultProblem("Could not get node id for element");
-        }
+        if (toolId == TrackPlacingToolService.ToolId) return ToolBar.PlaceTrack;
+        if (toolId == TrainPlacingToolService.ToolId) return ToolBar.PlaceTrain;
 
-        var newLayoutBox = update(guiElement.LayoutBox!.Value);
-        guiLayoutService.CreateOrSetNodeBox(nodeId, newLayoutBox);
-
-        return Result.Success();
+        return null;
     }
 }

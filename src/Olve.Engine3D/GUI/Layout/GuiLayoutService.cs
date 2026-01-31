@@ -15,13 +15,18 @@ public class GuiLayoutService(
     private readonly Dictionary<Id<GuiNode>, int> _nodeIndexById = new();
 
     private readonly List<LayoutData> _layoutData = [];
+    private bool _isDirty = true;
+
     private LayoutContext LayoutContext => layoutContextProvider.Value;
+
+    private (Id<GuiNode> NodeId, BoxPosition Position)[]? _nodePositions;
 
     protected override void OnAdded(Id<GuiNode> id)
     {
         var index = _layoutData.Count;
         _nodeIndexById.Add(id, index);
         _layoutData.Add(new LayoutData(id));
+        SetDirty();
     }
 
     protected override void OnRemoved(Id<GuiNode> id)
@@ -42,13 +47,20 @@ public class GuiLayoutService(
 
         _layoutData[lastIdx] = default;
         _layoutData.RemoveAt(lastIdx);
+        SetDirty();
     }
 
     public bool TryGetBoxPosition(Id<GuiNode> nodeId, out BoxPosition position)
     {
+        position = default;
+        if (ComputeLayout().TryPickProblems(out var problems))
+        {
+            LoggingManager.Log(problems.Prepend("Failed to compute layout while getting box position for node with id '{0}'",  nodeId));
+            return false;
+        }
+
         if (!_nodeIndexById.TryGetValue(nodeId, out var index))
         {
-            position = default;
             return false;
         }
 
@@ -57,7 +69,6 @@ public class GuiLayoutService(
             || _layoutData[index].Position is not { } dpPosition)
         {
             LoggingManager.Log(LogLevel.Warning, $"Tried to get position from unpositioned node with id '{nodeId}'");
-            position = default;
             return false;
         }
 
@@ -68,15 +79,19 @@ public class GuiLayoutService(
         return true;
     }
 
-    // Consider renaming to CreateOrSetBox and renaming LayoutBox → GuiBox in a future pass.
-    public void CreateOrSetNodeBox(Id<GuiNode> nodeId, LayoutBox layoutBox)
+    public Result SetNodeBox(Id<GuiNode> nodeId, LayoutBox layoutBox)
     {
         if (!_nodeIndexById.TryGetValue(nodeId, out var index))
         {
-            index = _layoutData.Count;
-            _nodeIndexById.Add(nodeId, index);
-            _layoutData.Add(new LayoutData(nodeId));
+            return new ResultProblem("Tried to set box for unregistered node id '{0}'", nodeId);
         }
+
+        if (_layoutData[index].LayoutBox == layoutBox)
+        {
+            return Result.Success();
+        }
+
+        SetDirty();
 
         _layoutData[index] = _layoutData[index] with
         {
@@ -85,10 +100,44 @@ public class GuiLayoutService(
             Height = null,
             Position = null
         };
+
+        return Result.Success();
+    }
+
+    public IReadOnlyList<(Id<GuiNode> NodeId, BoxPosition Position)> GetNodePositions()
+    {
+        ComputeLayout();
+        _nodePositions ??= EnumerateNodePositions()
+            .ToArray();
+        return _nodePositions;
+    }
+
+    private IEnumerable<(Id<GuiNode> NodeId, BoxPosition Position)> EnumerateNodePositions()
+    {
+        foreach (var layoutData in _layoutData)
+        {
+            if (layoutData.Width is not { } dpWidth
+                || layoutData.Height is not { } dpHeight
+                || layoutData.Position is not { } dpPosition)
+            {
+                LoggingManager.Log(LogLevel.Warning, $"Found node without a valid position '{layoutData.NodeId}'");
+                continue;
+            }
+
+            var pxPosition = LayoutContext.ToPx(dpPosition);
+            var pxSize = LayoutContext.ToPx(new Vector2D<Dp>(dpWidth, dpHeight));
+
+            yield return (layoutData.NodeId, new BoxPosition(pxPosition, pxSize));
+        }
     }
 
     public Result ComputeLayout()
     {
+        if (!_isDirty)
+        {
+            return Result.Success();
+        }
+
         var rootNodeIds = guiNodeService.GetRootNodes();
         var results = new List<Result>();
 
@@ -115,6 +164,8 @@ public class GuiLayoutService(
         {
             return problems;
         }
+
+        _isDirty = false;
 
         return Result.Success();
     }
@@ -560,6 +611,13 @@ public class GuiLayoutService(
         var ghostSize = new Vector2D<Dp>(width, height);
 
         return new BoxBounds(ghostPosition, ghostSize);
+    }
+
+
+    private void SetDirty()
+    {
+        _isDirty = true;
+        _nodePositions = null;
     }
 }
 

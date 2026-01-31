@@ -64,7 +64,6 @@ public class GuiRectangleRenderingService(
                 continue;
             }
 
-            // Create entity parameters with the texture Id
             var entityParams = new Shaders.TexturedRectangle.EntityParameters(UTexture: instanceData.TextureId);
 
             if (renderingManager2D.UpdateRectangle(instanceData.InstanceId, rectangleData, entityParams)
@@ -162,16 +161,16 @@ public class GuiRectangleRenderingService(
     {
         if (!guiLayoutService.TryGetBoxPosition(nodeId, out var boxPosition) ||
             !guiElementService.TryGetElement(nodeId, out var element) ||
-            !guiDepthService.GetDepth(nodeId).TryPickValue(out var depth) ||
             element is not IRenderableAsRectangle renderableAsRectangle)
         {
             rectangleData = null;
             return false;
         }
 
+        var depth = guiDepthService.GetDepth(nodeId);
+
         var rectData = renderableAsRectangle.TexturedRectangleData;
 
-        // Convert border from Dp to Px
         var border = rectData.Border ?? Border.None;
         var borderWidthPx = new Vector4D<float>(
             layoutContext.Value.ToPx(border.Width.Left).Value,

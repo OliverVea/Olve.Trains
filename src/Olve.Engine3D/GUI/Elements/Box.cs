@@ -6,17 +6,26 @@ public class Box : GuiElement, IRenderableAsRectangle
 {
     public int? Width { get; set; }
     public int? Height { get; set; }
-    public float Weight { get; set; } = 0f;
-    public float Gap { get; set; } = 0;
-    public bool Vertical { get; set; } = false;
-    public float Margin { get; set; } = 0;
-    public float Padding { get; set; } = 0;
-    public float Alpha { get; set; } = 1f;
+    public float Weight { get; set; }
+    public float Gap { get; set; }
+    public bool Vertical { get; set; }
+    public float Margin { get; set; }
+    public float? MarginBottom { get; set; }
+    public float? MarginTop { get; set; }
+    public float? MarginLeft { get; set; }
+    public float? MarginRight { get; set; }
+    public float? MarginVertical { get; set; }
+    public float? MarginHorizontal { get; set; }
+    public float Padding { get; set; }
+    public float? PaddingBottom { get; set; }
+    public float? PaddingTop { get; set; }
+    public float? PaddingLeft { get; set; }
+    public float? PaddingRight { get; set; }
+    public float? PaddingVertical { get; set; }
+    public float? PaddingHorizontal { get; set; }
     public Justify Justify { get; set; } = Justify.Start;
     public Align Align { get; set; } = Align.Start;
-    public (float R, float G, float B)? BackgroundColor { get; set; }
-
-    // Border convenience properties for XML
+    public (float R, float G, float B, float A)? BackgroundColor { get; set; }
     public float? BorderWidth { get; set; }
     public (float L, float T, float R, float B)? BorderWidthSides { get; set; }
     public (float R, float G, float B, float A)? BorderColor { get; set; }
@@ -24,9 +33,9 @@ public class Box : GuiElement, IRenderableAsRectangle
     public (float TL, float TR, float BR, float BL)? BorderRadiusCorners { get; set; }
 
     // Full border override
-    public Layout.Border? Border { get; set; }
+    public Border? Border { get; set; }
 
-    private Layout.Border ComputeBorder()
+    private Border ComputeBorder()
     {
         // If explicit Border is set, use it
         if (Border.HasValue) return Border.Value;
@@ -43,28 +52,41 @@ public class Box : GuiElement, IRenderableAsRectangle
                             BorderColor.Value.B, BorderColor.Value.A);
 
         var radius = BorderRadiusCorners.HasValue
-            ? new Layout.BorderRadius(new Dp(BorderRadiusCorners.Value.TL), new Dp(BorderRadiusCorners.Value.TR),
+            ? new BorderRadius(new Dp(BorderRadiusCorners.Value.TL), new Dp(BorderRadiusCorners.Value.TR),
                                      new Dp(BorderRadiusCorners.Value.BR), new Dp(BorderRadiusCorners.Value.BL))
             : Layout.BorderRadius.All(new Dp(BorderRadius ?? 0f));
 
-        return new Layout.Border(thickness, color, radius);
+        return new Border(thickness, color, radius);
     }
 
-    public override LayoutBox? LayoutBox => new LayoutBox()
+    public override LayoutBox? LayoutBox => new LayoutBox
     {
-        Size = new SizeSpec(Dp.FromNullable(Width), Dp.FromNullable(Height), Weight),
+        Size = new SizeSpec(
+            Dp.FromNullable(Width),
+            Dp.FromNullable(Height),
+            Weight),
         Gap = new Dp(Gap),
         Justify = Justify,
         Align = Align,
         LayoutAxis = Vertical ? UIAxis.Y : UIAxis.X,
-        Padding = Thickness.All(Padding),
-        Margin = Thickness.All(Margin),
+        Margin = new Thickness(
+            new Dp(MarginLeft ?? MarginHorizontal ?? Margin),
+            new Dp(MarginTop ?? MarginVertical ?? Margin),
+            new Dp(MarginRight ?? MarginHorizontal ?? Margin),
+            new Dp(MarginBottom ?? MarginVertical ?? Margin)),
+        Padding = new Thickness(
+            new Dp(PaddingLeft ?? PaddingHorizontal ?? Padding),
+            new Dp(PaddingTop ?? PaddingVertical ?? Padding),
+            new Dp(PaddingRight ?? PaddingHorizontal ?? Padding),
+            new Dp(PaddingBottom ?? PaddingVertical ?? Padding)),
         Border = ComputeBorder(),
     };
 
     public IRenderableAsRectangle.Data TexturedRectangleData => new()
     {
-        Color = BackgroundColor is {} bg ? new Vector4D<float>(bg.R,  bg.G, bg.B, Alpha) : Vector4D<float>.Zero,
+        Color = BackgroundColor is {} bg
+            ? new Vector4D<float>(bg.R,  bg.G, bg.B, bg.A)
+            : Vector4D<float>.Zero,
         Border = ComputeBorder(),
     };
 }
