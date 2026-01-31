@@ -23,6 +23,7 @@ public class Box : GuiElement, IRenderableAsRectangle
     public float? PaddingRight { get; set; }
     public float? PaddingVertical { get; set; }
     public float? PaddingHorizontal { get; set; }
+    public float? AspectRatio { get; set; }
     public Justify Justify { get; set; } = Justify.Start;
     public Align Align { get; set; } = Align.Start;
     public (float R, float G, float B, float A)? BackgroundColor { get; set; }
@@ -62,9 +63,10 @@ public class Box : GuiElement, IRenderableAsRectangle
     public override LayoutBox? LayoutBox => new LayoutBox
     {
         Size = new SizeSpec(
-            Dp.FromNullable(Width),
-            Dp.FromNullable(Height),
-            Weight),
+            PreferredWidth: Dp.FromNullable(Width),
+            PreferredHeight: Dp.FromNullable(Height),
+            ResizingWeight: Weight,
+            AspectRatio: AspectRatio),
         Gap = new Dp(Gap),
         Justify = Justify,
         Align = Align,

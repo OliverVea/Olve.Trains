@@ -306,6 +306,23 @@ public class GuiLayoutService(
             return preferred.Value + chrome;
         }
 
+        // Check if we can derive this dimension from AspectRatio + perpendicular preferred dimension
+        var aspectRatio = layoutBox.Size.AspectRatio;
+        if (aspectRatio is > 0f)
+        {
+            var perpendicularPreferred = axis == UIAxis.X
+                ? layoutBox.Size.PreferredHeight
+                : layoutBox.Size.PreferredWidth;
+
+            if (perpendicularPreferred.HasValue)
+            {
+                var derivedSize = axis == UIAxis.X
+                    ? new Dp(perpendicularPreferred.Value.Value * aspectRatio.Value)  // Width = Height * AspectRatio
+                    : new Dp(perpendicularPreferred.Value.Value / aspectRatio.Value); // Height = Width / AspectRatio
+                return derivedSize + chrome;
+            }
+        }
+
         var gap = layoutBox.GetGapForAxis(axis);
         return GetDimensionFromChildren(gap, childCount, childContentSize) + chrome;
     }
@@ -376,12 +393,19 @@ public class GuiLayoutService(
         }
         else
         {
+            // Cross-axis: only stretch if Align is Stretch, otherwise keep computed size
+            var shouldStretch = parent.LayoutBox.Align == Align.Stretch;
+
             foreach (var childIndex in childIndices)
             {
                 var child = _layoutData[childIndex];
 
                 if (axis == UIAxis.X)
                 {
+                    // Skip if child already has a width (computed from children or AspectRatio)
+                    if (child.Width.HasValue && !shouldStretch)
+                        continue;
+
                     if (!child.LayoutBox.Size.PreferredWidth.HasValue)
                     {
                         var aspectRatio = child.LayoutBox.Size.AspectRatio;
@@ -399,7 +423,7 @@ public class GuiLayoutService(
                                 Width = computedSize.Width, Height = computedSize.Height
                             };
                         }
-                        else
+                        else if (shouldStretch || !child.Width.HasValue)
                         {
                             _layoutData[childIndex] = child with { Width = parentInner };
                         }
@@ -407,6 +431,10 @@ public class GuiLayoutService(
                 }
                 else
                 {
+                    // Skip if child already has a height (computed from children or AspectRatio)
+                    if (child.Height.HasValue && !shouldStretch)
+                        continue;
+
                     if (!child.LayoutBox.Size.PreferredHeight.HasValue)
                     {
                         var aspectRatio = child.LayoutBox.Size.AspectRatio;
@@ -424,7 +452,7 @@ public class GuiLayoutService(
                                 Width = computedSize.Width, Height = computedSize.Height
                             };
                         }
-                        else
+                        else if (shouldStretch || !child.Height.HasValue)
                         {
                             _layoutData[childIndex] = child with { Height = parentInner };
                         }
@@ -542,8 +570,15 @@ public class GuiLayoutService(
 
         var axis = self.LayoutBox.LayoutAxis;
         var gap = self.LayoutBox.GetGapForAxis(axis);
-        var cursor = contentOrigin;
 
+        // Calculate content area size
+        var contentWidth = self.Width!.Value - self.LayoutBox.HorizontalChrome;
+        var contentHeight = self.Height!.Value - self.LayoutBox.VerticalChrome;
+        var mainAxisContentSize = axis == UIAxis.X ? contentWidth : contentHeight;
+        var crossAxisContentSize = axis == UIAxis.X ? contentHeight : contentWidth;
+
+        // First pass: calculate total children size along main axis for Justify
+        var totalChildrenMainSize = Dp.Zero;
         foreach (var childId in childIds)
         {
             if (!_nodeIndexById.TryGetValue(childId, out var ci))
@@ -552,16 +587,58 @@ public class GuiLayoutService(
                 return false;
             }
 
+            ref var c = ref CollectionsMarshal.AsSpan(_layoutData)[ci];
+            var cSize = c.GetSizeForAxis(axis) ?? Dp.Zero;
+            var m = c.LayoutBox.Margin;
+            var outerSize = axis == UIAxis.X
+                ? m.Left + cSize + m.Right
+                : m.Top + cSize + m.Bottom;
+            totalChildrenMainSize += outerSize;
+        }
+
+        totalChildrenMainSize += GetGapCount(childIds.Count) * gap;
+
+        // Calculate Justify offsets
+        var remainingSpace = mainAxisContentSize - totalChildrenMainSize;
+        var (mainAxisOffset, extraGap) = self.LayoutBox.Justify switch
+        {
+            Justify.Center => (remainingSpace / 2f, Dp.Zero),
+            Justify.End => (remainingSpace, Dp.Zero),
+            Justify.SpaceBetween when childIds.Count > 1 => (Dp.Zero, remainingSpace / (childIds.Count - 1)),
+            _ => (Dp.Zero, Dp.Zero), // Start
+        };
+
+        // Initialize cursor with Justify offset
+        var cursor = axis == UIAxis.X
+            ? new Vector2D<Dp>(contentOrigin.X + mainAxisOffset, contentOrigin.Y)
+            : new Vector2D<Dp>(contentOrigin.X, contentOrigin.Y + mainAxisOffset);
+
+        // Second pass: position children with Align
+        foreach (var childId in childIds)
+        {
+            var ci = _nodeIndexById[childId];
             ref var child = ref CollectionsMarshal.AsSpan(_layoutData)[ci];
             var cw = child.Width ?? Dp.Zero;
             var ch = child.Height ?? Dp.Zero;
 
             var margin = child.LayoutBox.Margin;
 
-            var childPos = axis == UIAxis.X
-                ? new Vector2D<Dp>(cursor.X + margin.Left, contentOrigin.Y + margin.Top)
-                : new Vector2D<Dp>(contentOrigin.X + margin.Left, cursor.Y + margin.Top);
+            // Calculate Align offset for cross axis
+            var childCrossSize = axis == UIAxis.X ? ch : cw;
+            var crossMarginBefore = axis == UIAxis.X ? margin.Top : margin.Left;
+            var crossMarginAfter = axis == UIAxis.X ? margin.Bottom : margin.Right;
+            var childOuterCrossSize = crossMarginBefore + childCrossSize + crossMarginAfter;
 
+            var crossAxisOffset = self.LayoutBox.Align switch
+            {
+                Align.Center => (crossAxisContentSize - childOuterCrossSize) / 2f + crossMarginBefore,
+                Align.End => crossAxisContentSize - childOuterCrossSize + crossMarginBefore,
+                _ => crossMarginBefore, // Start and Stretch
+            };
+
+            var childPos = axis == UIAxis.X
+                ? new Vector2D<Dp>(cursor.X + margin.Left, contentOrigin.Y + crossAxisOffset)
+                : new Vector2D<Dp>(contentOrigin.X + crossAxisOffset, cursor.Y + margin.Top);
 
             child = child with { Position = childPos };
 
@@ -572,8 +649,8 @@ public class GuiLayoutService(
             var outerHeight = margin.Top + ch + margin.Bottom;
 
             cursor = axis == UIAxis.X
-                ? new Vector2D<Dp>(cursor.X + outerWidth + gap, cursor.Y)
-                : new Vector2D<Dp>(cursor.X, cursor.Y + outerHeight + gap);
+                ? new Vector2D<Dp>(cursor.X + outerWidth + gap + extraGap, cursor.Y)
+                : new Vector2D<Dp>(cursor.X, cursor.Y + outerHeight + gap + extraGap);
         }
 
         return true;
