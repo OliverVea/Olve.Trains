@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Box Id="Root" Justify="Justify.Center" Align="Align.End">
-    <Box id="BarBackground" Style="MenuBarBackground" BackgroundColor="(0, 0, 0, 0.3f)" Padding="2" Gap="2" BorderWidth="1" BorderColor="(0.2f, 0.2f, 0.2f, 0.5f)" BorderRadius="6">
+    <Box id="BarBackground" Style="MenuBarBackground">
         <Box id="PlaceTrack" Style="MenuButtonStyle" Interactive="true">
             <Image Texture="Textures.Textures.icons_tracks" Style="ToolIconStyle" InheritParentState="true" />
         </Box>

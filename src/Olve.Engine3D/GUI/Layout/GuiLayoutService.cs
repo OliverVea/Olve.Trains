@@ -301,9 +301,11 @@ public class GuiLayoutService(
     private static Dp GetSizeForAxis(LayoutBox layoutBox, int childCount, Dp childContentSize, UIAxis axis)
     {
         var (preferred, chrome) = GetDimensionsForAxis(layoutBox, axis);
+
+        // Border-box: preferred size IS the outer size (includes padding/border)
         if (preferred.HasValue)
         {
-            return preferred.Value + chrome;
+            return preferred.Value;
         }
 
         // Check if we can derive this dimension from AspectRatio + perpendicular preferred dimension
@@ -314,15 +316,17 @@ public class GuiLayoutService(
                 ? layoutBox.Size.PreferredHeight
                 : layoutBox.Size.PreferredWidth;
 
+            // Border-box: perpendicular preferred is outer size, derived size is also outer size
             if (perpendicularPreferred.HasValue)
             {
                 var derivedSize = axis == UIAxis.X
                     ? new Dp(perpendicularPreferred.Value.Value * aspectRatio.Value)  // Width = Height * AspectRatio
                     : new Dp(perpendicularPreferred.Value.Value / aspectRatio.Value); // Height = Width / AspectRatio
-                return derivedSize + chrome;
+                return derivedSize;
             }
         }
 
+        // No preferred size - compute from children and add chrome
         var gap = layoutBox.GetGapForAxis(axis);
         return GetDimensionFromChildren(gap, childCount, childContentSize) + chrome;
     }
