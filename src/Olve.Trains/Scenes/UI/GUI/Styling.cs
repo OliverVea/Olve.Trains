@@ -20,7 +20,7 @@ public static class Styles
         StyleKey = new StyleKey(nameof(MenuButtonStyle)),
         OnStateChanged = (b, state) =>
         {
-            b.Height = 40;
+            b.Height = 60;
             b.AspectRatio = 1;
             b.BorderRadius = DefaultBorderRadius;
             b.BorderColor = DefaultBorder;
@@ -34,7 +34,7 @@ public static class Styles
 
             if (state.HasFlag(GuiNodeState.Pressed))
             {
-                b.Padding = 8;
+                b.Padding = DefaultPadding * 2;
             }
         }
     };
