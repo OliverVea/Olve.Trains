@@ -5,6 +5,7 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
+using Olve.Engine3D.GUI.Styling.Animation;
 using Olve.Engine3D.Scenes;
 
 namespace Olve.Engine3D.GUI;
@@ -16,6 +17,7 @@ namespace Olve.Engine3D.GUI;
 [Singleton(typeof(GuiActivationService))]
 [Singleton(typeof(GuiStateListenerService))]
 [Singleton(typeof(GuiStyleApplierService))]
+[Singleton(typeof(GuiAnimationService))]
 [Singleton(typeof(GuiStyleRegistry))]
 [Singleton(typeof(GuiElementService))]
 [Singleton(typeof(GuiNodeService))]
@@ -31,6 +33,7 @@ public interface IGuiProvider
             provider.GetRequiredService<GuiLayoutService>(),
             provider.GetRequiredService<GuiStateListenerService>(),
             provider.GetRequiredService<GuiStyleApplierService>(),
+            provider.GetRequiredService<GuiAnimationService>(),
             provider.GetRequiredService<GuiMouseInputService>(),
         ];
     }
