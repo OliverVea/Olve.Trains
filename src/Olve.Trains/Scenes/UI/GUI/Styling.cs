@@ -1,7 +1,7 @@
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
-using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
+using Olve.Engine3D.GUI.Styling.Animation;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
@@ -18,31 +18,33 @@ public static class Styles
     public static readonly GuiElementStyling<Box> MenuButtonStyle = new()
     {
         StyleKey = new StyleKey(nameof(MenuButtonStyle)),
-        OnStateChanged = (b, state) =>
+        StateTransitions = new()
         {
+            [GuiNodeState.Focused] = new StateTransition(
+                In: new GuiTransition(new Ms(100), Easing.EaseOut),
+                Out: new GuiTransition(new Ms(100), Easing.EaseIn)),
+            [GuiNodeState.Pressed] = new StateTransition(
+                In: new GuiTransition(new Ms(50), Easing.EaseIn),
+                Out: new GuiTransition(new Ms(100), Easing.EaseOut)),
+        },
+        OnStateChanged = (b, weights) =>
+        {
+            var pressed = weights[GuiNodeState.Pressed];
+            var focused = weights[GuiNodeState.Focused];
+
             b.Height = 60;
             b.AspectRatio = 1;
             b.BorderRadius = DefaultBorderRadius;
-            b.BorderColor = DefaultBorder;
-            b.BorderWidth = DefaultBorderWidth;
-            b.Padding = DefaultPadding;
-
-            if (state.HasFlag(GuiNodeState.Focused))
-            {
-                b.BorderColor = FocusBorder;
-            }
-
-            if (state.HasFlag(GuiNodeState.Pressed))
-            {
-                b.Padding = DefaultPadding * 2;
-            }
+            b.BorderWidth = DefaultBorderWidth + 0.5f * pressed;
+            b.BorderColor = Lerp(DefaultBorder, FocusBorder, focused);
+            b.Padding = Lerp(DefaultPadding, DefaultPadding * 2, pressed);
         }
     };
 
     public static readonly GuiElementStyling<Box> MenuBarBackground = new()
     {
         StyleKey = new StyleKey(nameof(MenuBarBackground)),
-        OnStateChanged = (b, state) =>
+        OnStateChanged = (b, _) =>
         {
             b.BackgroundColor = PanelBackground;
             b.Padding = DefaultPadding;
@@ -55,15 +57,37 @@ public static class Styles
     public static readonly GuiElementStyling<Image> ToolIconStyle = new()
     {
         StyleKey = new StyleKey(nameof(ToolIconStyle)),
-        OnStateChanged = (img, state) =>
+        OnStateChanged = (img, weights) =>
         {
-            img.Tint = (0.75f, 0.75f, 0.75f);
-            img.AspectRatio = 1;
+            var active = weights[GuiNodeState.Active];
 
-            if (state.HasFlag(GuiNodeState.Active))
-            {
-                img.Tint = null;
-            }
+            img.AspectRatio = 1;
+            img.Tint = Lerp((0.75f, 0.75f, 0.75f), (1f, 1f, 1f), active);
         }
     };
+
+    private static float Lerp(float a, float b, float t) => a + (b - a) * t;
+
+    private static (float R, float G, float B, float A) Lerp(
+        (float R, float G, float B, float A) a,
+        (float R, float G, float B, float A) b,
+        float t)
+    {
+        return (
+            Lerp(a.R, b.R, t),
+            Lerp(a.G, b.G, t),
+            Lerp(a.B, b.B, t),
+            Lerp(a.A, b.A, t));
+    }
+
+    private static (float R, float G, float B) Lerp(
+        (float R, float G, float B) a,
+        (float R, float G, float B) b,
+        float t)
+    {
+        return (
+            Lerp(a.R, b.R, t),
+            Lerp(a.G, b.G, t),
+            Lerp(a.B, b.B, t));
+    }
 }
