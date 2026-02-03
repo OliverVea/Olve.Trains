@@ -41,8 +41,7 @@ public class GuiStyleApplierService(
 
         if (!styleRegistry.TryGetStyle(guiElement, out var style))
         {
-            return new ResultProblem(
-                "Could not find GUI style for node id '{0}'", message.NodeId);
+            return Result.Success();
         }
 
         if (!style.TryApplyStateWeights(guiElement, message.Weights))

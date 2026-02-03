@@ -1,10 +1,11 @@
-using Olve.Engine3D.GUI.Styling;
+using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.Systems;
+using Olve.Logging;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI;
 
-public class GuiNodeStateService
+public class GuiNodeStateService(ILoggingManager loggingManager, GuiNodeService guiNodeService, GuiElementService guiElementService)
 {
     public readonly record struct GuiNodeStateChanged(
         Id<GuiNode> NodeId,
@@ -20,11 +21,11 @@ public class GuiNodeStateService
         return _stateRegistry.TryGetValue(nodeId, out state);
     }
 
-    public void SetState(Id<GuiNode> nodeId, GuiNodeState state)
+    public void SetState(Id<GuiNode> nodeId, GuiNodeState newState)
     {
         var existingState = _stateRegistry.GetValueOrDefault(nodeId, GuiNodeState.None);
-        _stateRegistry[nodeId] = state;
-        OnStateChanged.Invoke(new GuiNodeStateChanged(nodeId, existingState, state));
+
+        SetState(nodeId, existingState, newState);
     }
 
     public void UpdateState(Id<GuiNode> nodeId, Func<GuiNodeState, GuiNodeState> update)
@@ -37,15 +38,35 @@ public class GuiNodeStateService
             return;
         }
 
-        _stateRegistry[nodeId] = newState;
-        OnStateChanged.Invoke(new GuiNodeStateChanged(nodeId, existingState, newState));
+        SetState(nodeId, existingState, newState);
     }
 
-    public void UpdateAll(IEnumerable<Id<GuiNode>> nodeIds, Func<GuiNodeState, GuiNodeState> update)
+    private void SetState(Id<GuiNode> nodeId, GuiNodeState before, GuiNodeState after)
     {
-        foreach (var nodeId in nodeIds)
+        List<Id<GuiNode>> toUpdate = [nodeId, ..GetChildrenInheritingState(nodeId)];
+
+        foreach (var n in toUpdate)
         {
-            UpdateState(nodeId, update);
+            _stateRegistry[n] = after;
+            var source = n == nodeId ? "direct" : "inherited";
+            loggingManager.Log(LogLevel.Debug, $"Node '{n}' changed from '{before}' to  '{after}' ({source})");
+            OnStateChanged.Invoke(new GuiNodeStateChanged(n, before, after));
+        }
+    }
+
+    private IEnumerable<Id<GuiNode>> GetChildrenInheritingState(Id<GuiNode> nodeId)
+    {
+        if (!guiNodeService.TryGetChildren(nodeId, out var children))
+        {
+            yield break;
+        }
+
+        foreach (var childId in children)
+        {
+            if (guiElementService.TryGetElement(childId, out var element) && element.InheritParentState)
+            {
+                yield return childId;
+            }
         }
     }
 }
