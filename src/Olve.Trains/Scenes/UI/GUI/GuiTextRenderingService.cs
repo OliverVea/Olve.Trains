@@ -169,6 +169,93 @@ public class GuiTextRenderingService(
         return DeletionResult.Success();
     }
 
+    public Result UpdateText(Id<GuiNode> nodeId, string newContent)
+    {
+        if (!_instances.TryGetValue(nodeId, out var data))
+        {
+            return Result.Success(); // Not registered, nothing to update
+        }
+
+        if (data.CachedContent == newContent)
+        {
+            return Result.Success(); // Content unchanged
+        }
+
+        var newLayout = TextLayoutEngine.ComputeLayout(newContent, data.Font, data.CachedFontSize);
+        var oldGlyphIds = data.GlyphInstanceIds;
+        var newGlyphIds = new List<RenderingInstanceId>(oldGlyphIds);
+
+        var entityParams = new Shaders.MsdfText.EntityParameters(UFontAtlas: data.FontAtlasId);
+
+        // Update existing glyphs
+        var minCount = int.Min(oldGlyphIds.Count, newLayout.Count);
+        for (var i = 0; i < minCount; i++)
+        {
+            var glyphId = oldGlyphIds[i];
+            var glyph = newLayout[i];
+
+            var rectData = new RectangleData
+            {
+                PositionPx = glyph.PositionPx,
+                SizePx = glyph.SizePx,
+                TintRgba = Vector4D<float>.One,
+                UvMin = glyph.UvMin,
+                UvMax = glyph.UvMax,
+                Depth = 0
+            };
+
+            if (renderingManager2D.UpdateGlyph(glyphId, rectData, entityParams)
+                .TryPickProblems(out var problems))
+            {
+                return problems.Prepend("Failed to update glyph for text: nodeId={0}", nodeId);
+            }
+        }
+
+        // Register new glyphs if text got longer
+        for (var i = oldGlyphIds.Count; i < newLayout.Count; i++)
+        {
+            var glyph = newLayout[i];
+
+            var rectData = new RectangleData
+            {
+                PositionPx = glyph.PositionPx,
+                SizePx = glyph.SizePx,
+                TintRgba = Vector4D<float>.One,
+                UvMin = glyph.UvMin,
+                UvMax = glyph.UvMax,
+                Depth = 0
+            };
+
+            if (renderingManager2D.RegisterGlyph(_shader.RenderingId, rectData, entityParams)
+                .TryPickProblems(out var problems, out var instanceId))
+            {
+                return problems.Prepend("Failed to register new glyph for text: nodeId={0}", nodeId);
+            }
+
+            newGlyphIds.Add(instanceId);
+        }
+
+        // Deregister excess glyphs if text got shorter
+        for (var i = newLayout.Count; i < oldGlyphIds.Count; i++)
+        {
+            renderingManager2D.DeregisterRectangle(oldGlyphIds[i]);
+        }
+
+        if (newLayout.Count < oldGlyphIds.Count)
+        {
+            newGlyphIds.RemoveRange(newLayout.Count, oldGlyphIds.Count - newLayout.Count);
+        }
+
+        _instances[nodeId] = data with
+        {
+            GlyphInstanceIds = newGlyphIds,
+            CachedLayout = newLayout,
+            CachedContent = newContent
+        };
+
+        return Result.Success();
+    }
+
     private bool TryUpdateTextGlyphs(Id<GuiNode> nodeId, TextInstanceData instanceData)
     {
         if (!guiLayoutService.TryGetBoxPosition(nodeId, out var boxPosition) ||
@@ -185,7 +272,8 @@ public class GuiTextRenderingService(
         );
         var depth = guiDepthService.GetDepth(nodeId);
 
-        var baselineOffset = instanceData.Font.Metrics.Ascender * instanceData.CachedFontSize;
+        var scale = instanceData.CachedFontSize / instanceData.Font.Metrics.EmSize;
+        var baselineOffset = instanceData.Font.Metrics.Ascender * scale;
 
         for (var i = 0; i < instanceData.GlyphInstanceIds.Count; i++)
         {

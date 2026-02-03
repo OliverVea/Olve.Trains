@@ -1,5 +1,9 @@
+using Olve.Engine3D;
 using Olve.Engine3D.Assets;
+using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Layout;
+using Olve.Engine3D.GUI.Text;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
@@ -16,10 +20,12 @@ namespace Olve.Trains.Scenes.UI.GUI
         ILoggingManager loggingManager,
         GuiElementService guiElementService,
         TextureLoadingService textureLoadingService,
-        GuiTextRenderingService textRenderingService) : SceneService(loggingManager)
+        GuiTextRenderingService textRenderingService,
+        Provider<LayoutContext> layoutContextProvider) : SceneService(loggingManager)
     {
         private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
         private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
+        private readonly Dictionary<Id<GuiNode>, Text> _trackedTexts = new();
 
         protected override Result OnLoad()
         {
@@ -31,7 +37,32 @@ namespace Olve.Trains.Scenes.UI.GUI
 
         protected override Result OnUpdate(TimeSpan deltaTime)
         {
-            return Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update);
+            if (Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update)
+                .TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+
+            UpdateDirtyTexts();
+
+            return Result.Success();
+        }
+
+        private void UpdateDirtyTexts()
+        {
+            foreach (var (nodeId, textElement) in _trackedTexts)
+            {
+                if (textElement.ComputedSize.HasValue) continue;
+
+                var textData = textElement.TextRenderData;
+                var font = textData.Font ?? Fonts.RobotoRegular;
+
+                var measuredPx = TextLayoutEngine.MeasureText(textData.Content, font, textData.FontSize);
+                var measuredDp = layoutContextProvider.Value.ToDp(measuredPx);
+                textElement.ComputedSize = measuredDp;
+
+                textRenderingService.UpdateText(nodeId, textData.Content);
+            }
         }
 
         private Result OnGuiElementAdded(GuiElementArgs addedEvent)
@@ -41,13 +72,19 @@ namespace Olve.Trains.Scenes.UI.GUI
                 return new ResultProblem("Could not find element with id: {0}", addedEvent.NodeId);
             }
 
-            if (element is not IRenderableAsText textElement)
+            if (element is not Text textElement)
             {
                 return Result.Success();
             }
 
+            _trackedTexts[addedEvent.NodeId] = textElement;
+
             var textData = textElement.TextRenderData;
             var font = textData.Font ?? Fonts.RobotoRegular;
+
+            var measuredPx = TextLayoutEngine.MeasureText(textData.Content, font, textData.FontSize);
+            var measuredDp = layoutContextProvider.Value.ToDp(measuredPx);
+            textElement.ComputedSize = measuredDp;
 
             if (textureLoadingService.LoadTexture(font.Atlas.FontAtlas)
                 .TryPickProblems(out var problems, out var textureId))
@@ -66,12 +103,16 @@ namespace Olve.Trains.Scenes.UI.GUI
 
         private Result OnGuiElementRemoved(GuiElementArgs removedEvent)
         {
-            return textRenderingService.DeregisterText(removedEvent.NodeId)
+            if (_trackedTexts.Remove(removedEvent.NodeId)) {
+                return textRenderingService.DeregisterText(removedEvent.NodeId)
 #if DEBUG
-                .MapToResult(allowNotFound: false);
+                    .MapToResult(allowNotFound: false);
 #else
-            .MapToResult(allowNotFound: true);
+                    .MapToResult(allowNotFound: true);
 #endif
+            }
+
+            return Result.Success();
         }
     }
 }

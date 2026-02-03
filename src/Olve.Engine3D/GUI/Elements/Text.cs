@@ -6,7 +6,15 @@ namespace Olve.Engine3D.GUI.Elements;
 public class Text : GuiElement, IRenderableAsText
 {
     public (float R, float G, float B, float A)? Color { get; set; }
-    public string Content { get; set; } = string.Empty;
+    public string Content
+    {
+        get;
+        set
+        {
+            field = value;
+            ComputedSize = null;
+        }
+    } = string.Empty;
     public FontData? Font { get; set; }
     public float FontSize { get; set; } = 16f;
     public Align Align { get; set; } = Align.Start;

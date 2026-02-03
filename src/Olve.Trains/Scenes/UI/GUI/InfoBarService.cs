@@ -31,4 +31,10 @@ public class InfoBarService(
             .RegisterElementAndChildren(anchorId, InfoBar.BarBackground)
             .TryPickProblems(out problems, out _registrationId) ? problems : Result.Success();
     }
+
+    protected override Result OnUpdate(TimeSpan deltaTime)
+    {
+        InfoBar.Clock.Content = $"FPS: {1f / deltaTime.TotalSeconds}";
+        return Result.Success();
+    }
 }
