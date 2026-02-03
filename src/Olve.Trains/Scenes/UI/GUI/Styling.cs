@@ -100,6 +100,7 @@ public static class Styles
         StyleKey = new StyleKey(nameof(InfoBarClockText)),
         OnStateChanged = (text, weights) =>
         {
+
         }
     };
 
