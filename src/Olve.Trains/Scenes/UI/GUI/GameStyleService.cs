@@ -16,6 +16,8 @@ public class GameStyleService(
         styleRegistry.Register(Styles.MenuButtonStyle);
         styleRegistry.Register(Styles.MenuBarBackground);
         styleRegistry.Register(Styles.ToolIconStyle);
+        styleRegistry.Register(Styles.InfoBarBackground);
+        styleRegistry.Register(Styles.InfoBarSection);
 
         return Result.Success();
     }

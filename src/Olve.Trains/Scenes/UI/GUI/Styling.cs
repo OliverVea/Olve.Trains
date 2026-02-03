@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Styling;
@@ -24,8 +25,8 @@ public static class Styles
                 In: new GuiTransition(new Ms(100), Easing.EaseOut),
                 Out: new GuiTransition(new Ms(100), Easing.EaseIn)),
             [GuiNodeState.Pressed] = new StateTransition(
-                In: new GuiTransition(new Ms(50), Easing.EaseIn),
-                Out: new GuiTransition(new Ms(100), Easing.EaseOut)),
+                In: new GuiTransition(new Ms(25), Easing.EaseIn),
+                Out: new GuiTransition(new Ms(50), Easing.EaseOut)),
         },
         OnStateChanged = (b, weights) =>
         {
@@ -63,6 +64,24 @@ public static class Styles
 
             img.AspectRatio = 1;
             img.Tint = Lerp((0.75f, 0.75f, 0.75f), (1f, 1f, 1f), active);
+        }
+    };
+
+    public static readonly GuiElementStyling<Box> InfoBarBackground = new()
+    {
+        StyleKey = new StyleKey(nameof(InfoBarBackground)),
+        OnStateChanged =  (box, weights) =>
+        {
+            box.BackgroundColor = PanelBackground;
+        }
+    };
+
+    public static readonly GuiElementStyling<Box> InfoBarSection = new()
+    {
+        StyleKey = new StyleKey(nameof(InfoBarSection)),
+        OnStateChanged = (box, weights) =>
+        {
+            box.Weight = 1f;
         }
     };
 

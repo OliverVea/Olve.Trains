@@ -77,8 +77,6 @@ public class GuiAnimationService(
             };
         }
 
-        _animations.RemoveAll(IsExpired);
-
         foreach (var (nodeId, animations) in _animations.GroupBy(x => x.NodeId).Unpack())
         {
             StateWeights stateWeights = new();
@@ -107,13 +105,13 @@ public class GuiAnimationService(
 
                     if (!stateTransitions.TryGetValue(state, out var stateTransition))
                     {
-                        LoggingManager.Log(LogLevel.Warning, $"Could not get state transition for state '{state}'");
                         continue;
                     }
 
                     var transition = animation.IsOut ? stateTransition.Out : stateTransition.In;
                     var t = (float)(animation.Elapsed.TotalSeconds / transition.Duration.ToTimeSpan().TotalSeconds);
                     t = float.Clamp(t, 0f, 1f);
+                    t = animation.IsOut ? 1 - t : t;
 
                     stateWeights.Set(state, transition.Easing.CalculateWeight(t));
                 }
@@ -121,6 +119,8 @@ public class GuiAnimationService(
 
             GuiStateWeightsChanged.Invoke(new GuiStateWeightsChangedMessage(nodeId, stateWeights));
         }
+
+        _animations.RemoveAll(IsExpired);
 
         return Result.Success();
     }

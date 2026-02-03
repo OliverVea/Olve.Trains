@@ -9,12 +9,11 @@ using Olve.Trains.Scenes.UI.Tools;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
-public class InfoBarService(
+public class ToolBarService(
     ILoggingManager loggingManager,
     ToolManagementService toolManagementService,
     GuiElementService guiElementService,
     GuiNodeStateService stateService,
-    GuiNodeService guiNodeService,
     GuiActivationService guiActivationService,
     GuiAnchorService guiAnchorService) : SceneService(loggingManager)
 {
@@ -65,31 +64,22 @@ public class InfoBarService(
 
     private void OnActiveToolChanged(ToolManagementService.ActiveToolChangedMessage message)
     {
-        if (GetNodeAndDescendants(message.CurrentTool) is { } currentNodeIds)
+        if (GetNode(message.CurrentTool) is { } currentNodeIds)
         {
-            stateService.UpdateAll(currentNodeIds, s => s & ~GuiNodeState.Active);
+            stateService.UpdateState(currentNodeIds, s => s & ~GuiNodeState.Active);
         }
 
-        if (GetNodeAndDescendants(message.NewTool) is { } newNodeIds)
+        if (GetNode(message.NewTool) is { } newNodeIds)
         {
-            stateService.UpdateAll(newNodeIds, s => s | GuiNodeState.Active);
+            stateService.UpdateState(newNodeIds, s => s | GuiNodeState.Active);
         }
     }
 
-    private IEnumerable<Id<GuiNode>>? GetNodeAndDescendants(Id<Tool>? toolId)
+    private Id<GuiNode>? GetNode(Id<Tool>? toolId)
     {
         if (GetToolElement(toolId) is { } currentElement && guiElementService.TryGetGuiNodeId(currentElement.Id, _registrationId, out var currentNodeId))
         {
-            if (guiNodeService
-                .GetNodeAndDescendants(currentNodeId)
-                .TryPickProblems(out var problems, out var nodeIds))
-            {
-                LoggingManager.Log(problems.Prepend("Failed to get node and descendants for node with id '{0}'", currentNodeId));
-                return null;
-            }
-
-            return nodeIds;
-
+            return currentNodeId;
         }
 
         return null;
