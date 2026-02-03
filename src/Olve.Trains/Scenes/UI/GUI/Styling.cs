@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.GUI.Styling.Animation;
 
@@ -58,6 +59,12 @@ public static class Styles
     public static readonly GuiElementStyling<Image> ToolIconStyle = new()
     {
         StyleKey = new StyleKey(nameof(ToolIconStyle)),
+        StateTransitions = new()
+        {
+            [GuiNodeState.Active] = new StateTransition(
+                In: new GuiTransition(new Ms(25), Easing.EaseIn),
+                Out: new GuiTransition(new Ms(25),  Easing.EaseOut)),
+        },
         OnStateChanged = (img, weights) =>
         {
             var active = weights[GuiNodeState.Active];
@@ -73,6 +80,8 @@ public static class Styles
         OnStateChanged =  (box, weights) =>
         {
             box.BackgroundColor = PanelBackground;
+            box.Align = Align.Stretch;
+            box.Padding = DefaultPadding;
         }
     };
 
@@ -82,6 +91,15 @@ public static class Styles
         OnStateChanged = (box, weights) =>
         {
             box.Weight = 1f;
+            box.Align = Align.Center;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> InfoBarClockText = new()
+    {
+        StyleKey = new StyleKey(nameof(InfoBarClockText)),
+        OnStateChanged = (text, weights) =>
+        {
         }
     };
 

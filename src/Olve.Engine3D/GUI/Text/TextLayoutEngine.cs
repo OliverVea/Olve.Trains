@@ -1,6 +1,5 @@
-using System.Text;
+using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Rendering.Entities;
-using Silk.NET.Maths;
 
 namespace Olve.Engine3D.GUI.Text;
 
@@ -81,10 +80,10 @@ public static class TextLayoutEngine
     /// Measures text size without computing full layout.
     /// Returns (width, lineHeight) in pixels.
     /// </summary>
-    public static Vector2D<float> MeasureText(string text, FontData font, float fontSize)
+    public static Vector2D<Px> MeasureText(string text, FontData font, float fontSize)
     {
         var scale = fontSize / font.Metrics.EmSize;
-        float width = 0f;
+        var width = 0f;
 
         foreach (var rune in text.EnumerateRunes())
         {
@@ -98,6 +97,8 @@ public static class TextLayoutEngine
             }
         }
 
-        return new Vector2D<float>(width, font.Metrics.LineHeight * scale);
+        return new Vector2D<Px>(
+            new Px((int)float.Ceiling(width)),
+            new Px((int)float.Ceiling(font.Metrics.LineHeight * scale)));
     }
 }
