@@ -1,9 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<Box id="BarBackground" Style="InfoBarBackground" Height="80" Weight="1">
-    <Box Style="InfoBarSection" Align="Align.Start" BackgroundColor="(1,0,0,0.2f)">
+<Box id="BarBackground" Style="InfoBarBackground" Height="30" Weight="1">
+    <Box Style="InfoBarSection" Justify="Justify.Start" BackgroundColor="(1,0,0,1f)">
     </Box>
-    <Box Style="InfoBarSection" Align="Align.Center" BackgroundColor="(1,0,0,0.2f)">
+    <Box Style="InfoBarSection" Justify="Justify.Center" BackgroundColor="(0,1,0,1f)">
+        <Text Id="Clock" Style="InfoBarClockText" Content='"Hi!"' />
     </Box>
-    <Box Style="InfoBarSection" Align="Align.End" BackgroundColor="(1,0,0,0.2f)">
+    <Box Style="InfoBarSection" Justify="Justify.End" BackgroundColor="(0,0,1,1f)">
     </Box>
 </Box>

@@ -85,7 +85,7 @@ public class ToolBarService(
         return null;
     }
 
-    private Box? GetToolElement(Id<Tool>? toolId)
+    private static Box? GetToolElement(Id<Tool>? toolId)
     {
         if (toolId == TrackPlacingToolService.ToolId) return ToolBar.PlaceTrack;
         if (toolId == TrainPlacingToolService.ToolId) return ToolBar.PlaceTrain;
