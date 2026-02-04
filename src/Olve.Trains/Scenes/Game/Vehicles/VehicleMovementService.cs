@@ -11,7 +11,7 @@ public class VehicleMovementService(ILoggingManager loggingManager,
     TrackSplineService trackSplineService) : SceneService(loggingManager)
 {
     public Event<Id<Vehicle>> OnVehicleReachedTrackEnd { get; } = new();
-    
+
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
         foreach (var (vehicleId, trackPosition) in vehiclePositionService.TrackPositions)
@@ -32,20 +32,21 @@ public class VehicleMovementService(ILoggingManager loggingManager,
         {
             return problems;
         }
-                
+
         var newTime = vehicleTrackPosition.Time + vehicleTrackPosition.Velocity * deltaTime.InSeconds() / trackLength;
 
         var reachedEndOfTrack = newTime < 0 && vehicleTrackPosition.Velocity < 0 || newTime > 1 && vehicleTrackPosition.Velocity > 0;
         newTime = float.Clamp(newTime, 0, 1);
-        
-        vehicleTrackPosition = vehicleTrackPosition with { Time = newTime };
+
+        var newTrackPoint = vehicleTrackPosition.TrackPoint with { Time = newTime };
+        vehicleTrackPosition = vehicleTrackPosition with { TrackPoint = newTrackPoint };
         vehiclePositionService.SetTrackPosition(vehicleId, vehicleTrackPosition);
 
         if (reachedEndOfTrack)
         {
             OnVehicleReachedTrackEnd.Invoke(vehicleId);
         }
-        
+
         return Result.Success();
     }
 }

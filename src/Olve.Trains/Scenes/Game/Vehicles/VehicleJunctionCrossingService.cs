@@ -3,6 +3,7 @@ using Olve.Engine3D.Systems;
 using Olve.Engine3D.Time;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.Junctions;
+using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
@@ -16,7 +17,7 @@ public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
     JunctionSignalRuleEvaluationService junctionSignalRuleEvaluationService) : SceneService(loggingManager)
 {
     private static readonly DayTimeSpan Delay = new(minutes: 5);
-    
+
     private readonly EventQueue<Id<Vehicle>> _vehicleReachedEndQueue = new(vehicleMovementService.OnVehicleReachedTrackEnd);
     private readonly PriorityQueue<Id<Vehicle>, long> _queue = new();
 
@@ -38,7 +39,7 @@ public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
         {
             return problems;
         }
-        
+
         _queue.Enqueue(vehicleId, dayTimeManager.AbsoluteMinutes);
         return Result.Success();
     }
@@ -60,7 +61,7 @@ public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
 
             _queue.Dequeue();
         }
-        
+
         return Result.Success();
     }
 
@@ -76,12 +77,12 @@ public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
         {
             return Result.Success();
         }
-        
+
         if (!vehiclePositionService.TryGetTrackPosition(vehicleId, out var trackPosition))
         {
             return new ResultProblem("Vehicle does not have a track position - likely not on a track");
-        } 
-        
+        }
+
         if (junctionSignalService.JunctionHasSignal(junctionId).TryPickProblems(out problems, out var junctionHasSignal))
         {
             return problems;
@@ -105,7 +106,7 @@ public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
         {
             return problems;
         }
-        
+
         return ruleEvaluation.Match(
             none => SuspendVehicle(vehicleId),
             transferredTracks => TransferTracks(vehicleId, trackPosition, transferredTracks));
@@ -125,11 +126,12 @@ public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
         {
             return problems;
         }
-        
+
         var newVelocity = isAtDestinationEnd ? -float.Abs(vehicleTrackPosition.Velocity) : float.Abs(vehicleTrackPosition.Velocity);
         var newTime = isAtDestinationEnd ? 1 : 0;
 
-        VehicleTrackPosition newVehicleTrackPosition = new(transferredTracks.To, newTime, newVelocity);
+        TrackPoint newVehicleTrackPoint = new(transferredTracks.To, newTime);
+        VehicleTrackPosition newVehicleTrackPosition = new(newVehicleTrackPoint, newVelocity);
         return vehiclePositionService.SetTrackPosition(vehicleId, newVehicleTrackPosition);
     }
 }

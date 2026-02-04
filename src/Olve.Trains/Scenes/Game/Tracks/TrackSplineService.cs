@@ -148,34 +148,38 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
         return points;
     }
 
-    public Result<bool> GetClosestTrackPoint(Vector3D<float> position, float maxDistance, out TrackEndpoint closestEndpoint)
+    public Result<bool> GetClosestTrackPoint(Vector3D<float> position, float maxDistance, out TrackPoint closestTrackPoint)
     {
-        List<TrackEndpoint> points = [];
+        List<(TrackPoint TrackPoint, Vector3D<float> WorldPosition)> points = [];
 
         foreach (var trackId in _trackSplines.Keys)
         {
-            if (GetClosestTrackPoint(trackId, position, maxDistance, out var point)
+            if (GetClosestTrackPoint(trackId, position, maxDistance, out var trackPoint)
                 .TryPickProblems(out var problems, out var foundPoint))
             {
-                closestEndpoint = default;
+                closestTrackPoint = default;
                 return problems;
             }
 
             if (foundPoint)
             {
-                points.Add(point);
+                var worldPosition = _trackSplines[trackId].Sample(trackPoint.Time);
+                points.Add((trackPoint, worldPosition));
             }
         }
 
-        closestEndpoint = points.OrderBy(x => float.Abs((x.Point - position).LengthSquared)).FirstOrDefault();
+        closestTrackPoint = points
+            .OrderBy(x => (x.WorldPosition - position).LengthSquared)
+            .Select(x => x.TrackPoint)
+            .FirstOrDefault();
         return points.Count > 0;
     }
 
-    public Result<bool> GetClosestTrackPoint(Id<Track> trackId, Vector3D<float> target, float maxDistance, out TrackEndpoint closestTrackEndpoint)
+    public Result<bool> GetClosestTrackPoint(Id<Track> trackId, Vector3D<float> target, float maxDistance, out TrackPoint closestTrackPoint)
     {
         if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
         {
-            closestTrackEndpoint = default;
+            closestTrackPoint = default;
             return problems.Prepend("Failed to get spline");
         }
 
@@ -188,7 +192,7 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
         if (deltaStart.LengthSquared > maxDistanceSquared + splineLengthSquared &&
             deltaEnd.LengthSquared > maxDistanceSquared + splineLengthSquared)
         {
-            closestTrackEndpoint = default;
+            closestTrackPoint = default;
             return false;
         }
 
@@ -214,15 +218,12 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
 
         if (closestT < 0)
         {
-            closestTrackEndpoint = default;
+            closestTrackPoint = default;
             return false;
         }
 
-        var closestPoint =  spline.Sample(closestT);
-        var closestTangent =  spline.Tangent(closestT);
-
-        closestTrackEndpoint = new TrackEndpoint(closestPoint, closestTangent);
-        return closestTangent.LengthSquared > closestLengthSquared;
+        closestTrackPoint = new TrackPoint(trackId, closestT);
+        return closestLengthSquared < maxDistanceSquared;
     }
 
     private Result<UniformHermite<Vector3D<float>>> CreateSpline(Id<Track> trackId)
