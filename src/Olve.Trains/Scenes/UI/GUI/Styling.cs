@@ -14,7 +14,7 @@ public static class Styles
     public const float DefaultBorderWidth = 1.5f;
 
     public static readonly (float R, float G, float B, float A) DefaultBorder = (0.2f, 0.2f, 0.2f, 0.3f);
-    public static readonly (float R, float G, float B, float A) PanelBackground = (0.35f, 0.35f, 0.35f, 0.3f);
+    public static readonly (float R, float G, float B, float A) PanelBackground = (0.27f, 0.3f, 0.28f, 0.65f);
     public static readonly (float R, float G, float B, float A) FocusBorder = (1, 1, 1, 1);
 
     public static readonly GuiElementStyling<Box> MenuButtonStyle = new()
@@ -100,7 +100,7 @@ public static class Styles
         StyleKey = new StyleKey(nameof(InfoBarClockText)),
         OnStateChanged = (text, weights) =>
         {
-
+            text.Color = (0.75f, 0.75f, 0.75f, 1f);
         }
     };
 

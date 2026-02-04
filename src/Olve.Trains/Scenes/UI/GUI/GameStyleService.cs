@@ -18,6 +18,7 @@ public class GameStyleService(
         styleRegistry.Register(Styles.ToolIconStyle);
         styleRegistry.Register(Styles.InfoBarBackground);
         styleRegistry.Register(Styles.InfoBarSection);
+        styleRegistry.Register(Styles.InfoBarClockText);
 
         return Result.Success();
     }

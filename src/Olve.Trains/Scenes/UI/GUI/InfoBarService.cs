@@ -2,6 +2,7 @@
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Time;
 using Olve.Generated.Layouts;
 using Olve.Logging;
 
@@ -9,6 +10,7 @@ namespace Olve.Trains.Scenes.UI.GUI;
 
 public class InfoBarService(
     ILoggingManager loggingManager,
+    DayTimeManager dayTimeManager,
     GuiElementService guiElementService,
     GuiAnchorService guiAnchorService) : SceneService(loggingManager)
 {
@@ -34,7 +36,8 @@ public class InfoBarService(
 
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
-        InfoBar.Clock.Content = $"FPS: {1f / deltaTime.TotalSeconds}";
+        var dayTime = dayTimeManager.CurrentTime;
+        InfoBar.Clock.Content = $"{dayTime.Hours:D2} : {dayTime.Minutes:D2}";
         return Result.Success();
     }
 }

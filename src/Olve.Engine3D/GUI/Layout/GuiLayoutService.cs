@@ -16,6 +16,7 @@ public class GuiLayoutService(
 
     private readonly List<LayoutData> _layoutData = [];
     private bool _isDirty = true;
+    private static bool _shrinkWarningLogged;
 
     private LayoutContext LayoutContext => layoutContextProvider.Value;
 
@@ -376,23 +377,18 @@ public class GuiLayoutService(
 
             var remaining = parentInner - totalGapSize - totalChildOuter;
 
-            if (float.Abs(remaining.Value) > Epsilon)
+            if (remaining.Value < -Epsilon)
             {
-                var totalWeight = childIndices.Select(x => _layoutData[x].LayoutBox.Size.ResizingWeight).Sum();
-
-                foreach (var childIndex in childIndices)
+                // Need to shrink - not implemented yet
+                if (!_shrinkWarningLogged)
                 {
-                    var weight = _layoutData[childIndex].LayoutBox.Size.ResizingWeight;
-                    if (weight < Epsilon)
-                    {
-                        continue;
-                    }
-
-                    var delta = weight / totalWeight * remaining;
-                    var size = _layoutData[childIndex].GetSizeForAxis(axis) ?? Dp.Zero;
-                    var newSize = size + delta;
-                    _layoutData[childIndex] = _layoutData[childIndex].WithSize(axis, newSize);
+                    _shrinkWarningLogged = true;
+                    LoggingManager.Log(LogLevel.Warning, "Layout requires shrinking children but shrink logic is not implemented");
                 }
+            }
+            else if (remaining.Value > Epsilon)
+            {
+                DistributeRemainingSpaceEqualized(childIndices, axis, remaining);
             }
         }
         else
@@ -709,6 +705,77 @@ public class GuiLayoutService(
                 Height = null,
                 Position = null
             };
+        }
+    }
+
+    /// <summary>
+    /// Distributes remaining space by equalizing child sizes.
+    /// Brings smallest children up to the next size tier, then repeats until all are equal.
+    /// </summary>
+    private void DistributeRemainingSpaceEqualized(int[] childIndices, UIAxis axis, Dp remaining)
+    {
+        // Get weighted children with their current sizes
+        var weightedChildren = childIndices
+            .Where(i => _layoutData[i].LayoutBox.Size.ResizingWeight > Epsilon)
+            .ToList();
+
+        if (weightedChildren.Count == 0)
+            return;
+
+        while (remaining.Value > Epsilon)
+        {
+            // Get current sizes of weighted children
+            var sizes = weightedChildren
+                .Select(i => (Index: i, Size: _layoutData[i].GetSizeForAxis(axis) ?? Dp.Zero))
+                .OrderBy(x => x.Size.Value)
+                .ToList();
+
+            var minSize = sizes[0].Size;
+
+            // Find all children at minimum size
+            var minChildren = sizes.TakeWhile(x => x.Size.Value - minSize.Value < Epsilon).ToList();
+
+            // Find the next size tier (first child not at min size)
+            var nextTier = sizes.Skip(minChildren.Count).FirstOrDefault();
+            var hasNextTier = nextTier.Index != 0 || sizes.Count > minChildren.Count;
+
+            if (hasNextTier)
+            {
+                var targetSize = nextTier.Size;
+                var gapPerChild = targetSize - minSize;
+                var totalCost = minChildren.Count * gapPerChild;
+
+                if (totalCost.Value <= remaining.Value + Epsilon)
+                {
+                    // We can afford to bring all min children up to the next tier
+                    foreach (var (index, _) in minChildren)
+                    {
+                        _layoutData[index] = _layoutData[index].WithSize(axis, targetSize);
+                    }
+                    remaining -= totalCost;
+                }
+                else
+                {
+                    // Not enough space - distribute remaining equally among min children
+                    var delta = remaining / minChildren.Count;
+                    foreach (var (index, size) in minChildren)
+                    {
+                        _layoutData[index] = _layoutData[index].WithSize(axis, size + delta);
+                    }
+                    remaining = Dp.Zero;
+                }
+            }
+            else
+            {
+                // All children are at the same size - distribute remaining equally
+                var delta = remaining / weightedChildren.Count;
+                foreach (var index in weightedChildren)
+                {
+                    var size = _layoutData[index].GetSizeForAxis(axis) ?? Dp.Zero;
+                    _layoutData[index] = _layoutData[index].WithSize(axis, size + delta);
+                }
+                remaining = Dp.Zero;
+            }
         }
     }
 }
