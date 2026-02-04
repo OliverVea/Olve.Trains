@@ -16,14 +16,14 @@ public class PlaceVehicleHandlerService(
     private static readonly CommandArgument TrackArgument = new ("track", "The track to place the vehicle on.", true);
     private static readonly CommandArgument VehicleIdArgument = new("vehicle", "The vehicle to place. If empty, a new vehicle will be created.");
     private static readonly CommandArgument SpeedArgument = new("speed", "The speed of the vehicle.");
-    
+
     public override string Verb => "place-vehicle";
     public override string HelpString => "Places the specified vehicle on the specified track";
     public override IReadOnlyList<CommandArgument> Arguments { get; } = [VehicleIdArgument, TrackArgument, SpeedArgument];
     public override Result Handle(CommandContext commandContext)
     {
         var trackIdResult = commandContext.GetId<Track>(TrackArgument);
-        
+
         var vehicleIdResult = commandContext.Arguments.ContainsKey(VehicleIdArgument.Key)
             ? commandContext.GetId<Vehicle>(VehicleIdArgument)
             : CreateVehicle();
@@ -45,11 +45,11 @@ public class PlaceVehicleHandlerService(
         {
             return new ResultProblem("Got invalid speed value '{0}'", speedString);
         }
-        TrackPosition trackPosition = new(trackId, 0, speed);
-        
-        vehiclePositionService.SetTrackPosition(vehicleId, trackPosition);
-        
-        LoggingManager.Log(LogLevel.Info, $"Placed vehicle '{vehicleId}' on track with id '{trackId}' with position '{trackPosition}'");
+        VehicleTrackPosition vehicleTrackPosition = new(trackId, 0, speed);
+
+        vehiclePositionService.SetTrackPosition(vehicleId, vehicleTrackPosition);
+
+        LoggingManager.Log(LogLevel.Info, $"Placed vehicle '{vehicleId}' on track with id '{trackId}' with position '{vehicleTrackPosition}'");
 
         return Result.Success();
     }
