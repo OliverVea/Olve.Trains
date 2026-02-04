@@ -13,14 +13,14 @@ public class JunctionService(ILoggingManager loggingManager) : BaseEntityService
 
     public Event<Id<Junction>> OnJunctionConnectionsUpdated { get; } = new();
     
-    public Result<Id<Junction>> AddJunctionConnection(Id<Track> trackId, TrackPoint trackPoint)
+    public Result<Id<Junction>> AddJunctionConnection(Id<Track> trackId, TrackEndpoint trackEndpoint)
     {
-        var tilePosition = ToTilePosition(trackPoint.Point);
+        var tilePosition = ToTilePosition(trackEndpoint.Point);
         var junctionId = _junctions.GetOrAdd(tilePosition, Id.New<Junction>);
         Junction trackJunction = new(junctionId, tilePosition);
 
         var connections = _junctionConnections.GetOrAdd(junctionId, NewJunctionConnections);
-        JunctionConnection connection = new(trackId, trackPoint);
+        JunctionConnection connection = new(trackId, trackEndpoint);
         connections.Add(connection);
         
         LoggingManager.Log(LogLevel.Debug, $"Connected {connections.Count} tracks at '{tilePosition}'");
@@ -34,9 +34,9 @@ public class JunctionService(ILoggingManager loggingManager) : BaseEntityService
         return junctionId;
     }
 
-    public DeletionResult RemoveJunctionConnection(Id<Track> trackId, TrackPoint trackPoint)
+    public DeletionResult RemoveJunctionConnection(Id<Track> trackId, TrackEndpoint trackEndpoint)
     {
-        var tilePosition = ToTilePosition(trackPoint.Point);
+        var tilePosition = ToTilePosition(trackEndpoint.Point);
         if (!_junctions.TryGetValue(tilePosition, out var junctionId))
         {
             return DeletionResult.NotFound();
@@ -44,7 +44,7 @@ public class JunctionService(ILoggingManager loggingManager) : BaseEntityService
 
         if (_junctionConnections.TryGetValue(junctionId, out var connections))
         {
-            JunctionConnection connection = new(trackId, trackPoint);
+            JunctionConnection connection = new(trackId, trackEndpoint);
             connections.Remove(connection);
             if (connections.Count == 0)
             {
@@ -67,18 +67,18 @@ public class JunctionService(ILoggingManager loggingManager) : BaseEntityService
         return DeletionResult.Success();
     }
 
-    public bool TryGetJunctionId(TrackPoint trackPoint, out Id<Junction> junctionId)
+    public bool TryGetJunctionId(TrackEndpoint trackEndpoint, out Id<Junction> junctionId)
     {
-        return _junctions.TryGetValue(ToTilePosition(trackPoint.Point), out junctionId);
+        return _junctions.TryGetValue(ToTilePosition(trackEndpoint.Point), out junctionId);
     }
 
-    public IReadOnlyCollection<JunctionConnection> GetConnections(TrackPoint trackPoint)
+    public IReadOnlyCollection<JunctionConnection> GetConnections(TrackEndpoint trackEndpoint)
     {
-        if (TryGetJunctionId(trackPoint, out var junctionId))
+        if (TryGetJunctionId(trackEndpoint, out var junctionId))
         {
             var connections = GetConnections(junctionId);
             return connections
-                .Where(x => (x.TrackPoint.Tangent + trackPoint.Tangent).Length < MathConstants.Epsilon)
+                .Where(x => (x.TrackEndpoint.Tangent + trackEndpoint.Tangent).Length < MathConstants.Epsilon)
                 .ToArray();
         }
 
@@ -98,9 +98,9 @@ public class JunctionService(ILoggingManager loggingManager) : BaseEntityService
     private static TilePosition ToTilePosition(Vector3D<float> point) => new((int)point.X, (int)(point.Y * 8), (int)point.Z);
     private static HashSet<JunctionConnection> NewJunctionConnections() => new(1);
 
-    public bool IsConnected(Id<Track> trackId, TrackPoint trackPoint)
+    public bool IsConnected(Id<Track> trackId, TrackEndpoint trackEndpoint)
     {
-        return _junctions.TryGetValue(ToTilePosition(trackPoint.Point), out var junctionId)
+        return _junctions.TryGetValue(ToTilePosition(trackEndpoint.Point), out var junctionId)
                && _junctionConnections.TryGetValue(junctionId, out var connections)
                && connections.Any(x => x.TrackId == trackId);
     }

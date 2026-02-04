@@ -94,10 +94,10 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
 
         if (ToolState.ActivatedThisFrame)
         {
-            TrackPosition trackPosition = null; // ???
+            VehicleTrackPosition vehicleTrackPosition = null; // ???
 
             if (vehicleService.AddVehicle("Vehicle :D").TryPickProblems(out problems, out var vehicleId)
-                || vehiclePositionService.SetTrackPosition(vehicleId, trackPosition).TryPickProblems(out problems))
+                || vehiclePositionService.SetTrackPosition(vehicleId, vehicleTrackPosition).TryPickProblems(out problems))
             {
                 return problems;
             }

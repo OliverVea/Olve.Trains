@@ -26,20 +26,20 @@ public class VehicleMovementService(ILoggingManager loggingManager,
         return Result.Success();
     }
 
-    private Result UpdateTrackPosition(Id<Vehicle> vehicleId, TimeSpan deltaTime, TrackPosition trackPosition)
+    private Result UpdateTrackPosition(Id<Vehicle> vehicleId, TimeSpan deltaTime, VehicleTrackPosition vehicleTrackPosition)
     {
-        if (trackSplineService.GetLength(trackPosition.TrackId).TryPickProblems(out var problems, out var trackLength))
+        if (trackSplineService.GetLength(vehicleTrackPosition.TrackId).TryPickProblems(out var problems, out var trackLength))
         {
             return problems;
         }
                 
-        var newTime = trackPosition.Time + trackPosition.Velocity * deltaTime.InSeconds() / trackLength;
+        var newTime = vehicleTrackPosition.Time + vehicleTrackPosition.Velocity * deltaTime.InSeconds() / trackLength;
 
-        var reachedEndOfTrack = newTime < 0 && trackPosition.Velocity < 0 || newTime > 1 && trackPosition.Velocity > 0;
+        var reachedEndOfTrack = newTime < 0 && vehicleTrackPosition.Velocity < 0 || newTime > 1 && vehicleTrackPosition.Velocity > 0;
         newTime = float.Clamp(newTime, 0, 1);
         
-        trackPosition = trackPosition with { Time = newTime };
-        vehiclePositionService.SetTrackPosition(vehicleId, trackPosition);
+        vehicleTrackPosition = vehicleTrackPosition with { Time = newTime };
+        vehiclePositionService.SetTrackPosition(vehicleId, vehicleTrackPosition);
 
         if (reachedEndOfTrack)
         {

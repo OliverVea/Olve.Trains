@@ -4,7 +4,7 @@ using OneOf.Types;
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
 [GenerateOneOf]
-public partial class VehiclePosition : OneOfBase<None, TrackPosition>
+public partial class VehiclePosition : OneOfBase<None, VehicleTrackPosition>
 {
     public static VehiclePosition None { get; } = new None();
 }

@@ -27,7 +27,7 @@ public class VehicleJunctionService(VehiclePositionService vehiclePositionServic
         return VehicleJunction.None;
     }
     
-    public Result<TrackPoint> GetVehicleTrackPoint(Id<Vehicle> vehicleId)
+    public Result<TrackEndpoint> GetVehicleTrackPoint(Id<Vehicle> vehicleId)
     {
         if (!vehiclePositionService.TryGetTrackPosition(vehicleId, out var trackPosition))
         {

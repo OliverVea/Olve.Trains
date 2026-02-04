@@ -17,11 +17,11 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
     KeyboardManager keyboardManager,
     TrackPlacingService trackPlacingService) : BaseToolService<TrackPlacingToolService.State>(loggingManager, toolManagementService, new State())
 {
-    public record State(TrackPoint? From = null, CardinalDirection Direction = CardinalDirection.North, bool ActivatedThisFrame = false);
+    public record State(TrackEndpoint? From = null, CardinalDirection Direction = CardinalDirection.North, bool ActivatedThisFrame = false);
 
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Place Tracks");
-    
+
     private Id<ArrowIndicator> _arrowIndicatorId;
 
     protected override Result OnLoad()
@@ -30,7 +30,7 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
         {
             return problems;
         }
-        
+
         return base.OnLoad();
     }
 
@@ -40,7 +40,7 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
         {
             return problems;
         }
-        
+
         return base.OnUnload();
     }
 
@@ -66,7 +66,7 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
             var newDirection = keyboardManager.State.Shift
                 ? ToolState.Direction.RotateClockwise()
                 : ToolState.Direction.RotateCounterClockwise();
-            
+
             ToolState = ToolState with { Direction = newDirection };
         }
 
@@ -87,17 +87,17 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
         {
             return Result.Success();
         }
-        
-        TrackPoint trackPoint = new(terrainIntersectionTileCenter, ToolState.Direction.ToVector3D());
+
+        TrackEndpoint trackEndpoint = new(terrainIntersectionTileCenter, ToolState.Direction.ToVector3D());
 
         if (ToolState.From is not { } from)
         {
-            LoggingManager.Log(LogLevel.Debug, $"Set start of track placement to '{trackPoint}'");
-            ToolState = ToolState with { From = trackPoint };
+            LoggingManager.Log(LogLevel.Debug, $"Set start of track placement to '{trackEndpoint}'");
+            ToolState = ToolState with { From = trackEndpoint };
             return Result.Success();
         }
-        
+
         ToolState = ToolState with { From = null };
-        return trackPlacingService.PlaceTrack(from, trackPoint);
+        return trackPlacingService.PlaceTrack(from, trackEndpoint);
     }
 }

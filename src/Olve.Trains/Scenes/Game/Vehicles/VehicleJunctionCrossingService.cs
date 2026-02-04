@@ -118,7 +118,7 @@ public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
         return Result.Success();
     }
 
-    private Result TransferTracks(Id<Vehicle> vehicleId, TrackPosition trackPosition, TransferredTracks transferredTracks)
+    private Result TransferTracks(Id<Vehicle> vehicleId, VehicleTrackPosition vehicleTrackPosition, TransferredTracks transferredTracks)
     {
         var isAtDestinationEndResult = vehicleJunctionService.IsAtTrackEnd(vehicleId, transferredTracks.To);
         if (isAtDestinationEndResult.TryPickProblems(out var problems, out var isAtDestinationEnd))
@@ -126,10 +126,10 @@ public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
             return problems;
         }
         
-        var newVelocity = isAtDestinationEnd ? -float.Abs(trackPosition.Velocity) : float.Abs(trackPosition.Velocity);
+        var newVelocity = isAtDestinationEnd ? -float.Abs(vehicleTrackPosition.Velocity) : float.Abs(vehicleTrackPosition.Velocity);
         var newTime = isAtDestinationEnd ? 1 : 0;
 
-        TrackPosition newTrackPosition = new(transferredTracks.To, newTime, newVelocity);
-        return vehiclePositionService.SetTrackPosition(vehicleId, newTrackPosition);
+        VehicleTrackPosition newVehicleTrackPosition = new(transferredTracks.To, newTime, newVelocity);
+        return vehiclePositionService.SetTrackPosition(vehicleId, newVehicleTrackPosition);
     }
 }
