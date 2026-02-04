@@ -92,9 +92,22 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
             return Result.Success();
         }
 
+        if (trackSplineService.GetPoint(closestTrackPoint.TrackId, closestTrackPoint.Time)
+            .TryPickProblems(out problems, out var worldPosition))
+        {
+            return problems;
+        }
+
+        if (trackSplineService.GetTangent(closestTrackPoint.TrackId, closestTrackPoint.Time)
+            .TryPickProblems(out problems, out var tangent))
+        {
+            return problems;
+        }
+
         if (ToolState.ActivatedThisFrame)
         {
-            VehicleTrackPosition vehicleTrackPosition = null; // ???
+            var velocity = ToolState.Forward ? 6f : -6f;
+            var vehicleTrackPosition = new VehicleTrackPosition(closestTrackPoint, velocity);
 
             if (vehicleService.AddVehicle("Vehicle :D").TryPickProblems(out problems, out var vehicleId)
                 || vehiclePositionService.SetTrackPosition(vehicleId, vehicleTrackPosition).TryPickProblems(out problems))
@@ -105,11 +118,9 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
 
         arrowIndicatorService.Show(_arrowIndicatorId);
 
-        var direction = ToolState.Forward
-            ? closestTrackPoint.Tangent
-            : -closestTrackPoint.Tangent;
+        var direction = ToolState.Forward ? tangent : -tangent;
 
-        arrowIndicatorService.SetPosition(_arrowIndicatorId, closestTrackPoint.Point, direction);
+        arrowIndicatorService.SetPosition(_arrowIndicatorId, worldPosition, direction);
 
         return Result.Success();
     }

@@ -12,6 +12,7 @@ using Olve.Engine3D.Time;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.Game.Vehicles;
 using Olve.Trains.Scenes.Rendering;
 using Olve.Trains.Scenes.UI.GUI;
 using Olve.Trains.Scenes.UI.Indicators;
@@ -54,6 +55,8 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(Provider<IWindow>), Factory = nameof(GetWindowProvider))]
 [Transient(typeof(TrackPlacingService), Factory = nameof(GetTrackPlacingService))]
 [Transient(typeof(TrackSplineService), Factory = nameof(GetTrackSplineService))]
+[Transient(typeof(VehicleService), Factory = nameof(GetVehicleService))]
+[Transient(typeof(VehiclePositionService), Factory = nameof(GetVehiclePositionService))]
 [Transient(typeof(AssetLoader), Factory = nameof(GetAssetLoader))]
 [Transient(typeof(RenderingServiceHelper), Factory = nameof(GetRenderingServiceHelper))]
 [Transient(typeof(DayTimeManager), Factory = nameof(GetDayTimeManager))]
@@ -65,6 +68,8 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private TrackService GetTrackService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackService>();
     private TrackSplineService GetTrackSplineService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackSplineService>();
     private TrackPlacingService GetTrackPlacingService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackPlacingService>();
+    private VehicleService GetVehicleService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<VehicleService>();
+    private VehiclePositionService GetVehiclePositionService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<VehiclePositionService>();
     private Provider<IWindow> GetWindowProvider() => gameProvider.GetRequiredService<Provider<IWindow>>();
     private ScreenResizedEvent GetScreenResizedEvent() => gameProvider.GetRequiredService<ScreenResizedEvent>();
     private MouseManager GetMouseManager() => gameProvider.GetRequiredService<MouseManager>();

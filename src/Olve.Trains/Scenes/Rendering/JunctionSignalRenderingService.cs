@@ -45,7 +45,7 @@ public class JunctionSignalRenderingService(
             return problems.Prepend("Failed to load shader");
         }
 
-        if (assetLoader.LoadAsset(Meshes.SM_Veh_Bullet_01).TryPickProblems(out problems, out var meshData))
+        if (assetLoader.LoadAsset(Meshes.SM_Prop_CrossingLight_01).TryPickProblems(out problems, out var meshData))
         {
             return problems.Prepend("Failed to load mesh");
         }
@@ -75,7 +75,7 @@ public class JunctionSignalRenderingService(
 
         var junctionWorld = Matrix4X4.CreateScale(0.2f)
                             * Matrix4X4.CreateRotationY(float.Pi)
-                            * Matrix4X4.CreateTranslation(0, -0.9f, 0)
+                            * Matrix4X4.CreateTranslation(-0.2f, -0.9f, -0.2f)
                             * junction.Position.ToWorldMatrix();
 
         var renderingResult = renderingManager3D.RegisterInstance(MeshRenderingId, _shader.RenderingId, junctionWorld);

@@ -45,7 +45,9 @@ public class PlaceVehicleHandlerService(
         {
             return new ResultProblem("Got invalid speed value '{0}'", speedString);
         }
-        VehicleTrackPosition vehicleTrackPosition = new(trackId, 0, speed);
+
+        TrackPoint trackPoint = new(trackId, 0);
+        VehicleTrackPosition vehicleTrackPosition = new(trackPoint, speed);
 
         vehiclePositionService.SetTrackPosition(vehicleId, vehicleTrackPosition);
 
