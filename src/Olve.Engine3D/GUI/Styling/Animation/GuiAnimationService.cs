@@ -148,7 +148,10 @@ public class GuiAnimationService(
 
         if (!guiStyleRegistry.TryGetStyle(guiElement, out var style))
         {
-            LoggingManager.Log(LogLevel.Warning, $"Could not get style for node id '{nodeId}'");
+            if (guiElement.StyleKey.HasValue)
+            {
+                LoggingManager.Log(LogLevel.Warning, $"Could not get style for node id '{nodeId}' and style key '{guiElement.StyleKey}'");
+            }
             return false;
         }
 

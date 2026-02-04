@@ -2,6 +2,7 @@
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.Game.Vehicles;
 using Olve.Trains.Scenes.Rendering;
 using Olve.Trains.Scenes.UI.Indicators;
 using Silk.NET.Input;
@@ -13,16 +14,18 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
     ToolManagementService toolManagementService,
     TrackArrowIndicatorService arrowIndicatorService,
     TrackSplineService trackSplineService,
+    VehicleService vehicleService,
+    VehiclePositionService vehiclePositionService,
     MouseManager mouseManager,
     KeyboardManager keyboardManager) : BaseToolService<TrainPlacingToolService.State>(loggingManager, toolManagementService, new State())
 {
     public record State(bool Forward = true, bool ActivatedThisFrame = false);
-    
+
     private const float SnappingDistance = 1f;
-    
+
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Place Trains on Tracks");
-    
+
     private Id<ArrowIndicator> _arrowIndicatorId;
 
     protected override Result OnLoad()
@@ -31,7 +34,7 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
         {
             return problems;
         }
-        
+
         return base.OnLoad();
     }
 
@@ -41,7 +44,7 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
         {
             return problems;
         }
-        
+
         return base.OnUnload();
     }
 
@@ -89,15 +92,26 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
             return Result.Success();
         }
 
+        if (ToolState.ActivatedThisFrame)
+        {
+            TrackPosition trackPosition = null; // ???
+
+            if (vehicleService.AddVehicle("Vehicle :D").TryPickProblems(out problems, out var vehicleId)
+                || vehiclePositionService.SetTrackPosition(vehicleId, trackPosition).TryPickProblems(out problems))
+            {
+                return problems;
+            }
+        }
+
         arrowIndicatorService.Show(_arrowIndicatorId);
 
         var direction = ToolState.Forward
             ? closestTrackPoint.Tangent
             : -closestTrackPoint.Tangent;
-        
+
         arrowIndicatorService.SetPosition(_arrowIndicatorId, closestTrackPoint.Point, direction);
 
         return Result.Success();
     }
-    
+
 }

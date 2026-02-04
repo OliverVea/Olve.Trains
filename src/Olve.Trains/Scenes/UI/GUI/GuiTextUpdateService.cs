@@ -19,6 +19,7 @@ namespace Olve.Trains.Scenes.UI.GUI
     public class GuiTextUpdateService(
         ILoggingManager loggingManager,
         GuiElementService guiElementService,
+        GuiLayoutService guiLayoutService,
         TextureLoadingService textureLoadingService,
         GuiTextRenderingService textRenderingService,
         Provider<LayoutContext> layoutContextProvider) : SceneService(loggingManager)
@@ -61,6 +62,12 @@ namespace Olve.Trains.Scenes.UI.GUI
                 var measuredDp = layoutContextProvider.Value.ToDp(measuredPx);
                 textElement.ComputedSize = measuredDp;
 
+                // Update layout with the new size
+                if (textElement.LayoutBox is { } layoutBox)
+                {
+                    guiLayoutService.SetNodeBox(nodeId, layoutBox);
+                }
+
                 textRenderingService.UpdateText(nodeId, textData.Content);
             }
         }
@@ -85,6 +92,12 @@ namespace Olve.Trains.Scenes.UI.GUI
             var measuredPx = TextLayoutEngine.MeasureText(textData.Content, font, textData.FontSize);
             var measuredDp = layoutContextProvider.Value.ToDp(measuredPx);
             textElement.ComputedSize = measuredDp;
+
+            // Update layout with the computed size
+            if (textElement.LayoutBox is { } layoutBox)
+            {
+                guiLayoutService.SetNodeBox(addedEvent.NodeId, layoutBox);
+            }
 
             if (textureLoadingService.LoadTexture(font.Atlas.FontAtlas)
                 .TryPickProblems(out var problems, out var textureId))
