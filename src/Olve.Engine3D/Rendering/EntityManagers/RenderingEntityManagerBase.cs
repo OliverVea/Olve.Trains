@@ -7,6 +7,7 @@ public abstract class RenderingEntityManagerBase<TEntity, TRegistration>
     protected readonly Dictionary<RenderingId<TEntity>, TRegistration> ModelRegistrations = [];
 
     protected abstract Result<TRegistration> RegisterInOpenGL(TEntity entity);
+    protected abstract Result UpdateInOpenGL(TRegistration registration, TEntity entity);
     protected abstract Result DeregisterFromOpenGL(TRegistration registration);
 
     public Result<RenderingId<TEntity>> Register(TEntity entity)
@@ -24,6 +25,24 @@ public abstract class RenderingEntityManagerBase<TEntity, TRegistration>
         ModelRegistrations.Add(entityId, registration);
 
         return entityId;
+    }
+
+    public Result Update(RenderingId<TEntity> entityId, TEntity entity)
+    {
+        if (!ModelRegistrations.TryGetValue(entityId, out var registration))
+        {
+            return new ResultProblem("Entity with id '{0}' is not registered", entityId);
+        }
+
+        if (UpdateInOpenGL(registration, entity).TryPickProblems(out var problems))
+        {
+            return problems.Prepend(new ResultProblem("Failed to update entity in OpenGL")
+            {
+                Tags = [ ProblemTags.OpenGL ]
+            });
+        }
+
+        return Result.Success();
     }
 
     public Result Unregister(RenderingId<TEntity> entityId)

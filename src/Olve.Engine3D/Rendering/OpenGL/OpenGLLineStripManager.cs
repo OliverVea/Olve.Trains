@@ -9,7 +9,7 @@ public class OpenGLLineStripManager(Provider<GL> glProvider) : IOpenGLEntityMana
     private const int PositionFields = 3;
     private const int ColorFields = 3;
     private const int VertexFields = PositionFields + ColorFields;
-    
+
     public readonly record struct Registration(VAO VAO, VBO VBO);
 
     public Result<Registration> Register(LineStripData entityData)
@@ -30,12 +30,12 @@ public class OpenGLLineStripManager(Provider<GL> glProvider) : IOpenGLEntityMana
             entityData.Positions.CopyTo(vertices, VertexFields);
             entityData.Colors.CopyTo(vertices, VertexFields, offset: 3);
 
-            glProvider.Value.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices, BufferUsageARB.StaticDraw);
+            glProvider.Value.BufferData(BufferTargetARB.ArrayBuffer, vertices, BufferUsageARB.DynamicDraw);
         });
 
         glProvider.Value.VertexAttribPointer(0, PositionFields, VertexAttribPointerType.Float, false, VertexFields * sizeof(float), 0);
         glProvider.Value.EnableVertexAttribArray(0);
-        
+
         glProvider.Value.VertexAttribPointer(1, ColorFields, VertexAttribPointerType.Float, false, VertexFields * sizeof(float), PositionFields * sizeof(float));
         glProvider.Value.EnableVertexAttribArray(1);
 
@@ -43,6 +43,28 @@ public class OpenGLLineStripManager(Provider<GL> glProvider) : IOpenGLEntityMana
         glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
 
         return new Registration(new VAO(vao), new VBO(vbo, (uint)entityData.VertexCount));
+    }
+
+    public Result Update(Registration registration, LineStripData entityData)
+    {
+        if (entityData.Validate().TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
+        glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, registration.VBO.Handle);
+
+        BufferHelper.WithSpan<float>(entityData.VertexCount * VertexFields, vertices =>
+        {
+            entityData.Positions.CopyTo(vertices, VertexFields);
+            entityData.Colors.CopyTo(vertices, VertexFields, offset: 3);
+
+            glProvider.Value.BufferData(BufferTargetARB.ArrayBuffer, vertices, BufferUsageARB.DynamicDraw);
+        });
+
+        glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+
+        return Result.Success();
     }
 
     public Result Unregister(Registration registration)

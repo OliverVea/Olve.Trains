@@ -10,6 +10,11 @@ public class ShaderEntityManager(OpenGLShaderManager openGLShaderManager) : Rend
         return openGLShaderManager.Register(entity);
     }
 
+    protected override Result UpdateInOpenGL(OpenGLShaderManager.Registration registration, ShaderData entity)
+    {
+        throw new NotSupportedException("Updating shader data is not yet supported");
+    }
+
     protected override Result DeregisterFromOpenGL(OpenGLShaderManager.Registration registration)
     {
         return openGLShaderManager.Unregister(registration);
