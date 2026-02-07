@@ -57,6 +57,7 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(TrackPlacingService), Factory = nameof(GetTrackPlacingService))]
 [Transient(typeof(TrackRenderingService), Factory = nameof(GetTrackRenderingService))]
 [Transient(typeof(TrackLineStripDataService), Factory = nameof(GetTrackLineStripDataService))]
+[Transient(typeof(TrackValidationService), Factory = nameof(GetTrackValidationService))]
 [Transient(typeof(TrackSplineService), Factory = nameof(GetTrackSplineService))]
 [Transient(typeof(VehicleService), Factory = nameof(GetVehicleService))]
 [Transient(typeof(VehiclePositionService), Factory = nameof(GetVehiclePositionService))]
@@ -76,6 +77,7 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private TrackPlacingService GetTrackPlacingService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackPlacingService>();
     private TrackRenderingService GetTrackRenderingService() => gameProvider.GetRequiredService<RenderingSceneProvider>().GetRequiredService<TrackRenderingService>();
     private TrackLineStripDataService GetTrackLineStripDataService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackLineStripDataService>();
+    private TrackValidationService GetTrackValidationService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackValidationService>();
     private VehicleService GetVehicleService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<VehicleService>();
     private VehiclePositionService GetVehiclePositionService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<VehiclePositionService>();
     private StationService GetStationService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<StationService>();

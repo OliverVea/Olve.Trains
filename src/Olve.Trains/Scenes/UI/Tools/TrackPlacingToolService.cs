@@ -18,11 +18,16 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
     KeyboardManager keyboardManager,
     TrackPlacingService trackPlacingService,
     TrackRenderingService trackRenderingService,
-    TrackLineStripDataService trackLineStripDataService) : BaseToolService<TrackPlacingToolService.State>(loggingManager, toolManagementService, new State())
+    TrackLineStripDataService trackLineStripDataService,
+    TrackValidationService trackValidationService) : BaseToolService<TrackPlacingToolService.State>(loggingManager, toolManagementService, new State())
 {
     public record State(TrackEndpoint? From = null, CardinalDirection Direction = CardinalDirection.North, bool ActivatedThisFrame = false);
 
-    private static readonly Shaders.LineStrip.EntityParameters GhostShaderParameters = new(UOpacity: 0.5f);
+    private static readonly Shaders.LineStrip.EntityParameters ValidGhostParameters = new(UOpacity: 0.5f);
+    private static readonly Shaders.LineStrip.EntityParameters InvalidGhostParameters = new(
+        UOpacity: 0.7f,
+        UColorOverride: new Vector3D<float>(1, 0, 0),
+        UColorMix: 1.0f);
 
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Place Tracks");
@@ -100,16 +105,22 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
 
         TrackEndpoint trackEndpoint = new(terrainIntersectionTileCenter, ToolState.Direction.ToVector3D());
 
-        if (ToolState.From is not { } from)
+        if (ToolState.From is not { } f)
         {
             LoggingManager.Log(LogLevel.Debug, $"Set start of track placement to '{trackEndpoint}'");
             ToolState = ToolState with { From = trackEndpoint };
             return Result.Success();
         }
 
+        var fromNegated = f with { Tangent = -f.Tangent };
+        if (!trackValidationService.IsValid(fromNegated, trackEndpoint))
+        {
+            return Result.Success();
+        }
+
         UnregisterGhost();
         ToolState = ToolState with { From = null };
-        return trackPlacingService.PlaceTrack(from, trackEndpoint);
+        return trackPlacingService.PlaceTrack(f, trackEndpoint);
     }
 
     private Result UpdateGhost(Vector3D<float> mousePosition)
@@ -128,13 +139,16 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
             return problems;
         }
 
+        var isValid = trackValidationService.IsValid(f, currentEndpoint);
+        var ghostParams = isValid ? ValidGhostParameters : InvalidGhostParameters;
+
         if (_ghostRegistered)
         {
-            trackRenderingService.Update(_ghostTrackId, data, GhostShaderParameters);
+            trackRenderingService.Update(_ghostTrackId, data, ghostParams);
         }
         else
         {
-            trackRenderingService.Register(_ghostTrackId, data, GhostShaderParameters);
+            trackRenderingService.Register(_ghostTrackId, data, ghostParams);
             _ghostRegistered = true;
         }
 

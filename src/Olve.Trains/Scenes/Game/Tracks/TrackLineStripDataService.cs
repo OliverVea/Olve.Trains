@@ -29,14 +29,16 @@ public class TrackLineStripDataService(TrackSplineService trackSplineService)
         return BuildLineStripData(positions);
     }
 
-    private static LineStripData BuildLineStripData(Vector3D<float>[] positions)
+    private static LineStripData BuildLineStripData(IEnumerable<Vector3D<float>> positions)
     {
-        var colors = new Vector3D<float>[positions.Length];
+        var positionArray = positions as Vector3D<float>[] ?? positions.ToArray();
+
+            var colors = new Vector3D<float>[positionArray.Length];
         Array.Fill(colors, new Vector3D<float>(1, 1, 1));
 
         return new LineStripData
         {
-            Positions = positions,
+            Positions = positionArray,
             Colors = colors,
         };
     }
