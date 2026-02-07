@@ -4,8 +4,8 @@ public sealed class UniformHermite<T> : IInterpolator<T>
 {
     private readonly Hermite<T> _curve;
 
-    private readonly float[] _segStartLen;     
-    private readonly float[][] _cumLen;        
+    private readonly float[] _segStartLen;
+    private readonly float[][] _cumLen;
     private readonly float[][] _ts;
 
     public UniformHermite(Hermite<T> curve, IArcLengthMetric<T> metric, int samplesPerSegment = 64)
@@ -15,7 +15,7 @@ public sealed class UniformHermite<T> : IInterpolator<T>
         var samplesPerSegment1 = int.Max(2, samplesPerSegment);
 
         var segmentCount = curve.SegmentCount - 1;
-        
+
         _segStartLen = new float[segmentCount];
         _cumLen = new float[segmentCount][];
         _ts = new float[segmentCount][];
@@ -76,12 +76,12 @@ public sealed class UniformHermite<T> : IInterpolator<T>
     private int FindSegment(float s)
     {
         var last = _segStartLen.Length - 1;
-        
+
         for (var i = 0; i < last; i++)
         {
             if (s < _segStartLen[i + 1]) return i;
         }
-        
+
         return last;
     }
 

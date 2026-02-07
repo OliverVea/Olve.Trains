@@ -95,8 +95,7 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
 
         if (!ToolState.ActivatedThisFrame)
         {
-            UpdateGhost(terrainIntersectionTileCenter);
-            return Result.Success();
+            return UpdateGhost(terrainIntersectionTileCenter);
         }
 
         TrackEndpoint trackEndpoint = new(terrainIntersectionTileCenter, ToolState.Direction.ToVector3D());
@@ -113,16 +112,21 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
         return trackPlacingService.PlaceTrack(from, trackEndpoint);
     }
 
-    private void UpdateGhost(Vector3D<float> mousePosition)
+    private Result UpdateGhost(Vector3D<float> mousePosition)
     {
         if (ToolState.From is not { } f)
         {
-            return;
+            return Result.Success();
         }
 
         TrackEndpoint currentEndpoint = new(mousePosition, ToolState.Direction.ToVector3D());
         f = f with { Tangent = -f.Tangent };
-        var data = trackLineStripDataService.GetLineStripData(f, currentEndpoint);
+        if (trackLineStripDataService
+            .GetLineStripData(f, currentEndpoint)
+            .TryPickProblems(out var problems, out var data))
+        {
+            return problems;
+        }
 
         if (_ghostRegistered)
         {
@@ -133,6 +137,8 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
             trackRenderingService.Register(_ghostTrackId, data, GhostShaderParameters);
             _ghostRegistered = true;
         }
+
+        return Result.Success();
     }
 
     private void UnregisterGhost()
