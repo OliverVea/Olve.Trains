@@ -28,9 +28,11 @@ public class VehicleRenderingService(
     MeshEntityManager meshEntityManager,
     VehicleService vehicleService,
     VehiclePositionService vehiclePositionService,
-    TrackSplineService trackSplineService
+    TrackSplineService trackSplineService,
+    TrackRenderingService trackRenderingService
     ) : SceneService(loggingManager)
 {
+    public override int Priority => GetPriorityFromDependencies([trackRenderingService]);
 
     private RenderingId<MeshData> MeshRenderingId { get; set; }
     private readonly Dictionary<Id<Vehicle>, RenderingInstanceId> _instanceIds  = new();
