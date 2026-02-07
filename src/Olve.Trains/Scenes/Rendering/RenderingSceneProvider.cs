@@ -45,6 +45,7 @@ namespace Olve.Trains.Scenes.Rendering;
 [Transient(typeof(HeightmapEntityManager), Factory=nameof(GetHeightmapEntityManager))]
 [Transient(typeof(SceneLightService), Factory=nameof(GetSceneLightService))]
 [Transient(typeof(TrackSplineService), Factory=nameof(GetTrackSplineService))]
+[Transient(typeof(TrackLineStripDataService), Factory=nameof(GetTrackLineStripDataService))]
 [Transient(typeof(TrackService), Factory=nameof(GetTrackService))]
 [Transient(typeof(StationPlatformService), Factory=nameof(GetStationPlatformService))]
 [Transient(typeof(JunctionService), Factory=nameof(GetJunctionService))]
@@ -75,6 +76,7 @@ public partial class RenderingSceneProvider(GameProvider gameProvider) : ISceneS
     private SceneLightService GetSceneLightService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<SceneLightService>();
     private TerrainService GetTerrainService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TerrainService>();
     private TrackSplineService GetTrackSplineService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackSplineService>();
+    private TrackLineStripDataService GetTrackLineStripDataService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackLineStripDataService>();
     private TrackService GetTrackService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackService>();
     private StationPlatformService GetStationPlatformService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<StationPlatformService>();
     private JunctionService GetJunctionService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<JunctionService>();

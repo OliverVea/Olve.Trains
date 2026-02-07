@@ -226,6 +226,20 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
         return closestLengthSquared < maxDistanceSquared;
     }
 
+    public Vector3D<float>[] GetPoints(TrackEndpoint start, TrackEndpoint end, int count)
+    {
+        var spline = CreateSpline(start, end);
+        var points = new Vector3D<float>[count];
+
+        for (var i = 0; i < count; i++)
+        {
+            var time = StartTime + (EndTime - StartTime) * i / (count - 1);
+            points[i] = spline.Sample(time);
+        }
+
+        return points;
+    }
+
     private Result<UniformHermite<Vector3D<float>>> CreateSpline(Id<Track> trackId)
     {
         if (!trackService.TryGet(trackId, out var track))
@@ -233,12 +247,17 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
             return new ResultProblem("Failed to get track");
         }
 
-        var tangentScale = (track.Start.Point - track.End.Point).Length;
-        var startTangent = -track.Start.Tangent * tangentScale;
-        var endTangent = track.End.Tangent * tangentScale;
+        return CreateSpline(track.Start, track.End);
+    }
 
-        Hermite3.Knot startKnot = new(track.Start.Point, startTangent, startTangent);
-        Hermite3.Knot endKnot = new(track.End.Point, endTangent, endTangent);
+    private static UniformHermite<Vector3D<float>> CreateSpline(TrackEndpoint start, TrackEndpoint end)
+    {
+        var tangentScale = (start.Point - end.Point).Length;
+        var startTangent = -start.Tangent * tangentScale;
+        var endTangent = end.Tangent * tangentScale;
+
+        Hermite3.Knot startKnot = new(start.Point, startTangent, startTangent);
+        Hermite3.Knot endKnot = new(end.Point, endTangent, endTangent);
 
         KeyFrame<Hermite3.Knot> startKeyFrame = new(StartTime, startKnot);
         KeyFrame<Hermite3.Knot> endKeyFrame = new(EndTime, endKnot);

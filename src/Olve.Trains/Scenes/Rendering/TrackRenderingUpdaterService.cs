@@ -1,4 +1,3 @@
-using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Logging;
@@ -9,11 +8,9 @@ namespace Olve.Trains.Scenes.Rendering;
 public class TrackRenderingUpdaterService(
     ILoggingManager loggingManager,
     TrackService trackService,
-    TrackSplineService trackSplineService,
+    TrackLineStripDataService trackLineStripDataService,
     TrackRenderingService trackRenderingService) : SceneService(loggingManager)
 {
-    private const int TrackVertexCount = 100;
-
     private readonly EventQueue<Id<Track>> _onTrackAddedQueue = new(trackService.OnAdded);
 
     public override int Priority => GetPriorityFromDependents([trackRenderingService]);
@@ -38,7 +35,7 @@ public class TrackRenderingUpdaterService(
     {
         trackRenderingService.Unregister(trackId);
 
-        if (GetLineStripData(trackId).TryPickProblems(out var problems, out var data))
+        if (trackLineStripDataService.GetLineStripData(trackId).TryPickProblems(out var problems, out var data))
         {
             return problems.Prepend("Failed to get line strip data for track");
         }
@@ -49,27 +46,5 @@ public class TrackRenderingUpdaterService(
         }
 
         return Result.Success();
-    }
-
-    public Result<LineStripData> GetLineStripData(Id<Track> trackId)
-    {
-        if (trackSplineService.GetPoints(trackId, TrackVertexCount).TryPickProblems(out var problems, out var positions))
-        {
-            return problems.Prepend("Failed to get track points");
-        }
-
-        if (positions.Length != TrackVertexCount)
-        {
-            return new ResultProblem("Track length must be equal to vertex count");
-        }
-
-        var colors = new Vector3D<float>[TrackVertexCount];
-        Array.Fill(colors, new Vector3D<float>(1, 1, 1));
-
-        return new LineStripData
-        {
-            Positions = positions,
-            Colors = colors,
-        };
     }
 }
