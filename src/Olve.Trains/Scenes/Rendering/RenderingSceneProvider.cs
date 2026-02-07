@@ -25,6 +25,7 @@ namespace Olve.Trains.Scenes.Rendering;
 [Singleton(typeof(GLService))]
 [Singleton(typeof(CameraSceneService))]
 [Singleton(typeof(TrackRenderingService))]
+[Singleton(typeof(TrackRenderingUpdaterService))]
 [Singleton(typeof(VehicleRenderingService))]
 [Singleton(typeof(JunctionSignalRenderingService))]
 [Singleton(typeof(TerrainRenderingService))]
@@ -96,6 +97,7 @@ public partial class RenderingSceneProvider(GameProvider gameProvider) : ISceneS
         provider.GetRequiredService<GLService>(),
         provider.GetRequiredService<CameraSceneService>(),
         provider.GetRequiredService<TerrainRenderingService>(),
+        provider.GetRequiredService<TrackRenderingUpdaterService>(),
         provider.GetRequiredService<TrackRenderingService>(),
         provider.GetRequiredService<VehicleRenderingService>(),
         provider.GetRequiredService<JunctionSignalRenderingService>(),

@@ -1,4 +1,3 @@
-using Olve.Generated;
 using Olve.Engine3D;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
@@ -8,30 +7,26 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Logging;
-using Olve.Trains.Scenes.Game.Stations;
 using Olve.Trains.Scenes.Game.Tracks;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.Rendering;
 
 public class TrackRenderingService(ILoggingManager loggingManager,
-    TrackService trackService,
     Provider<GL> glProvider,
     LineStripEntityManager lineStripEntityManager,
     CameraSceneService cameraSceneService,
     ShaderEntityManager shaderEntityManager,
-    OpenGLShaderManager openGLShaderManager,
-    StationPlatformService stationPlatformService,
-    TrackSplineService trackSplineService) : SceneService(loggingManager)
+    TerrainRenderingService terrainRenderingService,
+    OpenGLShaderManager openGLShaderManager) : SceneService(loggingManager)
 {
-    private const int TrackVertexCount = 100;
+    public override int Priority => GetPriorityFromDependencies([terrainRenderingService]);
 
     private readonly record struct TrackEntry(
         RenderingId<LineStripData> RenderingId,
         Shaders.LineStrip.EntityParameters? ShaderParameters);
 
     private readonly Dictionary<Id<Track>, TrackEntry> _trackInstanceIds = new();
-    private readonly Queue<Id<Track>> _tracksToLoad = new();
     private readonly Shaders.LineStrip _shader = new()
     {
         UOpacity = 1.0f,
@@ -50,33 +45,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
 
         _shaderId = shaderId;
 
-        trackService.OnAdded.Subscribe(OnTrackAdded);
-        stationPlatformService.OnAdded.Subscribe(OnPlatformAdded);
-
         return Result.Success();
-    }
-
-    protected override Result OnUnload()
-    {
-        trackService.OnAdded.Unsubscribe(OnTrackAdded);
-        stationPlatformService.OnAdded.Unsubscribe(OnPlatformAdded);
-
-        return Result.Success();
-    }
-
-    private void OnTrackAdded(Id<Track> trackId)
-    {
-        _tracksToLoad.Enqueue(trackId);
-    }
-
-    private void OnPlatformAdded(Id<StationPlatform> platformId)
-    {
-        if (!stationPlatformService.TryGet(platformId, out var platform))
-        {
-            return;
-        }
-
-        _tracksToLoad.Enqueue(platform.TrackId);
     }
 
     public Result<RenderingId<LineStripData>> Register(
@@ -103,9 +72,9 @@ public class TrackRenderingService(ILoggingManager loggingManager,
             return new ResultProblem("Track '{0}' is not registered", trackId);
         }
 
-        if (data is { } newData)
+        if (data != null)
         {
-            if (lineStripEntityManager.Update(entry.RenderingId, newData).TryPickProblems(out var problems))
+            if (lineStripEntityManager.Update(entry.RenderingId, data).TryPickProblems(out var problems))
             {
                 return problems.Prepend("Failed to update line strip data");
             }
@@ -119,7 +88,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
     {
         if (!_trackInstanceIds.Remove(trackId, out var entry))
         {
-            return new ResultProblem("Track '{0}' is not registered", trackId);
+            return Result.Success();
         }
 
         if (lineStripEntityManager.Unregister(entry.RenderingId).TryPickProblems(out var problems))
@@ -128,58 +97,6 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         }
 
         return Result.Success();
-    }
-
-    protected override Result OnUpdate(TimeSpan deltaTime)
-    {
-        while (_tracksToLoad.TryDequeue(out var trackId))
-        {
-            if (_trackInstanceIds.Remove(trackId, out var existingEntry))
-            {
-                if (lineStripEntityManager.Unregister(existingEntry.RenderingId).TryPickProblems(out var unregisterProblems))
-                {
-                    return unregisterProblems.Prepend("Failed to unregister track");
-                }
-            }
-
-            if (Result.Chain(
-                    () => GetLineStripData(trackId),
-                    lineStripEntityManager.Register
-                ).TryPickProblems(out var problems, out var instanceId))
-            {
-                return problems.Prepend("Failed to load track");
-            }
-
-            _trackInstanceIds[trackId] = new TrackEntry(instanceId, null);
-        }
-
-        return Result.Success();
-    }
-
-    private Result<LineStripData> GetLineStripData(Id<Track> trackId)
-    {
-        if (trackSplineService.GetPoints(trackId, TrackVertexCount).TryPickProblems(out var problems, out var positions))
-        {
-            return problems.Prepend("Failed to get track points");
-        }
-
-        if (positions.Length != TrackVertexCount)
-        {
-            return new ResultProblem("Track length must be equal to vertex count");
-        }
-
-        var colors = new Vector3D<float>[TrackVertexCount];
-        var color = stationPlatformService.TryGetPlatform(trackId, out _)
-            ? new Vector3D<float>(1, 0, 0)
-            : new Vector3D<float>(1, 1, 1);
-
-        Array.Fill(colors, color);
-
-        return new LineStripData
-        {
-            Positions = positions,
-            Colors = colors,
-        };
     }
 
     protected override Result OnRender(TimeSpan deltaTime)
@@ -202,7 +119,6 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         _shader.World = Matrix4X4<float>.Identity;
 
-        // Apply blend state
         switch (_shader.BlendState.Blend)
         {
             case BlendMode.None:
@@ -220,7 +136,10 @@ public class TrackRenderingService(ILoggingManager loggingManager,
                 gl.Enable(GLEnum.Blend);
                 gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.One);
                 break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
+
         gl.DepthMask(_shader.BlendState.DepthWrite);
 
         var parameters = _shader.MakeParameters();
@@ -277,7 +196,10 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         gl.BindVertexArray(vao);
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
 
-        gl.DrawArrays(PrimitiveType.LineStrip, 0, TrackVertexCount);
+        gl.Disable(GLEnum.DepthTest);
+        gl.DrawArrays(PrimitiveType.LineStrip, 0, lineStripRegistration.VBO.VertexCount);
+        gl.Enable(GLEnum.DepthTest);
+
 
         gl.BindVertexArray(0);
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
