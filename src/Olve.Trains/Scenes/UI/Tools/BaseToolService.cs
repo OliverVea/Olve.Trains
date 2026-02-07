@@ -13,30 +13,11 @@ public abstract class BaseToolService<TToolState>(
 
     protected abstract Tool Tool { get; }
 
-    protected virtual TToolState OnToolSelected(TToolState toolState)
-    {
-        return toolState;
-    }
-
-    protected virtual TToolState OnToolDeselected(TToolState toolState)
-    {
-        return toolState;
-    }
-
-    protected virtual Result<Pass> OnSelectedInput(TimeSpan deltaTime)
-    {
-        return Pass.Pass;
-    }
-
-    protected virtual Result OnSelectedUpdate(TimeSpan deltaTime)
-    {
-        return Result.Success();
-    }
-
-    protected virtual Result OnSelectedRender(TimeSpan deltaTime)
-    {
-        return Result.Success();
-    }
+    protected virtual TToolState OnToolSelected(TToolState toolState) => toolState;
+    protected virtual TToolState OnToolDeselected(TToolState toolState) => toolState;
+    protected virtual Result<Pass> OnSelectedInput(TimeSpan deltaTime) => Pass.Pass;
+    protected virtual Result OnSelectedUpdate(TimeSpan deltaTime) => Result.Success();
+    protected virtual Result OnSelectedRender(TimeSpan deltaTime) => Result.Success();
 
     protected override Result OnLoad()
     {
@@ -44,7 +25,7 @@ public abstract class BaseToolService<TToolState>(
         {
             return problems;
         }
-        
+
         toolManagementService.ActiveToolChanged.Subscribe(OnActiveToolChanged);
         return Result.Success();
     }
@@ -55,7 +36,7 @@ public abstract class BaseToolService<TToolState>(
         {
             return problems;
         }
-        
+
         toolManagementService.ActiveToolChanged.Unsubscribe(OnActiveToolChanged);
         return Result.Success();
     }
@@ -75,7 +56,7 @@ public abstract class BaseToolService<TToolState>(
         {
             ToolState = OnToolSelected(ToolState);
         }
-        
+
         if (activeToolChangedMessage.CurrentTool == Tool.Id)
         {
             ToolState = OnToolDeselected(ToolState);

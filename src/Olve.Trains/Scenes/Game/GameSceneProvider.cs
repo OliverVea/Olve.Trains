@@ -29,6 +29,7 @@ namespace Olve.Trains.Scenes.Game;
 [Singleton(typeof(StationPlatformAreaService))]
 [Singleton(typeof(StationPlatformService))]
 [Singleton(typeof(StationPlatformTrackDeletionService))]
+[Singleton(typeof(StationNameGenerator))]
 [Singleton(typeof(StationService))]
 [Singleton(typeof(TerrainService))]
 [Singleton(typeof(TrackConnectionService))]

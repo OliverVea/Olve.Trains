@@ -9,16 +9,16 @@ public class StationPlatformService(ILoggingManager loggingManager) : BaseEntity
 {
     private readonly Dictionary<Id<Track>, Id<StationPlatform>> _platformsByTrack = new();
 
-    public Result<Id<StationPlatform>> AddPlatform(Id<Track> trackId)
+    public Result<Id<StationPlatform>> AddPlatform(Id<Track> trackId, Id<Station> stationId)
     {
         if (_platformsByTrack.ContainsKey(trackId))
         {
             return new ResultProblem("Track with id '{0}' already has a platform", trackId);
         }
-        
+
         var platformId = Id.New<StationPlatform>();
         _platformsByTrack.Add(trackId, platformId);
-        StationPlatform platform = new(platformId, trackId, Id.New<Station>());
+        StationPlatform platform = new(platformId, trackId, stationId);
 
         return Add(platform);
     }
