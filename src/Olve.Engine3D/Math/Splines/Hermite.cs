@@ -55,7 +55,7 @@ public abstract class Hermite<T> : IInterpolator<T>
 
         throw new InvalidOperationException("This should never happen.");
     }
-    
+
     public T Tangent(float time)
     {
         if (time < KeyFrames[0].Time || time > KeyFrames[^1].Time)

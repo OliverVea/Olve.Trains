@@ -7,146 +7,33 @@ namespace Olve.Trains.Scenes.Game.Tracks;
 
 public class TrackSplineService(ILoggingManager loggingManager, TrackService trackService) : BaseEntityAuxiliaryService<Track>(loggingManager, trackService)
 {
-    private static readonly ResultProblem TimeInvalidProblem = new("Time must be between {0} and {1}", StartTime, EndTime);
+    private readonly Dictionary<Id<Track>, UniformHermite<Vector3D<float>>> _trackSplines = [];
 
-    private const float StartTime = 0.0f;
-    private const float EndTime = 1.0f;
-
-    private readonly Dictionary<Id<Track>, UniformHermite<Vector3D<float>>> _trackSplines = new();
-
-    protected override void OnRemoved(Id<Track> id)
-    {
-        _trackSplines.Remove(id);
-    }
-
-    private Result<UniformHermite<Vector3D<float>>> GetOrAddSpline(Id<Track> trackId)
-    {
-        if (_trackSplines.TryGetValue(trackId, out var trackSpline))
-        {
-            return trackSpline;
-        }
-
-        if (CreateSpline(trackId).TryPickProblems(out var problems, out trackSpline))
-        {
-            return problems;
-        }
-
-        _trackSplines[trackId] = trackSpline;
-
-        return trackSpline;
-    }
+    protected override void OnRemoved(Id<Track> id) => _trackSplines.Remove(id);
 
     public Result<Vector3D<float>> GetPoint(Id<Track> trackId, float time)
-    {
-        if (time is > EndTime or < StartTime)
-        {
-            return TimeInvalidProblem;
-        }
-
-        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
-        {
-            return problems.Prepend("Failed to get spline");
-        }
-
-        return spline.Sample(time);
-    }
+        => WithTrackSpline(trackId, spline => spline.GetPoint(time));
 
     public Result<(Vector3D<float> Start, Vector3D<float> End)> GetEnds(Id<Track> trackId)
-    {
-
-        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
-        {
-            return problems.Prepend("Failed to get spline");
-        }
-
-        return (spline.Sample(StartTime), spline.Sample(EndTime));
-    }
+        => WithTrackSpline(trackId, spline => spline.GetEnds());
 
     public Result<float> GetLength(Id<Track> trackId)
-    {
-        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
-        {
-            return problems.Prepend("Failed to get spline");
-        }
-
-        return spline.Length;
-    }
+        => WithTrackSpline(trackId, spline => spline.Length);
 
     public Result<Vector3D<float>> GetTangent(Id<Track> trackId, float time)
-    {
-        if (time is > EndTime or < StartTime)
-        {
-            return TimeInvalidProblem;
-        }
-
-        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
-        {
-            return problems.Prepend("Failed to get spline");
-        }
-
-        return spline.Tangent(time);
-    }
+        => WithTrackSpline(trackId, spline => spline.GetTangent(time));
 
     public Result<Position3D> GetPosition(Id<Track> trackId, float time)
-    {
-        if (time is > EndTime or < StartTime)
-        {
-            return TimeInvalidProblem;
-        }
-
-        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
-        {
-            return problems.Prepend("Failed to get spline");
-        }
-
-        var position = spline.Sample(time);
-        var tangent = spline.Tangent(time);
-
-        if (tangent.Length <= 1e-6f)
-        {
-            return new ResultProblem("Tangent is zero-length at time {0}", time);
-        }
-
-        tangent = Vector3D.Normalize(tangent);
-
-        var up = Vector3D<float>.UnitY;
-        var dot = Vector3D.Dot(tangent, up);
-        if (MathF.Abs(dot) > 0.999f)
-        {
-            up = Vector3D<float>.UnitZ;
-        }
-
-        var world = Matrix4X4.CreateWorld(position, tangent, up);
-        if (!Matrix4X4.Decompose(world, out _, out var rotation, out _))
-        {
-            return new ResultProblem("Failed to compute rotation at time {0}", time);
-        }
-
-        return new Position3D(position, rotation);
-    }
+        => WithTrackSpline(trackId, spline => spline.GetPosition(time));
 
     public Result<Vector3D<float>[]> GetPoints(Id<Track> trackId, int count)
-    {
-        if (count < 1)
-        {
-            return new ResultProblem("Count must be greater than 0");
-        }
+        => WithTrackSpline(trackId, spline => spline.GetPoints(count));
 
-        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
-        {
-            return problems.Prepend("Failed to get spline");
-        }
+    public Result<Vector3D<float>> GetSecondDerivative(Id<Track> trackId, float time)
+        => WithTrackSpline(trackId, spline => spline.GetSecondDerivative(time));
 
-        var points = new Vector3D<float>[count];
-
-        for (var i = 0; i < count; i++)
-        {
-            var time = StartTime + (EndTime - StartTime) * i / (count - 1);
-            points[i] = spline.Sample(time);
-        }
-
-        return points;
-    }
+    public Result<float> GetCurvature(Id<Track> trackId, float time)
+        => WithTrackSpline(trackId, spline => spline.GetCurvature(time));
 
     public Result<bool> GetClosestTrackPoint(Vector3D<float> position, float maxDistance, out TrackPoint closestTrackPoint)
     {
@@ -183,61 +70,53 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
             return problems.Prepend("Failed to get spline");
         }
 
-        var deltaStart = target - spline.Sample(0);
-        var deltaEnd = target - spline.Sample(1);
-
-        var maxDistanceSquared = maxDistance * maxDistance;
-        var splineLengthSquared = spline.Length * spline.Length;
-
-        if (deltaStart.LengthSquared > maxDistanceSquared + splineLengthSquared &&
-            deltaEnd.LengthSquared > maxDistanceSquared + splineLengthSquared)
-        {
-            closestTrackPoint = default;
-            return false;
-        }
-
-        const int sampleCount = 100;
-        const float sampleDist = 1f / sampleCount;
-
-        var closestLengthSquared = float.MaxValue;
-        var closestT = -1f;
-
-        for (var i = 0; i < sampleCount; i++)
-        {
-            var t = i * sampleDist;
-            var point = spline.Sample(t);
-
-            var distanceSquared = (point - target).LengthSquared;
-
-            if (distanceSquared < closestLengthSquared)
-            {
-                closestT = t;
-                closestLengthSquared = distanceSquared;
-            }
-        }
-
-        if (closestT < 0)
+        if (!spline.TryGetClosestTime(target, maxDistance, out var closestT))
         {
             closestTrackPoint = default;
             return false;
         }
 
         closestTrackPoint = new TrackPoint(trackId, closestT);
+        var closestLengthSquared = (spline.Sample(closestT) - target).LengthSquared;
+        var maxDistanceSquared = maxDistance * maxDistance;
         return closestLengthSquared < maxDistanceSquared;
     }
 
-    public Vector3D<float>[] GetPoints(TrackEndpoint start, TrackEndpoint end, int count)
+    private Result<T> WithTrackSpline<T>(Id<Track> trackId, Func<UniformHermite<Vector3D<float>>, Result<T>> transform)
     {
-        var spline = CreateSpline(start, end);
-        var points = new Vector3D<float>[count];
-
-        for (var i = 0; i < count; i++)
+        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
         {
-            var time = StartTime + (EndTime - StartTime) * i / (count - 1);
-            points[i] = spline.Sample(time);
+            return problems.Prepend("Failed to get spline");
         }
 
-        return points;
+        return transform(spline);
+    }
+
+    private Result<T> WithTrackSpline<T>(Id<Track> trackId, Func<UniformHermite<Vector3D<float>>, T> transform)
+    {
+        if (GetOrAddSpline(trackId).TryPickProblems(out var problems, out var spline))
+        {
+            return problems.Prepend("Failed to get spline");
+        }
+
+        return transform(spline);
+    }
+
+    private Result<UniformHermite<Vector3D<float>>> GetOrAddSpline(Id<Track> trackId)
+    {
+        if (_trackSplines.TryGetValue(trackId, out var trackSpline))
+        {
+            return trackSpline;
+        }
+
+        if (CreateSpline(trackId).TryPickProblems(out var problems, out trackSpline))
+        {
+            return problems;
+        }
+
+        _trackSplines[trackId] = trackSpline;
+
+        return trackSpline;
     }
 
     private Result<UniformHermite<Vector3D<float>>> CreateSpline(Id<Track> trackId)
@@ -250,7 +129,7 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
         return CreateSpline(track.Start, track.End);
     }
 
-    private static UniformHermite<Vector3D<float>> CreateSpline(TrackEndpoint start, TrackEndpoint end)
+    public UniformHermite<Vector3D<float>> CreateSpline(TrackEndpoint start, TrackEndpoint end)
     {
         var tangentScale = (start.Point - end.Point).Length;
         var startTangent = -start.Tangent * tangentScale;
@@ -259,8 +138,8 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
         Hermite3.Knot startKnot = new(start.Point, startTangent, startTangent);
         Hermite3.Knot endKnot = new(end.Point, endTangent, endTangent);
 
-        KeyFrame<Hermite3.Knot> startKeyFrame = new(StartTime, startKnot);
-        KeyFrame<Hermite3.Knot> endKeyFrame = new(EndTime, endKnot);
+        KeyFrame<Hermite3.Knot> startKeyFrame = new(0, startKnot);
+        KeyFrame<Hermite3.Knot> endKeyFrame = new(1, endKnot);
 
         var hermite = new Hermite3([startKeyFrame, endKeyFrame]);
 

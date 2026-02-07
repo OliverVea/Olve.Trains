@@ -16,9 +16,16 @@ public class TrackLineStripDataService(TrackSplineService trackSplineService)
         return BuildLineStripData(positions);
     }
 
-    public LineStripData GetLineStripData(TrackEndpoint start, TrackEndpoint end)
+    public Result<LineStripData> GetLineStripData(TrackEndpoint start, TrackEndpoint end)
     {
-        var positions = trackSplineService.GetPoints(start, end, TrackVertexCount);
+        var spline = trackSplineService.CreateSpline(start, end);
+        if (spline
+            .GetPoints(TrackVertexCount)
+            .TryPickProblems(out var problems, out var positions))
+        {
+            return problems;
+        }
+
         return BuildLineStripData(positions);
     }
 
