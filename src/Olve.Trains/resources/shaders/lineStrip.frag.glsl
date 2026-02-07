@@ -3,7 +3,12 @@
 in vec3 vColor;
 out vec4 fragColor;
 
+uniform vec3 uColorOverride;
+uniform float uColorMix;
+uniform float uOpacity;
+
 void main()
 {
-    fragColor = vec4(vColor, 1.0);
+    vec3 color = mix(vColor, uColorOverride, uColorMix);
+    fragColor = vec4(color, uOpacity);
 }

@@ -4,6 +4,7 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
+using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Logging;
@@ -25,9 +26,18 @@ public class TrackRenderingService(ILoggingManager loggingManager,
 {
     private const int TrackVertexCount = 100;
 
-    private readonly Dictionary<Id<Track>, RenderingId<LineStripData>> _trackInstanceIds = new();
+    private readonly record struct TrackEntry(
+        RenderingId<LineStripData> RenderingId,
+        Shaders.LineStrip.EntityParameters? ShaderParameters);
+
+    private readonly Dictionary<Id<Track>, TrackEntry> _trackInstanceIds = new();
     private readonly Queue<Id<Track>> _tracksToLoad = new();
-    private readonly Shaders.LineStrip _shader = new();
+    private readonly Shaders.LineStrip _shader = new()
+    {
+        UOpacity = 1.0f,
+        UColorMix = 0.0f,
+        BlendState = RenderState.AlphaBlend,
+    };
 
     private RenderingId<ShaderData>? _shaderId;
 
@@ -69,13 +79,64 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         _tracksToLoad.Enqueue(platform.TrackId);
     }
 
+    public Result<RenderingId<LineStripData>> Register(
+        Id<Track> trackId,
+        LineStripData data,
+        Shaders.LineStrip.EntityParameters? shaderParameters = null)
+    {
+        if (lineStripEntityManager.Register(data).TryPickProblems(out var problems, out var renderingId))
+        {
+            return problems.Prepend("Failed to register line strip");
+        }
+
+        _trackInstanceIds[trackId] = new TrackEntry(renderingId, shaderParameters);
+        return renderingId;
+    }
+
+    public Result Update(
+        Id<Track> trackId,
+        LineStripData? data = null,
+        Shaders.LineStrip.EntityParameters? shaderParameters = null)
+    {
+        if (!_trackInstanceIds.TryGetValue(trackId, out var entry))
+        {
+            return new ResultProblem("Track '{0}' is not registered", trackId);
+        }
+
+        if (data is { } newData)
+        {
+            if (lineStripEntityManager.Update(entry.RenderingId, newData).TryPickProblems(out var problems))
+            {
+                return problems.Prepend("Failed to update line strip data");
+            }
+        }
+
+        _trackInstanceIds[trackId] = entry with { ShaderParameters = shaderParameters };
+        return Result.Success();
+    }
+
+    public Result Unregister(Id<Track> trackId)
+    {
+        if (!_trackInstanceIds.Remove(trackId, out var entry))
+        {
+            return new ResultProblem("Track '{0}' is not registered", trackId);
+        }
+
+        if (lineStripEntityManager.Unregister(entry.RenderingId).TryPickProblems(out var problems))
+        {
+            return problems.Prepend("Failed to unregister line strip");
+        }
+
+        return Result.Success();
+    }
+
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
         while (_tracksToLoad.TryDequeue(out var trackId))
         {
-            if (_trackInstanceIds.Remove(trackId, out var existingId))
+            if (_trackInstanceIds.Remove(trackId, out var existingEntry))
             {
-                if (lineStripEntityManager.Unregister(existingId).TryPickProblems(out var unregisterProblems))
+                if (lineStripEntityManager.Unregister(existingEntry.RenderingId).TryPickProblems(out var unregisterProblems))
                 {
                     return unregisterProblems.Prepend("Failed to unregister track");
                 }
@@ -89,7 +150,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
                 return problems.Prepend("Failed to load track");
             }
 
-            _trackInstanceIds[trackId] = instanceId;
+            _trackInstanceIds[trackId] = new TrackEntry(instanceId, null);
         }
 
         return Result.Success();
@@ -141,6 +202,27 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         _shader.World = Matrix4X4<float>.Identity;
 
+        // Apply blend state
+        switch (_shader.BlendState.Blend)
+        {
+            case BlendMode.None:
+                gl.Disable(GLEnum.Blend);
+                break;
+            case BlendMode.Alpha:
+                gl.Enable(GLEnum.Blend);
+                gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.OneMinusSrcAlpha);
+                break;
+            case BlendMode.Premultiplied:
+                gl.Enable(GLEnum.Blend);
+                gl.BlendFunc(GLEnum.One, GLEnum.OneMinusSrcAlpha);
+                break;
+            case BlendMode.Additive:
+                gl.Enable(GLEnum.Blend);
+                gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.One);
+                break;
+        }
+        gl.DepthMask(_shader.BlendState.DepthWrite);
+
         var parameters = _shader.MakeParameters();
 
         if (openGLShaderManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
@@ -149,13 +231,35 @@ public class TrackRenderingService(ILoggingManager loggingManager,
             return problems.Prepend("Failed to load shader into OpenGL");
         }
 
-        foreach (var trackRenderingId in _trackInstanceIds.Values)
+        foreach (var trackEntry in _trackInstanceIds.Values)
         {
-            if (DrawTrack(gl, trackRenderingId).TryPickProblems(out problems))
+            if (trackEntry.ShaderParameters is { } entityParams)
+            {
+                if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, entityParams.ToRenderingParameters())
+                    .TryPickProblems(out problems))
+                {
+                    return problems.Prepend("Failed to apply entity shader parameters");
+                }
+            }
+
+            if (DrawTrack(gl, trackEntry.RenderingId).TryPickProblems(out problems))
             {
                 return problems.Prepend("Failed to draw track");
             }
+
+            if (trackEntry.ShaderParameters is not null)
+            {
+                if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, parameters)
+                    .TryPickProblems(out problems))
+                {
+                    return problems.Prepend("Failed to restore shader-level parameters");
+                }
+            }
         }
+
+        // Restore default blend state
+        gl.DepthMask(true);
+        gl.Disable(GLEnum.Blend);
 
         return Result.Success();
     }
