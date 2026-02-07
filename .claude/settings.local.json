@@ -7,7 +7,8 @@
       "Bash(npx @fsmiamoto/reagent:*)",
       "Bash(pushd:*)",
       "Bash(popd)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []

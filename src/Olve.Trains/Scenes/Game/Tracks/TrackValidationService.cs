@@ -1,10 +1,21 @@
-﻿namespace Olve.Trains.Scenes.Game.Tracks;
+﻿using Olve.Engine3D.Utilities;
+
+namespace Olve.Trains.Scenes.Game.Tracks;
 
 public class TrackValidationService(TrackSplineService trackSplineService)
 {
-    public bool IsValid(TrackEndpoint from, TrackEndpoint to)
+    public const int SamplingPoints = 25;
+    public const float MaxCurvature = 1f;
+
+    public bool IsValid(TrackEndpoint from, TrackEndpoint to) =>
+        !trackSplineService
+            .CreateSpline(from, to)
+            .GetCurvatures(SamplingPoints)
+            .MapValue(x => !x.Any(IsInvalidCurvature))
+            .TryPickProblems(out _, out var value) && value;
+
+    private static bool IsInvalidCurvature(float curvature)
     {
-        var spline = trackSplineService.CreateSpline(from, to);
-        return true;
+        return float.Abs(curvature) > MaxCurvature;
     }
 }

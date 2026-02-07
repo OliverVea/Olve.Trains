@@ -1,5 +1,6 @@
 ﻿using Olve.Engine3D.Math;
 using Olve.Engine3D.Math.Splines;
+using Olve.Engine3D.Utilities;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 
@@ -70,22 +71,11 @@ public static class HermiteSplineExtensions
             return new Position3D(position, rotation);
         }
 
-        public Result<Vector3D<float>[]> GetPoints(int count)
+        public Result<IEnumerable<Vector3D<float>>> GetPoints(int count)
         {
-            if (count < 1)
-            {
-                return new ResultProblem("Count must be greater than 0");
-            }
-
-            var points = new Vector3D<float>[count];
-
-            for (var i = 0; i < count; i++)
-            {
-                var time = StartTime + (EndTime - StartTime) * i / (count - 1);
-                points[i] = spline.Sample(time);
-            }
-
-            return points;
+            return GetTimes(count)
+                .MapValue(x => x
+                    .Select(spline.Sample));
         }
 
         public bool TryGetClosestTime(Vector3D<float> target,
@@ -131,6 +121,12 @@ public static class HermiteSplineExtensions
             return closestLengthSquared < maxDistanceSquared;
         }
 
+        public Result<IEnumerable<float>> GetCurvatures(int count)
+        {
+            return GetTimes(count)
+                .MapValue(x => x
+                    .Select(spline.GetCurvatureSafe));
+        }
 
         public Result<float> GetCurvature(float time)
         {
@@ -139,14 +135,18 @@ public static class HermiteSplineExtensions
                 return TimeInvalidProblem;
             }
 
+            return spline.GetCurvatureSafe(time);
+        }
+
+        private float GetCurvatureSafe(float time)
+        {
             var d1 = spline.Tangent(time);
             var d2 = spline.GetSecondDerivative(time);
 
             var speed = d1.Length;
             if (speed <= 1e-6f)
             {
-                return new ResultProblem(
-                    "Zero tangent at time {0}", time);
+                return float.PositiveInfinity;
             }
 
             var curvature =
@@ -170,4 +170,15 @@ public static class HermiteSplineExtensions
         }
     }
 
+    public static Result<IEnumerable<float>> GetTimes(int count)
+    {
+        if (count < 1)
+        {
+            return new ResultProblem("Count must be greater than 0");
+        }
+
+        return Result.Success(Enumerable
+            .Range(0, count)
+            .Select(i => StartTime + (EndTime - StartTime) * i / (count - 1)));
+    }
 }

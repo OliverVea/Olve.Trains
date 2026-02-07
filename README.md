@@ -10,10 +10,10 @@
 
 (updated 07/02/2026 [mm/dd/yyyy])
 
-- Track creation epic:
+- [x] Track creation epic:
   - [x] Allow ghost preview during track creation
-  - [ ] Disallow tracks with collisions with geometry, other tracks, and extreme curvature
-  - Display ghost previews of disallowed tracks in red
+  - [x] Disallow tracks with collisions with geometry, other tracks, and extreme curvature
+  - [x] Display ghost previews of disallowed tracks in red
 - Configuration epic:
   - [ ] Create engine-side system for managing configuration
     - all kinds of configuration: graphics, interface, audio, game options, bindings

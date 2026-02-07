@@ -26,7 +26,7 @@ public class TrackSplineService(ILoggingManager loggingManager, TrackService tra
     public Result<Position3D> GetPosition(Id<Track> trackId, float time)
         => WithTrackSpline(trackId, spline => spline.GetPosition(time));
 
-    public Result<Vector3D<float>[]> GetPoints(Id<Track> trackId, int count)
+    public Result<IEnumerable<Vector3D<float>>> GetPoints(Id<Track> trackId, int count)
         => WithTrackSpline(trackId, spline => spline.GetPoints(count));
 
     public Result<Vector3D<float>> GetSecondDerivative(Id<Track> trackId, float time)
