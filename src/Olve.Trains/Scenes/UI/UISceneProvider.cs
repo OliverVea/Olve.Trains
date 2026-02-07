@@ -11,6 +11,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game;
+using Olve.Trains.Scenes.Game.Stations;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Game.Vehicles;
 using Olve.Trains.Scenes.Rendering;
@@ -23,9 +24,9 @@ namespace Olve.Trains.Scenes.UI;
 
 [ServiceProvider]
 [Singleton(typeof(ToolManagementService))]
-[Singleton(typeof(ToolKeyboardService))]
 [Singleton(typeof(TrackPlacingToolService))]
 [Singleton(typeof(TrainPlacingToolService))]
+[Singleton(typeof(StationPlacingToolService))]
 [Singleton(typeof(TrackArrowIndicatorService))]
 [Singleton(typeof(ToolBarService))]
 [Singleton(typeof(GuiLayoutUpdateService))]
@@ -57,6 +58,9 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(TrackSplineService), Factory = nameof(GetTrackSplineService))]
 [Transient(typeof(VehicleService), Factory = nameof(GetVehicleService))]
 [Transient(typeof(VehiclePositionService), Factory = nameof(GetVehiclePositionService))]
+[Transient(typeof(StationService), Factory = nameof(GetStationService))]
+[Transient(typeof(StationPlatformService), Factory = nameof(GetStationPlatformService))]
+[Transient(typeof(StationNameGenerator), Factory = nameof(GetStationNameGenerator))]
 [Transient(typeof(AssetLoader), Factory = nameof(GetAssetLoader))]
 [Transient(typeof(RenderingServiceHelper), Factory = nameof(GetRenderingServiceHelper))]
 [Transient(typeof(DayTimeManager), Factory = nameof(GetDayTimeManager))]
@@ -70,6 +74,9 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private TrackPlacingService GetTrackPlacingService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<TrackPlacingService>();
     private VehicleService GetVehicleService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<VehicleService>();
     private VehiclePositionService GetVehiclePositionService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<VehiclePositionService>();
+    private StationService GetStationService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<StationService>();
+    private StationPlatformService GetStationPlatformService() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<StationPlatformService>();
+    private StationNameGenerator GetStationNameGenerator() => gameProvider.GetRequiredService<GameSceneProvider>().GetRequiredService<StationNameGenerator>();
     private Provider<IWindow> GetWindowProvider() => gameProvider.GetRequiredService<Provider<IWindow>>();
     private ScreenResizedEvent GetScreenResizedEvent() => gameProvider.GetRequiredService<ScreenResizedEvent>();
     private MouseManager GetMouseManager() => gameProvider.GetRequiredService<MouseManager>();
@@ -91,7 +98,7 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
         provider.GetRequiredService<TrackArrowIndicatorService>(),
         provider.GetRequiredService<TrackPlacingToolService>(),
         provider.GetRequiredService<TrainPlacingToolService>(),
-        provider.GetRequiredService<ToolKeyboardService>(),
+        provider.GetRequiredService<StationPlacingToolService>(),
         provider.GetRequiredService<ToolBarService>(),
         provider.GetRequiredService<InfoBarService>(),
         provider.GetRequiredService<GuiLayoutContextUpdater>(),

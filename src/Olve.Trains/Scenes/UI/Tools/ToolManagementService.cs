@@ -1,9 +1,5 @@
-﻿using Olve.Engine3D.Input;
-using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Systems;
-using Olve.Engine3D.Utilities;
+﻿using Olve.Engine3D.Systems;
 using Olve.Logging;
-using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.UI.Tools;
 
@@ -26,7 +22,7 @@ public sealed class ToolManagementService(ILoggingManager loggingManager)
         {
             loggingManager.Log(LogLevel.Warning, $"Failed to add tool '{tool} to {_tools.Count} tools'");
         }
-        
+
         return added
             ? Result.Success()
             :  new ResultProblem("Tool with id '{0}' already exists.", tool.Id);
@@ -41,7 +37,7 @@ public sealed class ToolManagementService(ILoggingManager loggingManager)
                 $"Tool with id '{toolId}' could not be removed as no tool with that id was found among {_tools.Count} tools.";
             loggingManager.Log(LogLevel.Warning, message);
         }
-        
+
         return removed ? DeletionResult.Success() : DeletionResult.NotFound();
     }
 
@@ -50,48 +46,19 @@ public sealed class ToolManagementService(ILoggingManager loggingManager)
         Id<Tool>? newToolId = ActiveToolId == toolId ? null : toolId;
         return SetActiveTool(newToolId);
     }
-    
+
     public Result SetActiveTool(Id<Tool>? toolId)
     {
         var previousActiveTool = ActiveToolId;
-        
+
         ActiveToolId = toolId;
-        
+
         if (toolId != previousActiveTool)
         {
             loggingManager.Log(LogLevel.Debug, $"Changed tool: {previousActiveTool} -> {toolId}");
             ActiveToolChanged.Invoke(new ActiveToolChangedMessage(previousActiveTool, toolId));
         }
-        
+
         return Result.Success();
-    }
-}
-
-public class ToolKeyboardService(ILoggingManager loggingManager, ToolManagementService toolManagementService, KeyboardManager keyboardManager) : SceneService(loggingManager)
-{
-    protected override Result<Pass> OnInput(TimeSpan deltaTime)
-    {
-        if (keyboardManager.State.IsKeyPressed(Key.Number1))
-        {
-            if (toolManagementService.ToggleActiveTool(TrackPlacingToolService.ToolId).TryPickProblems(out var problems))
-            {
-                return problems;
-            }
-        }
-        
-        if (keyboardManager.State.IsKeyPressed(Key.Number2))
-        {
-            if (toolManagementService.ToggleActiveTool(TrainPlacingToolService.ToolId).TryPickProblems(out var problems))
-            {
-                return problems;
-            }
-        }
-
-        if (keyboardManager.State.IsKeyPressed(Key.Escape) && toolManagementService.ActiveToolId != null)
-        {
-            return toolManagementService.SetActiveTool(null).WithValueOnSuccess(Pass.Block);
-        }
-
-        return Pass.Pass;
     }
 }

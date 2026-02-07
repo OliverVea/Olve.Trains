@@ -41,6 +41,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         _shaderId = shaderId;
 
         trackService.OnAdded.Subscribe(OnTrackAdded);
+        stationPlatformService.OnAdded.Subscribe(OnPlatformAdded);
 
         return Result.Success();
     }
@@ -48,6 +49,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
     protected override Result OnUnload()
     {
         trackService.OnAdded.Unsubscribe(OnTrackAdded);
+        stationPlatformService.OnAdded.Unsubscribe(OnPlatformAdded);
 
         return Result.Success();
     }
@@ -57,10 +59,28 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         _tracksToLoad.Enqueue(trackId);
     }
 
+    private void OnPlatformAdded(Id<StationPlatform> platformId)
+    {
+        if (!stationPlatformService.TryGet(platformId, out var platform))
+        {
+            return;
+        }
+
+        _tracksToLoad.Enqueue(platform.TrackId);
+    }
+
     protected override Result OnUpdate(TimeSpan deltaTime)
     {
         while (_tracksToLoad.TryDequeue(out var trackId))
         {
+            if (_trackInstanceIds.Remove(trackId, out var existingId))
+            {
+                if (lineStripEntityManager.Unregister(existingId).TryPickProblems(out var unregisterProblems))
+                {
+                    return unregisterProblems.Prepend("Failed to unregister track");
+                }
+            }
+
             if (Result.Chain(
                     () => GetLineStripData(trackId),
                     lineStripEntityManager.Register

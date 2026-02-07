@@ -23,6 +23,12 @@ public class ToolBarService(
 
     private Id<GuiElementRegistrations> _registrationId;
 
+    private readonly (Box, Id<Tool>)[] _toolElements = [
+        (ToolBar.PlaceTrack, TrackPlacingToolService.ToolId),
+        (ToolBar.PlaceStation, StationPlacingToolService.ToolId),
+        (ToolBar.PlaceTrain, TrainPlacingToolService.ToolId)
+    ];
+
     protected override Result OnLoad()
     {
         if (guiAnchorService.RegisterAnchor(AnchorPosition.BottomCenter, GrowthDirection.Up)
@@ -41,14 +47,12 @@ public class ToolBarService(
 
     private void OnGuiElementActivated(GuiActivationService.GuiElementActivatedMessage message)
     {
-        if (NodeIdMatches(ToolBar.PlaceTrack, message.NodeId))
+        foreach (var (box, toolId) in _toolElements)
         {
-            toolManagementService.ToggleActiveTool(TrackPlacingToolService.ToolId);
-        }
-
-        if (NodeIdMatches(ToolBar.PlaceTrain, message.NodeId))
-        {
-            toolManagementService.ToggleActiveTool(TrainPlacingToolService.ToolId);
+            if (NodeIdMatches(box, message.NodeId))
+            {
+                toolManagementService.ToggleActiveTool(toolId);
+            }
         }
     }
 
@@ -85,10 +89,15 @@ public class ToolBarService(
         return null;
     }
 
-    private static Box? GetToolElement(Id<Tool>? toolId)
+    private Box? GetToolElement(Id<Tool>? toolId)
     {
-        if (toolId == TrackPlacingToolService.ToolId) return ToolBar.PlaceTrack;
-        if (toolId == TrainPlacingToolService.ToolId) return ToolBar.PlaceTrain;
+        foreach (var (box, boxToolId) in _toolElements)
+        {
+            if (boxToolId == toolId)
+            {
+                return box;
+            }
+        }
 
         return null;
     }
