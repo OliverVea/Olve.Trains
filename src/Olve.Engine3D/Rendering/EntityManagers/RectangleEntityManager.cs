@@ -21,6 +21,11 @@ public class RectangleEntityManager(OpenGLRectangleManager openGLRectangleManage
         return new Registration(vao, vbo);
     }
 
+    protected override Result UpdateInOpenGL(Registration registration, RectangleData entity)
+    {
+        throw new NotSupportedException("Updating rectangle data is not yet supported");
+    }
+
     protected override Result DeregisterFromOpenGL(Registration registration)
     {
         OpenGLRectangleManager.Registration openGLRegistration = new(registration.VAO, registration.VBO);

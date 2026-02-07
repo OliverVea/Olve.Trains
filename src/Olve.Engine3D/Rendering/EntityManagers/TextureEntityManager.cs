@@ -18,6 +18,11 @@ public class TextureEntityManager(OpenGLTextureManager openGLTextureManager) : R
         return new Registration(openGlTexture);
     }
 
+    protected override Result UpdateInOpenGL(Registration registration, Texture entity)
+    {
+        throw new NotSupportedException("Updating texture data is not yet supported");
+    }
+
     protected override Result DeregisterFromOpenGL(Registration registration)
     {
         if (openGLTextureManager.Unregister(registration.Texture).TryPickProblems(out var problems))

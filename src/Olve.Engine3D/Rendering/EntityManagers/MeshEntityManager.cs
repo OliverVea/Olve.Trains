@@ -20,6 +20,11 @@ public class MeshEntityManager(OpenGLMeshManager openGLMeshManager) : RenderingE
         return new Registration(vao, vbo, ebo);
     }
 
+    protected override Result UpdateInOpenGL(Registration registration, MeshData entity)
+    {
+        throw new NotSupportedException("Updating mesh data is not yet supported");
+    }
+
     protected override Result DeregisterFromOpenGL(Registration registration)
     {
         OpenGLMeshManager.Registration openGLRegistration = new(registration.VAO, registration.VBO, registration.EBO);

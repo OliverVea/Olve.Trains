@@ -21,6 +21,18 @@ public class LineStripEntityManager(OpenGLLineStripManager openGLLineStripManage
         return new Registration(vao, vbo);
     }
 
+    protected override Result UpdateInOpenGL(Registration registration, LineStripData entity)
+    {
+        OpenGLLineStripManager.Registration openGLRegistration = new(registration.VAO, registration.VBO);
+
+        if (openGLLineStripManager.Update(openGLRegistration, entity).TryPickProblems(out var problems))
+        {
+            return problems.Prepend("Failed updating line strip in OpenGL");
+        }
+
+        return Result.Success();
+    }
+
     protected override Result DeregisterFromOpenGL(Registration registration)
     {
         OpenGLLineStripManager.Registration openGLRegistration = new(registration.VAO, registration.VBO);

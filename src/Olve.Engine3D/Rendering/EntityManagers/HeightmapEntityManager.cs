@@ -20,6 +20,11 @@ public class HeightmapEntityManager(OpenGLHeightmapManager openGLHeightmapManage
         return new Registration(vao, vbo, ebo, texture);
     }
 
+    protected override Result UpdateInOpenGL(Registration registration, HeightmapData entity)
+    {
+        throw new NotSupportedException("Updating heightmap data is not yet supported");
+    }
+
     protected override Result DeregisterFromOpenGL(Registration registration)
     {
         OpenGLHeightmapManager.Registration openGLRegistration = new(registration.VAO, registration.VBO, registration.EBO, registration.Texture);
