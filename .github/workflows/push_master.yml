@@ -34,6 +34,10 @@ jobs:
           S3__Bucket: ${{ secrets.S3_BUCKET }}
           S3__Key: ${{ secrets.S3_KEY }}
           S3__Secret: ${{ secrets.S3_SECRET }}
+          Build__OutputDirectory: ${{ github.workspace }}/src/Olve.Trains/assets
+          Build__BuildDirectory: ${{ github.workspace }}/src/Olve.Trains.AssetPipeline/temp
+          Shader__ShadersDirectory: ${{ github.workspace }}/src/Olve.Trains/resources/shaders
+          Layout__LayoutsDirectory: ${{ github.workspace }}/src/Olve.Trains/resources/layouts
         run: dotnet run --project src/Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj
 
       - name: Upload assets to artifact storage
