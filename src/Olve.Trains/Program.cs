@@ -28,7 +28,6 @@ public static class Program
             SceneIds.GameScene,
             SceneIds.RenderingScene,
             SceneIds.UIScene,
-            SceneIds.ConsoleScene,
         ]);
     }
 

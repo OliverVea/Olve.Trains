@@ -9,7 +9,6 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 using Olve.Logging;
-using Olve.Trains.Scenes.Console;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Rendering;
 using Olve.Trains.Scenes.UI;
@@ -28,9 +27,6 @@ namespace Olve.Trains;
 [Singleton(typeof(CommandHandlerServiceCollection))]
 [Singleton(typeof(GameSceneProvider))]
 [Singleton(typeof(UISceneProvider))]
-#if DEBUG
-[Singleton(typeof(ConsoleSceneProvider))]
-#endif
 [Singleton(typeof(RenderingSceneProvider))]
 [Singleton(typeof(IEnumerable<IScene>), Factory = nameof(GetAllScenes))]
 [Singleton(typeof(GameProvider), Factory = nameof(GetGameProvider))]
@@ -52,13 +48,11 @@ public partial class GameProvider
     {
         var loggingManager = provider.GetRequiredService<ILoggingManager>();
 
-        return [
+        return
+        [
             new Scene<GameSceneProvider>(loggingManager, provider.GetRequiredService<GameSceneProvider>(), SceneIds.GameScene),
             new Scene<RenderingSceneProvider>(loggingManager, provider.GetRequiredService<RenderingSceneProvider>(), SceneIds.RenderingScene, 1),
             new Scene<UISceneProvider>(loggingManager, provider.GetRequiredService<UISceneProvider>(), SceneIds.UIScene, 2),
-#if DEBUG
-            new Scene<ConsoleSceneProvider>(loggingManager, provider.GetRequiredService<ConsoleSceneProvider>(), SceneIds.ConsoleScene, 3)
-#endif
         ];
     }
 }

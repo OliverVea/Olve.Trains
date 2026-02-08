@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using Olve.Engine3D;
-using Olve.Engine3D.DebugServer.Commands;
+using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Utilities;
 using Olve.Logging;

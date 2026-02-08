@@ -1,4 +1,4 @@
-﻿using Olve.Engine3D.DebugServer.Commands;
+﻿using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.Vehicles;

@@ -1,4 +1,4 @@
-using Olve.Engine3D.DebugServer.Commands;
+using Olve.Engine3D.Commands;
 
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
