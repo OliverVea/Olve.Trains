@@ -43,4 +43,16 @@ public static class UniformTypeExtensions
             _ => ""
         };
     }
+
+    public static int GetComponentCount(this UniformType uniformType)
+    {
+        return uniformType switch
+        {
+            UniformType.Float => 1,
+            UniformType.Vector2 => 2,
+            UniformType.Vector3 => 3,
+            UniformType.Vector4 => 4,
+            _ => throw new ArgumentException($"Unsupported vertex attribute type: {uniformType}")
+        };
+    }
 }

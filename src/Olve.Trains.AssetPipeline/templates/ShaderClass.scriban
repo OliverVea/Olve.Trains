@@ -10,6 +10,8 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Utilities.Ids;
 using Silk.NET.Maths;
+using GL = Silk.NET.OpenGL.GL;
+using VertexAttribPointerType = Silk.NET.OpenGL.VertexAttribPointerType;
 
 // ReSharper disable once CheckNamespace
 namespace {{ Namespace }};
@@ -70,5 +72,30 @@ public static partial class Shaders
 {{ end }}
             return new(parameters);
         }
-    }
+{{ if VertexAttributes.size > 0 }}
+        public static class VertexLayout
+        {
+{{ if !HasInstancedAttributes }}
+            public const int VertexFloats = {{ VertexStride }};
+            public const uint VertexBytes = {{ VertexStrideBytes }};
+            public const bool IsInstanced = false;
+
+            public static void ConfigureAttributes(GL gl)
+            {
+{{ for attr in VertexAttributes }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, VertexBytes, (nint){{ attr.ByteOffset }});
+                gl.EnableVertexAttribArray({{ attr.Location }});
+{{ end }}            }
+{{ else }}
+            public const int InstanceFloats = {{ InstanceStride }};
+            public const uint InstanceBytes = {{ InstanceStrideBytes }};
+            public const bool IsInstanced = true;
+
+            public static void ConfigureInstanceAttributes(GL gl)
+            {
+{{ for attr in VertexAttributes }}{{ if attr.IsInstanced }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, InstanceBytes, (nint){{ attr.ByteOffset }});
+                gl.EnableVertexAttribArray({{ attr.Location }});
+                gl.VertexAttribDivisor({{ attr.Location }}, 1);
+{{ end }}{{ end }}            }
+{{ end }}        }
+{{ end }}    }
 }

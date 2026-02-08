@@ -12,6 +12,8 @@ namespace Olve.Engine3D.Rendering;
 [Singleton(typeof(LineStripEntityManager))]
 [Singleton(typeof(MeshEntityManager))]
 [Singleton(typeof(OpenGLHeightmapManager))]
+[Singleton(typeof(OpenGLBufferManager))]
+[Singleton(typeof(OpenGLInstancedBufferManager))]
 [Singleton(typeof(OpenGLLineStripManager))]
 [Singleton(typeof(OpenGLMeshManager))]
 [Singleton(typeof(OpenGLModelRenderingManager))]

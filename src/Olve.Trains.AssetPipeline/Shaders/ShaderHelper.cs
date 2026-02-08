@@ -65,6 +65,95 @@ public static class ShaderHelper
         return uniforms;
     }
 
+    public static Result<IReadOnlyList<VertexAttribute>> GetVertexAttributes(string shaderSource)
+    {
+        List<VertexAttribute> attributes = [];
+        var lines = shaderSource.Split('\n');
+
+        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+        {
+            var line = lines[lineIndex].Trim();
+
+            // Match: layout(location = N) in <type> <name>;
+            // Also handles layout (location=N) with varying whitespace
+            var layoutIndex = line.IndexOf("layout", StringComparison.Ordinal);
+            if (layoutIndex == -1) continue;
+
+            var inIndex = line.IndexOf(" in ", StringComparison.Ordinal);
+            if (inIndex == -1) continue;
+
+            // Extract location number
+            var locationIndex = line.IndexOf("location", StringComparison.Ordinal);
+            if (locationIndex == -1) continue;
+
+            var equalsIndex = line.IndexOf('=', locationIndex);
+            if (equalsIndex == -1) continue;
+
+            var closeParenIndex = line.IndexOf(')', equalsIndex);
+            if (closeParenIndex == -1) continue;
+
+            var locationString = line[(equalsIndex + 1)..closeParenIndex].Trim();
+            if (!int.TryParse(locationString, out var location))
+            {
+                return new ResultProblem(
+                    "Could not parse location number '{0}' at line {1}",
+                    locationString, lineIndex + 1);
+            }
+
+            // Extract type and name after " in "
+            var afterIn = line[(inIndex + 4)..].TrimStart();
+            var spaceIndex = afterIn.IndexOf(' ');
+            if (spaceIndex == -1)
+            {
+                return new ResultProblem(
+                    "Could not find type and name after 'in' at line {0}",
+                    lineIndex + 1);
+            }
+
+            var typeString = afterIn[..spaceIndex];
+            if (!TryParseUniformType(typeString, out var type))
+            {
+                return new ResultProblem(
+                    "Could not parse vertex attribute type '{0}' at line {1}",
+                    typeString, lineIndex + 1);
+            }
+
+            var nameStart = afterIn[(spaceIndex + 1)..];
+            var nameEnd = nameStart.IndexOfAny([';', ' ']);
+            var name = nameEnd == -1 ? nameStart : nameStart[..nameEnd];
+
+            // Check for // @instanced annotation on previous line or same line
+            var isInstanced = false;
+            if (lineIndex > 0)
+            {
+                var prevLine = lines[lineIndex - 1].Trim();
+                if (prevLine.Contains("@instanced", StringComparison.OrdinalIgnoreCase))
+                {
+                    isInstanced = true;
+                }
+            }
+
+            var commentIndex = line.IndexOf("//", StringComparison.Ordinal);
+            if (commentIndex != -1 && line[commentIndex..].Contains("@instanced", StringComparison.OrdinalIgnoreCase))
+            {
+                isInstanced = true;
+            }
+
+            attributes.Add(new VertexAttribute
+            {
+                Location = location,
+                Name = name,
+                Type = type.Value,
+                IsInstanced = isInstanced,
+            });
+        }
+
+        // Sort by location to ensure consistent ordering
+        attributes.Sort((a, b) => a.Location.CompareTo(b.Location));
+
+        return attributes;
+    }
+
     public static bool TryParseUniformType(string uniformTypeString, [NotNullWhen(true)] out UniformType? uniformType)
     {
         uniformType = uniformTypeString switch

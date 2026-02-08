@@ -3,12 +3,17 @@
 // Per-vertex from unit quad [0..1] (two triangles)
 layout(location = 0) in vec2 aUnit;
 
-// Per-instance attributes
+// @instanced
 layout(location = 1) in vec2 iPosPx;
+// @instanced
 layout(location = 2) in vec2 iSizePx;
+// @instanced
 layout(location = 3) in vec4 iTint;
+// @instanced
 layout(location = 4) in vec4 iBorderWidthPx;  // left, top, right, bottom
+// @instanced
 layout(location = 5) in vec4 iBorderColor;    // RGBA
+// @instanced
 layout(location = 6) in vec4 iBorderRadiusPx; // topLeft, topRight, bottomRight, bottomLeft
 
 out VS_OUT {

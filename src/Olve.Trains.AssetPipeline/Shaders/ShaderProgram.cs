@@ -12,4 +12,5 @@ public class ShaderProgram
     public Shader? GeometryShader { get; set; }
 
     public required IReadOnlyList<Uniform> Uniforms { get; set; }
+    public IReadOnlyList<VertexAttribute> VertexAttributes { get; set; } = [];
 }

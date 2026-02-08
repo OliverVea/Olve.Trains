@@ -1,5 +1,4 @@
 using Olve.Engine3D.Rendering.Entities;
-using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
@@ -8,34 +7,16 @@ namespace Olve.Engine3D.Rendering.OpenGL;
 /// OpenGL manager for glyph rendering with per-instance UV coordinates.
 /// Unlike OpenGLRectangleManager, this sends UvMin/UvMax to the shader.
 /// </summary>
-public class OpenGLGlyphManager(
-    Provider<GL> glProvider,
-    OpenGLQuadRenderingManager quadRenderingManager)
-    : IOpenGLEntityManager<RectangleData, OpenGLGlyphManager.Registration>
+public class OpenGLGlyphManager(OpenGLInstancedBufferManager instancedBufferManager)
+    : IOpenGLEntityManager<RectangleData, OpenGLInstancedBufferManager.Registration>
 {
     // pos2, size2, tint4, uvMin2, uvMax2 = 12 floats
     private const int InstFields = 2 + 2 + 4 + 2 + 2;
 
-    public readonly record struct Registration(VAO VAO, VBO InstanceVBO);
-
-    public Result<Registration> Register(RectangleData entityData)
+    public Result<OpenGLInstancedBufferManager.Registration> Register(RectangleData entityData)
     {
         if (entityData.Validate().TryPickProblems(out var problems))
             return problems;
-
-        var gl = glProvider.Value;
-
-        var vaoHandle = gl.CreateVertexArray();
-        gl.BindVertexArray(vaoHandle);
-
-        if (quadRenderingManager.AttachUnitQuad(new VAO(vaoHandle)).TryPickProblems(out problems))
-        {
-            gl.BindVertexArray(0);
-            return problems.Prepend("Failed to attach unit quad to glyph VAO");
-        }
-
-        var instVboHandle = gl.CreateBuffer();
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, instVboHandle);
 
         Span<float> instance = stackalloc float[InstFields];
         int i = 0;
@@ -46,39 +27,35 @@ public class OpenGLGlyphManager(
         instance[i++] = entityData.UvMin.X;      instance[i++] = entityData.UvMin.Y;        // uvMin2
         instance[i++] = entityData.UvMax.X;      instance[i++] = entityData.UvMax.Y;        // uvMax2
 
-        gl.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)instance, BufferUsageARB.DynamicDraw);
-
-        {
-            uint stride = InstFields * sizeof(float);
-            nint offsetBytes = 0;
-
-            void Attr(uint index, int comps)
-            {
-                gl.VertexAttribPointer(index, comps, VertexAttribPointerType.Float, false, stride, offsetBytes);
-                gl.EnableVertexAttribArray(index);
-                gl.VertexAttribDivisor(index, 1); // mark as per-instance
-                offsetBytes += comps * sizeof(float);
-            }
-
-            Attr(1, 2); // iPosPx
-            Attr(2, 2); // iSizePx
-            Attr(3, 4); // iTint
-            Attr(4, 2); // iUvMin
-            Attr(5, 2); // iUvMax
-        }
-
-        // Unbind
-        gl.BindVertexArray(0);
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
-
-        return new Registration(new VAO(vaoHandle), new VBO(instVboHandle, 6));
+        return instancedBufferManager.CreateInstanceBuffer(
+            instance,
+            ConfigureInstanceAttributes,
+            BufferUsageARB.DynamicDraw);
     }
 
-    public Result Unregister(Registration r)
+    public Result Unregister(OpenGLInstancedBufferManager.Registration registration)
     {
-        var gl = glProvider.Value;
-        gl.DeleteVertexArray(r.VAO.Handle);
-        gl.DeleteBuffer(r.InstanceVBO.Handle);
+        instancedBufferManager.DeleteBuffers(registration);
         return Result.Success();
+    }
+
+    private static void ConfigureInstanceAttributes(GL gl)
+    {
+        const uint stride = InstFields * sizeof(float);
+        nint offset = 0;
+
+        void Attr(uint index, int comps)
+        {
+            gl.VertexAttribPointer(index, comps, VertexAttribPointerType.Float, false, stride, offset);
+            gl.EnableVertexAttribArray(index);
+            gl.VertexAttribDivisor(index, 1);
+            offset += comps * sizeof(float);
+        }
+
+        Attr(1, 2); // iPosPx
+        Attr(2, 2); // iSizePx
+        Attr(3, 4); // iTint
+        Attr(4, 2); // iUvMin
+        Attr(5, 2); // iUvMax
     }
 }

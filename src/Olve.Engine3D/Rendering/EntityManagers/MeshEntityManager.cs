@@ -1,35 +1,29 @@
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
-using Olve.Engine3D.Rendering.OpenGL.Handles;
 
 namespace Olve.Engine3D.Rendering.EntityManagers;
 
-public class MeshEntityManager(OpenGLMeshManager openGLMeshManager) : RenderingEntityManagerBase<MeshData, MeshEntityManager.Registration>
+public class MeshEntityManager(OpenGLMeshManager openGLMeshManager)
+    : RenderingEntityManagerBase<MeshData, OpenGLBufferManager.Registration>
 {
-    public readonly record struct Registration(VAO VAO, VBO VBO, EBO EBO);
-
-    protected override Result<Registration> RegisterInOpenGL(MeshData entity)
+    protected override Result<OpenGLBufferManager.Registration> RegisterInOpenGL(MeshData entity)
     {
         if (openGLMeshManager.Register(entity).TryPickProblems(out var problems, out var registration))
         {
             return problems.Prepend("Failed registering mesh in OpenGL");
         }
 
-        var (vao, vbo, ebo) = registration;
-
-        return new Registration(vao, vbo, ebo);
+        return registration;
     }
 
-    protected override Result UpdateInOpenGL(Registration registration, MeshData entity)
+    protected override Result UpdateInOpenGL(OpenGLBufferManager.Registration registration, MeshData entity)
     {
         throw new NotSupportedException("Updating mesh data is not yet supported");
     }
 
-    protected override Result DeregisterFromOpenGL(Registration registration)
+    protected override Result DeregisterFromOpenGL(OpenGLBufferManager.Registration registration)
     {
-        OpenGLMeshManager.Registration openGLRegistration = new(registration.VAO, registration.VBO, registration.EBO);
-
-        if (openGLMeshManager.Unregister(openGLRegistration).TryPickProblems(out var problems))
+        if (openGLMeshManager.Unregister(registration).TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed unregistering mesh in OpenGL");
         }
