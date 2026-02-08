@@ -15,9 +15,7 @@ permissions:
   id-token: write
 
 env:
-  DOTNET_VERSION: 9.0.100
-  MINIO_URL: https://minio.ovhome.online
-  MINIO_BUCKET: olve.trains
+  DOTNET_VERSION: 10.0.x
 
 jobs:
   # 1️⃣ Build the Asset Pipeline (Linux)
@@ -26,19 +24,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .env
-        run: |
-          echo "S3_URL=${{ env.MINIO_URL }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "S3_BUCKET=${{ env.MINIO_BUCKET }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "S3_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "S3_SECRET=${{ secrets.MINIO_SECRET_KEY }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "CF_CLIENT_ID=${{ secrets.CF_CLIENT_ID }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "CF_CLIENT_SECRET=${{ secrets.CF_CLIENT_SECRET }}" >> ./src/Olve.Trains.AssetPipeline/.env
-          echo "LOG_LEVEL=Debug" >> ./src/Olve.Trains.AssetPipeline/.env
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Run asset pipeline
-        shell: bash
-        run: sh ./src/Olve.Trains.AssetPipeline/build.sh --s3-timeout 5000
+        env:
+          S3__Bucket: ${{ secrets.S3_BUCKET }}
+          S3__Key: ${{ secrets.S3_KEY }}
+          S3__Secret: ${{ secrets.S3_SECRET }}
+        run: dotnet run --project src/Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj
 
       - name: Upload assets to artifact storage
         uses: actions/upload-artifact@v4
@@ -65,7 +61,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
         run: dotnet restore src/Olve.Trains/Olve.Trains.csproj

@@ -3,7 +3,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
         <UserSecretsId>983dd17b-97c5-4a7c-9d97-2d687e32a81d</UserSecretsId>
     </PropertyGroup>
 
