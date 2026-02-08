@@ -58,12 +58,6 @@
             if (rectangleGLManager.Register(rectangle).TryPickProblems(out problems, out var reg))
                 return problems.Prepend("Failed to create OpenGL registration for rectangle");
 
-            if (openGLQuadRenderingManager.AttachUnitQuad(reg.VAO).TryPickProblems(out problems))
-            {
-                rectangleGLManager.Unregister(reg);
-                return problems.Prepend("Failed to attach unit quad to VAO");
-            }
-
             var id = NextInstanceId();
             Instances.Add(id, new Instance(id, shaderId, rectangle.Depth, reg.VAO, reg.InstanceVBO, InstanceType.Rectangle, shaderParameters));
             return id;
@@ -86,12 +80,6 @@
             if (glyphGLManager.Register(glyph).TryPickProblems(out problems, out var reg))
                 return problems.Prepend("Failed to create OpenGL registration for glyph");
 
-            if (openGLQuadRenderingManager.AttachUnitQuad(reg.VAO).TryPickProblems(out problems))
-            {
-                glyphGLManager.Unregister(reg);
-                return problems.Prepend("Failed to attach unit quad to glyph VAO");
-            }
-
             var id = NextInstanceId();
             Instances.Add(id, new Instance(id, shaderId, glyph.Depth, reg.VAO, reg.InstanceVBO, InstanceType.Glyph, shaderParameters));
             return id;
@@ -105,9 +93,9 @@
 
             var inst = Instances.GetValueAtIndex(idx);
             if (inst.Type == InstanceType.Glyph)
-                _ = glyphGLManager.Unregister(new OpenGLGlyphManager.Registration(inst.VAO, inst.InstanceVBO));
+                _ = glyphGLManager.Unregister(new OpenGLInstancedBufferManager.Registration(inst.VAO, inst.InstanceVBO));
             else
-                _ = rectangleGLManager.Unregister(new OpenGLRectangleManager.Registration(inst.VAO, inst.InstanceVBO));
+                _ = rectangleGLManager.Unregister(new OpenGLInstancedBufferManager.Registration(inst.VAO, inst.InstanceVBO));
 
             Instances.RemoveAt(idx);
             return Result.Success();
@@ -130,17 +118,11 @@
             }
 
             var old = Instances.GetValueAtIndex(idx);
-            rectangleGLManager.Unregister(new OpenGLRectangleManager.Registration(old.VAO, old.InstanceVBO));
+            rectangleGLManager.Unregister(new OpenGLInstancedBufferManager.Registration(old.VAO, old.InstanceVBO));
 
             if (rectangleGLManager.Register(rectangle).TryPickProblems(out problems, out var reg))
             {
                 return problems.Prepend("Failed to upload updated rectangle data");
-            }
-
-            if (openGLQuadRenderingManager.AttachUnitQuad(reg.VAO).TryPickProblems(out problems))
-            {
-                rectangleGLManager.Unregister(reg);
-                return problems.Prepend("Failed to attach unit quad after update");
             }
 
             Instances.SetValueAtIndex(idx, old with
@@ -171,17 +153,11 @@
             }
 
             var old = Instances.GetValueAtIndex(idx);
-            glyphGLManager.Unregister(new OpenGLGlyphManager.Registration(old.VAO, old.InstanceVBO));
+            glyphGLManager.Unregister(new OpenGLInstancedBufferManager.Registration(old.VAO, old.InstanceVBO));
 
             if (glyphGLManager.Register(glyph).TryPickProblems(out problems, out var reg))
             {
                 return problems.Prepend("Failed to upload updated glyph data");
-            }
-
-            if (openGLQuadRenderingManager.AttachUnitQuad(reg.VAO).TryPickProblems(out problems))
-            {
-                glyphGLManager.Unregister(reg);
-                return problems.Prepend("Failed to attach unit quad after glyph update");
             }
 
             Instances.SetValueAtIndex(idx, old with

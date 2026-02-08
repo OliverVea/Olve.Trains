@@ -72,6 +72,20 @@ public class ProcessShaders(
                 return new ResultProblem("Invalid shader type '{0}' in shader file '{1}'. Shader type should be either 'frag' or 'vert'.", fileNameSegments[1], shaderFile);
             }
 
+            // Read vertex attributes from vertex shaders
+            IReadOnlyList<VertexAttribute> vertexAttributes = [];
+            if (shaderType == ShaderType.Vertex)
+            {
+                if (ShaderHelper.GetVertexAttributes(shaderSource).TryPickProblems(out var attrProblems, out var attrs))
+                {
+                    return attrProblems.Prepend("Failed to read vertex attributes in shader file '{0}'", shaderFile);
+                }
+
+                vertexAttributes = attrs;
+                var attrNames = string.Join(", ", vertexAttributes.Select(a => $"{a.Name}({a.Type})"));
+                logger.LogDebug("Got vertex attributes: {AttributeNames}", attrNames);
+            }
+
             // Populate shader class
             var shader = new Shader
             {
@@ -79,7 +93,8 @@ public class ProcessShaders(
                 Type = shaderType,
                 SourcePath = shaderFile,
                 SourceCode = shaderSource,
-                Uniforms = uniforms
+                Uniforms = uniforms,
+                VertexAttributes = vertexAttributes,
             };
 
             shaders.Add(shader);
@@ -145,7 +160,8 @@ public class ProcessShaders(
                 FragmentShader = fragmentShader,
                 VertexShader = vertexShader,
                 GeometryShader = geometryShader,
-                Uniforms = uniforms.Values.ToArray()
+                Uniforms = uniforms.Values.ToArray(),
+                VertexAttributes = vertexShader.VertexAttributes,
             };
 
             shaderPrograms.Add(shaderProgram);
@@ -207,6 +223,48 @@ public class ProcessShaders(
         }
 
         programObject.Add("Uniforms", uniformObjects);
+
+        // Vertex attributes
+        List<ScriptObject> vertexAttributeObjects = [];
+        var perVertexAttributes = shaderProgram.VertexAttributes.Where(a => !a.IsInstanced).ToList();
+        var instancedAttributes = shaderProgram.VertexAttributes.Where(a => a.IsInstanced).ToList();
+        var hasInstancedAttributes = instancedAttributes.Count > 0;
+
+        var vertexStride = perVertexAttributes.Sum(a => a.Type.GetComponentCount());
+        var instanceStride = instancedAttributes.Sum(a => a.Type.GetComponentCount());
+
+        var perVertexByteOffset = 0;
+        var instanceByteOffset = 0;
+
+        foreach (var attr in shaderProgram.VertexAttributes)
+        {
+            var componentCount = attr.Type.GetComponentCount();
+            var byteOffset = attr.IsInstanced ? instanceByteOffset : perVertexByteOffset;
+
+            ScriptObject attrObject = new()
+            {
+                { "Location", attr.Location },
+                { "Name", attr.Name },
+                { "PropertyName", char.ToUpper(attr.Name[0]) + attr.Name[1..] },
+                { "ComponentCount", componentCount },
+                { "IsInstanced", attr.IsInstanced },
+                { "ByteOffset", byteOffset },
+            };
+
+            vertexAttributeObjects.Add(attrObject);
+
+            if (attr.IsInstanced)
+                instanceByteOffset += componentCount * sizeof(float);
+            else
+                perVertexByteOffset += componentCount * sizeof(float);
+        }
+
+        programObject.Add("VertexAttributes", vertexAttributeObjects);
+        programObject.Add("HasInstancedAttributes", hasInstancedAttributes);
+        programObject.Add("VertexStride", vertexStride);
+        programObject.Add("VertexStrideBytes", vertexStride * sizeof(float));
+        programObject.Add("InstanceStride", instanceStride);
+        programObject.Add("InstanceStrideBytes", instanceStride * sizeof(float));
 
         ScriptObject fragmentShaderObject = new()
         {

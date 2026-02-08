@@ -7,4 +7,5 @@ public class Shader
     public required string SourcePath { get; set; }
     public required string SourceCode { get; set; }
     public required IReadOnlyList<Uniform> Uniforms { get; set; }
+    public IReadOnlyList<VertexAttribute> VertexAttributes { get; set; } = [];
 }

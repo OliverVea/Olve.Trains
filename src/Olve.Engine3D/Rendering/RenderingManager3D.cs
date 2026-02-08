@@ -48,7 +48,7 @@ public class RenderingManager3D(
         }
 
         var instanceId = NextInstanceId();
-        Instance instance = new(instanceId, shaderId, meshData.VAO, meshData.VBO, meshData.EBO, worldMatrix);
+        Instance instance = new(instanceId, shaderId, meshData.VAO, meshData.VBO, meshData.EBO!.Value, worldMatrix);
 
         Instances.Add(instanceId, instance);
 

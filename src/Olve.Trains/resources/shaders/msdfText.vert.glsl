@@ -3,11 +3,15 @@
 // Per-vertex from unit quad [0..1]
 layout(location = 0) in vec2 aUnit;
 
-// Per-instance attributes
+// @instanced
 layout(location = 1) in vec2 iPosPx;    // top-left position in pixels
+// @instanced
 layout(location = 2) in vec2 iSizePx;   // glyph size in pixels
+// @instanced
 layout(location = 3) in vec4 iTint;     // RGBA tint
+// @instanced
 layout(location = 4) in vec2 iUvMin;    // atlas UV min
+// @instanced
 layout(location = 5) in vec2 iUvMax;    // atlas UV max
 
 out VS_OUT {

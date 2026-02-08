@@ -1,106 +1,54 @@
 using Olve.Engine3D.Rendering.Entities;
-using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Primitives;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
-public class OpenGLMeshManager(Provider<GL> glProvider) : IOpenGLEntityManager<MeshData, OpenGLMeshManager.Registration>
+public class OpenGLMeshManager(OpenGLBufferManager bufferManager)
+    : IOpenGLEntityManager<MeshData, OpenGLBufferManager.Registration>
 {
     private const int PositionFields = 3;
     private const int NormalFields = 3;
     private const int TextureFields = 2;
     private const int VertexFields = PositionFields + NormalFields + TextureFields;
+    private const int VertexSize = VertexFields * sizeof(float);
 
-    private const int PositionSize = PositionFields * sizeof(float);
-    private const int NormalSize = NormalFields * sizeof(float);
-    private const int TextureSize = TextureFields * sizeof(float);
-    private const int VertexSize = PositionSize + NormalSize + TextureSize;
-
-    public readonly record struct Registration(VAO VAO, VBO VBO, EBO EBO);
-
-    public Result<Registration> Register(MeshData meshData)
+    public Result<OpenGLBufferManager.Registration> Register(MeshData meshData)
     {
         if (meshData.Validate().TryPickProblems(out var problems))
         {
             return problems;
         }
-        
-        var vao = BindVAO();
-        var vbo = BindVBO(meshData);
-        var ebo = BindEBO(meshData);
 
-        SetVertexAttributes();
-        Cleanup();
+        var vertices = new float[meshData.VertexCount * VertexFields];
+        meshData.Positions.CopyTo(vertices, VertexFields, offset: 0);
+        meshData.Normals.CopyTo(vertices, VertexFields, offset: PositionFields);
+        meshData.TextureCoordinates.CopyTo(vertices, VertexFields, offset: PositionFields + NormalFields);
 
-        return new Registration(vao, vbo, ebo);
+        var indices = new uint[meshData.Indices.Length * 3];
+        meshData.Indices.CopyTo(indices);
+
+        return bufferManager.CreateBuffers(
+            vertices,
+            (uint)meshData.VertexCount,
+            indices,
+            ConfigureAttributes,
+            BufferUsageARB.StaticDraw);
     }
 
-    private VAO BindVAO()
+    public Result Unregister(OpenGLBufferManager.Registration registration)
     {
-        var vao = glProvider.Value.CreateVertexArray();
-        glProvider.Value.BindVertexArray(vao);
-
-        return new VAO(vao);
-    }
-
-    private VBO BindVBO(MeshData meshData)
-    {
-        var vbo = glProvider.Value.CreateBuffer();
-        glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
-
-        BufferHelper.WithSpan<float>(meshData.VertexCount * VertexFields, vertices =>
-        {
-            meshData.Positions.CopyTo(vertices, VertexFields, offset: 0);
-            meshData.Normals.CopyTo(vertices, VertexFields, offset: PositionFields);
-            meshData.TextureCoordinates.CopyTo(vertices, VertexFields, offset: PositionFields + NormalFields);
-
-            glProvider.Value.BufferData(BufferTargetARB.ArrayBuffer, (ReadOnlySpan<float>)vertices, BufferUsageARB.StaticDraw);
-        });
-
-        return new VBO(vbo, (uint)meshData.VertexCount);
-    }
-
-    private EBO BindEBO(MeshData meshData)
-    {
-        var ebo = glProvider.Value.CreateBuffer();
-        glProvider.Value.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
-
-        BufferHelper.WithSpan<uint>(meshData.Indices.Length * 3, indices =>
-        {
-            meshData.Indices.CopyTo(indices);
-
-            glProvider.Value.BufferData(BufferTargetARB.ElementArrayBuffer, (ReadOnlySpan<uint>)indices, BufferUsageARB.StaticDraw);
-        });
-
-        return new EBO(ebo, (uint)meshData.Indices.Length * 3);
-    }
-
-    private void SetVertexAttributes()
-    {
-        glProvider.Value.VertexAttribPointer(0, PositionFields, VertexAttribPointerType.Float, false, VertexSize, IntPtr.Zero);
-        glProvider.Value.EnableVertexAttribArray(0);
-
-        glProvider.Value.VertexAttribPointer(1, NormalFields, VertexAttribPointerType.Float, false, VertexSize, new IntPtr(PositionSize));
-        glProvider.Value.EnableVertexAttribArray(1);
-
-        glProvider.Value.VertexAttribPointer(2, TextureFields, VertexAttribPointerType.Float, false, VertexSize, new IntPtr(PositionSize + NormalSize));
-        glProvider.Value.EnableVertexAttribArray(2);
-    }
-
-    private void Cleanup()
-    {
-        glProvider.Value.BindVertexArray(0); // Unbind VAO
-        glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, 0); // Unbind VBO
-        glProvider.Value.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0); // Unbind EBO
-    }
-
-    public Result Unregister(Registration registration)
-    {
-        glProvider.Value.DeleteVertexArray(registration.VAO.Handle);
-        glProvider.Value.DeleteBuffer(registration.VBO.Handle);
-        glProvider.Value.DeleteBuffer(registration.EBO.Handle);
-
+        bufferManager.DeleteBuffers(registration);
         return Result.Success();
+    }
+
+    private static void ConfigureAttributes(GL gl)
+    {
+        gl.VertexAttribPointer(0, PositionFields, VertexAttribPointerType.Float, false, VertexSize, (nint)0);
+        gl.EnableVertexAttribArray(0);
+        gl.VertexAttribPointer(1, NormalFields, VertexAttribPointerType.Float, false, VertexSize, (nint)(PositionFields * sizeof(float)));
+        gl.EnableVertexAttribArray(1);
+        gl.VertexAttribPointer(2, TextureFields, VertexAttribPointerType.Float, false, VertexSize, (nint)((PositionFields + NormalFields) * sizeof(float)));
+        gl.EnableVertexAttribArray(2);
     }
 }

@@ -1,38 +1,31 @@
 using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
-using Olve.Engine3D.Rendering.OpenGL.Handles;
 
 namespace Olve.Engine3D.Rendering.EntityManagers;
 
 public class RectangleEntityManager(OpenGLRectangleManager openGLRectangleManager)
-    : RenderingEntityManagerBase<RectangleData, RectangleEntityManager.Registration>
+    : RenderingEntityManagerBase<RectangleData, OpenGLInstancedBufferManager.Registration>
 {
-    public readonly record struct Registration(VAO VAO, VBO VBO);
-
-    protected override Result<Registration> RegisterInOpenGL(RectangleData entity)
+    protected override Result<OpenGLInstancedBufferManager.Registration> RegisterInOpenGL(RectangleData entity)
     {
         if (openGLRectangleManager.Register(entity).TryPickProblems(out var problems, out var registration))
         {
-            return problems.Prepend("Failed registering line strip in OpenGL");
+            return problems.Prepend("Failed registering rectangle in OpenGL");
         }
 
-        var (vao, vbo) = registration;
-
-        return new Registration(vao, vbo);
+        return registration;
     }
 
-    protected override Result UpdateInOpenGL(Registration registration, RectangleData entity)
+    protected override Result UpdateInOpenGL(OpenGLInstancedBufferManager.Registration registration, RectangleData entity)
     {
         throw new NotSupportedException("Updating rectangle data is not yet supported");
     }
 
-    protected override Result DeregisterFromOpenGL(Registration registration)
+    protected override Result DeregisterFromOpenGL(OpenGLInstancedBufferManager.Registration registration)
     {
-        OpenGLRectangleManager.Registration openGLRegistration = new(registration.VAO, registration.VBO);
-
-        if (openGLRectangleManager.Unregister(openGLRegistration).TryPickProblems(out var problems))
+        if (openGLRectangleManager.Unregister(registration).TryPickProblems(out var problems))
         {
-            return problems.Prepend("Failed unregistering line strip in OpenGL");
+            return problems.Prepend("Failed unregistering rectangle in OpenGL");
         }
 
         return Result.Success();
