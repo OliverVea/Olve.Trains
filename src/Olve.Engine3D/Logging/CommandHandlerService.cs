@@ -1,4 +1,4 @@
-﻿using Olve.Engine3D.DebugServer.Commands;
+﻿using Olve.Engine3D.Commands;
 using Olve.Engine3D.Scenes;
 using Olve.Logging;
 

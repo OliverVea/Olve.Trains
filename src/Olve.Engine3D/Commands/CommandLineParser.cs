@@ -1,6 +1,6 @@
-﻿using System.Text;
+using System.Text;
 
-namespace Olve.Engine3D.DebugServer.Commands;
+namespace Olve.Engine3D.Commands;
 
 internal static class CommandLineParser
 {

@@ -1,4 +1,4 @@
-﻿namespace Olve.Engine3D.DebugServer.Commands;
+namespace Olve.Engine3D.Commands;
 
 public interface ICommandHandler
 {

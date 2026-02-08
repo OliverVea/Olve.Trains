@@ -1,20 +1,19 @@
-﻿using System.Text;
-using Microsoft.Extensions.DependencyInjection;
+using System.Text;
 using Olve.Logging;
 
-namespace Olve.Engine3D.DebugServer.Commands;
+namespace Olve.Engine3D.Commands;
 
-public class HelpCommandHandler(IServiceProvider serviceProvider, ILoggingManager loggingManager) : ICommandHandler
+public class HelpCommandHandler(IEnumerable<ICommandHandler> commandHandlers, ILoggingManager loggingManager) : ICommandHandler
 {
     public static readonly CommandArgument CommandArgument = new("command", "the command to provide help with");
-    
+
     private readonly StringBuilder _builder = new();
-    
+
     public string Verb => "help";
     public string HelpString => "Prints the help message of the application or a specific command";
 
     public IReadOnlyList<CommandArgument> Arguments { get; } = [CommandArgument];
-    
+
     public Result Handle(CommandContext context)
     {
         if (context.GetArgument(CommandArgument) is {} command)
@@ -29,7 +28,7 @@ public class HelpCommandHandler(IServiceProvider serviceProvider, ILoggingManage
         var messageText = _builder.ToString();
         LogMessage logMessage = new(LogLevel.Info, messageText, null, null, DateTime.Now, [Verb]);
         loggingManager.Log(logMessage);
-        
+
         _builder.Clear();
 
         return Result.Success();
@@ -38,7 +37,6 @@ public class HelpCommandHandler(IServiceProvider serviceProvider, ILoggingManage
     private void HandleNoCommand()
     {
         _builder.AppendLine("Available commands:");
-        var commandHandlers = serviceProvider.GetServices<ICommandHandler>();
         foreach (var h in commandHandlers.OrderBy(x => x.Verb))
         {
             var argsUsage = string.Join(" ", h.Arguments.Select(a => a.Required ? $"<{a.Name}>" : $"[{a.Name}]"));
@@ -48,7 +46,6 @@ public class HelpCommandHandler(IServiceProvider serviceProvider, ILoggingManage
 
     private void HandleCommand(string command)
     {
-        var commandHandlers = serviceProvider.GetServices<ICommandHandler>();
         var handler = commandHandlers.FirstOrDefault(h => string.Equals(h.Verb, command, StringComparison.OrdinalIgnoreCase));
 
         if (handler is null)

@@ -1,5 +1,5 @@
 ﻿using System.Collections;
-using Olve.Engine3D.DebugServer.Commands;
+using Olve.Engine3D.Commands;
 using Olve.Logging;
 
 namespace Olve.Engine3D.Logging;

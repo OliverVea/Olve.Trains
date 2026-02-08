@@ -4,8 +4,6 @@
 ## Get latest from `dotnet new gitignore`
 
 # User-specific files
-src/Olve.Engine3D.DebugServer/SvelteDist/*
-!src/Olve.Engine3D.DebugServer/SvelteDist/.gitkeep
 src/Olve.Trains/assets/
 src/Olve.Trains.AssetPipeline/temp/
 [Aa]ppsettings.local.json

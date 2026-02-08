@@ -1,7 +1,7 @@
-﻿using System.Text;
+using System.Text;
 using Olve.Logging;
 
-namespace Olve.Engine3D.DebugServer.Commands;
+namespace Olve.Engine3D.Commands;
 
 public class EchoCommandHandler(ILoggingManager loggingManager) : ICommandHandler
 {
