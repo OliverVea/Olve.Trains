@@ -28,7 +28,9 @@ namespace Olve.Trains;
 [Singleton(typeof(CommandHandlerServiceCollection))]
 [Singleton(typeof(GameSceneProvider))]
 [Singleton(typeof(UISceneProvider))]
+#if DEBUG
 [Singleton(typeof(ConsoleSceneProvider))]
+#endif
 [Singleton(typeof(RenderingSceneProvider))]
 [Singleton(typeof(IEnumerable<IScene>), Factory = nameof(GetAllScenes))]
 [Singleton(typeof(GameProvider), Factory = nameof(GetGameProvider))]
@@ -50,12 +52,13 @@ public partial class GameProvider
     {
         var loggingManager = provider.GetRequiredService<ILoggingManager>();
 
-        return
-        [
+        return [
             new Scene<GameSceneProvider>(loggingManager, provider.GetRequiredService<GameSceneProvider>(), SceneIds.GameScene),
             new Scene<RenderingSceneProvider>(loggingManager, provider.GetRequiredService<RenderingSceneProvider>(), SceneIds.RenderingScene, 1),
             new Scene<UISceneProvider>(loggingManager, provider.GetRequiredService<UISceneProvider>(), SceneIds.UIScene, 2),
-            new Scene<ConsoleSceneProvider>(loggingManager, provider.GetRequiredService<ConsoleSceneProvider>(), SceneIds.ConsoleScene, 3),
+#if DEBUG
+            new Scene<ConsoleSceneProvider>(loggingManager, provider.GetRequiredService<ConsoleSceneProvider>(), SceneIds.ConsoleScene, 3)
+#endif
         ];
     }
 }
