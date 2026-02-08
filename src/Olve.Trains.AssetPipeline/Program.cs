@@ -14,8 +14,12 @@ using Olve.Trains.AssetPipeline.Options;
 
 ServiceCollection serviceCollection = new();
 
+var projectPath = Olve.Paths.Path.TryGetAssemblyExecutable(out var assemblyExecutable)
+    ? assemblyExecutable.Parent
+    : Olve.Paths.Path.GetCurrentDirectory();
+
 var configurationRoot = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
+    .SetBasePath(projectPath.Path)
     .AddEnvironmentVariables()
     .AddJsonFile("Properties/appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile("Properties/appsettings.local.json", optional: true, reloadOnChange: true)
