@@ -1,7 +1,7 @@
 ﻿##############################
 # (Optional) Stage 1: tools for assets
 ##############################
-FROM mcr.microsoft.com/dotnet/runtime:9.0 AS asset-builder
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS asset-builder
 WORKDIR /app
 RUN apt-get update && \
     apt-get install -y awscli wget tar unzip && \
@@ -10,7 +10,7 @@ RUN apt-get update && \
 ##############################
 # Stage 2: build & publish
 ##############################
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS publish
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS publish
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
@@ -33,7 +33,7 @@ RUN dotnet publish ./src/Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csp
     -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Final stage: runtime with ASP.NET shared framework
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Olve.Trains.AssetPipeline.dll"]
