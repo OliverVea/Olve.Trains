@@ -12,7 +12,13 @@
       "Bash(\"C:\\\\Users\\\\olive\\\\Downloads\\\\build-Windows\\\\Olve.Trains.exe\")",
       "Bash(echo:*)",
       "Bash(git -C \"C:\\\\Users\\\\olive\\\\RiderProjects\\\\Olve.Trains\" check-ignore src/Olve.Engine3D.DebugServer/SvelteDist)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(grep:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:perksey.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:kylekukshtel.com)",
+      "WebFetch(domain:velzie.rip)"
     ],
     "deny": [],
     "ask": []
