@@ -16,6 +16,12 @@ public class AssetWriter(ILogger<AssetWriter> logger, PathProvider pathProvider)
 
             var assetOutputPath = pathProvider.OutputPath / destination;
 
+            var parentDir = Path.GetDirectoryName(assetOutputPath.Path);
+            if (parentDir != null)
+            {
+                Directory.CreateDirectory(parentDir);
+            }
+
             ReadOnlyMemory<byte> assetBytes = assetStream.GetBuffer();
 
             await File.WriteAllBytesAsync(assetOutputPath.Path, assetBytes, ct);
