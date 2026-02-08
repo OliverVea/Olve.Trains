@@ -1,22 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <PackageReference Include="BigGustave" />
         <PackageReference Include="Jab" />
         <PackageReference Include="MemoryPack" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-        <PackageReference Include="Olve.MinimalApi" />
         <PackageReference Include="Olve.OpenRaster" />
         <PackageReference Include="Olve.Results" />
         <PackageReference Include="Olve.Utilities" />
-        <PackageReference Include="Olve.Validation" />
         <PackageReference Include="OneOf" />
         <PackageReference Include="OneOf.SourceGenerator" />
         <PackageReference Include="Silk.NET.Input" />
         <PackageReference Include="Silk.NET.Maths" />
         <PackageReference Include="Silk.NET.OpenGL" />
         <PackageReference Include="Silk.NET.Windowing" />
-        <PackageReference Include="StrictId" />
     </ItemGroup>
 
     <ItemGroup>
