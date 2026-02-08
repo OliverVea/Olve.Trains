@@ -11,7 +11,8 @@
       "Bash(wc:*)",
       "Bash(\"C:\\\\Users\\\\olive\\\\Downloads\\\\build-Windows\\\\Olve.Trains.exe\")",
       "Bash(echo:*)",
-      "Bash(git -C \"C:\\\\Users\\\\olive\\\\RiderProjects\\\\Olve.Trains\" check-ignore src/Olve.Engine3D.DebugServer/SvelteDist)"
+      "Bash(git -C \"C:\\\\Users\\\\olive\\\\RiderProjects\\\\Olve.Trains\" check-ignore src/Olve.Engine3D.DebugServer/SvelteDist)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

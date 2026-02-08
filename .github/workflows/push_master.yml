@@ -54,7 +54,11 @@ jobs:
     needs: build-assets
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest] # Run on both OSes
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: windows-latest
+            rid: win-x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -70,14 +74,22 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          output=$(dotnet run tools/version.cs -- --ci --run-number ${{ github.run_number }} --rid ${{ matrix.rid }})
+          echo "$output"
+          echo "$output" >> $GITHUB_OUTPUT
+
       - name: Restore dependencies
         run: dotnet restore src/Olve.Trains/Olve.Trains.csproj
 
       - name: Build
-        run: dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release --output build/${{ runner.os }}
+        run: dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release --output build/${{ matrix.rid }} -p:Version=${{ steps.version.outputs.version }}
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ runner.os }}
-          path: build/${{ runner.os }}
+          name: ${{ steps.version.outputs.artifact-name }}
+          path: build/${{ matrix.rid }}
