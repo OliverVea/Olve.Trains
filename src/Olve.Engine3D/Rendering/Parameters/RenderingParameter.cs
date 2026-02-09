@@ -27,10 +27,6 @@ public static class RenderingParameter
     [DebuggerDisplay("Bool {Name} ({Value})")]
     public class Bool(string name, bool value) : Base<bool>(name, value);
 
-    /// <summary>
-    /// Texture parameter using a domain-level texture Id.
-    /// The rendering system resolves this to an OpenGL handle internally.
-    /// </summary>
     [DebuggerDisplay("Texture {Name} ({Value})")]
     public class Texture(string name, Id<Textures.Texture> value) : Base<Id<Textures.Texture>>(name, value);
 
