@@ -40,7 +40,7 @@ public class TrackRenderingUpdaterService(
             return problems.Prepend("Failed to get line strip data for track");
         }
 
-        if (trackRenderingService.Register(trackId, data).TryPickProblems(out problems, out _))
+        if (trackRenderingService.Register(trackId, data).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to register track");
         }

@@ -1,4 +1,4 @@
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Assets.Entities;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 

@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Operations;
 using Olve.Results;
 

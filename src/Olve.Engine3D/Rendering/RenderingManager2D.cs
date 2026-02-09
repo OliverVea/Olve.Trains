@@ -1,4 +1,4 @@
-    using Olve.Engine3D.Rendering.Entities;
+    using Olve.Engine3D.Assets.Entities;
     using Olve.Engine3D.Rendering.EntityManagers;
     using Olve.Engine3D.Rendering.OpenGL;
     using Olve.Engine3D.Rendering.OpenGL.Handles;
@@ -12,8 +12,7 @@
     public class RenderingManager2D(
         Provider<GL> glProvider,
         OpenGLQuadRenderingManager openGLQuadRenderingManager,
-        OpenGLRectangleManager rectangleGLManager,
-        OpenGLGlyphManager glyphGLManager,
+        OpenGLInstancedBufferManager instancedBufferManager,
         OpenGLShaderManager openGLShaderManager,
         ShaderEntityManager shaderEntityManager)
     {
@@ -24,8 +23,6 @@
         private const int ErrorCounterThreshold = 20;
         private int _errorCounter;
 
-        private enum InstanceType { Rectangle, Glyph }
-
         /// <summary>
         /// Instance stores geometry and optional per-entity shader parameters.
         /// </summary>
@@ -35,101 +32,68 @@
             float Depth,
             VAO VAO,
             VBO InstanceVBO,
-            InstanceType Type = InstanceType.Rectangle,
             IShaderParameters? ShaderParameters = null);
 
-        /// <summary>
-        /// Registers a rectangle with optional per-entity shader parameters.
-        /// </summary>
-        /// <param name="shaderId">The shader to use for rendering.</param>
-        /// <param name="rectangle">Geometry data (position, size, tint, UVs).</param>
-        /// <param name="shaderParameters">Optional per-entity shader parameters (e.g., texture overrides).</param>
-        public Result<RenderingInstanceId> RegisterRectangle(
+        public Result<RenderingInstanceId> Register<T>(
             RenderingId<ShaderData> shaderId,
-            RectangleData rectangle,
-            IShaderParameters? shaderParameters = null)
+            T instanceData,
+            float depth,
+            IShaderParameters? shaderParameters = null) where T : IInstanceData
         {
-            if (rectangle.Validate().TryPickProblems(out var problems))
-                return problems.Prepend("Invalid RectangleData");
-
-            if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
+            if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out var problems, out _))
                 return problems.Prepend("Failed to get shader data");
 
-            if (rectangleGLManager.Register(rectangle).TryPickProblems(out problems, out var reg))
-                return problems.Prepend("Failed to create OpenGL registration for rectangle");
+            // TODO: investigate this
+            Span<float> buf = stackalloc float[T.FloatCount];
+            instanceData.WriteTo(buf);
+
+            if (instancedBufferManager.CreateInstanceBuffer(buf, T.ConfigureAttributes, BufferUsageARB.DynamicDraw)
+                .TryPickProblems(out problems, out var reg))
+                return problems.Prepend("Failed to create OpenGL instance buffer");
 
             var id = NextInstanceId();
-            Instances.Add(id, new Instance(id, shaderId, rectangle.Depth, reg.VAO, reg.InstanceVBO, InstanceType.Rectangle, shaderParameters));
+            Instances.Add(id, new Instance(id, shaderId, depth, reg.VAO, reg.InstanceVBO, shaderParameters));
             return id;
         }
 
-        /// <summary>
-        /// Registers a glyph with per-instance UV coordinates for text rendering.
-        /// </summary>
-        public Result<RenderingInstanceId> RegisterGlyph(
-            RenderingId<ShaderData> shaderId,
-            RectangleData glyph,
-            IShaderParameters? shaderParameters = null)
-        {
-            if (glyph.Validate().TryPickProblems(out var problems))
-                return problems.Prepend("Invalid glyph RectangleData");
-
-            if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
-                return problems.Prepend("Failed to get shader data");
-
-            if (glyphGLManager.Register(glyph).TryPickProblems(out problems, out var reg))
-                return problems.Prepend("Failed to create OpenGL registration for glyph");
-
-            var id = NextInstanceId();
-            Instances.Add(id, new Instance(id, shaderId, glyph.Depth, reg.VAO, reg.InstanceVBO, InstanceType.Glyph, shaderParameters));
-            return id;
-        }
-
-        public Result DeregisterRectangle(RenderingInstanceId instanceId)
+        public Result Deregister(RenderingInstanceId instanceId)
         {
             var idx = Instances.IndexOfKey(instanceId);
             if (idx == -1)
                 return new ResultProblem("Instance with id '{0}' is not registered", instanceId);
 
             var inst = Instances.GetValueAtIndex(idx);
-            if (inst.Type == InstanceType.Glyph)
-                _ = glyphGLManager.Unregister(new OpenGLInstancedBufferManager.Registration(inst.VAO, inst.InstanceVBO));
-            else
-                _ = rectangleGLManager.Unregister(new OpenGLInstancedBufferManager.Registration(inst.VAO, inst.InstanceVBO));
+            instancedBufferManager.DeleteBuffers(new OpenGLInstancedBufferManager.Registration(inst.VAO, inst.InstanceVBO));
 
             Instances.RemoveAt(idx);
             return Result.Success();
         }
 
-        /// <summary>
-        /// Updates the geometry of an existing rectangle. Optionally updates shader parameters.
-        /// </summary>
-        public Result UpdateRectangle(RenderingInstanceId instanceId, RectangleData rectangle, IShaderParameters? shaderParameters = null)
+        public Result Update<T>(
+            RenderingInstanceId instanceId,
+            T instanceData,
+            float depth,
+            IShaderParameters? shaderParameters = null) where T : IInstanceData
         {
-            if (rectangle.Validate().TryPickProblems(out var problems))
-            {
-                return problems.Prepend("Invalid RectangleData");
-            }
-
             var idx = Instances.IndexOfKey(instanceId);
             if (idx == -1)
-            {
-                return new ResultProblem("Rectangle with id '{0}' is not registered", instanceId);
-            }
+                return new ResultProblem("Instance with id '{0}' is not registered", instanceId);
 
             var old = Instances.GetValueAtIndex(idx);
-            rectangleGLManager.Unregister(new OpenGLInstancedBufferManager.Registration(old.VAO, old.InstanceVBO));
+            instancedBufferManager.DeleteBuffers(new OpenGLInstancedBufferManager.Registration(old.VAO, old.InstanceVBO));
 
-            if (rectangleGLManager.Register(rectangle).TryPickProblems(out problems, out var reg))
-            {
-                return problems.Prepend("Failed to upload updated rectangle data");
-            }
+            Span<float> buf = stackalloc float[T.FloatCount];
+            instanceData.WriteTo(buf);
+
+            if (instancedBufferManager.CreateInstanceBuffer(buf, T.ConfigureAttributes, BufferUsageARB.DynamicDraw)
+                .TryPickProblems(out var problems, out var reg))
+                return problems.Prepend("Failed to upload updated instance data");
 
             Instances.SetValueAtIndex(idx, old with
             {
                 VAO = reg.VAO,
                 InstanceVBO = reg.InstanceVBO,
-                Depth = rectangle.Depth,
+                Depth = depth,
                 ShaderParameters = shaderParameters ?? old.ShaderParameters
             });
 
@@ -137,42 +101,7 @@
         }
 
         /// <summary>
-        /// Updates the geometry of an existing glyph. Optionally updates shader parameters.
-        /// </summary>
-        public Result UpdateGlyph(RenderingInstanceId instanceId, RectangleData glyph, IShaderParameters? shaderParameters = null)
-        {
-            if (glyph.Validate().TryPickProblems(out var problems))
-            {
-                return problems.Prepend("Invalid glyph RectangleData");
-            }
-
-            var idx = Instances.IndexOfKey(instanceId);
-            if (idx == -1)
-            {
-                return new ResultProblem("Glyph with id '{0}' is not registered", instanceId);
-            }
-
-            var old = Instances.GetValueAtIndex(idx);
-            glyphGLManager.Unregister(new OpenGLInstancedBufferManager.Registration(old.VAO, old.InstanceVBO));
-
-            if (glyphGLManager.Register(glyph).TryPickProblems(out problems, out var reg))
-            {
-                return problems.Prepend("Failed to upload updated glyph data");
-            }
-
-            Instances.SetValueAtIndex(idx, old with
-            {
-                VAO = reg.VAO,
-                InstanceVBO = reg.InstanceVBO,
-                Depth = glyph.Depth,
-                ShaderParameters = shaderParameters ?? old.ShaderParameters
-            });
-
-            return Result.Success();
-        }
-
-        /// <summary>
-        /// Updates only the shader parameters of an existing rectangle without changing geometry.
+        /// Updates only the shader parameters of an existing instance without changing geometry.
         /// </summary>
         public Result UpdateShaderParameters(RenderingInstanceId instanceId, IShaderParameters? shaderParameters)
         {

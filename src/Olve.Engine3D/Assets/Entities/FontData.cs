@@ -1,9 +1,8 @@
 ﻿using System.Collections.Frozen;
 using System.Text;
-using Olve.Engine3D.Assets;
 using Olve.Utilities.Ids;
 
-namespace Olve.Engine3D.Rendering.Entities;
+namespace Olve.Engine3D.Assets.Entities;
 
 public enum FontAtlasType
 {

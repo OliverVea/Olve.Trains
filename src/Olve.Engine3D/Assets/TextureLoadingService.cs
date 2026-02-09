@@ -1,4 +1,4 @@
-﻿using Olve.Engine3D.Rendering.Entities;
+﻿using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;

@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Primitives;
 using Olve.Results;
 using Silk.NET.Assimp;

@@ -1,11 +1,11 @@
 using MemoryPack;
 
-namespace Olve.Engine3D.Rendering.Entities;
+namespace Olve.Engine3D.Assets.Entities;
 
 [MemoryPackable]
-public partial class TextureData
+public partial class FloatTextureData
 {
-    public required Vector4D<byte>[] Pixels { get; set; }
+    public required float[] Pixels { get; set; }
     public required int Width { get; set; }
     public required int Height { get; set; }
 

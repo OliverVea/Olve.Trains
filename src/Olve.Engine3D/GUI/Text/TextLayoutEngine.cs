@@ -1,5 +1,5 @@
 using Olve.Engine3D.GUI.Layout;
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Assets.Entities;
 
 namespace Olve.Engine3D.GUI.Text;
 

@@ -1,6 +1,6 @@
 using MemoryPack;
 
-namespace Olve.Engine3D.Rendering.Entities;
+namespace Olve.Engine3D.Assets.Entities;
 
 [MemoryPackable]
 public partial class LineStripData

@@ -1,7 +1,9 @@
-using Olve.Engine3D.Rendering.Entities;
+using System.Runtime.CompilerServices;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
+using Olve.Engine3D.Rendering.Parameters;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Utilities.Ids;
 using Silk.NET.OpenGL;
@@ -10,10 +12,8 @@ namespace Olve.Engine3D.Rendering;
 
 public class RenderingManager3D(
     Provider<GL> glProvider,
-    OpenGLModelRenderingManager openGLModelRenderingManager,
     OpenGLShaderManager openGLShaderManager,
-    MeshEntityManager meshEntityManager,
-    HeightmapEntityManager heightmapEntityManager,
+    OpenGLBufferManager bufferManager,
     ShaderEntityManager shaderEntityManager)
 {
     private RenderingInstanceId NextInstanceId() => new(Id.New());
@@ -21,57 +21,118 @@ public class RenderingManager3D(
     // Dictionary on shader?
     protected readonly SortedList<RenderingInstanceId, Instance> Instances = new();
 
+    private readonly Dictionary<GeometryId, GeometryRegistration> _geometries = new();
+
     private const int ErrorCounterThreshold = 20;
     private int _errorCounter;
+
+    private readonly record struct GeometryRegistration(
+        OpenGLBufferManager.Registration BufferRegistration,
+        PrimitiveType PrimitiveType);
 
     protected readonly record struct Instance(
         RenderingInstanceId InstanceId,
         RenderingId<ShaderData> ShaderId,
-        VAO VAO,
-        VBO VBO,
-        EBO EBO,
-        Matrix4X4<float> Transform);
+        GeometryId GeometryId,
+        Matrix4X4<float> Transform,
+        IShaderParameters? Parameters);
 
-    public Result<RenderingInstanceId> RegisterInstance(
-        RenderingId<MeshData> meshId,
-        RenderingId<ShaderData> shaderId,
-        Matrix4X4<float> worldMatrix)
+    public Result<GeometryId> RegisterGeometry<T>(
+        ReadOnlySpan<T> vertices, ReadOnlySpan<uint> indices) where T : IVertexData
     {
-        if (meshEntityManager.GetRegistration(meshId).TryPickProblems(out var problems, out var meshData))
+        return RegisterGeometry(vertices, indices, PrimitiveType.Triangles);
+    }
+
+    public Result<GeometryId> RegisterGeometry<T>(
+        ReadOnlySpan<T> vertices, ReadOnlySpan<uint> indices, PrimitiveType primitiveType,
+        BufferUsageARB usage = BufferUsageARB.StaticDraw) where T : IVertexData
+    {
+
+        // TODO: investigate this
+        var floatCount = vertices.Length * T.FloatCount;
+        var floats = new float[floatCount];
+        var span = floats.AsSpan();
+        var offset = 0;
+        foreach (var vertex in vertices)
         {
-            return problems.Prepend("Failed to get mesh data");
+            vertex.WriteTo(span.Slice(offset, T.FloatCount));
+            offset += T.FloatCount;
         }
 
-        if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
+        var reg = bufferManager.CreateBuffers(
+            floats,
+            (uint)vertices.Length,
+            indices,
+            T.ConfigureAttributes,
+            usage);
+
+        var id = GeometryId.New();
+        _geometries[id] = new GeometryRegistration(reg, primitiveType);
+        return id;
+    }
+
+    public Result<GeometryId> RegisterGeometry<T>(
+        ReadOnlySpan<T> vertices, PrimitiveType primitiveType,
+        BufferUsageARB usage = BufferUsageARB.StaticDraw) where T : IVertexData
+    {
+        return RegisterGeometry(vertices, ReadOnlySpan<uint>.Empty, primitiveType, usage);
+    }
+
+    public Result<GeometryId> RegisterDrawArraysGeometry(
+        uint vertexCount, PrimitiveType primitiveType = PrimitiveType.Triangles)
+    {
+        var reg = bufferManager.CreateDrawArraysBuffers(vertexCount);
+        var id = GeometryId.New();
+        _geometries[id] = new GeometryRegistration(reg, primitiveType);
+        return id;
+    }
+
+    public Result UpdateGeometry<T>(GeometryId geometryId, ReadOnlySpan<T> vertices) where T : IVertexData
+    {
+        if (!_geometries.TryGetValue(geometryId, out var geoReg))
         {
-            return problems.Prepend("Failed to get shader data");
+            return new ResultProblem("Geometry with id '{0}' is not registered", geometryId);
         }
 
-        var instanceId = NextInstanceId();
-        Instance instance = new(instanceId, shaderId, meshData.VAO, meshData.VBO, meshData.EBO!.Value, worldMatrix);
+        var floatCount = vertices.Length * T.FloatCount;
+        var floats = new float[floatCount];
+        var span = floats.AsSpan();
+        var offset = 0;
+        foreach (var vertex in vertices)
+        {
+            vertex.WriteTo(span.Slice(offset, T.FloatCount));
+            offset += T.FloatCount;
+        }
 
-        Instances.Add(instanceId, instance);
+        bufferManager.UpdateVBO(geoReg.BufferRegistration, floats, BufferUsageARB.DynamicDraw);
 
-        return instanceId;
+        // Update vertex count
+        var updatedBufReg = geoReg.BufferRegistration with
+        {
+            VBO = new VBO(geoReg.BufferRegistration.VBO.Handle, (uint)vertices.Length)
+        };
+        _geometries[geometryId] = geoReg with { BufferRegistration = updatedBufReg };
+
+        return Result.Success();
     }
 
     public Result<RenderingInstanceId> RegisterInstance(
-        RenderingId<HeightmapData> terrainId,
+        GeometryId geometryId,
         RenderingId<ShaderData> shaderId,
         Matrix4X4<float> worldMatrix)
     {
-        if (heightmapEntityManager.GetRegistration(terrainId).TryPickProblems(out var problems, out var terrainRegistration))
+        if (!_geometries.ContainsKey(geometryId))
         {
-            return problems.Prepend("Failed to get mesh data");
+            return new ResultProblem("Geometry with id '{0}' is not registered", geometryId);
         }
 
-        if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out problems, out _))
+        if (shaderEntityManager.GetRegistration(shaderId).TryPickProblems(out var problems, out _))
         {
             return problems.Prepend("Failed to get shader data");
         }
 
         var instanceId = NextInstanceId();
-        Instance instance = new(instanceId, shaderId, terrainRegistration.VAO, terrainRegistration.VBO, terrainRegistration.EBO, worldMatrix);
+        Instance instance = new(instanceId, shaderId, geometryId, worldMatrix, null);
 
         Instances.Add(instanceId, instance);
 
@@ -85,6 +146,17 @@ public class RenderingManager3D(
             return new ResultProblem("Entity instance with '{0}' is not registered", instanceId);
         }
 
+        return Result.Success();
+    }
+
+    public Result DeregisterGeometry(GeometryId geometryId)
+    {
+        if (!_geometries.Remove(geometryId, out var geoReg))
+        {
+            return new ResultProblem("Geometry with id '{0}' is not registered", geometryId);
+        }
+
+        bufferManager.DeleteBuffers(geoReg.BufferRegistration);
         return Result.Success();
     }
 
@@ -112,6 +184,20 @@ public class RenderingManager3D(
         }
 
         return instance.Transform;
+    }
+
+    public Result SetInstanceParameters(RenderingInstanceId instanceId, IShaderParameters? parameters)
+    {
+        var instanceIndex = Instances.IndexOfKey(instanceId);
+        if (instanceIndex == -1)
+        {
+            return new ResultProblem("Entity instance with '{0}' is not registered", instanceId);
+        }
+
+        var instance = Instances.GetValueAtIndex(instanceIndex);
+        Instances.SetValueAtIndex(instanceIndex, instance with { Parameters = parameters });
+
+        return Result.Success();
     }
 
     public Result Render(IShader shader)
@@ -153,6 +239,11 @@ public class RenderingManager3D(
 
         glProvider.Value.DepthMask(shader.BlendState.DepthWrite);
 
+        if (!shader.BlendState.DepthTest)
+        {
+            glProvider.Value.Disable(GLEnum.DepthTest);
+        }
+
         var parameters = shader.MakeParameters();
 
         if (openGLShaderManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
@@ -161,7 +252,7 @@ public class RenderingManager3D(
             return problems.Prepend("Failed to load shader '{0}' into OpenGL", shader.ShaderData.Name);
         }
 
-        if (RenderInstances(shader.RenderingId, shaderRegistration).TryPickProblems(out problems))
+        if (RenderInstances(shader.RenderingId, shaderRegistration, parameters).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to render entity instances with shader '{0}'", shader.ShaderData.Name);
         }
@@ -169,12 +260,19 @@ public class RenderingManager3D(
         glProvider.Value.DepthMask(true);
         glProvider.Value.Disable(GLEnum.Blend);
 
+        if (!shader.BlendState.DepthTest)
+        {
+            glProvider.Value.Enable(GLEnum.DepthTest);
+        }
+
         return Result.Success();
     }
 
     private Result RenderInstances(RenderingId<ShaderData> shaderRenderingId,
-        OpenGLShaderManager.Registration shaderRegistration)
+        OpenGLShaderManager.Registration shaderRegistration, RenderingParameters shaderParameters)
     {
+        Span<float> worldBuffer = stackalloc float[16];
+        Span<float> normalMatrixBuffer = stackalloc float[9];
         try
         {
             foreach (var instance in Instances.Values)
@@ -184,30 +282,60 @@ public class RenderingManager3D(
                     continue;
                 }
 
-                if (openGLModelRenderingManager.LoadModelInOpenGL(
-                        instance.VAO,
-                        instance.VBO,
-                        instance.EBO).TryPickProblems(out var problems))
+                if (!_geometries.TryGetValue(instance.GeometryId, out var geoReg))
                 {
-                    return problems.Prepend("Failed to load model instance into OpenGL");
+                    return new ResultProblem("Geometry with id '{0}' is not registered", instance.GeometryId);
                 }
+
+                var bufReg = geoReg.BufferRegistration;
+
+                // Apply per-instance shader parameters if present
+                if (instance.Parameters is { } entityParams)
+                {
+                    if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, entityParams.ToRenderingParameters())
+                        .TryPickProblems(out var paramProblems))
+                    {
+                        return paramProblems.Prepend("Failed to apply entity shader parameters");
+                    }
+                }
+
+                glProvider.Value.BindVertexArray(bufReg.VAO.Handle);
+                if (bufReg.VBO.Handle != 0)
+                    glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, bufReg.VBO.Handle);
 
                 if (shaderRegistration.WorldPositionLocation is { } worldPositionLocation)
                 {
-                    if (openGLModelRenderingManager.RenderModel(
-                            worldPositionLocation,
-                            shaderRegistration.NormalMatrixLocation,
-                            instance.Transform,
-                            instance.EBO.IndexCount).TryPickProblems(out problems))
+                    instance.Transform.CopyTo(worldBuffer);
+                    glProvider.Value.UniformMatrix4(worldPositionLocation, 1, false, worldBuffer);
+
+                    if (shaderRegistration.NormalMatrixLocation is { } normalMatrixLocation)
                     {
-                        return problems.Prepend("Failed to render model instance with OpenGL");
+                        instance.Transform.Extract3X3().CopyTo(normalMatrixBuffer);
+                        glProvider.Value.UniformMatrix3(normalMatrixLocation, 1, true, normalMatrixBuffer);
                     }
+                }
+
+                if (bufReg.EBO is { } ebo)
+                {
+                    glProvider.Value.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo.Handle);
+                    glProvider.Value.DrawElements(geoReg.PrimitiveType, ebo.IndexCount, DrawElementsType.UnsignedInt, in Unsafe.NullRef<int>());
                 }
                 else
                 {
-                    if (openGLModelRenderingManager.RenderModel(instance.EBO.IndexCount).TryPickProblems(out problems))
+                    glProvider.Value.DrawArrays(geoReg.PrimitiveType, 0, bufReg.VBO.VertexCount);
+                }
+
+                glProvider.Value.BindVertexArray(0);
+                if (bufReg.VBO.Handle != 0)
+                    glProvider.Value.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+
+                // Restore shader-level parameters if per-instance overrides were applied
+                if (instance.Parameters is not null)
+                {
+                    if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, shaderParameters)
+                        .TryPickProblems(out var restoreProblems))
                     {
-                        return problems.Prepend("Failed to render model instance with OpenGL");
+                        return restoreProblems.Prepend("Failed to restore shader-level parameters");
                     }
                 }
             }

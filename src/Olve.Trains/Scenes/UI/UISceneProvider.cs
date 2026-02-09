@@ -46,7 +46,6 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(TerrainRaycastService), Factory = nameof(GetTerrainRaycastService))]
 [Transient(typeof(MouseManager), Factory = nameof(GetMouseManager))]
 [Transient(typeof(KeyboardManager), Factory = nameof(GetKeyboardManager))]
-[Transient(typeof(MeshEntityManager), Factory = nameof(GetMeshEntityManager))]
 [Transient(typeof(ShaderEntityManager), Factory = nameof(GetShaderEntityManager))]
 [Transient(typeof(TextureEntityManager), Factory = nameof(GetTextureEntityManager))]
 [Transient(typeof(CameraSceneService), Factory = nameof(GetCameraSceneService))]
@@ -87,7 +86,6 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private ScreenResizedEvent GetScreenResizedEvent() => gameProvider.GetRequiredService<ScreenResizedEvent>();
     private MouseManager GetMouseManager() => gameProvider.GetRequiredService<MouseManager>();
     private KeyboardManager GetKeyboardManager() => gameProvider.GetRequiredService<KeyboardManager>();
-    private MeshEntityManager GetMeshEntityManager() => gameProvider.GetRequiredService<MeshEntityManager>();
     private ShaderEntityManager GetShaderEntityManager() => gameProvider.GetRequiredService<ShaderEntityManager>();
     private TextureEntityManager GetTextureEntityManager() => gameProvider.GetRequiredService<TextureEntityManager>();
     private RenderingManager3D GetRenderingManager3D() => gameProvider.GetRequiredService<RenderingManager3D>();

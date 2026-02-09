@@ -1,7 +1,7 @@
 using MemoryPack;
 using Olve.Utilities.Ids;
 
-namespace Olve.Engine3D.Rendering.Entities;
+namespace Olve.Engine3D.Assets.Entities;
 
 [MemoryPackable]
 public partial class TerrainData
