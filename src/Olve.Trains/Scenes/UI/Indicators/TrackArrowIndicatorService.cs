@@ -13,8 +13,6 @@ using Olve.Trains.Scenes.Rendering;
 
 namespace Olve.Trains.Scenes.UI.Indicators;
 
-public readonly record struct ArrowIndicator;
-
 public class TrackArrowIndicatorService(
     ILoggingManager loggingManager,
     AssetLoader assetLoader,

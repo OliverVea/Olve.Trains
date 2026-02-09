@@ -1,29 +1,6 @@
-using Olve.Engine3D.Assets.Entities;
+﻿using Olve.Engine3D.Assets.Entities;
 
 namespace Olve.Engine3D.Math;
-
-public readonly record struct AABB(Vector3D<float> Min, Vector3D<float> Max);
-
-public static class AABBExtensions
-{
-    extension(in AABB a)
-    {
-        public bool Intersects(in AABB b)
-        {
-            return !(a.Max.X < b.Min.X || a.Min.X > b.Max.X ||
-                     a.Max.Y < b.Min.Y || a.Min.Y > b.Max.Y ||
-                     a.Max.Z < b.Min.Z || a.Min.Z > b.Max.Z);
-        }
-
-        public bool Contains(in Vector3D<float> p)
-        {
-            return p.X >= a.Min.X && p.X <= a.Max.X &&
-                   p.Y >= a.Min.Y && p.Y <= a.Max.Y &&
-                   p.Z >= a.Min.Z && p.Z <= a.Max.Z;
-        }
-    }
-
-}
 
 public static class AABBHelper
 {

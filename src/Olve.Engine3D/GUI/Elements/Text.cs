@@ -53,16 +53,3 @@ public class Text : GuiElement, IRenderableAsText, IRenderableAsRectangle
             : Vector4D<float>.Zero,
     };
 }
-
-public interface IRenderableAsText
-{
-    TextRenderData TextRenderData { get; }
-}
-
-public record TextRenderData(
-    FontData? Font,
-    string Content,
-    float FontSize,
-    Vector4D<float> Color,
-    Align Align
-);

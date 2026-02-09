@@ -17,9 +17,8 @@ public partial class TextureData
             Width <= 0 ? new ResultProblem("Texture width '{0}' is less than or equal to zero", Width) : Result.Success(),
             Height <= 0 ? new ResultProblem("Texture height '{0}' is less than or equal to zero", Height) : Result.Success(),
             Pixels.Length != Width * Height
-            ? new ResultProblem("Texture pixel count '{0}' does not equal width '{1}' x height '{2}' ('{3}')",
-            Pixels.Length, Width, Height, Width * Height)
-            : Result.Success()
+                ? new ResultProblem("Texture pixel count '{0}' does not equal width '{1}' x height '{2}' ('{3}')", Pixels.Length, Width, Height, Width * Height)
+                : Result.Success()
         ];
 
         if (results.TryPickProblems(out var problems))
