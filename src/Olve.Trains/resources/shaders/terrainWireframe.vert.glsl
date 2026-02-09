@@ -1,6 +1,7 @@
 #version 330 core
 
-uniform sampler2D heightMap;            // single-channel heightmap texture
+// @pixelType(float)
+uniform sampler2D heightMap;
 uniform vec2 texelSize;                 // (1/textureWidth, 1/textureHeight)
 
 uniform mat4 world;

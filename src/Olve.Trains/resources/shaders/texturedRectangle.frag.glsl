@@ -12,6 +12,7 @@ in VS_OUT {
 
 out vec4 fragColor;
 
+// @pixelType(RGBA)
 uniform sampler2D uTexture;
 
 // SDF for rounded rectangle

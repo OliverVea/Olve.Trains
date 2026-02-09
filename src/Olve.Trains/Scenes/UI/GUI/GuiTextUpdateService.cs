@@ -4,6 +4,7 @@ using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Text;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
@@ -20,7 +21,8 @@ namespace Olve.Trains.Scenes.UI.GUI
         ILoggingManager loggingManager,
         GuiElementService guiElementService,
         GuiLayoutService guiLayoutService,
-        TextureLoadingService textureLoadingService,
+        TextureLoadingManager textureLoadingManager,
+        TextureEntityManager textureEntityManager,
         GuiTextRenderingService textRenderingService,
         Provider<LayoutContext> layoutContextProvider) : SceneService(loggingManager)
     {
@@ -99,10 +101,16 @@ namespace Olve.Trains.Scenes.UI.GUI
                 guiLayoutService.SetNodeBox(addedEvent.NodeId, layoutBox);
             }
 
-            if (textureLoadingService.LoadTexture(font.Atlas.FontAtlas)
+            if (textureLoadingManager.LoadTexture(font.Atlas.FontAtlas)
                 .TryPickProblems(out var problems, out var textureId))
             {
                 return problems.Prepend("Failed to load font atlas for text element: {0}", addedEvent.NodeId);
+            }
+
+            if (textureEntityManager.Register<RGB, RGBPixelFormat>(textureId, new TextureUploadOptions())
+                .TryPickProblems(out problems))
+            {
+                return problems.Prepend("Failed to register font atlas texture with OpenGL: {0}", addedEvent.NodeId);
             }
 
             return textRenderingService.RegisterText(

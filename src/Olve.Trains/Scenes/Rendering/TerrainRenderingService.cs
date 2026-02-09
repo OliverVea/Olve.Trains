@@ -8,13 +8,15 @@ using Olve.Generated.Shaders;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.Light;
 using Olve.Trains.Scenes.Game.Terrain;
+using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.Rendering;
 
 public class TerrainRenderingService(ILoggingManager loggingManager,
     TerrainService terrainService,
     ShaderEntityManager shaderEntityManager,
-    TextureRenderingManager textureRenderingManager,
+    TextureManager textureManager,
+    TextureEntityManager textureEntityManager,
     RenderingManager3D renderingManager3D,
     CameraSceneService cameraSceneService,
     TerrainRaycastService terrainRaycastService,
@@ -61,17 +63,19 @@ public class TerrainRenderingService(ILoggingManager loggingManager,
             heightmapPixels[i] = heightmap.Heights[i] * heightmap.Step;
         }
 
-        var floatTextureData = new FloatTextureData
+        var floatTextureData = new TextureData<float>
         {
             Pixels = heightmapPixels,
             Width = heightmap.Width,
             Height = heightmap.Length,
         };
 
-        if (textureRenderingManager.RegisterFloatTexture("terrain_heightmap", floatTextureData)
-            .TryPickProblems(out problems, out var heightmapTextureId))
+        var heightmapTextureId = textureManager.RegisterTexture(floatTextureData);
+
+        if (textureEntityManager.Register<float, R32FPixelFormat>(heightmapTextureId, new TextureUploadOptions(Wrap: GLEnum.ClampToEdge))
+            .TryPickProblems(out problems))
         {
-            return problems.Prepend("Failed to register heightmap texture");
+            return problems.Prepend("Failed to register heightmap texture with OpenGL");
         }
 
         Vector2D<float> textureSize = new(1f / heightmap.Width, 1f / heightmap.Length);

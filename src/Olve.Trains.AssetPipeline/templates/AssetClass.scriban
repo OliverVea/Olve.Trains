@@ -3,6 +3,7 @@
 // |               WARNING: This is a generated file. Do not modify it manually.                    |
 // |                                                                                                |
 // --------------------------------------------------------------------------------------------------
+using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Assets.Entities;
 

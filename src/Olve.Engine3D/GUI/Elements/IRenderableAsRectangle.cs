@@ -6,11 +6,11 @@ namespace Olve.Engine3D.GUI.Elements;
 
 public interface IRenderableAsRectangle
 {
-    record Data()
+    record Data
     {
-        public Vector4D<float> Color { get; init; } = Vector4D<float>.One;
-        public AssetPath<TextureData>? TexturePath { get; init; } = null;
-        public Border? Border { get; init; } = null;
+        public RGBA Color { get; init; } = RGBA.White;
+        public AssetPath<TextureData<RGBA>>? TexturePath { get; init; }
+        public Border? Border { get; init; }
     }
 
     Data TexturedRectangleData { get; }

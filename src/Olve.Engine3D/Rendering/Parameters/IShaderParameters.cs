@@ -18,5 +18,5 @@ public interface IShaderParameters
     /// <summary>
     /// Gets the texture Ids that need to be bound before rendering.
     /// </summary>
-    IReadOnlyList<Id<Texture>> GetTextureIds();
+    IReadOnlyList<UntypedTextureId> GetTextureIds();
 }

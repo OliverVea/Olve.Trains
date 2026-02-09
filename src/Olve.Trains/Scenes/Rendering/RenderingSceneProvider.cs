@@ -54,9 +54,8 @@ namespace Olve.Trains.Scenes.Rendering;
 [Transient(typeof(Provider<GL>), Factory=nameof(GetGLProvider))]
 [Transient(typeof(Provider<IWindow>), Factory=nameof(GetWindowProvider))]
 [Transient(typeof(AssetLoader), Factory=nameof(GetAssetLoader))]
-[Transient(typeof(TextureLoadingService), Factory=nameof(GetTextureLoadingService))]
+[Transient(typeof(TextureLoadingManager), Factory=nameof(GetTextureLoadingService))]
 [Transient(typeof(RenderingServiceHelper), Factory=nameof(GetRenderingServiceHelper))]
-[Transient(typeof(TextureRenderingManager), Factory=nameof(GetTextureRenderingManager))]
 [Transient(typeof(TextureManager), Factory=nameof(GetTextureManager))]
 public partial class RenderingSceneProvider(GameProvider gameProvider) : ISceneServicesProvider
 {
@@ -83,9 +82,8 @@ public partial class RenderingSceneProvider(GameProvider gameProvider) : ISceneS
     private Provider<GL> GetGLProvider() => gameProvider.GetRequiredService<Provider<GL>>();
     private Provider<IWindow> GetWindowProvider() => gameProvider.GetRequiredService<Provider<IWindow>>();
     private AssetLoader GetAssetLoader() => gameProvider.GetRequiredService<AssetLoader>();
-    private TextureLoadingService GetTextureLoadingService() => gameProvider.GetRequiredService<TextureLoadingService>();
+    private TextureLoadingManager GetTextureLoadingService() => gameProvider.GetRequiredService<TextureLoadingManager>();
     private RenderingServiceHelper GetRenderingServiceHelper() => gameProvider.GetRequiredService<RenderingServiceHelper>();
-    private TextureRenderingManager GetTextureRenderingManager() => gameProvider.GetRequiredService<TextureRenderingManager>();
     private TextureManager GetTextureManager() => gameProvider.GetRequiredService<TextureManager>();
 
     public IEnumerable<SceneService> GetSceneServices() => this.GetServices<SceneService>();

@@ -32,7 +32,7 @@ public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, NamespaceProvi
 
         var templateOutputPath = pathProvider.MeshesOutputFolder / "Meshes.cs";
 
-        var templateResult = await templateWriter.WriteTemplateAsync("Meshes", namespaceProvider.MeshNamespace, meshAssets, templateOutputPath, ct);
+        var templateResult = await templateWriter.WriteTemplateAsync("Meshes", namespaceProvider.MeshNamespace, "MeshData", meshAssets, templateOutputPath, ct);
         if (templateResult.TryPickProblems(out var templateProblems))
         {
             return templateProblems.Prepend("Failed to write template");

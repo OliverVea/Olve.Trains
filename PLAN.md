@@ -1,10 +1,20 @@
-# Plan: Generic Texture System
+# Superplan: Generic Texture System
 
 ## Overview
 
-Unify the parallel RGBA/Float texture paths into a single generic `TextureData<T>` system with compile-time type safety from asset loading through OpenGL upload. Replace MemoryPack with a swappable `IAssetSerializer` (JSON for now).
+Two-phase plan:
+- **Phase 1**: Replace MemoryPack with a swappable `IAssetSerializer` (JSON for now). This unblocks generic type serialization and is a standalone improvement.
+- **Phase 2**: Unify the parallel RGBA/Float texture paths into a single generic `TextureData<T>` system with compile-time type safety from asset loading through OpenGL upload.
+
+Each phase should be completed, committed, and verified independently before starting the next.
+
+---
+
+# Phase 1: Serialization Abstraction
 
 ## Step 1: Serialization Abstraction
+
+(skipped since it's not required)
 
 Replace MemoryPack with an `IAssetSerializer` interface and JSON implementation.
 
@@ -18,7 +28,7 @@ Replace MemoryPack with an `IAssetSerializer` interface and JSON implementation.
   }
   ```
 - `src/Olve.Engine3D/Assets/JsonAssetSerializer.cs` — implementation using `System.Text.Json`
-  - Register a custom `JsonConverter` for `Vector4D<byte>`, `Vector3D<float>`, `Vector2D<float>`, `Matrix4X4<float>` etc. (Silk.NET types that System.Text.Json won't handle by default)
+  - Register custom `JsonConverter`s for `Vector4D<byte>`, `Vector3D<float>`, `Vector2D<float>`, `Matrix4X4<float>` etc. (Silk.NET types that System.Text.Json won't handle by default)
   - Register converter for `RGBA` struct
 
 ### Files to modify:
@@ -32,23 +42,31 @@ Replace MemoryPack with an `IAssetSerializer` interface and JSON implementation.
 
 **Note:** Re-run the asset pipeline after this step to re-serialize all assets as JSON. Existing binary `.mesh`/`.texture`/`.terrain` files will need to be regenerated.
 
+---
+
+# Phase 2: Generic Texture System
+
 ## Step 2: Generic TextureData<T>
 
 Replace `TextureData` and `FloatTextureData` with a single generic `TextureData<T>`.
 
-### Files to create:
-- None (modify existing)
-
 ### Files to modify:
 - `src/Olve.Engine3D/Assets/Entities/TextureData.cs` — replace with:
   ```csharp
-  public class TextureData<T> where T : unmanaged
+  public class TextureData<T> : ITextureData where T : unmanaged
   {
       public required T[] Pixels { get; init; }
       public required int Width { get; init; }
       public required int Height { get; init; }
 
       public Result Validate() { ... } // Width * Height == Pixels.Length
+  }
+
+  /// Non-generic interface for type-erased storage in TextureManager.
+  public interface ITextureData
+  {
+      int Width { get; }
+      int Height { get; }
   }
   ```
 
@@ -71,31 +89,50 @@ Replace the non-generic `Texture` domain type with a generic `Texture<T>` marker
   /// Marker type for typed texture IDs.
   public readonly record struct Texture<T> where T : unmanaged;
   ```
-  The old `Texture(TextureData Data, AssetPath)` record is removed — the `TextureManager` stores `ITextureData` internally.
+  The old `Texture(TextureData Data, AssetPath)` record is removed.
 
 - `src/Olve.Engine3D/Rendering/Textures/TextureManager.cs`:
-  - Internal storage: `Dictionary<Id<Texture<T>>, ...>` won't work for mixed T. Instead, use a non-generic `TextureId` wrapper internally, or store as `Dictionary<Id, ITextureData>` and provide generic accessor methods.
-  - Actually: use `Id` (untyped) internally for storage, but expose typed `Id<Texture<T>>` at the API boundary:
+  - Domain-level only. No type tracking — just stores data and hands out IDs.
+  - Internal storage: `Dictionary<Id, ITextureData>` — fully type-erased.
+  - Public API uses typed `Id<Texture<T>>`:
     ```csharp
     public Id<Texture<T>> Register<T>(TextureData<T> data, string? name = null) where T : unmanaged
     public Id<Texture<T>> EnsureTextureLoaded<T>(AssetPath<TextureData<T>> assetPath) where T : unmanaged
     public bool TryGetTextureData<T>(Id<Texture<T>> id, out TextureData<T> data) where T : unmanaged
     ```
+  - `TryGetTextureData<T>` attempts to cast `ITextureData` to `TextureData<T>`. Logs a warning and returns false if the cast fails. In practice the typed IDs guarantee the cast always succeeds.
   - Remove `ReserveExternalTextureId` (no longer needed — float textures go through the same path)
 
 - `src/Olve.Engine3D/Rendering/Textures/TextureRenderingManager.cs`:
-  - `EnsureTextureLoaded<T>(Id<Texture<T>>)` → `RenderingId<Texture<T>>`
-  - Remove `RegisterFloatTexture` method
-  - Callers provide `TextureUploadOptions` when registering for rendering
+  - No more `RenderingId` in the public API. Callers only deal with `Id<Texture<T>>`.
+  - Owns type verification: stores `Dictionary<Id, (Type PixelType, Texture2D Handle)>`.
+  - Single unified registration method:
+    ```csharp
+    public Result Register<T, TFormat>(Id<Texture<T>> textureId, TextureUploadOptions options)
+        where T : unmanaged
+        where TFormat : IPixelFormat<T>
+    ```
+  - Stores `(typeof(T), texture2D)` by `textureId.Value`.
+  - Remove `RegisterFloatTexture`, `RegisterExternalTexture`, `AdoptExternalTexture`, `EnsureTextureLoaded` — replaced by the single `Register` method.
+  - Provides `TryGetTexture2D(Id id, Type expectedPixelType, out Texture2D texture)` for use by `TextureSlotManager`. Verifies that `expectedPixelType` matches the stored `Type` and logs/returns false on mismatch.
 
 - `src/Olve.Engine3D/Rendering/Parameters/RenderingParameter.cs`:
-  - `Texture` class uses `Id<Textures.Texture>` — this needs to become type-erased at this boundary since `AnyRenderingParameter` can't be generic. Keep `RenderingParameter.Texture(string name, Id value)` using untyped `Id` internally, with implicit conversion from `Id<Texture<T>>`.
+  - Include the pixel type in the rendering parameter so the rendering manager can verify at render time:
+    ```csharp
+    public class Texture(string name, Id value, Type pixelType) : Base<Id>(name, value)
+    {
+        public Type PixelType { get; } = pixelType;
+    }
+    ```
+  - Generated shader code passes `typeof(T)` when creating the parameter.
 
 - `src/Olve.Engine3D/Rendering/Parameters/IShaderParameters.cs`:
-  - `GetTextureIds()` returns `IReadOnlyList<Id>` (untyped) since the slot manager just needs handles at bind time.
+  - `GetTextureIds()` returns `IReadOnlyList<Id>` (untyped) since mixed texture types can't share a single generic list.
 
 - `src/Olve.Engine3D/Rendering/OpenGL/TextureSlotManager.cs`:
-  - Works with untyped `Id` internally (from `RenderingParameter.Texture.Value`), resolves to GL handle. No change to binding logic.
+  - Receives `RenderingParameter.Texture` (which contains both `Id` and `PixelType`).
+  - Passes both to `TextureRenderingManager.TryGetTexture2D(id, pixelType, out texture)` for type-verified lookup.
+  - Binds the returned `Texture2D` handle to the GL texture unit.
 
 ## Step 4: IPixelFormat<T> and TextureUploadOptions
 
@@ -153,15 +190,33 @@ Add the type-safe pixel format system in the OpenGL layer.
   - Uses `TFormat.WriteBytes`, `TFormat.InternalFormat`, etc.
   - Applies `options.Wrap`, `options.Filter`, `options.GenerateMipmaps`
   - Remove `BytesPerPixel` constant and `Nearest`/`Repeat` statics
+  - No longer implements `IOpenGLEntityManager` (not needed since TextureEntityManager is bespoke now)
 
 - `src/Olve.Engine3D/Rendering/EntityManagers/TextureEntityManager.cs`:
-  - Replace `RegisterInOpenGL(Texture)` and `RegisterFloat(FloatTextureData)` with:
+  - **Replace entirely** with a bespoke sealed class in a single file. No base class inheritance.
+  - Sealed class that wraps `OpenGLTextureManager` directly:
     ```csharp
-    public Result<RenderingId<Texture<T>>> Register<T, TFormat>(TextureData<T> data, TextureUploadOptions options)
-        where T : unmanaged
-        where TFormat : IPixelFormat<T>
+    public sealed class TextureEntityManager(OpenGLTextureManager openGLTextureManager)
+    {
+        private readonly Dictionary<Id, Texture2D> _textures = new();
+
+        public Result Register<T, TFormat>(Id<Texture<T>> textureId, TextureData<T> data, TextureUploadOptions options)
+            where T : unmanaged
+            where TFormat : IPixelFormat<T>
+        {
+            if (openGLTextureManager.Register<T, TFormat>(data, options)
+                .TryPickProblems(out var problems, out var texture))
+                return problems;
+            _textures[textureId.Value] = texture;
+            return Result.Success();
+        }
+
+        public bool TryGetTexture2D(Id id, out Texture2D texture)
+            => _textures.TryGetValue(id, out texture);
+
+        public Result Unregister(Id id) { ... }
+    }
     ```
-  - May need to adjust base class usage since `RenderingEntityManagerBase<Texture, Registration>` is typed to non-generic `Texture`.
 
 ## Step 5: Shader Annotation and Code Generation
 
@@ -178,22 +233,24 @@ Add `@pixelType` annotation support to the asset pipeline.
   - Extract the type string and set `uniform.PixelType`
   - Same pattern as existing `@instanced` annotation parsing
 
-- `src/Olve.Trains.AssetPipeline/Shaders/UniformTypeExtensions.cs` — change `GetDataType()`:
-  - `Sampler2D` now needs the pixel type context. Change signature or add overload:
+- `src/Olve.Trains.AssetPipeline/Shaders/UniformTypeExtensions.cs`:
+  - `GetDataType` changes to accept the `Uniform` (not just `UniformType`) so it can access `PixelType`:
     ```csharp
     public static string GetDataType(this Uniform uniform)
     ```
-  - For `Sampler2D`: returns `"Id<Texture<{pixelType}>>"` (e.g. `"Id<Texture<RGBA>>"`, `"Id<Texture<float>>"`)
-  - Error/warning if `Sampler2D` uniform has no `@pixelType` annotation
+  - For `Sampler2D` with `PixelType = "RGBA"`: returns `"Id<Texture<RGBA>>"`
+  - For `Sampler2D` with `PixelType = "float"`: returns `"Id<Texture<float>>"`
+  - Error if `Sampler2D` uniform has no `@pixelType` annotation
 
 - `src/Olve.Trains.AssetPipeline/Shaders/ProcessShaders.cs` — in `MapToScriptObject()`:
-  - Pass `uniform` object (not just `uniform.Type`) to `GetDataType`
-  - Pass pixel type info to template
+  - Pass `uniform` object to `GetDataType` instead of `uniform.Type`
+  - Pass pixel type info to template for `RenderingParameter.Texture` construction (needs `typeof(T)`)
 
 - `src/Olve.Trains.AssetPipeline/templates/ShaderClass.scriban`:
-  - `GetTextureIds()` return type becomes `IReadOnlyList<Id>` (untyped) since mixed texture types can't share a single generic list
+  - `GetTextureIds()` return type becomes `IReadOnlyList<Id>` (untyped)
+  - Texture ID extraction uses `.Value` to get untyped `Id` from `Id<Texture<T>>`
+  - `RenderingParameter.Texture` construction passes `typeof({pixelType})` as third argument
   - Add `using Olve.Engine3D;` for `RGBA` type access
-  - The texture ID extraction uses `.Value` to get untyped `Id` from `Id<Texture<T>>`
 
 ### Shader files to annotate:
 - `src/Olve.Trains/resources/shaders/texturedRectangle.frag.glsl`: `uniform sampler2D uTexture; // @pixelType(RGBA)`
@@ -210,11 +267,15 @@ Update all texture usage sites to the new generic API.
 - `src/Olve.Engine3D/Assets/TextureLoadingService.cs`:
   - `LoadTexture(AssetPath<TextureData<RGBA>>)` → returns `Id<Texture<RGBA>>`
   - Fallback white pixel uses `TextureData<RGBA>` with `new RGBA(1f, 1f, 1f, 1f)`
-  - Registration includes `TextureUploadOptions` (Repeat, Nearest, mipmaps=true)
+  - Registration: `textureManager.Register(data)` then `textureRenderingManager.Register<RGBA, RgbaPixelFormat>(id, options)`
 
 - `src/Olve.Trains/Scenes/Rendering/TerrainRenderingService.cs`:
   - `TextureData<float>` instead of `FloatTextureData`
-  - Register through unified path with `TextureUploadOptions(ClampToEdge, Nearest, mipmaps=false)`
+  - Register through unified path:
+    ```csharp
+    var id = textureManager.Register(floatTextureData, "terrain_heightmap");
+    textureRenderingManager.Register<float, R32fPixelFormat>(id, new TextureUploadOptions(Wrap: GLEnum.ClampToEdge));
+    ```
   - `_terrainShader.HeightMap` is now `Id<Texture<float>>`
 
 - `src/Olve.Trains/Scenes/Rendering/VehicleRenderingService.cs` — `Id<Texture<RGBA>>`
@@ -235,16 +296,19 @@ Update all texture usage sites to the new generic API.
 
 - Delete proof of concept: `src/Olve.Trains/TextureProofOfConcept.cs`
 - Delete old PoC location if still exists: `src/Olve.Engine3D/Rendering/OpenGL/TextureProofOfConcept.cs`
-- Remove `TextureUploadOptions2`, `TextureData2`, etc. from proof of concept
 - Run asset pipeline to regenerate all shader classes and texture assets
 - Build and verify compilation
 - Run the application to verify textures render correctly
 
 ## Key Design Decisions
 
-1. **`Id<Texture<T>>`** carries pixel type for compile-time safety at registration and shader parameter assignment
-2. **Type erasure at rendering parameter boundary**: `RenderingParameter.Texture` stores untyped `Id` internally since `AnyRenderingParameter` union can't be generic. `GetTextureIds()` returns `IReadOnlyList<Id>`.
-3. **`IPixelFormat<T>`** lives in the OpenGL layer with default `MemoryMarshal` implementation. Only `RgbaPixelFormat` overrides (float→byte packing).
-4. **`TextureUploadOptions`** is non-format (wrap, filter, mipmaps only). Format comes from `TFormat` type parameter.
-5. **`IAssetSerializer`** interface with JSON implementation replaces MemoryPack. Swappable via DI.
-6. **`@pixelType(T)` shader annotation** parsed by asset pipeline, emitted as `Id<Texture<T>>` in generated code.
+1. **`Id<Texture<T>>`** carries pixel type for compile-time safety at registration and shader parameter assignment.
+2. **`TextureManager` is domain-only, fully type-erased internally**: stores `Dictionary<Id, ITextureData>`. `TryGetTextureData<T>` just attempts a cast — no type tracking needed.
+3. **`TextureRenderingManager` owns type verification**: stores `(Type, Texture2D)` by `Id`. Verifies pixel type matches at render time when `TextureSlotManager` resolves textures.
+4. **No `RenderingId` in public API**: callers only deal with `Id<Texture<T>>`. The mapping to OpenGL handles is internal.
+5. **`RenderingParameter.Texture` includes `Type pixelType`**: passed from generated shader code (`typeof(T)`), used by `TextureRenderingManager` for render-time verification.
+5. **Bespoke `TextureEntityManager`**: sealed class, no base class inheritance. Single file, simple dictionary-based management.
+6. **`IPixelFormat<T>`** lives in the OpenGL layer with default `MemoryMarshal` implementation. Only `RgbaPixelFormat` overrides (float→byte packing).
+7. **`TextureUploadOptions`** is non-format (wrap, filter, mipmaps only). Format comes from `TFormat` type parameter.
+8. **`IAssetSerializer`** interface with JSON implementation replaces MemoryPack. Swappable via DI.
+9. **`@pixelType(T)` shader annotation** parsed by asset pipeline, emitted as `Id<Texture<T>>` in generated code.

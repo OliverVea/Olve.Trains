@@ -5,12 +5,12 @@ namespace Olve.Engine3D.Rendering.OpenGL;
 
 public class OpenGLQuadRenderingManager(Provider<GL> glProvider)
 {
-    private const int UnitFields = 2;              
-    private const int VerticesPerQuad = 6;         
+    private const int UnitFields = 2;
+    private const int VerticesPerQuad = 6;
 
-    private uint _unitVboHandle;                   
+    private uint _unitVboHandle;
     private bool HasUnitVbo => _unitVboHandle != 0;
-    
+
     public Result AttachUnitQuad(VAO vao)
     {
         EnsureUnitVbo();

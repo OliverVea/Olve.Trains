@@ -32,7 +32,7 @@ public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, Namespac
 
         var templateOutputPath = pathProvider.TerrainsOutputFolder / "Terrains.cs";
 
-        var templateResult = await templateWriter.WriteTemplateAsync("Terrains", namespaceProvider.TerrainNamespace, terrainAssets, templateOutputPath, ct);
+        var templateResult = await templateWriter.WriteTemplateAsync("Terrains", namespaceProvider.TerrainNamespace, "TerrainData", terrainAssets, templateOutputPath, ct);
         if (templateResult.TryPickProblems(out var templateProblems))
         {
             return templateProblems.Prepend("Failed to write template");

@@ -7,6 +7,7 @@ in VS_OUT {
 
 out vec4 fragColor;
 
+// @pixelType(RGB)
 uniform sampler2D uFontAtlas;
 
 // Median of RGB channels for MSDF

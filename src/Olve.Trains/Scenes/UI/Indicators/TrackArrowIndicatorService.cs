@@ -1,8 +1,10 @@
+using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Shaders;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
@@ -19,7 +21,8 @@ public class TrackArrowIndicatorService(
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
     RenderingServiceHelper renderingServiceHelper,
-    TextureLoadingService textureLoadingService) : SceneService(loggingManager)
+    TextureLoadingManager textureLoadingManager,
+    TextureEntityManager textureEntityManager) : SceneService(loggingManager)
 {
     private float _scale = 1f;
 
@@ -38,10 +41,16 @@ public class TrackArrowIndicatorService(
 
     protected override Result OnLoad()
     {
-        if (textureLoadingService.LoadTexture(Textures.PolygonPrototype_Texture_01)
+        if (textureLoadingManager.LoadTexture(Textures.PolygonPrototype_Texture_01)
             .TryPickProblems(out var problems, out var textureId))
         {
             return problems.Prepend("Failed to load texture");
+        }
+
+        if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(textureId, new TextureUploadOptions())
+            .TryPickProblems(out problems))
+        {
+            return problems.Prepend("Failed to register texture with OpenGL");
         }
 
         _shader.TextureSampler = textureId;

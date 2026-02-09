@@ -5,8 +5,8 @@ namespace Olve.Engine3D.GUI.Elements;
 
 public class Text : GuiElement, IRenderableAsText, IRenderableAsRectangle
 {
-    public (float R, float G, float B, float A)? Color { get; set; }
-    public (float R, float G, float B, float A)? BackgroundColor { get; set; }
+    public RGBA? Color { get; set; }
+    public RGBA? BackgroundColor { get; set; }
     public string Content
     {
         get;
@@ -42,14 +42,12 @@ public class Text : GuiElement, IRenderableAsText, IRenderableAsRectangle
         Font,
         Content,
         FontSize,
-        new Vector4D<float>(Color?.R ?? 1, Color?.G ?? 1, Color?.B ?? 1, Color?.A ?? 1),
+        Color ?? RGBA.Black,
         Align
     );
 
     public IRenderableAsRectangle.Data TexturedRectangleData => new()
     {
-        Color = BackgroundColor is { } bg
-            ? new Vector4D<float>(bg.R, bg.G, bg.B, bg.A)
-            : Vector4D<float>.Zero,
+        Color = BackgroundColor ?? RGBA.Transparent,
     };
 }

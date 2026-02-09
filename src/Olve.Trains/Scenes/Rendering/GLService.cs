@@ -15,7 +15,7 @@ public class GLService(ILoggingManager loggingManager, Provider<GL> glProvider) 
         glProvider.Value.Enable(EnableCap.Multisample);
         glProvider.Value.Disable(EnableCap.CullFace);
         glProvider.Value.Enable(EnableCap.DepthTest);
-        
+
         return Result.Success();
     }
 
@@ -23,7 +23,7 @@ public class GLService(ILoggingManager loggingManager, Provider<GL> glProvider) 
     {
         glProvider.Value.ClearColor(Color.CornflowerBlue);
         glProvider.Value.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-        
+
         return Result.Success();
     }
 }

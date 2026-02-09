@@ -21,8 +21,7 @@ namespace Olve.Engine3D.Rendering;
 [Singleton(typeof(ShaderEntityManager))]
 [Singleton(typeof(TextureEntityManager))]
 [Singleton(typeof(TextureManager))]
-[Singleton(typeof(TextureRenderingManager))]
 [Singleton(typeof(TextureSlotManager))]
 [Singleton(typeof(AssetLoader))]
-[Singleton(typeof(TextureLoadingService))]
+[Singleton(typeof(TextureLoadingManager))]
 public interface IOpenGLProvider;

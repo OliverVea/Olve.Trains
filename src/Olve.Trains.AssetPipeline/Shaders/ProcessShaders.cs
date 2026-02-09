@@ -42,7 +42,7 @@ public class ProcessShaders(
             var shaderSource = await File.ReadAllTextAsync(absoluteShaderFile, ct);
 
             // Read uniforms
-            if (ShaderHelper.GetUniforms(shaderSource).TryPickProblems(out var problems, out var uniforms))
+            if (ShaderHelper.GetUniforms(shaderSource, shaderFile).TryPickProblems(out var problems, out var uniforms))
             {
                 return problems.Prepend("Failed to read uniforms in shader file '{0}'", shaderFile);
             }
@@ -213,10 +213,11 @@ public class ProcessShaders(
                 { "VariableName", uniform.Name },
                 { "PropertyName", char.ToUpper(uniform.Name[0]) + uniform.Name[1..] },
                 { "UniformType", uniform.Type.ToString() },
-                { "DataType", uniform.Type.GetDataType() },
+                { "DataType", uniform.GetDataType() },
                 { "RenderParameterType", uniform.Type.GetRenderParameterType() },
                 { "LayoutLocation", uniform.LayoutLocation },
-                { "Initializer", uniform.Type.GetInitializer() }
+                { "Initializer", uniform.Type.GetInitializer() },
+                { "PixelType", uniform.PixelType }
             };
 
             uniformObjects.Add(uniformObject);
@@ -249,7 +250,7 @@ public class ProcessShaders(
                 { "ComponentCount", componentCount },
                 { "IsInstanced", attr.IsInstanced },
                 { "ByteOffset", byteOffset },
-                { "DataType", attr.Type.GetDataType() },
+                { "DataType", attr.Type.GetVertexDataType() },
                 { "WriteCode", GetWriteCode(attr.Name, componentCount) },
             };
 

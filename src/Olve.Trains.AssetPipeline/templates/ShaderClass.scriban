@@ -4,6 +4,7 @@
 // |                                                                                                |
 // --------------------------------------------------------------------------------------------------
 // ReSharper disable RedundantUsingDirective
+using Olve.Engine3D;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Parameters;
@@ -43,9 +44,9 @@ public static partial class Shaders
                 return new(parameters);
             }
 
-            public IReadOnlyList<Id<Texture>> GetTextureIds()
+            public IReadOnlyList<UntypedTextureId> GetTextureIds()
             {
-                var ids = new List<Id<Texture>>();
+                var ids = new List<UntypedTextureId>();
                 {{ for x in 0..(Uniforms.size - 1) }}{{ if Uniforms[x].UniformType == "Sampler2D" }}if ({{Uniforms[x].PropertyName}} is { } {{Uniforms[x].VariableName}})
                     ids.Add({{Uniforms[x].VariableName}});
 {{ end }}{{ end }}

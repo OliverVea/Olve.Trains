@@ -2,9 +2,9 @@ namespace Olve.Trains.AssetPipeline.Shaders;
 
 public static class UniformTypeExtensions
 {
-    public static string GetDataType(this UniformType uniformType)
+    public static string GetDataType(this Uniform uniform)
     {
-        return uniformType switch
+        return uniform.Type switch
         {
             UniformType.Bool => "bool",
             UniformType.Float => "float",
@@ -13,7 +13,7 @@ public static class UniformTypeExtensions
             UniformType.Vector4  => "Vector4D<float>",
             UniformType.Matrix3 => "Matrix3X3<float>",
             UniformType.Matrix4 => "Matrix4X4<float>",
-            UniformType.Sampler2D => "Id<Texture>",
+            UniformType.Sampler2D => $"TextureId<{uniform.PixelType}>",
             _ => "Unknown"
         };
     }
@@ -41,6 +41,18 @@ public static class UniformTypeExtensions
             UniformType.Matrix3 => " = Matrix3X3<float>.Identity;",
             UniformType.Matrix4 => " = Matrix4X4<float>.Identity;",
             _ => ""
+        };
+    }
+
+    public static string GetVertexDataType(this UniformType uniformType)
+    {
+        return uniformType switch
+        {
+            UniformType.Float => "float",
+            UniformType.Vector2 => "Vector2D<float>",
+            UniformType.Vector3 => "Vector3D<float>",
+            UniformType.Vector4 => "Vector4D<float>",
+            _ => throw new ArgumentException($"Unsupported vertex attribute type: {uniformType}")
         };
     }
 
