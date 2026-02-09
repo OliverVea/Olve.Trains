@@ -6,6 +6,7 @@
 // ReSharper disable InconsistentNaming
 using System.Collections.Frozen;
 using System.Text;
+using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Utilities.Ids;
@@ -22,7 +23,7 @@ public static partial class Fonts
             DistanceRange = {{ Font.Atlas.DistanceRange }},
             DistanceRangeMiddle = {{ Font.Atlas.DistanceRangeMiddle }},
             GlyphSize = {{ Font.Atlas.GlyphSize }},
-            FontAtlas = new AssetPath<TextureData>("{{ Font.Atlas.Path.Name }}", "{{ Font.Atlas.Path.Path }}"),
+            FontAtlas = new AssetPath<TextureData<RGB>>("{{ Font.Atlas.Path.Name }}", "{{ Font.Atlas.Path.Path }}"),
             FontAtlasSize = new Vector2D<int>({{ Font.Atlas.Size.X }}, {{ Font.Atlas.Size.Y }}),
             FontAtlasType = FontAtlasType.{{ Font.Atlas.Type }},
         },

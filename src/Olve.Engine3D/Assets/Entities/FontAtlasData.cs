@@ -2,7 +2,7 @@
 
 public class FontAtlasData
 {
-    public required AssetPath<TextureData> FontAtlas { get; init; }
+    public required AssetPath<TextureData<RGB>> FontAtlas { get; init; }
     public required FontAtlasType FontAtlasType { get; init; }
     public required Vector2D<int> FontAtlasSize { get; init; }
     public required int DistanceRange { get; init; }

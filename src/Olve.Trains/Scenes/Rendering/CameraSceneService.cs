@@ -67,14 +67,14 @@ public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow
     {
         _cameraController.Move(_movementInput.Direction, deltaTime);
         _cameraController.Zoom(_movementInput.Zoom, deltaTime);
-        
+
         _viewMatrix = Camera.GetViewMatrix();
         _projectionMatrix = Camera.GetProjectionMatrix();
-        
+
         _rotationMatrix = _viewMatrix.ExtractRotation();
-        
+
         _cameraViewDirection = Vector3D.Transform(Vector3D<float>.UnitZ, _rotationMatrix);
-        
+
         _movementInput = new CameraMovementInput();
 
         return Result.Success();

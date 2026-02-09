@@ -1,5 +1,8 @@
+using Olve.Engine3D;
 using Olve.Engine3D.Assets;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
@@ -10,14 +13,23 @@ namespace Olve.Trains.Scenes.UI.GUI;
 public class GuiRectangleUpdateService(
     ILoggingManager loggingManager,
     GuiElementService guiElementService,
-    TextureLoadingService textureLoadingService,
+    TextureManager textureManager,
+    TextureEntityManager textureEntityManager,
+    TextureLoadingManager textureLoadingManager,
     GuiRectangleRenderingService rectangleRenderingService) : SceneService(loggingManager)
 {
+    private readonly TextureId<RGBA> _singleWhitePixel = textureManager.RegisterTexture(TextureData<RGBA>.Single(RGBA.White));
     private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
     private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
 
     protected override Result OnLoad()
     {
+        if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(_singleWhitePixel, new TextureUploadOptions())
+            .TryPickProblems(out var problems))
+        {
+            return problems.Prepend("Failed to register white pixel texture with OpenGL");
+        }
+
         _elementAddedQueue.SetHandler(OnGuiElementAdded).Init();
         _elementRemovedQueue.SetHandler(OnGuiElementRemoved).Init();
 
@@ -41,14 +53,20 @@ public class GuiRectangleUpdateService(
             return Result.Success();
         }
 
-        var texturePath = renderableAsRectangle.TexturedRectangleData.TexturePath;
+        var textureId = _singleWhitePixel;
 
-        if (textureLoadingService.LoadTextureOrFallbackIfNull(texturePath)
-            .TryPickProblems(out var problems, out var textureId))
+        if (renderableAsRectangle.TexturedRectangleData.TexturePath is { } texturePath)
         {
-            return problems.Prepend("Failed to load texture '{0}' for GuiElement: {1}",
-                texturePath?.Path.Path!,
-                addedEvent);
+            if (textureLoadingManager.LoadTexture(texturePath).TryPickProblems(out var problems, out textureId))
+            {
+                return problems.Prepend("Failed to load texture '{0}' for GuiElement: {1}", texturePath.Path.Path, addedEvent);
+            }
+
+            if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(textureId, new TextureUploadOptions())
+                .TryPickProblems(out problems))
+            {
+                return problems.Prepend("Failed to register texture with OpenGL for GuiElement: {0}", addedEvent);
+            }
         }
 
         return rectangleRenderingService.RegisterTexturedRectangle(addedEvent.NodeId, textureId);

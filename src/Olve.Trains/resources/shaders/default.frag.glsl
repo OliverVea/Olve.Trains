@@ -19,6 +19,7 @@ uniform float directionalLight1Intensity;
 
 uniform vec3 cameraDirection;
 
+// @pixelType(RGBA)
 uniform sampler2D textureSampler;
 
 void main()

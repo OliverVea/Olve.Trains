@@ -1,7 +1,9 @@
+using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Shaders;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
@@ -21,7 +23,8 @@ public class VehicleRenderingService(
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
     RenderingManager3D renderingManager3D,
-    TextureLoadingService textureLoadingService,
+    TextureLoadingManager textureLoadingManager,
+    TextureEntityManager textureEntityManager,
     SceneLightService sceneLightService,
     VehicleService vehicleService,
     VehiclePositionService vehiclePositionService,
@@ -43,10 +46,16 @@ public class VehicleRenderingService(
     protected override Result OnLoad()
     {
         // Load texture and get its Id
-        if (textureLoadingService.LoadTexture(Textures.SimpleTrains_Texture_01)
+        if (textureLoadingManager.LoadTexture(Textures.SimpleTrains_Texture_01)
             .TryPickProblems(out var problems, out var textureId))
         {
             return problems.Prepend("Failed to load texture");
+        }
+
+        if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(textureId, new TextureUploadOptions())
+            .TryPickProblems(out problems))
+        {
+            return problems.Prepend("Failed to register texture with OpenGL");
         }
 
         _shader.TextureSampler = textureId;

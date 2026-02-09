@@ -1,5 +1,6 @@
 using BigGustave;
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Results;
 using Silk.NET.Maths;
@@ -8,7 +9,7 @@ namespace Olve.Trains.AssetPipeline.Assets;
 
 public class TextureFileReader(ILogger<TextureFileReader> logger)
 {
-    public Result<IReadOnlyList<Asset<TextureData>>> LoadTextures(IReadOnlyList<FileInfo> files)
+    public Result<IReadOnlyList<Asset<TextureData<RGBA>>>> LoadTextures(IReadOnlyList<FileInfo> files)
     {
         var pngFiles = files
             .Where(f => f.Extension is ".png")
@@ -18,7 +19,7 @@ public class TextureFileReader(ILogger<TextureFileReader> logger)
         if (pngFiles.Length == 0)
         {
             logger.LogWarning("No texture files found");
-            return Array.Empty<Asset<TextureData>>();
+            return Array.Empty<Asset<TextureData<RGBA>>>();
         }
 
         logger.LogDebug("Processing {ModelCount} textures", pngFiles.Length);
@@ -31,10 +32,10 @@ public class TextureFileReader(ILogger<TextureFileReader> logger)
 
         logger.LogDebug("Processed {ModelCount} textures", pngFiles.Length);
 
-        return Result.Success((IReadOnlyList<Asset<TextureData>>)textures);
+        return Result.Success((IReadOnlyList<Asset<TextureData<RGBA>>>)textures);
     }
 
-    private Result<Asset<TextureData>> LoadTexture(string assetSource)
+    private Result<Asset<TextureData<RGBA>>> LoadTexture(string assetSource)
     {
         if (!File.Exists(assetSource))
         {
@@ -45,34 +46,32 @@ public class TextureFileReader(ILogger<TextureFileReader> logger)
 
         int width = png.Width, height = png.Height;
 
-        var pixelData = new Vector4D<byte>[width * height];
+        var pixelData = new RGBA[width * height];
 
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
             {
                 var pixel = png.GetPixel(x, height - y - 1);
-                pixelData[y * width + x] = new Vector4D<byte>(pixel.R, pixel.G, pixel.B, pixel.A);
+                pixelData[y * width + x] = new RGBA(
+                    pixel.R / 255f,
+                    pixel.G / 255f,
+                    pixel.B / 255f,
+                    pixel.A / 255f);
             }
         }
 
-        TextureData textureData = new()
+        TextureData<RGBA> textureData = new()
         {
             Width = width,
             Height = height,
             Pixels = pixelData,
         };
 
-        var validation = textureData.Validate();
-        if (validation.TryPickProblems(out var problems))
-        {
-            return problems.Prepend("Failed to validate texture data");
-        }
-
         var assetName = Path.GetFileNameWithoutExtension(assetSource).Split('.')[0];
         var assetDestination = $"textures/{assetName}.texture";
 
-        return new Asset<TextureData>
+        return new Asset<TextureData<RGBA>>
         {
             Name = assetName,
             Source = assetSource,

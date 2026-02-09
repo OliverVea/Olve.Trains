@@ -1,60 +1,54 @@
-﻿using Olve.Engine3D.Assets;
+﻿using System.Diagnostics.CodeAnalysis;
 using Olve.Engine3D.Assets.Entities;
-using Olve.Utilities.Assertions;
-using Olve.Utilities.Ids;
+using Olve.Engine3D.Systems;
 
 namespace Olve.Engine3D.Rendering.Textures;
 
-public class TextureManager(AssetLoader assetLoader)
+public class TextureManager
 {
-    private readonly Dictionary<Id<Texture>, Texture> _textures = new();
+    private readonly Dictionary<UntypedTextureId, (ITextureData, Type)> _textures = new();
 
-    /// <summary>
-    /// Loads a texture from an asset path. Returns existing Id if already loaded.
-    /// </summary>
-    public Result<Id<Texture>> EnsureTextureLoaded(AssetPath<TextureData> assetPath)
+    public Event<UntypedTextureId> OnAdded { get; } = new();
+    public Event<UntypedTextureId> OnRemoved { get; } = new();
+
+    public TextureId<T> RegisterTexture<T>(TextureData<T> textureData)
+        where T : unmanaged
     {
-        var id = GetIdForTexturePath(assetPath);
-        if (_textures.TryGetValue(id, out var texture))
-        {
-            Assert.That(() => texture.AssetPath == assetPath, "Got texture with different asset paths under same id");
-            return id;
-        }
-
-        if (assetLoader
-            .LoadAsset(assetPath)
-            .TryPickProblems(out var problems, out var data))
-        {
-            return problems;
-        }
-
-        texture = new Texture(data, assetPath);
-        _textures.Add(id, texture);
-
+        // TODO: perhaps generate id from texture data hash
+        var id = TextureId<T>.New();
+        _textures[id] = (textureData, typeof(T));
+        OnAdded.Invoke(id);
         return id;
     }
 
-    /// <summary>
-    /// Registers a dynamically created texture (heightmap, render target, etc.)
-    /// Returns the Id for use in shader parameters.
-    /// </summary>
-    public Id<Texture> RegisterDynamicTexture(TextureData data, string? name = null)
+    public DeletionResult UnregisterTexture<T>(TextureId<T> textureId)
     {
-        var id = name != null ? Id.FromName<Texture>(name) : Id.New<Texture>();
-        var texture = new Texture(data);
-        _textures[id] = texture;
-        return id;
+        if (!_textures.ContainsKey(textureId))
+        {
+            return DeletionResult.NotFound();
+        }
+
+        OnRemoved.Invoke(textureId);
+        _textures.Remove(textureId);
+        return DeletionResult.Success();
     }
 
-    /// <summary>
-    /// Reserves an Id for a texture that will be registered externally (e.g., heightmaps).
-    /// The actual OpenGL texture is managed elsewhere; this just provides an Id for the shader system.
-    /// </summary>
-    public Id<Texture> ReserveExternalTextureId(string name)
+    public bool TryGetTextureData<T>(TextureId<T> id, [MaybeNullWhen(false)] out TextureData<T> data)
+        where T : unmanaged
     {
-        return Id.FromName<Texture>(name);
-    }
+        data = null;
+        if (!_textures.TryGetValue(id, out var textureDataAndType))
+        {
+            return false;
+        }
 
-    public bool TryGetTexture(Id<Texture> id, out Texture texture) => _textures.TryGetValue(id, out texture);
-    public Id<Texture> GetIdForTexturePath(AssetPath<TextureData> assetPath) => Id.FromName<Texture>(assetPath.Path.Path);
+        var (textureData, textureType) = textureDataAndType;
+        if (textureType != typeof(T))
+        {
+            return false;
+        }
+
+        data = textureData as TextureData<T>;
+        return data != null;
+    }
 }

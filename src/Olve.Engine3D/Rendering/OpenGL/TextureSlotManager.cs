@@ -1,36 +1,32 @@
-using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Textures;
-using Olve.Utilities.Ids;
+using Olve.Engine3D.Utilities;
 using Silk.NET.OpenGL;
-using Texture = Olve.Engine3D.Rendering.Textures.Texture;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
-/// <summary>
-/// Manages texture unit binding. Exchanges domain texture IDs for bound texture slots.
-/// RenderingId resolution is handled internally - callers only need Id&lt;Texture&gt;.
-/// </summary>
 public class TextureSlotManager(
     Provider<GL> glProvider,
-    TextureRenderingManager textureRenderingManager,
     TextureEntityManager textureEntityManager)
 {
-    public const uint MaxTextureUnits = 8;
+    public const int MaxTextureUnits = 8;
+    private readonly RotatingIndex _slotIndex = new(MaxTextureUnits);
 
-    public Result<IReadOnlyList<TextureSlot>> BindTextures(IReadOnlyList<Id<Texture>> textureIds)
+    public Result<IReadOnlyList<TextureSlot>> BindTextures(IReadOnlyList<UntypedTextureId> textureIds)
     {
         if (textureIds.Count > MaxTextureUnits)
-            return new ResultProblem("Too many textures ({0}), max is {1}",
-                textureIds.Count, MaxTextureUnits);
+        {
+            return new ResultProblem("Too many textures ({0}), max is {1}", textureIds.Count, MaxTextureUnits);
+        }
 
         var slots = new List<TextureSlot>(textureIds.Count);
 
-        for (uint unit = 0; unit < textureIds.Count; unit++)
+        var textureIdsWithSlotIndices = textureIds.Zip(_slotIndex.GetMultiple(textureIds.Count));
+        foreach (var textureIdAndSlotIndex in textureIdsWithSlotIndices)
         {
-            var textureId = textureIds[(int)unit];
+            var (textureId, slotIndex) = textureIdAndSlotIndex;
 
-            if (BindTextureInternal(textureId, unit).TryPickProblems(out var problems, out var slot))
+            if (BindTextureInternal(textureId, slotIndex).TryPickProblems(out var problems, out var slot))
                 return problems;
 
             slots.Add(slot);
@@ -39,26 +35,19 @@ public class TextureSlotManager(
         return slots;
     }
 
-    public Result<TextureSlot> BindTexture(Id<Texture> textureId)
+    public Result<TextureSlot> BindTexture(UntypedTextureId textureId) => BindTextureInternal(textureId, _slotIndex.GetNext());
+
+    private Result<TextureSlot> BindTextureInternal(UntypedTextureId textureId, int slotIndex)
     {
-        return BindTextureInternal(textureId, 0);
-    }
+        if (!textureEntityManager.TryGetRegistration(textureId, out var openGlTexture))
+        {
+            return new ResultProblem("Texture OpenGL registration not found: {0}", textureId);
+        }
 
-    private Result<TextureSlot> BindTextureInternal(Id<Texture> textureId, uint unit)
-    {
-        // Resolve: Id<Texture> → RenderingId<Texture>
-        if (!textureRenderingManager.TryGetRenderingId(textureId, out var renderingId))
-            return new ResultProblem("Texture not registered for rendering: {0}", textureId);
+        glProvider.Value.ActiveTexture(TextureUnit.Texture0 + slotIndex);
+        glProvider.Value.BindTexture(TextureTarget.Texture2D, openGlTexture.Handle);
 
-        // Resolve: RenderingId<Texture> → Texture2D (OpenGL handle)
-        if (!textureEntityManager.TryGetRegistration(renderingId, out var reg))
-            return new ResultProblem("Texture OpenGL registration not found: {0}", renderingId);
-
-        // Bind to texture unit
-        glProvider.Value.ActiveTexture(TextureUnit.Texture0 + (int)unit);
-        glProvider.Value.BindTexture(TextureTarget.Texture2D, reg.Texture.Handle);
-
-        return new TextureSlot(unit, reg.Texture);
+        return new TextureSlot(slotIndex, openGlTexture);
     }
 
     public void UnbindAll(uint count)

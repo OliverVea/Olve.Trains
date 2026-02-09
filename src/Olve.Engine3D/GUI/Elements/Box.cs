@@ -26,10 +26,10 @@ public class Box : GuiElement, IRenderableAsRectangle
     public float? AspectRatio { get; set; }
     public Justify Justify { get; set; } = Justify.Start;
     public Align Align { get; set; } = Align.Start;
-    public (float R, float G, float B, float A)? BackgroundColor { get; set; }
+    public RGBA? BackgroundColor { get; set; }
     public float? BorderWidth { get; set; }
     public (float L, float T, float R, float B)? BorderWidthSides { get; set; }
-    public (float R, float G, float B, float A)? BorderColor { get; set; }
+    public RGBA? BorderColor { get; set; }
     public float? BorderRadius { get; set; }
     public (float TL, float TR, float BR, float BL)? BorderRadiusCorners { get; set; }
 
@@ -38,26 +38,19 @@ public class Box : GuiElement, IRenderableAsRectangle
 
     private Border ComputeBorder()
     {
-        // If explicit Border is set, use it
         if (Border.HasValue) return Border.Value;
-
-        // Otherwise, build from convenience properties
-        if (!BorderColor.HasValue) return Layout.Border.None;
 
         var thickness = BorderWidthSides.HasValue
             ? new Thickness(new Dp(BorderWidthSides.Value.L), new Dp(BorderWidthSides.Value.T),
                            new Dp(BorderWidthSides.Value.R), new Dp(BorderWidthSides.Value.B))
             : Thickness.All(new Dp(BorderWidth ?? 0f));
 
-        var color = new RGBA(BorderColor.Value.R, BorderColor.Value.G,
-                            BorderColor.Value.B, BorderColor.Value.A);
-
         var radius = BorderRadiusCorners.HasValue
             ? new BorderRadius(new Dp(BorderRadiusCorners.Value.TL), new Dp(BorderRadiusCorners.Value.TR),
                                      new Dp(BorderRadiusCorners.Value.BR), new Dp(BorderRadiusCorners.Value.BL))
             : Layout.BorderRadius.All(new Dp(BorderRadius ?? 0f));
 
-        return new Border(thickness, color, radius);
+        return new Border(thickness, BorderColor ?? RGBA.Transparent, radius);
     }
 
     public override LayoutBox? LayoutBox => new LayoutBox
@@ -86,9 +79,7 @@ public class Box : GuiElement, IRenderableAsRectangle
 
     public IRenderableAsRectangle.Data TexturedRectangleData => new()
     {
-        Color = BackgroundColor is {} bg
-            ? new Vector4D<float>(bg.R,  bg.G, bg.B, bg.A)
-            : Vector4D<float>.Zero,
+        Color = BackgroundColor ?? RGBA.Transparent,
         Border = ComputeBorder(),
     };
 }

@@ -1,6 +1,8 @@
+using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Assets.Entities;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
@@ -15,7 +17,8 @@ public class JunctionSignalRenderingService(
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
-    TextureLoadingService textureLoadingService,
+    TextureLoadingManager textureLoadingManager,
+    TextureEntityManager textureEntityManager,
     RenderingServiceHelper renderingServiceHelper,
     JunctionService junctionService,
     JunctionSignalService junctionSignalService)
@@ -30,10 +33,16 @@ public class JunctionSignalRenderingService(
     protected override Result OnLoad()
     {
         // Load texture and get its Id
-        if (textureLoadingService.LoadTexture(Textures.SimpleTrains_Texture_01)
+        if (textureLoadingManager.LoadTexture(Textures.SimpleTrains_Texture_01)
             .TryPickProblems(out var problems, out var textureId))
         {
             return problems.Prepend("Failed to load texture");
+        }
+
+        if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(textureId, new TextureUploadOptions())
+            .TryPickProblems(out problems))
+        {
+            return problems.Prepend("Failed to register texture with OpenGL");
         }
 
         _shader.TextureSampler = textureId;

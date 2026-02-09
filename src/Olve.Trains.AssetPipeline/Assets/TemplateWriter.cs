@@ -8,10 +8,10 @@ namespace Olve.Trains.AssetPipeline.Assets;
 
 public class TemplateWriter(ILogger<TemplateWriter> logger, PathProvider pathProvider)
 {
-    public async Task<Result> WriteTemplateAsync<T>(string className, string @namespace, IEnumerable<Asset<T>> assets, IPath outputPath,
+    public async Task<Result> WriteTemplateAsync<T>(string className, string @namespace, string assetType, IEnumerable<Asset<T>> assets, IPath outputPath,
         CancellationToken ct = default)
     {
-        var scriptObject = MapToScriptObject(className, @namespace, typeof(T).Name, assets);
+        var scriptObject = MapToScriptObject(className, @namespace, assetType, assets);
         var templatePath = pathProvider.TemplatesSourceFolder / "AssetClass.scriban";
         return await WriteTemplateAsync(templatePath, scriptObject, outputPath, ct);
     }

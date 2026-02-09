@@ -7,6 +7,7 @@ using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.EntityManagers;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 using Olve.Logging;
@@ -42,7 +43,7 @@ namespace Olve.Trains.Scenes.UI;
 [Singleton(typeof(IEnumerable<SceneService>), Factory = nameof(GetAllSceneServices))]
 [Singleton(typeof(RenderingManager2D), Factory = nameof(GetRenderingManager2D))]
 [Transient(typeof(ILoggingManager), Factory = nameof(GetLoggingManager))]
-[Transient(typeof(TextureLoadingService), Factory = nameof(GetTextureLoadingService))]
+[Transient(typeof(TextureLoadingManager), Factory = nameof(GetTextureLoadingService))]
 [Transient(typeof(TerrainRaycastService), Factory = nameof(GetTerrainRaycastService))]
 [Transient(typeof(MouseManager), Factory = nameof(GetMouseManager))]
 [Transient(typeof(KeyboardManager), Factory = nameof(GetKeyboardManager))]
@@ -58,6 +59,7 @@ namespace Olve.Trains.Scenes.UI;
 [Transient(typeof(TrackLineStripDataService), Factory = nameof(GetTrackLineStripDataService))]
 [Transient(typeof(TrackValidationService), Factory = nameof(GetTrackValidationService))]
 [Transient(typeof(TrackSplineService), Factory = nameof(GetTrackSplineService))]
+[Transient(typeof(TextureManager), Factory = nameof(GetTextureManager))]
 [Transient(typeof(VehicleService), Factory = nameof(GetVehicleService))]
 [Transient(typeof(VehiclePositionService), Factory = nameof(GetVehiclePositionService))]
 [Transient(typeof(StationService), Factory = nameof(GetStationService))]
@@ -89,9 +91,10 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
     private ShaderEntityManager GetShaderEntityManager() => gameProvider.GetRequiredService<ShaderEntityManager>();
     private TextureEntityManager GetTextureEntityManager() => gameProvider.GetRequiredService<TextureEntityManager>();
     private RenderingManager3D GetRenderingManager3D() => gameProvider.GetRequiredService<RenderingManager3D>();
+    private TextureManager GetTextureManager() => gameProvider.GetRequiredService<TextureManager>();
     private RenderingManager2D GetRenderingManager2D() => gameProvider.GetRequiredService<RenderingManager2D>();
     private ILoggingManager GetLoggingManager() => gameProvider.GetRequiredService<ILoggingManager>();
-    private TextureLoadingService GetTextureLoadingService() => gameProvider.GetRequiredService<TextureLoadingService>();
+    private TextureLoadingManager GetTextureLoadingService() => gameProvider.GetRequiredService<TextureLoadingManager>();
     private AssetLoader GetAssetLoader() => gameProvider.GetRequiredService<AssetLoader>();
     private RenderingServiceHelper GetRenderingServiceHelper() => gameProvider.GetRequiredService<RenderingServiceHelper>();
     private DayTimeManager GetDayTimeManager() => gameProvider.GetRequiredService<DayTimeManager>();
@@ -111,7 +114,6 @@ public partial class UISceneProvider(GameProvider gameProvider) : ISceneServices
         provider.GetRequiredService<GuiRectangleUpdateService>(),
         provider.GetRequiredService<GuiTextRenderingService>(),
         provider.GetRequiredService<GuiTextUpdateService>(),
-        provider.GetRequiredService<TextureLoadingService>(),
         provider.GetRequiredService<GameStyleService>(),
 
         ..IGuiProvider.GetAllSceneServices(provider)

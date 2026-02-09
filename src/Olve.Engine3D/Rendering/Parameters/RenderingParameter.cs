@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Olve.Engine3D.Rendering.Textures;
-using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Rendering.Parameters;
 
@@ -28,7 +27,7 @@ public static class RenderingParameter
     public class Bool(string name, bool value) : Base<bool>(name, value);
 
     [DebuggerDisplay("Texture {Name} ({Value})")]
-    public class Texture(string name, Id<Textures.Texture> value) : Base<Id<Textures.Texture>>(name, value);
+    public class Texture(string name, UntypedTextureId value) : Base<UntypedTextureId>(name, value);
 
     public abstract class Base<T>(string name, T value)
     {

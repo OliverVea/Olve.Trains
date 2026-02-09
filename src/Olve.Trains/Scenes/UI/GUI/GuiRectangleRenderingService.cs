@@ -23,7 +23,7 @@ public class GuiRectangleRenderingService(
 {
     public override int Priority => GetPriorityFromDependencies([guiLayoutService]);
 
-    private readonly record struct InstanceData(RenderingInstanceId InstanceId, Id<Texture> TextureId);
+    private readonly record struct InstanceData(RenderingInstanceId InstanceId, UntypedTextureId TextureId);
 
     private readonly Dictionary<Id<GuiNode>, InstanceData> _instances = new();
     private readonly List<Id<GuiNode>> _nodesToDelete = [];
@@ -62,7 +62,13 @@ public class GuiRectangleRenderingService(
                 continue;
             }
 
-            var entityParams = new Shaders.TexturedRectangle.EntityParameters(UTexture: instanceData.TextureId);
+            if (!instanceData.TextureId.TryGetAsTypedId<RGBA>(out var textureId))
+            {
+                // TODO: Improve this error message
+                return new ResultProblem("Failed to find texture id for node '{0}'", nodeId);
+            }
+
+            var entityParams = new Shaders.TexturedRectangle.EntityParameters(UTexture: textureId);
 
             if (renderingManager2D.Update(instanceData.InstanceId, rectInstance, depth, entityParams)
                 .TryPickProblems(out var problems))
@@ -99,7 +105,7 @@ public class GuiRectangleRenderingService(
         return renderingManager2D.Render(_shader);
     }
 
-    public Result RegisterTexturedRectangle(Id<GuiNode> nodeId, Id<Texture> textureId)
+    public Result RegisterTexturedRectangle(Id<GuiNode> nodeId, TextureId<RGBA> textureId)
     {
         ResultProblemCollection? problems;
         if (_instances.Remove(nodeId, out var oldInstance))
@@ -120,7 +126,6 @@ public class GuiRectangleRenderingService(
             iBorderColor: Vector4D<float>.Zero,
             iBorderRadiusPx: Vector4D<float>.Zero);
 
-        // Create entity parameters with the texture Id
         var entityParams = new Shaders.TexturedRectangle.EntityParameters(UTexture: textureId);
 
         if (renderingManager2D.Register(_shader.RenderingId, initialInstance, 0f, entityParams)
@@ -192,7 +197,7 @@ public class GuiRectangleRenderingService(
         instance = new Shaders.TexturedRectangle.Instance(
             iPosPx: new Vector2D<float>(boxPosition.Position.X.Value, boxPosition.Position.Y.Value),
             iSizePx: new Vector2D<float>(boxPosition.Size.X.Value, boxPosition.Size.Y.Value),
-            iTint: rectData.Color,
+            iTint: rectData.Color.ToVector(),
             iBorderWidthPx: borderWidthPx,
             iBorderColor: border.Color.ToVector(),
             iBorderRadiusPx: borderRadiusPx);

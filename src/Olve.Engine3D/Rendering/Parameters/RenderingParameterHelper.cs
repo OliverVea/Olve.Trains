@@ -125,13 +125,12 @@ public static class RenderingParameterHelper
             return false;
         }
 
-        // Bind texture by Id - TextureSlotManager resolves to OpenGL handle internally
-        if (textureSlotManager.BindTexture(texture.Value).TryPickProblems(out var problems, out var slot))
+        if (textureSlotManager.BindTexture(texture.Value).TryPickProblems(out _, out var slot))
         {
             return false;
         }
 
-        gl.Uniform1(location, (int)slot.Unit);
+        gl.Uniform1(location, slot.SlotIntex);
         return true;
     }
 }

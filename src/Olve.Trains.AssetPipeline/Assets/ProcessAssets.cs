@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Operations;
 using Olve.Paths;
@@ -14,14 +15,14 @@ public class ProcessAssets(ILogger<ProcessAssets> logger, PathProvider pathProvi
     private IPath TemplateFilePath => pathProvider.TemplatesSourceFolder / "MeshesClass.scriban";
 
     public record Request(IReadOnlyList<FileInfo> AssetFiles, BuildTargets Targets);
-    public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets, IReadOnlyList<Asset<TextureData>> TextureAssets, IReadOnlyList<Asset<TerrainData>> TerrainAssets, IReadOnlyList<IPath> FontFiles);
+    public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets, IReadOnlyList<Asset<TextureData<RGBA>>> TextureAssets, IReadOnlyList<Asset<TerrainData>> TerrainAssets, IReadOnlyList<IPath> FontFiles);
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
         logger.LogDebug("Processing assets");
 
         IReadOnlyList<Asset<MeshData>> meshAssets = [];
-        IReadOnlyList<Asset<TextureData>> textureAssets = [];
+        IReadOnlyList<Asset<TextureData<RGBA>>> textureAssets = [];
         IReadOnlyList<Asset<TerrainData>> terrainAssets = [];
         IReadOnlyList<IPath> fontFiles = [];
 
@@ -89,11 +90,26 @@ public class ProcessAssets(ILogger<ProcessAssets> logger, PathProvider pathProvi
 
                 var textureAsset = textureAssetsList.First();
 
+                // Convert RGBA to RGB for font atlas (MSDF only needs RGB channels)
+                var rgbaData = textureAsset.Data;
+                var rgbPixels = new RGB[rgbaData.Pixels.Length];
+                for (var i = 0; i < rgbaData.Pixels.Length; i++)
+                {
+                    var p = rgbaData.Pixels[i];
+                    rgbPixels[i] = new RGB(p.R, p.G, p.B);
+                }
+                var rgbData = new TextureData<RGB>
+                {
+                    Pixels = rgbPixels,
+                    Width = rgbaData.Width,
+                    Height = rgbaData.Height,
+                };
+
                 // Override destination to fonts folder
                 var fontName = System.IO.Path.GetFileNameWithoutExtension(textureAsset.Name);
                 var fontAtlasDestination = $"fonts/{fontName}.texture";
 
-                var writeResult = await assetWriter.WriteAssetAsync(textureAsset.Data, fontAtlasDestination, ct);
+                var writeResult = await assetWriter.WriteAssetAsync(rgbData, fontAtlasDestination, ct);
                 if (writeResult.TryPickProblems(out var writeProblems))
                 {
                     return writeProblems.Prepend("Failed to write font atlas texture");

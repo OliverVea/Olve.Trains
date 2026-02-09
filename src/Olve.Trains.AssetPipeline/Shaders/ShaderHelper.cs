@@ -5,7 +5,7 @@ namespace Olve.Trains.AssetPipeline.Shaders;
 
 public static class ShaderHelper
 {
-    public static Result<IReadOnlyList<Uniform>> GetUniforms(string shaderSource)
+    public static Result<IReadOnlyList<Uniform>> GetUniforms(string shaderSource, string? fileName = null)
     {
         var offset = 0;
         var i = shaderSource.IndexOf("\nuniform ", offset, StringComparison.OrdinalIgnoreCase);
@@ -50,14 +50,38 @@ public static class ShaderHelper
             
             var uniformName = shaderSource[uniformNameStart..uniformNameEnd];
 
+            // Parse @pixelType(...) annotation from the previous line
+            string? pixelType = null;
+            if (uniformType == UniformType.Sampler2D)
+            {
+                // Check previous line (i points to the \n before "uniform")
+                var prevLineEnd = i;
+                var prevLineStart = shaderSource.LastIndexOf('\n', prevLineEnd - 1);
+                if (prevLineStart == -1) prevLineStart = 0;
+                var prevLine = shaderSource[prevLineStart..prevLineEnd];
+
+                if (TryParsePixelTypeAnnotation(prevLine, out var parsed))
+                {
+                    pixelType = parsed;
+                }
+                else
+                {
+                    var fileInfo = fileName != null ? $" in '{fileName}'" : "";
+                    return new ResultProblem(
+                        "sampler2D uniform '{0}' at line {1}{2} is missing a // @pixelType(...) annotation on the previous line",
+                        uniformName, lineNumber, fileInfo);
+                }
+            }
+
             Uniform uniform = new()
             {
                 Name = uniformName,
                 Type = uniformType.Value,
+                PixelType = pixelType,
             };
-            
+
             uniforms.Add(uniform);
-            
+
             offset = uniformNameEnd + 1;
             i = shaderSource.IndexOf("\nuniform ", offset, StringComparison.OrdinalIgnoreCase);
         }
@@ -152,6 +176,21 @@ public static class ShaderHelper
         attributes.Sort((a, b) => a.Location.CompareTo(b.Location));
 
         return attributes;
+    }
+
+    private static bool TryParsePixelTypeAnnotation(string text, [NotNullWhen(true)] out string? pixelType)
+    {
+        pixelType = null;
+
+        var markerIndex = text.IndexOf("@pixelType(", StringComparison.Ordinal);
+        if (markerIndex == -1) return false;
+
+        var start = markerIndex + "@pixelType(".Length;
+        var end = text.IndexOf(')', start);
+        if (end == -1) return false;
+
+        pixelType = text[start..end].Trim();
+        return pixelType.Length > 0;
     }
 
     public static bool TryParseUniformType(string uniformTypeString, [NotNullWhen(true)] out UniformType? uniformType)

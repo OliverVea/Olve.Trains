@@ -6,8 +6,8 @@ namespace Olve.Engine3D.GUI.Elements;
 
 public class Image : GuiElement, IRenderableAsRectangle
 {
-    public required AssetPath<TextureData> Texture { get; set; }
-    public (float R, float G, float B)? Tint { get; set; }
+    public required AssetPath<TextureData<RGBA>> Texture { get; set; }
+    public RGBA Tint { get; set; } = RGBA.White;
     public float Alpha { get; set; } = 1f;
     public float? AspectRatio { get; set; }
     public FitMode Fit { get; set; } = FitMode.Contain;
@@ -19,7 +19,7 @@ public class Image : GuiElement, IRenderableAsRectangle
 
     public IRenderableAsRectangle.Data TexturedRectangleData => new()
     {
-        Color = new Vector4D<float>(Tint?.R ?? 1f, Tint?.G ?? 1f, Tint?.B ?? 1f, Alpha),
+        Color = Tint,
         TexturePath = Texture
     };
 }

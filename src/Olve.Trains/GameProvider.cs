@@ -23,7 +23,7 @@ namespace Olve.Trains;
 [Singleton(typeof(DayTimeManager))]
 [Singleton(typeof(DaylightManager))]
 [Singleton(typeof(ScreenResizedEvent))]
-[Singleton(typeof(TextureLoadingService))]
+[Singleton(typeof(TextureLoadingManager))]
 [Singleton(typeof(CommandHandlerServiceCollection))]
 [Singleton(typeof(GameSceneProvider))]
 [Singleton(typeof(UISceneProvider))]

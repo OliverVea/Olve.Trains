@@ -34,7 +34,7 @@ public class GuiTextRenderingService(
     /// </summary>
     private readonly record struct TextInstanceData(
         IReadOnlyList<RenderingInstanceId> GlyphInstanceIds,
-        Id<Texture> FontAtlasId,
+        TextureId<RGB> FontAtlasId,
         IReadOnlyList<TextLayoutEngine.GlyphLayout> CachedLayout,
         FontData Font,
         string CachedContent,
@@ -108,7 +108,7 @@ public class GuiTextRenderingService(
     public Result RegisterText(
         Id<GuiNode> nodeId,
         FontData font,
-        Id<Texture> fontAtlasId,
+        TextureId<RGB> fontAtlasId,
         string content,
         float fontSize)
     {
@@ -170,12 +170,12 @@ public class GuiTextRenderingService(
     {
         if (!_instances.TryGetValue(nodeId, out var data))
         {
-            return Result.Success(); // Not registered, nothing to update
+            return Result.Success();
         }
 
         if (data.CachedContent == newContent)
         {
-            return Result.Success(); // Content unchanged
+            return Result.Success();
         }
 
         var newLayout = TextLayoutEngine.ComputeLayout(newContent, data.Font, data.CachedFontSize);
@@ -279,7 +279,7 @@ public class GuiTextRenderingService(
             var glyphInstance = new Shaders.MsdfText.Instance(
                 iPosPx: glyphPos,
                 iSizePx: glyphLayout.SizePx,
-                iTint: textData.Color,
+                iTint: textData.Color.ToVector(),
                 iUvMin: glyphLayout.UvMin,
                 iUvMax: glyphLayout.UvMax);
 
