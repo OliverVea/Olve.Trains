@@ -17,7 +17,3 @@ public class GuiFocusService
         OnFocusChanged.Invoke(new GuiFocusChanged(previous, nodeId));
     }
 }
-
-public readonly record struct GuiFocusChanged(
-    Id<GuiNode>? Previous,
-    Id<GuiNode>? Current);

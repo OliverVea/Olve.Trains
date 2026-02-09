@@ -1,18 +1,12 @@
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Systems;
 using Olve.Utilities.Ids;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 
 namespace Olve.Engine3D;
-
-public class ScreenResizedEvent
-{
-    public Event<Vector2D<int>> OnWindowResize { get; } = new();
-}
 
 public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvider, Provider<IInputContext> inputContextProvider, KeyboardManager keyboardManager, MouseManager mouseManager, SceneManager sceneManager, ScreenResizedEvent screenResizedEvent)
 {

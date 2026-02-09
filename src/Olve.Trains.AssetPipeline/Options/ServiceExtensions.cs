@@ -3,11 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Olve.Trains.AssetPipeline.Options;
 
-public interface IAssetOptions
-{
-    string SectionName { get; }
-}
-
 public static class ServiceExtensions
 {
     public static IServiceCollection AddAssetPipelineConfiguration(this IServiceCollection services,

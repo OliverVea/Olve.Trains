@@ -173,12 +173,3 @@ public class GuiAnimationService(
             && flags.HasFlag(state));
     }
 }
-
-public static class GroupingExtensions
-{
-    public static IEnumerable<(TKey, IEnumerable<TValue>)> Unpack<TKey, TValue>(
-        this IEnumerable<IGrouping<TKey, TValue>> groupings)
-    {
-        return groupings.Select(x => (x.Key, x.AsEnumerable()));
-    }
-}

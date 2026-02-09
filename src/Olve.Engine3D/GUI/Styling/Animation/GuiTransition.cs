@@ -6,8 +6,3 @@ public readonly record struct GuiTransition(Ms Duration, Easing Easing = Easing.
 
     public bool IsInstant => Duration.Value <= 0;
 }
-
-public readonly record struct StateTransition(GuiTransition In, GuiTransition Out)
-{
-    public static StateTransition Instant => new(GuiTransition.Instant, GuiTransition.Instant);
-}
