@@ -18,9 +18,6 @@ public class TextureSlotManager(
 {
     public const uint MaxTextureUnits = 8;
 
-    /// <summary>
-    /// Binds multiple textures to consecutive texture units.
-    /// </summary>
     public Result<IReadOnlyList<TextureSlot>> BindTextures(IReadOnlyList<Id<Texture>> textureIds)
     {
         if (textureIds.Count > MaxTextureUnits)
@@ -42,15 +39,9 @@ public class TextureSlotManager(
         return slots;
     }
 
-    /// <summary>
-    /// Binds a single texture to the specified unit and returns its slot.
-    /// </summary>
-    public Result<TextureSlot> BindTexture(Id<Texture> textureId, uint unit = 0)
+    public Result<TextureSlot> BindTexture(Id<Texture> textureId)
     {
-        if (unit >= MaxTextureUnits)
-            return new ResultProblem("Texture unit {0} exceeds max {1}", unit, MaxTextureUnits);
-
-        return BindTextureInternal(textureId, unit);
+        return BindTextureInternal(textureId, 0);
     }
 
     private Result<TextureSlot> BindTextureInternal(Id<Texture> textureId, uint unit)
