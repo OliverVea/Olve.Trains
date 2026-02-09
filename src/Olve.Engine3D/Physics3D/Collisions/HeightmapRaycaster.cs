@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Assets.Entities;
 
 namespace Olve.Engine3D.Physics3D.Collisions;
 

@@ -1,10 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
 using Olve.Engine3D;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
@@ -58,7 +56,7 @@ public class GuiRectangleRenderingService(
 
         foreach (var (nodeId, instanceData) in _instances)
         {
-            if (!TryBuildRectangleData(nodeId, out var rectangleData))
+            if (!TryBuildInstanceData(nodeId, out var rectInstance, out var depth))
             {
                 _nodesToDelete.Add(nodeId);
                 continue;
@@ -66,7 +64,7 @@ public class GuiRectangleRenderingService(
 
             var entityParams = new Shaders.TexturedRectangle.EntityParameters(UTexture: instanceData.TextureId);
 
-            if (renderingManager2D.UpdateRectangle(instanceData.InstanceId, rectangleData, entityParams)
+            if (renderingManager2D.Update(instanceData.InstanceId, rectInstance, depth, entityParams)
                 .TryPickProblems(out var problems))
             {
                 _nodesToDelete.Add(nodeId);
@@ -107,25 +105,25 @@ public class GuiRectangleRenderingService(
         if (_instances.Remove(nodeId, out var oldInstance))
         {
             if (renderingManager2D
-                .DeregisterRectangle(oldInstance.InstanceId)
+                .Deregister(oldInstance.InstanceId)
                 .TryPickProblems(out problems))
             {
                 return problems;
             }
         }
 
-        var initialData = new RectangleData
-        {
-            PositionPx = Vector2D<float>.Zero,
-            SizePx = Vector2D<float>.One,
-            TintRgba = Vector4D<float>.One,
-            Depth = 0
-        };
+        var initialInstance = new Shaders.TexturedRectangle.Instance(
+            iPosPx: Vector2D<float>.Zero,
+            iSizePx: Vector2D<float>.One,
+            iTint: Vector4D<float>.One,
+            iBorderWidthPx: Vector4D<float>.Zero,
+            iBorderColor: Vector4D<float>.Zero,
+            iBorderRadiusPx: Vector4D<float>.Zero);
 
         // Create entity parameters with the texture Id
         var entityParams = new Shaders.TexturedRectangle.EntityParameters(UTexture: textureId);
 
-        if (renderingManager2D.RegisterRectangle(_shader.RenderingId, initialData, entityParams)
+        if (renderingManager2D.Register(_shader.RenderingId, initialInstance, 0f, entityParams)
             .TryPickProblems(out problems, out var renderingInstanceId))
         {
             return problems.Prepend("Failed to register rectangle: nodeId={0}, textureId={1}", nodeId, textureId);
@@ -146,7 +144,7 @@ public class GuiRectangleRenderingService(
         }
 
         if (renderingManager2D
-            .DeregisterRectangle(instanceData.InstanceId)
+            .Deregister(instanceData.InstanceId)
             .TryPickProblems(out var problems))
         {
             return DeletionResult.Error(problems);
@@ -157,17 +155,22 @@ public class GuiRectangleRenderingService(
         return DeletionResult.Success();
     }
 
-    private bool TryBuildRectangleData(Id<GuiNode> nodeId, [MaybeNullWhen(false)] out RectangleData rectangleData)
+    private bool TryBuildInstanceData(
+        Id<GuiNode> nodeId,
+        out Shaders.TexturedRectangle.Instance instance,
+        out float depth)
     {
+        instance = default;
+        depth = 0;
+
         if (!guiLayoutService.TryGetBoxPosition(nodeId, out var boxPosition) ||
             !guiElementService.TryGetElement(nodeId, out var element) ||
             element is not IRenderableAsRectangle renderableAsRectangle)
         {
-            rectangleData = null;
             return false;
         }
 
-        var depth = guiDepthService.GetDepth(nodeId);
+        depth = -guiDepthService.GetDepth(nodeId);
 
         var rectData = renderableAsRectangle.TexturedRectangleData;
 
@@ -186,16 +189,13 @@ public class GuiRectangleRenderingService(
             layoutContext.Value.ToPx(border.Radius.BottomLeft).Value
         );
 
-        rectangleData = new RectangleData
-        {
-            PositionPx = new Vector2D<float>(boxPosition.Position.X.Value, boxPosition.Position.Y.Value),
-            SizePx = new Vector2D<float>(boxPosition.Size.X.Value, boxPosition.Size.Y.Value),
-            TintRgba = rectData.Color,
-            Depth = -depth,
-            BorderWidthPx = borderWidthPx,
-            BorderColor = border.Color.ToVector(),
-            BorderRadiusPx = borderRadiusPx
-        };
+        instance = new Shaders.TexturedRectangle.Instance(
+            iPosPx: new Vector2D<float>(boxPosition.Position.X.Value, boxPosition.Position.Y.Value),
+            iSizePx: new Vector2D<float>(boxPosition.Size.X.Value, boxPosition.Size.Y.Value),
+            iTint: rectData.Color,
+            iBorderWidthPx: borderWidthPx,
+            iBorderColor: border.Color.ToVector(),
+            iBorderRadiusPx: borderRadiusPx);
 
         return true;
     }

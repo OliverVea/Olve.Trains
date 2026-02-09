@@ -1,6 +1,6 @@
 ﻿using BigGustave;
 using Microsoft.Extensions.Options;
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Assets.Entities;
 using Olve.OpenRaster;
 using Olve.Results;
 using Olve.Trains.AssetPipeline.Options;

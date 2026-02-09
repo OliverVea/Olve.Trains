@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Assets.Entities;
 using Olve.OpenRaster;
 using Olve.Trains.AssetPipeline;
 using Olve.Trains.AssetPipeline.Assets;

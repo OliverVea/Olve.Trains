@@ -37,6 +37,14 @@ public class OpenGLInstancedBufferManager(
         return new Registration(new VAO(vaoHandle), new VBO(instVboHandle, 6));
     }
 
+    public void UpdateBuffer(Registration registration, ReadOnlySpan<float> instanceData, BufferUsageARB usage)
+    {
+        var gl = glProvider.Value;
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, registration.InstanceVBO.Handle);
+        gl.BufferData(BufferTargetARB.ArrayBuffer, instanceData, usage);
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+    }
+
     public void DeleteBuffers(Registration registration)
     {
         var gl = glProvider.Value;

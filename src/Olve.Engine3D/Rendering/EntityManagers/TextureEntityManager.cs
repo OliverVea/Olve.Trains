@@ -1,3 +1,4 @@
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Textures;
@@ -34,7 +35,23 @@ public class TextureEntityManager(OpenGLTextureManager openGLTextureManager) : R
     }
 
     /// <summary>
-    /// Adopts an externally-created texture (e.g., from HeightmapEntityManager).
+    /// Registers a float texture (R32F format) through the texture system.
+    /// </summary>
+    // TODO: investigate this
+    public Result<RenderingId<Texture>> RegisterFloat(FloatTextureData floatTextureData)
+    {
+        if (openGLTextureManager.RegisterFloat(floatTextureData).TryPickProblems(out var problems, out var openGlTexture))
+        {
+            return problems.Prepend("Failed registering float texture in OpenGL");
+        }
+
+        var renderingId = RenderingId<Texture>.New();
+        ModelRegistrations.Add(renderingId, new Registration(openGlTexture));
+        return renderingId;
+    }
+
+    /// <summary>
+    /// Adopts an externally-created texture.
     /// The caller is responsible for managing the texture's lifecycle.
     /// </summary>
     public RenderingId<Texture> AdoptExternalTexture(Texture2D texture)

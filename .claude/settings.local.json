@@ -18,7 +18,9 @@
       "WebFetch(domain:perksey.com)",
       "WebFetch(domain:medium.com)",
       "WebFetch(domain:kylekukshtel.com)",
-      "WebFetch(domain:velzie.rip)"
+      "WebFetch(domain:velzie.rip)",
+      "Bash(git mv:*)",
+      "Bash(xargs sed:*)"
     ],
     "deny": [],
     "ask": []

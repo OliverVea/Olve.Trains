@@ -51,6 +51,20 @@ public class OpenGLBufferManager(Provider<GL> glProvider)
         return CreateBuffers(vertexData, vertexCount, ReadOnlySpan<uint>.Empty, configureAttributes, usage);
     }
 
+    public Registration CreateDrawArraysBuffers(uint vertexCount)
+    {
+        var gl = glProvider.Value;
+
+        var vaoHandle = gl.CreateVertexArray();
+        gl.BindVertexArray(vaoHandle);
+        gl.BindVertexArray(0);
+
+        return new Registration(
+            new VAO(vaoHandle),
+            new VBO(0, vertexCount),
+            null);
+    }
+
     public void UpdateVBO(Registration registration, ReadOnlySpan<float> vertexData, BufferUsageARB usage)
     {
         var gl = glProvider.Value;

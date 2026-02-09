@@ -8,18 +8,10 @@ using Silk.NET.OpenGL;
 namespace Olve.Engine3D.Rendering;
 
 [ServiceProviderModule]
-[Singleton(typeof(HeightmapEntityManager))]
-[Singleton(typeof(LineStripEntityManager))]
-[Singleton(typeof(MeshEntityManager))]
-[Singleton(typeof(OpenGLHeightmapManager))]
 [Singleton(typeof(OpenGLBufferManager))]
 [Singleton(typeof(OpenGLInstancedBufferManager))]
-[Singleton(typeof(OpenGLLineStripManager))]
-[Singleton(typeof(OpenGLMeshManager))]
 [Singleton(typeof(OpenGLModelRenderingManager))]
 [Singleton(typeof(OpenGLQuadRenderingManager))]
-[Singleton(typeof(OpenGLRectangleManager))]
-[Singleton(typeof(OpenGLGlyphManager))]
 [Singleton(typeof(OpenGLShaderManager))]
 [Singleton(typeof(OpenGLTextureManager))]
 [Singleton(typeof(Provider<GL>))]

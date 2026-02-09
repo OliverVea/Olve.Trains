@@ -249,6 +249,8 @@ public class ProcessShaders(
                 { "ComponentCount", componentCount },
                 { "IsInstanced", attr.IsInstanced },
                 { "ByteOffset", byteOffset },
+                { "DataType", attr.Type.GetDataType() },
+                { "WriteCode", GetWriteCode(attr.Name, componentCount) },
             };
 
             vertexAttributeObjects.Add(attrObject);
@@ -265,6 +267,12 @@ public class ProcessShaders(
         programObject.Add("VertexStrideBytes", vertexStride * sizeof(float));
         programObject.Add("InstanceStride", instanceStride);
         programObject.Add("InstanceStrideBytes", instanceStride * sizeof(float));
+
+        // Separate lists for struct generation (avoids Scriban filtering issues)
+        var instancedAttrObjects = vertexAttributeObjects.Where(a => (bool)a["IsInstanced"]).ToList();
+        var perVertexAttrObjects = vertexAttributeObjects.Where(a => !(bool)a["IsInstanced"]).ToList();
+        programObject.Add("InstancedAttributes", instancedAttrObjects);
+        programObject.Add("PerVertexAttributes", perVertexAttrObjects);
 
         ScriptObject fragmentShaderObject = new()
         {
@@ -297,6 +305,18 @@ public class ProcessShaders(
         }
 
         return programObject;
+    }
+
+    private static string GetWriteCode(string name, int componentCount)
+    {
+        return componentCount switch
+        {
+            1 => $"buffer[i++] = {name};",
+            2 => $"buffer[i++] = {name}.X; buffer[i++] = {name}.Y;",
+            3 => $"buffer[i++] = {name}.X; buffer[i++] = {name}.Y; buffer[i++] = {name}.Z;",
+            4 => $"buffer[i++] = {name}.X; buffer[i++] = {name}.Y; buffer[i++] = {name}.Z; buffer[i++] = {name}.W;",
+            _ => throw new ArgumentException($"Unsupported component count: {componentCount}")
+        };
     }
 
     private static Result AddUniforms(Dictionary<string, Uniform> uniforms, IReadOnlyList<Uniform> newUniforms)

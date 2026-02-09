@@ -1,6 +1,6 @@
 using BigGustave;
 using Microsoft.Extensions.Logging;
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Results;
 using Silk.NET.Maths;
 

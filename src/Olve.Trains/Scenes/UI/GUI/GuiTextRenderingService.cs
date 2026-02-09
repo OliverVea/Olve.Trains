@@ -4,7 +4,7 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Text;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
@@ -119,25 +119,22 @@ public class GuiTextRenderingService(
 
         foreach (var glyph in layout)
         {
-            var rectData = new RectangleData
-            {
-                PositionPx = glyph.PositionPx,
-                SizePx = glyph.SizePx,
-                TintRgba = Vector4D<float>.One,
-                UvMin = glyph.UvMin,
-                UvMax = glyph.UvMax,
-                Depth = 0
-            };
+            var glyphInstance = new Shaders.MsdfText.Instance(
+                iPosPx: glyph.PositionPx,
+                iSizePx: glyph.SizePx,
+                iTint: Vector4D<float>.One,
+                iUvMin: glyph.UvMin,
+                iUvMax: glyph.UvMax);
 
             var entityParams = new Shaders.MsdfText.EntityParameters(
                 UFontAtlas: fontAtlasId
             );
 
-            if (renderingManager2D.RegisterGlyph(_shader.RenderingId, rectData, entityParams)
+            if (renderingManager2D.Register(_shader.RenderingId, glyphInstance, 0f, entityParams)
                 .TryPickProblems(out var problems, out var instanceId))
             {
                 foreach (var id in glyphIds)
-                    renderingManager2D.DeregisterRectangle(id);
+                    renderingManager2D.Deregister(id);
                 return problems.Prepend("Failed to register glyph for text: nodeId={0}", nodeId);
             }
 
@@ -161,7 +158,7 @@ public class GuiTextRenderingService(
 
         foreach (var glyphId in data.GlyphInstanceIds)
         {
-            renderingManager2D.DeregisterRectangle(glyphId);
+            renderingManager2D.Deregister(glyphId);
         }
 
         LoggingManager.Log(LogLevel.Debug, $"Deregistered text rendering for node {nodeId}");
@@ -194,17 +191,14 @@ public class GuiTextRenderingService(
             var glyphId = oldGlyphIds[i];
             var glyph = newLayout[i];
 
-            var rectData = new RectangleData
-            {
-                PositionPx = glyph.PositionPx,
-                SizePx = glyph.SizePx,
-                TintRgba = Vector4D<float>.One,
-                UvMin = glyph.UvMin,
-                UvMax = glyph.UvMax,
-                Depth = 0
-            };
+            var glyphInstance = new Shaders.MsdfText.Instance(
+                iPosPx: glyph.PositionPx,
+                iSizePx: glyph.SizePx,
+                iTint: Vector4D<float>.One,
+                iUvMin: glyph.UvMin,
+                iUvMax: glyph.UvMax);
 
-            if (renderingManager2D.UpdateGlyph(glyphId, rectData, entityParams)
+            if (renderingManager2D.Update(glyphId, glyphInstance, 0f, entityParams)
                 .TryPickProblems(out var problems))
             {
                 return problems.Prepend("Failed to update glyph for text: nodeId={0}", nodeId);
@@ -216,17 +210,14 @@ public class GuiTextRenderingService(
         {
             var glyph = newLayout[i];
 
-            var rectData = new RectangleData
-            {
-                PositionPx = glyph.PositionPx,
-                SizePx = glyph.SizePx,
-                TintRgba = Vector4D<float>.One,
-                UvMin = glyph.UvMin,
-                UvMax = glyph.UvMax,
-                Depth = 0
-            };
+            var glyphInstance = new Shaders.MsdfText.Instance(
+                iPosPx: glyph.PositionPx,
+                iSizePx: glyph.SizePx,
+                iTint: Vector4D<float>.One,
+                iUvMin: glyph.UvMin,
+                iUvMax: glyph.UvMax);
 
-            if (renderingManager2D.RegisterGlyph(_shader.RenderingId, rectData, entityParams)
+            if (renderingManager2D.Register(_shader.RenderingId, glyphInstance, 0f, entityParams)
                 .TryPickProblems(out var problems, out var instanceId))
             {
                 return problems.Prepend("Failed to register new glyph for text: nodeId={0}", nodeId);
@@ -238,7 +229,7 @@ public class GuiTextRenderingService(
         // Deregister excess glyphs if text got shorter
         for (var i = newLayout.Count; i < oldGlyphIds.Count; i++)
         {
-            renderingManager2D.DeregisterRectangle(oldGlyphIds[i]);
+            renderingManager2D.Deregister(oldGlyphIds[i]);
         }
 
         if (newLayout.Count < oldGlyphIds.Count)
@@ -285,21 +276,18 @@ public class GuiTextRenderingService(
                 textOrigin.Y + baselineOffset - glyphLayout.PositionPx.Y - glyphLayout.SizePx.Y
             );
 
-            var rectData = new RectangleData
-            {
-                PositionPx = glyphPos,
-                SizePx = glyphLayout.SizePx,
-                TintRgba = textData.Color,
-                UvMin = glyphLayout.UvMin,
-                UvMax = glyphLayout.UvMax,
-                Depth = -depth
-            };
+            var glyphInstance = new Shaders.MsdfText.Instance(
+                iPosPx: glyphPos,
+                iSizePx: glyphLayout.SizePx,
+                iTint: textData.Color,
+                iUvMin: glyphLayout.UvMin,
+                iUvMax: glyphLayout.UvMax);
 
             var entityParams = new Shaders.MsdfText.EntityParameters(
                 UFontAtlas: instanceData.FontAtlasId
             );
 
-            if (renderingManager2D.UpdateGlyph(glyphId, rectData, entityParams)
+            if (renderingManager2D.Update(glyphId, glyphInstance, -depth, entityParams)
                 .TryPickProblems(out var problems))
             {
                 _updateProblems.AddRange(problems);

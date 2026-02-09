@@ -1,8 +1,6 @@
-﻿using Olve.Engine3D.Assets;
+using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.Entities;
-using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
@@ -25,7 +23,6 @@ public class VehicleRenderingService(
     RenderingManager3D renderingManager3D,
     TextureLoadingService textureLoadingService,
     SceneLightService sceneLightService,
-    MeshEntityManager meshEntityManager,
     VehicleService vehicleService,
     VehiclePositionService vehiclePositionService,
     TrackSplineService trackSplineService,
@@ -34,7 +31,7 @@ public class VehicleRenderingService(
 {
     public override int Priority => GetPriorityFromDependencies([trackRenderingService]);
 
-    private RenderingId<MeshData> MeshRenderingId { get; set; }
+    private GeometryId _geometryId;
     private readonly Dictionary<Id<Vehicle>, RenderingInstanceId> _instanceIds  = new();
     private readonly EventQueue<Id<Vehicle>> _toAddQueue = new(vehicleService.OnAdded);
     private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = new(vehicleService.OnRemoved);
@@ -64,11 +61,27 @@ public class VehicleRenderingService(
             return problems.Prepend("Failed to load mesh");
         }
 
-        var meshRegistrationResult = meshEntityManager.Register(meshData);
-        if (meshRegistrationResult.TryPickProblems(out problems, out var meshRenderingId))
+        // TODO: investigate this
+        // Convert MeshData to Shaders.Default.Vertex[] and register geometry
+        var vertices = new Shaders.Default.Vertex[meshData.VertexCount];
+        for (var i = 0; i < meshData.VertexCount; i++)
+            vertices[i] = new(meshData.Positions[i], meshData.Normals[i], meshData.TextureCoordinates[i]);
+
+        var indices = new uint[meshData.Indices.Length * 3];
+        for (var i = 0; i < meshData.Indices.Length; i++)
         {
-            return problems.Prepend("Failed to register mesh");
+            indices[i * 3] = meshData.Indices[i].A;
+            indices[i * 3 + 1] = meshData.Indices[i].B;
+            indices[i * 3 + 2] = meshData.Indices[i].C;
         }
+
+        if (renderingManager3D.RegisterGeometry<Shaders.Default.Vertex>(vertices, indices)
+            .TryPickProblems(out problems, out var geometryId))
+        {
+            return problems.Prepend("Failed to register geometry");
+        }
+
+        _geometryId = geometryId;
 
         AABB aabbTarget = new(Vector3D<float>.Zero, Vector3D<float>.One);
         var scaleResult = AABBHelper.GetUniformScaleToFitInside(meshData, aabbTarget);
@@ -76,8 +89,6 @@ public class VehicleRenderingService(
         {
             return problems.Prepend("Failed to compute scale");
         }
-
-        MeshRenderingId = meshRenderingId;
 
         _toAddQueue.SetHandler(AddVehicle).Init();
         _toRemoveQueue.SetHandler(RemoveVehicle).Init();
@@ -100,13 +111,13 @@ public class VehicleRenderingService(
             return new ResultProblem("Tried to add vehicle with id '{0}' twice.", vehicleId);
         }
 
-        var registerInstanceResult = renderingManager3D.RegisterInstance(MeshRenderingId, _shader.RenderingId, new Matrix4X4<float>());
-        if (registerInstanceResult.TryPickProblems(out var problems, out var meshRenderingId))
+        var registerInstanceResult = renderingManager3D.RegisterInstance(_geometryId, _shader.RenderingId, new Matrix4X4<float>());
+        if (registerInstanceResult.TryPickProblems(out var problems, out var instanceId))
         {
             return problems.Prepend("Failed to add vehicle");
         }
 
-        _instanceIds[vehicleId] = meshRenderingId;
+        _instanceIds[vehicleId] = instanceId;
         return Result.Success();
     }
 

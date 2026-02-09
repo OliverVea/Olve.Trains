@@ -1,13 +1,14 @@
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Silk.NET.OpenGL;
-using TextureData = Olve.Engine3D.Rendering.Entities.TextureData;
+using TextureData = Olve.Engine3D.Assets.Entities.TextureData;
 
 namespace Olve.Engine3D.Rendering.OpenGL;
 
 public class OpenGLTextureManager(Provider<GL> glProvider) : IOpenGLEntityManager<TextureData, Texture2D>
 {
     private const int BytesPerPixel = 4;
-    
+
     private static readonly int Nearest = (int)GLEnum.Nearest;
     private static readonly int Repeat = (int)GLEnum.Repeat;
 
@@ -38,6 +39,34 @@ public class OpenGLTextureManager(Provider<GL> glProvider) : IOpenGLEntityManage
         });
 
         glProvider.Value.GenerateMipmap(TextureTarget.Texture2D);
+
+        glProvider.Value.BindTexture(TextureTarget.Texture2D, 0);
+
+        return new Texture2D(texture, (uint)textureData.Width, (uint)textureData.Height);
+    }
+
+    // TODO: Rethink this approach to textures :)
+    public Result<Texture2D> RegisterFloat(FloatTextureData textureData)
+    {
+        if (textureData.Validate().TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
+        var texture = glProvider.Value.GenTexture();
+        glProvider.Value.ActiveTexture(TextureUnit.Texture0);
+        glProvider.Value.BindTexture(TextureTarget.Texture2D, texture);
+
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMinFilter, in Nearest);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMagFilter, in Nearest);
+
+        var clampToEdge = (int)GLEnum.ClampToEdge;
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, in clampToEdge);
+        glProvider.Value.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, in clampToEdge);
+
+        glProvider.Value.TexImage2D(TextureTarget.Texture2D, 0, (int)InternalFormat.R32f,
+            (uint)textureData.Width, (uint)textureData.Height, 0,
+            PixelFormat.Red, PixelType.Float, (ReadOnlySpan<float>)textureData.Pixels);
 
         glProvider.Value.BindTexture(TextureTarget.Texture2D, 0);
 

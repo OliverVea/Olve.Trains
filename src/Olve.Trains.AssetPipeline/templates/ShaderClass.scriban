@@ -4,7 +4,8 @@
 // |                                                                                                |
 // --------------------------------------------------------------------------------------------------
 // ReSharper disable RedundantUsingDirective
-using Olve.Engine3D.Rendering.Entities;
+using Olve.Engine3D.Rendering;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Parameters;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
@@ -97,5 +98,44 @@ public static partial class Shaders
                 gl.VertexAttribDivisor({{ attr.Location }}, 1);
 {{ end }}{{ end }}            }
 {{ end }}        }
-{{ end }}    }
+{{ if HasInstancedAttributes }}
+        public readonly record struct Instance(
+{{ for attr in InstancedAttributes }}            {{ attr.DataType }} {{ attr.Name }}{{ if !for.last }},{{ end }}
+{{ end }}        ) : IInstanceData
+        {
+            public static int FloatCount => {{ InstanceStride }};
+
+            public void WriteTo(Span<float> buffer)
+            {
+                var i = 0;
+{{ for attr in InstancedAttributes }}                {{ attr.WriteCode }}
+{{ end }}            }
+
+            public static void ConfigureAttributes(GL gl)
+            {
+{{ for attr in InstancedAttributes }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, {{ InstanceStrideBytes }}, (nint){{ attr.ByteOffset }});
+                gl.EnableVertexAttribArray({{ attr.Location }});
+                gl.VertexAttribDivisor({{ attr.Location }}, 1);
+{{ end }}            }
+        }
+{{ else }}
+        public readonly record struct Vertex(
+{{ for attr in PerVertexAttributes }}            {{ attr.DataType }} {{ attr.Name }}{{ if !for.last }},{{ end }}
+{{ end }}        ) : IVertexData
+        {
+            public static int FloatCount => {{ VertexStride }};
+
+            public void WriteTo(Span<float> buffer)
+            {
+                var i = 0;
+{{ for attr in PerVertexAttributes }}                {{ attr.WriteCode }}
+{{ end }}            }
+
+            public static void ConfigureAttributes(GL gl)
+            {
+{{ for attr in PerVertexAttributes }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, {{ VertexStrideBytes }}, (nint){{ attr.ByteOffset }});
+                gl.EnableVertexAttribArray({{ attr.Location }});
+{{ end }}            }
+        }
+{{ end }}{{ end }}    }
 }

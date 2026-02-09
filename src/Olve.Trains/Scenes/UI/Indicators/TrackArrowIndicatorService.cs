@@ -1,8 +1,7 @@
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.Entities;
-using Olve.Engine3D.Rendering.EntityManagers;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
@@ -22,8 +21,7 @@ public class TrackArrowIndicatorService(
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
     RenderingServiceHelper renderingServiceHelper,
-    TextureLoadingService textureLoadingService,
-    MeshEntityManager meshEntityManager) : SceneService(loggingManager)
+    TextureLoadingService textureLoadingService) : SceneService(loggingManager)
 {
     private float _scale = 1f;
 
@@ -35,7 +33,7 @@ public class TrackArrowIndicatorService(
         AmbientLightIntensity = 1f,
     };
 
-    private RenderingId<MeshData> MeshRenderingId { get; set; }
+    private GeometryId _geometryId;
     private RenderingInstanceId InstanceId { get; set; }
 
     private Result LoadShader(IShader shader) => renderingServiceHelper.LoadShader(shader);
@@ -60,11 +58,27 @@ public class TrackArrowIndicatorService(
             return problems.Prepend("Failed to load mesh");
         }
 
-        var meshRegistrationResult = meshEntityManager.Register(meshData);
-        if (meshRegistrationResult.TryPickProblems(out problems, out var meshRenderingId))
+        // Convert MeshData to Shaders.Default.Vertex[] and register geometry
+        // TODO: investigate this
+        var vertices = new Shaders.Default.Vertex[meshData.VertexCount];
+        for (var i = 0; i < meshData.VertexCount; i++)
+            vertices[i] = new(meshData.Positions[i], meshData.Normals[i], meshData.TextureCoordinates[i]);
+
+        var indices = new uint[meshData.Indices.Length * 3];
+        for (var i = 0; i < meshData.Indices.Length; i++)
         {
-            return problems.Prepend("Failed to register mesh");
+            indices[i * 3] = meshData.Indices[i].A;
+            indices[i * 3 + 1] = meshData.Indices[i].B;
+            indices[i * 3 + 2] = meshData.Indices[i].C;
         }
+
+        if (renderingManager3D.RegisterGeometry<Shaders.Default.Vertex>(vertices, indices)
+            .TryPickProblems(out problems, out var geometryId))
+        {
+            return problems.Prepend("Failed to register geometry");
+        }
+
+        _geometryId = geometryId;
 
         AABB aabbTarget = new(Vector3D<float>.Zero, Vector3D<float>.One);
         var scaleResult = AABBHelper.GetUniformScaleToFitInside(meshData, aabbTarget);
@@ -73,9 +87,7 @@ public class TrackArrowIndicatorService(
             return problems.Prepend("Failed to compute scale");
         }
 
-        MeshRenderingId = meshRenderingId;
-
-        if (renderingManager3D.RegisterInstance(MeshRenderingId, _shader.RenderingId, new Matrix4X4<float>())
+        if (renderingManager3D.RegisterInstance(_geometryId, _shader.RenderingId, new Matrix4X4<float>())
             .TryPickProblems(out problems, out var instanceId))
         {
             return problems.Prepend("Failed to register mesh");

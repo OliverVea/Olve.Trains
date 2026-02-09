@@ -1,7 +1,6 @@
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.Entities;
-using Olve.Engine3D.Rendering.EntityManagers;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
@@ -15,7 +14,6 @@ public class JunctionSignalRenderingService(
     ILoggingManager loggingManager,
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
-    MeshEntityManager meshEntityManager,
     RenderingManager3D renderingManager3D,
     TextureLoadingService textureLoadingService,
     RenderingServiceHelper renderingServiceHelper,
@@ -23,7 +21,7 @@ public class JunctionSignalRenderingService(
     JunctionSignalService junctionSignalService)
     : BaseEntityListeningService<Junction>(loggingManager, junctionSignalService)
 {
-    private RenderingId<MeshData> MeshRenderingId { get; set; }
+    private GeometryId _geometryId;
     private readonly Dictionary<Id<Junction>, RenderingInstanceId> _instanceIds = new();
     private readonly Shaders.Default _shader = new();
 
@@ -50,13 +48,26 @@ public class JunctionSignalRenderingService(
             return problems.Prepend("Failed to load mesh");
         }
 
-        var meshRegistrationResult = meshEntityManager.Register(meshData);
-        if (meshRegistrationResult.TryPickProblems(out problems, out var meshRenderingId))
+        // TODO: Improve this mapping - perhaps generalize
+        var vertices = new Shaders.Default.Vertex[meshData.VertexCount];
+        for (var i = 0; i < meshData.VertexCount; i++)
+            vertices[i] = new(meshData.Positions[i], meshData.Normals[i], meshData.TextureCoordinates[i]);
+
+        var indices = new uint[meshData.Indices.Length * 3];
+        for (var i = 0; i < meshData.Indices.Length; i++)
         {
-            return problems.Prepend("Failed to register mesh");
+            indices[i * 3] = meshData.Indices[i].A;
+            indices[i * 3 + 1] = meshData.Indices[i].B;
+            indices[i * 3 + 2] = meshData.Indices[i].C;
         }
 
-        MeshRenderingId = meshRenderingId;
+        if (renderingManager3D.RegisterGeometry(vertices, indices)
+            .TryPickProblems(out problems, out var geometryId))
+        {
+            return problems.Prepend("Failed to register geometry");
+        }
+
+        _geometryId = geometryId;
 
         return base.OnLoad();
     }
@@ -78,7 +89,7 @@ public class JunctionSignalRenderingService(
                             * Matrix4X4.CreateTranslation(-0.2f, -0.9f, -0.2f)
                             * junction.Position.ToWorldMatrix();
 
-        var renderingResult = renderingManager3D.RegisterInstance(MeshRenderingId, _shader.RenderingId, junctionWorld);
+        var renderingResult = renderingManager3D.RegisterInstance(_geometryId, _shader.RenderingId, junctionWorld);
         if (renderingResult.TryPickProblems(out problems, out var junctionInstanceId))
         {
             return problems;
