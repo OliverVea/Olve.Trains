@@ -5,6 +5,7 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Text;
 using Olve.Engine3D.Rendering.Textures;
+using Silk.NET.OpenGL;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
@@ -70,7 +71,7 @@ namespace Olve.Trains.Scenes.UI.GUI
                     guiLayoutService.SetNodeBox(nodeId, layoutBox);
                 }
 
-                textRenderingService.UpdateText(nodeId, textData.Content);
+                textRenderingService.UpdateText(nodeId, textData.Content, textData.FontSize);
             }
         }
 
@@ -107,7 +108,7 @@ namespace Olve.Trains.Scenes.UI.GUI
                 return problems.Prepend("Failed to load font atlas for text element: {0}", addedEvent.NodeId);
             }
 
-            if (textureEntityManager.Register<RGB, RGBPixelFormat>(textureId, new TextureUploadOptions())
+            if (textureEntityManager.Register<RGB, RGBPixelFormat>(textureId, new TextureUploadOptions(Wrap: GLEnum.ClampToEdge, Filter: GLEnum.Linear))
                 .TryPickProblems(out problems))
             {
                 return problems.Prepend("Failed to register font atlas texture with OpenGL: {0}", addedEvent.NodeId);
