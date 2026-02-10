@@ -167,19 +167,21 @@ public class GuiTextRenderingService(
         return DeletionResult.Success();
     }
 
-    public Result UpdateText(Id<GuiNode> nodeId, string newContent)
+    public Result UpdateText(Id<GuiNode> nodeId, string newContent, float? fontSize = null)
     {
         if (!_instances.TryGetValue(nodeId, out var data))
         {
             return Result.Success();
         }
 
-        if (data.CachedContent == newContent)
+        var effectiveFontSize = fontSize ?? data.CachedFontSize;
+
+        if (data.CachedContent == newContent && float.Abs(effectiveFontSize - data.CachedFontSize) < 0.001f)
         {
             return Result.Success();
         }
 
-        var newLayout = TextLayoutEngine.ComputeLayout(newContent, data.Font, data.CachedFontSize);
+        var newLayout = TextLayoutEngine.ComputeLayout(newContent, data.Font, effectiveFontSize);
         var oldGlyphIds = data.GlyphInstanceIds;
         var newGlyphIds = new List<RenderingInstanceId>(oldGlyphIds);
 
@@ -242,7 +244,8 @@ public class GuiTextRenderingService(
         {
             GlyphInstanceIds = newGlyphIds,
             CachedLayout = newLayout,
-            CachedContent = newContent
+            CachedContent = newContent,
+            CachedFontSize = effectiveFontSize
         };
 
         return Result.Success();

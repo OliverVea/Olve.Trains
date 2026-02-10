@@ -17,7 +17,15 @@ public class Text : GuiElement, IRenderableAsText, IRenderableAsRectangle
         }
     } = string.Empty;
     public FontData? Font { get; set; }
-    public float FontSize { get; set; } = 16f;
+    public float FontSize
+    {
+        get;
+        set
+        {
+            field = value;
+            ComputedSize = null;
+        }
+    } = 16f;
     public Align Align { get; set; } = Align.Start;
 
     // Layout properties
