@@ -7,6 +7,7 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Utilities;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game.ShaderExtensions;
 using Silk.NET.Windowing;
