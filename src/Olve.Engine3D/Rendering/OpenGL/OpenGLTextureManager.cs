@@ -1,6 +1,7 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Textures;
+using Olve.Engine3D.Utilities;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.OpenGL;

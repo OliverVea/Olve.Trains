@@ -1,6 +1,4 @@
-using Olve.Engine3D.Utilities;
-
-namespace Olve.Engine3D;
+namespace Olve.Engine3D.Utilities;
 
 public sealed class Provider<T>(T? initialValue = default)
 {

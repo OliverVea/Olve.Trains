@@ -7,6 +7,7 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
 using Olve.Logging;
 

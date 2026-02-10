@@ -8,6 +8,7 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Utilities;
 using Olve.Logging;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Game.Junctions;

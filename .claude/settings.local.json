@@ -20,7 +20,8 @@
       "WebFetch(domain:kylekukshtel.com)",
       "WebFetch(domain:velzie.rip)",
       "Bash(git mv:*)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "WebFetch(domain:www.gamedev.net)"
     ],
     "deny": [],
     "ask": []

@@ -4,6 +4,7 @@
     using Olve.Engine3D.Rendering.OpenGL.Handles;
     using Olve.Engine3D.Rendering.Parameters;
     using Olve.Engine3D.Rendering.Shaders;
+    using Olve.Engine3D.Utilities;
     using Olve.Utilities.Ids;
     using Silk.NET.OpenGL;
 
