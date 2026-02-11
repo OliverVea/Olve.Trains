@@ -1,4 +1,5 @@
-﻿using Olve.Engine3D;
+using Microsoft.Extensions.DependencyInjection;
+using Olve.Engine3D;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains;
@@ -14,21 +15,24 @@ public static class Program
 
     public static int Main()
     {
-        var result = RunGame();
-        return LogResult(result);
-    }
+        var services = new ServiceCollection();
+        services.AddAllServices();
 
-    private static Result RunGame()
-    {
+        using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true,
+        });
+
         var window = Window.Create(WindowOptions);
-        GameProvider gameProvider = new();
-
-        var gameManager = gameProvider.GetService<GameManager>();
-        return gameManager.Run(window, [
+        var gameManager = serviceProvider.GetRequiredService<GameManager>();
+        var result = gameManager.Run(window, [
             SceneIds.GameScene,
             SceneIds.RenderingScene,
             SceneIds.UIScene,
         ]);
+
+        return LogResult(result);
     }
 
     private static int LogResult(Result result)
@@ -46,5 +50,4 @@ public static class Program
         Console.WriteLine("Game exited successfully.");
         return 0;
     }
-
 }

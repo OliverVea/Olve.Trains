@@ -1,4 +1,4 @@
-using Jab;
+using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
@@ -8,21 +8,26 @@ using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering;
 
-[ServiceProviderModule]
-[Singleton(typeof(OpenGLBufferManager))]
-[Singleton(typeof(OpenGLInstancedBufferManager))]
-[Singleton(typeof(OpenGLModelRenderingManager))]
-[Singleton(typeof(OpenGLQuadRenderingManager))]
-[Singleton(typeof(OpenGLShaderManager))]
-[Singleton(typeof(OpenGLTextureManager))]
-[Singleton(typeof(Provider<GL>))]
-[Singleton(typeof(RenderingManager2D))]
-[Singleton(typeof(RenderingManager3D))]
-[Singleton(typeof(RenderingServiceHelper))]
-[Singleton(typeof(ShaderEntityManager))]
-[Singleton(typeof(TextureEntityManager))]
-[Singleton(typeof(TextureManager))]
-[Singleton(typeof(TextureSlotManager))]
-[Singleton(typeof(AssetLoader))]
-[Singleton(typeof(TextureLoadingManager))]
-public interface IOpenGLProvider;
+public static class OpenGLServiceRegistration
+{
+    public static IServiceCollection AddOpenGLServices(this IServiceCollection services)
+    {
+        services.AddSingleton<OpenGLBufferManager>();
+        services.AddSingleton<OpenGLInstancedBufferManager>();
+        services.AddSingleton<OpenGLModelRenderingManager>();
+        services.AddSingleton<OpenGLQuadRenderingManager>();
+        services.AddSingleton<OpenGLShaderManager>();
+        services.AddSingleton<OpenGLTextureManager>();
+        services.AddSingleton<Provider<GL>>();
+        services.AddSingleton<RenderingManager2D>();
+        services.AddSingleton<RenderingManager3D>();
+        services.AddSingleton<RenderingServiceHelper>();
+        services.AddSingleton<ShaderEntityManager>();
+        services.AddSingleton<TextureEntityManager>();
+        services.AddSingleton<TextureManager>();
+        services.AddSingleton<TextureSlotManager>();
+        services.AddSingleton<AssetLoader>();
+        services.AddSingleton<TextureLoadingManager>();
+        return services;
+    }
+}
