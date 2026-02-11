@@ -4,7 +4,7 @@ namespace Olve.Engine3D.Utilities;
 
 public static class LoggerExtensions
 {
-    public static void Log<T>(this ILogger<T> logger, ResultProblemCollection problems)
+    public static void Log(this ILogger logger, ResultProblemCollection problems)
     {
         // TODO: implement this in a better way :)
         foreach (var problem in problems)

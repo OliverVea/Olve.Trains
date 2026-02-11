@@ -15,6 +15,7 @@ namespace Olve.Trains.Scenes.Rendering;
 
 public class JunctionSignalRenderingService(
     ILogger<JunctionSignalRenderingService> logger,
+    EventQueueFactory eventQueueFactory,
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
@@ -29,8 +30,8 @@ public class JunctionSignalRenderingService(
     private readonly Dictionary<Id<Junction>, RenderingInstanceId> _instanceIds = new();
     private readonly Shaders.Default _shader = new();
 
-    private readonly EventQueue<Id<Junction>> _junctionSignalAddedQueue = new(junctionSignalService.OnAdded);
-    private readonly EventQueue<Id<Junction>> _junctionSignalRemovedQueue = new(junctionSignalService.OnRemoved);
+    private readonly EventQueue<Id<Junction>> _junctionSignalAddedQueue = eventQueueFactory.Create(junctionSignalService.OnAdded);
+    private readonly EventQueue<Id<Junction>> _junctionSignalRemovedQueue = eventQueueFactory.Create(junctionSignalService.OnRemoved);
 
     public Result Load()
     {
@@ -160,19 +161,8 @@ public class JunctionSignalRenderingService(
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
         cameraSceneService.ApplyCameraPositionParameters(_shader);
 
-        if (_junctionSignalRemovedQueue
-            .Update()
-            .TryPickProblems(out var problems))
-        {
-            logger.Log(problems.Prepend("Failed to remove junction signal"));
-        }
-
-        if (_junctionSignalAddedQueue
-            .Update()
-            .TryPickProblems(out problems))
-        {
-            logger.Log(problems.Prepend("Failed to add junction signal"));
-        }
+        _junctionSignalRemovedQueue.Update();
+        _junctionSignalAddedQueue.Update();
 
         return Result.Success();
     }
