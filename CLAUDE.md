@@ -29,6 +29,20 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj
 2. **Compile assets**: `cd src/Olve.Trains.AssetPipeline && dotnet run`
 3. **Run app**: `dotnet run --project src/Olve.Trains/Olve.Trains.csproj`
 
+## Package Management
+
+### Upgrade outdated packages
+
+```bash
+dotnet outdated -u
+```
+
+### Remove unused package references
+
+```bash
+pkg-trim --sln-dir . --fix
+```
+
 ## Notes
 
 ### OpenGL State Management
