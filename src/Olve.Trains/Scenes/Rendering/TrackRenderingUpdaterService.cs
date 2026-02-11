@@ -1,21 +1,19 @@
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Rendering;
 
 public class TrackRenderingUpdaterService(
-    ILoggingManager loggingManager,
     TrackService trackService,
     TrackLineStripDataService trackLineStripDataService,
-    TrackRenderingService trackRenderingService) : SceneService(loggingManager)
+    TrackRenderingService trackRenderingService) : ISceneService
 {
     private readonly EventQueue<Id<Track>> _onTrackAddedQueue = new(trackService.OnAdded);
 
-    public override int Priority => GetPriorityFromDependents([trackRenderingService]);
+    public int Priority => SceneServicePriority.FromDependents([trackRenderingService]);
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         _onTrackAddedQueue
             .SetHandler(OnTrackAdded)
@@ -23,13 +21,13 @@ public class TrackRenderingUpdaterService(
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         _onTrackAddedQueue.Cleanup();
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime) => _onTrackAddedQueue.Update();
+    public Result Update(TimeSpan deltaTime) => _onTrackAddedQueue.Update();
 
     private Result OnTrackAdded(Id<Track> trackId)
     {

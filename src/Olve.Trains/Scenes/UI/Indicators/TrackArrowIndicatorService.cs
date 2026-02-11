@@ -10,19 +10,17 @@ using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
-using Olve.Logging;
 using Olve.Trains.Scenes.Rendering;
 
 namespace Olve.Trains.Scenes.UI.Indicators;
 
 public class TrackArrowIndicatorService(
-    ILoggingManager loggingManager,
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
     RenderingServiceHelper renderingServiceHelper,
     TextureLoadingManager textureLoadingManager,
-    TextureEntityManager textureEntityManager) : SceneService(loggingManager)
+    TextureEntityManager textureEntityManager) : ISceneService
 {
     private float _scale = 1f;
 
@@ -39,7 +37,7 @@ public class TrackArrowIndicatorService(
 
     private Result LoadShader(IShader shader) => renderingServiceHelper.LoadShader(shader);
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (textureLoadingManager.LoadTexture(Textures.PolygonPrototype_Texture_01)
             .TryPickProblems(out var problems, out var textureId))
@@ -105,7 +103,7 @@ public class TrackArrowIndicatorService(
         return Result.Success();
     }
 
-    protected override Result OnRender(TimeSpan deltaTime)
+    public Result Render(TimeSpan deltaTime)
     {
         if (_trackArrows.Count == 0)
         {

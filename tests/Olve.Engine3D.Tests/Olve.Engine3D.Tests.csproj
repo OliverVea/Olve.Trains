@@ -5,6 +5,7 @@
 
     <ItemGroup>
         <PackageReference Include="ScottPlot"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
         <PackageReference Include="TUnit"/>
         <PackageReference Include="Olve.Results.TUnit"/>
     </ItemGroup>

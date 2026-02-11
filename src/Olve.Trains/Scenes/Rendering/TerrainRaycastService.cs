@@ -2,16 +2,15 @@ using Olve.Engine3D.Camera;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.ShaderExtensions;
 using Olve.Trains.Scenes.Game.Terrain;
 
 namespace Olve.Trains.Scenes.Rendering;
 
-public class TerrainRaycastService(ILoggingManager loggingManager,
+public class TerrainRaycastService(
     MouseManager mouseManager,
     CameraSceneService cameraSceneService,
-    TerrainService terrainService) : SceneService(loggingManager)
+    TerrainService terrainService) : ISceneService
 {
     private HeightmapRaycaster? _heightmapRaycaster;
     
@@ -19,9 +18,9 @@ public class TerrainRaycastService(ILoggingManager loggingManager,
     public Vector3D<float>? TerrainIntersection { get; set; }
     public Vector3D<float>? TerrainIntersectionTileCenter { get; set; }
     
-    public override int Priority => GetPriorityFromDependencies([cameraSceneService, terrainService]);
+    public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService]);
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (terrainService.Terrain is not { } terrain)
         {
@@ -33,7 +32,7 @@ public class TerrainRaycastService(ILoggingManager loggingManager,
         return Result.Success();
     }
 
-    protected override Result<Pass> OnInput(TimeSpan deltaTime)
+    public Result<Pass> Input(TimeSpan deltaTime)
     {
         var mouseCoordinates = mouseManager.State.NormalizedPosition;
 
@@ -51,7 +50,7 @@ public class TerrainRaycastService(ILoggingManager loggingManager,
         return Pass.Pass;
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         TerrainIntersection = null;
         

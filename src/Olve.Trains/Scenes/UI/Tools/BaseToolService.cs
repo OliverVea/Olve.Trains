@@ -1,13 +1,11 @@
-﻿using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
 
 namespace Olve.Trains.Scenes.UI.Tools;
 
 public abstract class BaseToolService<TToolState>(
-    ILoggingManager loggingManager,
     ToolManagementService toolManagementService,
-    TToolState initialToolState) : SceneService(loggingManager)
+    TToolState initialToolState) : ISceneService
 {
     public TToolState ToolState { get; protected set; } = initialToolState;
 
@@ -19,7 +17,7 @@ public abstract class BaseToolService<TToolState>(
     protected virtual Result OnSelectedUpdate(TimeSpan deltaTime) => Result.Success();
     protected virtual Result OnSelectedRender(TimeSpan deltaTime) => Result.Success();
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (toolManagementService.AddTool(Tool).TryPickProblems(out var problems))
         {
@@ -30,7 +28,7 @@ public abstract class BaseToolService<TToolState>(
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         if (toolManagementService.RemoveTool(Tool.Id).MapToResult(allowNotFound: false).TryPickProblems(out var problems))
         {
@@ -41,13 +39,13 @@ public abstract class BaseToolService<TToolState>(
         return Result.Success();
     }
 
-    protected override Result<Pass> OnInput(TimeSpan deltaTime)
+    public Result<Pass> Input(TimeSpan deltaTime)
         => toolManagementService.ActiveToolId != Tool.Id ? Pass.Pass : OnSelectedInput(deltaTime);
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
         => toolManagementService.ActiveToolId != Tool.Id ? Result.Success() : OnSelectedUpdate(deltaTime);
 
-    protected override Result OnRender(TimeSpan deltaTime)
+    public Result Render(TimeSpan deltaTime)
         => toolManagementService.ActiveToolId != Tool.Id ? Result.Success() : OnSelectedRender(deltaTime);
 
     private void OnActiveToolChanged(ToolManagementService.ActiveToolChangedMessage activeToolChangedMessage)

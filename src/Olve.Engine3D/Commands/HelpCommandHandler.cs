@@ -1,9 +1,9 @@
 using System.Text;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Olve.Engine3D.Commands;
 
-public class HelpCommandHandler(IEnumerable<ICommandHandler> commandHandlers, ILoggingManager loggingManager) : ICommandHandler
+public class HelpCommandHandler(IEnumerable<ICommandHandler> commandHandlers, ILogger<HelpCommandHandler> logger) : ICommandHandler
 {
     public static readonly CommandArgument CommandArgument = new("command", "the command to provide help with");
 
@@ -26,8 +26,7 @@ public class HelpCommandHandler(IEnumerable<ICommandHandler> commandHandlers, IL
         }
 
         var messageText = _builder.ToString();
-        LogMessage logMessage = new(LogLevel.Info, messageText, null, null, DateTime.Now, [Verb]);
-        loggingManager.Log(logMessage);
+        logger.LogInformation("{Message}", messageText);
 
         _builder.Clear();
 

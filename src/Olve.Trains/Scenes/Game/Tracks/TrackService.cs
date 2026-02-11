@@ -1,9 +1,9 @@
 using Olve.Engine3D.Systems;
-using Olve.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 
-public class TrackService(ILoggingManager loggingManager) : BaseEntityService<Track>(loggingManager)
+public class TrackService() : BaseEntityService<Track>(NullLogger.Instance)
 {
     public Result<Id<Track>> AddTrack(TrackEndpoint start, TrackEndpoint end)
     {

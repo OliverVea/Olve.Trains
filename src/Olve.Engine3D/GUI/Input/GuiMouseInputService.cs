@@ -4,30 +4,28 @@ using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
 using Olve.Utilities.Ids;
 using Silk.NET.Input;
 
 namespace Olve.Engine3D.GUI.Input;
 
 public class GuiMouseInputService(
-    ILoggingManager loggingManager,
     MouseManager mouseManager,
     GuiCollisionService guiCollisionService,
     GuiActivationService guiActivationService,
     GuiElementService guiElementService,
     GuiDepthService guiDepthService,
     GuiFocusService guiFocusService,
-    GuiNodeStateService stateService) : SceneService(loggingManager)
+    GuiNodeStateService stateService) : ISceneService
 {
     private Id<GuiNode>? _pressedNode;
 
     public Event<Id<GuiNode>> OnPressedNode { get; } = new();
     public Event<Id<GuiNode>> OnReleasedNode { get; } = new();
 
-    public override int Priority => -100;
+    public int Priority => -100;
 
-    protected override Result<Pass> OnInput(TimeSpan deltaTime)
+    public Result<Pass> Input(TimeSpan deltaTime)
     {
         var mousePos = GetMousePositionInPx();
 

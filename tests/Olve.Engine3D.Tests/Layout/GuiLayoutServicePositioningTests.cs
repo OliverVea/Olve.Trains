@@ -1,7 +1,7 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
 using Olve.Results.TUnit;
 using Olve.Utilities.Ids;
 using Silk.NET.Maths;
@@ -21,19 +21,17 @@ public class GuiLayoutServicePositioningTests
     private static readonly Id<GuiAnchor> DefaultAnchorId = Id.New<GuiAnchor>();
 
     private static GuiLayoutService BuildSut(
-        InMemoryLoggingManager? logging = null,
         GuiNodeService? ge = null,
         LayoutContext? ctx = null)
     {
-        var log = logging ?? new InMemoryLoggingManager();
-        var svc = ge ?? new GuiNodeService(log);
+        var svc = ge ?? new GuiNodeService(NullLogger<GuiNodeService>.Instance);
         GuiAnchorService guiAnchorService = new();
         Provider<LayoutContext> lcp = new(ctx ?? DefaultContext);
 
         // Register the default anchor
         guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight);
 
-        return new GuiLayoutService(log, svc, guiAnchorService, lcp);
+        return new GuiLayoutService(NullLogger<GuiLayoutService>.Instance, svc, guiAnchorService, lcp);
     }
 
     // Shorthand for creating boxes
@@ -60,9 +58,8 @@ public class GuiLayoutServicePositioningTests
     public async Task Positions_SingleChild_Horizontal_Defaults_To_Origin()
     {
         // Arrange
-        var logging = new InMemoryLoggingManager();
-        var ge = new GuiNodeService(logging);
-        var sut = BuildSut(logging, ge);
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var sut = BuildSut(ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.SetNodeBox(parentId, Box(prefW: 300, prefH: 100)); // parent 300x100
@@ -92,9 +89,8 @@ public class GuiLayoutServicePositioningTests
     public async Task Positions_TwoChildren_Horizontal_Stack()
     {
         // Arrange
-        var logging = new InMemoryLoggingManager();
-        var ge = new GuiNodeService(logging);
-        var sut = BuildSut(logging, ge);
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var sut = BuildSut(ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.SetNodeBox(parentId, Box(prefW: 300, prefH: 100)); // 300x100
@@ -123,9 +119,8 @@ public class GuiLayoutServicePositioningTests
     public async Task Positions_TwoChildren_Vertical_Stack()
     {
         // Arrange
-        var logging = new InMemoryLoggingManager();
-        var ge = new GuiNodeService(logging);
-        var sut = BuildSut(logging, ge);
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var sut = BuildSut(ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.SetNodeBox(parentId, Box(axis: UIAxis.Y, prefW: 100, prefH: 300)); // vertical parent
@@ -154,9 +149,8 @@ public class GuiLayoutServicePositioningTests
     public async Task Positions_Nested_LeftRight_With_Fill_Weights()
     {
         // Arrange
-        var logging = new InMemoryLoggingManager();
-        var ge = new GuiNodeService(logging);
-        var sut = BuildSut(logging, ge);
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var sut = BuildSut(ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.SetNodeBox(parentId, Box(prefW: 600, prefH: 300));
@@ -220,9 +214,8 @@ public class GuiLayoutServicePositioningTests
     public async Task Positions_Respect_Chrome_As_Inner_Content_Offset()
     {
         // Arrange: parent has chrome (total) that reduces content area by 40x20 and shifts origin by 20x10
-        var logging = new InMemoryLoggingManager();
-        var ge = new GuiNodeService(logging);
-        var sut = BuildSut(logging, ge);
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var sut = BuildSut(ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.SetNodeBox(parentId, Box(prefW: 300, prefH: 200, horizontalChrome: new Dp(40), verticalChrome: new Dp(20)));
@@ -251,9 +244,8 @@ public class GuiLayoutServicePositioningTests
     [Test, NotInParallel]
     public async Task TryGetBoxPosition_Fails_Before_ComputeLayout()
     {
-        var logging = new InMemoryLoggingManager();
-        var ge = new GuiNodeService(logging);
-        var sut = BuildSut(logging, ge);
+        var ge = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
+        var sut = BuildSut(ge);
 
         var parentId = await ge.AddNode("Parent", DefaultAnchorId).AssertSuccessAndGetAsync();
         sut.SetNodeBox(parentId, Box(prefW: 100, prefH: 50));

@@ -4,19 +4,18 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.Rendering;
 
-public class TrackRenderingService(ILoggingManager loggingManager,
+public class TrackRenderingService(
     RenderingManager3D renderingManager3D,
     CameraSceneService cameraSceneService,
     ShaderEntityManager shaderEntityManager,
-    TerrainRenderingService terrainRenderingService) : SceneService(loggingManager)
+    TerrainRenderingService terrainRenderingService) : ISceneService
 {
-    public override int Priority => GetPriorityFromDependencies([terrainRenderingService]);
+    public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
 
     private readonly record struct TrackEntry(
         GeometryId GeometryId,
@@ -30,7 +29,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         BlendState = RenderState.AlphaBlendNoDepth,
     };
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (shaderEntityManager.Register(_shader.ShaderData).TryPickProblems(out var problems, out var shaderId))
         {
@@ -114,7 +113,7 @@ public class TrackRenderingService(ILoggingManager loggingManager,
         return Result.Success();
     }
 
-    protected override Result OnRender(TimeSpan deltaTime)
+    public Result Render(TimeSpan deltaTime)
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         _shader.World = Matrix4X4<float>.Identity;

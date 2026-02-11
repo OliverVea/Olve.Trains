@@ -1,33 +1,32 @@
 ﻿using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Time;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.Junctions;
 using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
-public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
+public class VehicleJunctionCrossingService(
     DayTimeManager dayTimeManager,
     VehiclePositionService vehiclePositionService,
     VehicleJunctionService vehicleJunctionService,
     VehicleMovementService vehicleMovementService,
     JunctionService junctionService,
     JunctionSignalService junctionSignalService,
-    JunctionSignalRuleEvaluationService junctionSignalRuleEvaluationService) : SceneService(loggingManager)
+    JunctionSignalRuleEvaluationService junctionSignalRuleEvaluationService) : ISceneService
 {
     private static readonly DayTimeSpan Delay = new(minutes: 5);
 
     private readonly EventQueue<Id<Vehicle>> _vehicleReachedEndQueue = new(vehicleMovementService.OnVehicleReachedTrackEnd);
     private readonly PriorityQueue<Id<Vehicle>, long> _queue = new();
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         _vehicleReachedEndQueue.SetHandler(OnVehicleReachedEnd).Init();
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         _vehicleReachedEndQueue.Cleanup();
         return Result.Success();
@@ -44,7 +43,7 @@ public class VehicleJunctionCrossingService(ILoggingManager loggingManager,
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         if (_vehicleReachedEndQueue.Update().TryPickProblems(out var problems))
         {

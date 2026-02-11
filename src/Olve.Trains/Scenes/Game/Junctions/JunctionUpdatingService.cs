@@ -1,13 +1,11 @@
 ﻿using Olve.Engine3D.Systems;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 
 public class JunctionUpdatingService(
-    ILoggingManager loggingManager,
     TrackService trackService,
-    JunctionService junctionService) : BaseEntityListeningService<Track>(loggingManager, trackService)
+    JunctionService junctionService) : BaseEntityListeningService<Track>(trackService)
 {
     protected override (bool SubscribeAdd, bool SubscribeDelete) GetSubscriptions() => (true, true);
 

@@ -5,14 +5,13 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.Light;
 using Olve.Trains.Scenes.Game.Terrain;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.Rendering;
 
-public class TerrainRenderingService(ILoggingManager loggingManager,
+public class TerrainRenderingService(
     TerrainService terrainService,
     ShaderEntityManager shaderEntityManager,
     TextureManager textureManager,
@@ -20,7 +19,7 @@ public class TerrainRenderingService(ILoggingManager loggingManager,
     RenderingManager3D renderingManager3D,
     CameraSceneService cameraSceneService,
     TerrainRaycastService terrainRaycastService,
-    SceneLightService sceneLightService) : SceneService(loggingManager)
+    SceneLightService sceneLightService) : ISceneService
 {
     public RenderingInstanceId TerrainInstanceId { get; set; }
     public RenderingInstanceId WireframeTerrainInstanceId { get; set; }
@@ -32,9 +31,9 @@ public class TerrainRenderingService(ILoggingManager loggingManager,
         BlendState = RenderState.Additive
     };
 
-    public override int Priority => GetPriorityFromDependencies([cameraSceneService, terrainService, terrainRaycastService, sceneLightService]);
+    public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, terrainRaycastService, sceneLightService]);
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (terrainService.Terrain is not {} terrain)
         {
@@ -121,7 +120,7 @@ public class TerrainRenderingService(ILoggingManager loggingManager,
         return (shaderId, instanceId);
     }
 
-    protected override Result OnRender(TimeSpan deltaTime)
+    public Result Render(TimeSpan deltaTime)
     {
         sceneLightService.ApplyShaderParameters(_terrainShader);
         cameraSceneService.ApplyCameraPositionParameters(_terrainShader);

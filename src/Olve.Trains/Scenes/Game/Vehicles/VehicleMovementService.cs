@@ -1,25 +1,25 @@
 ﻿using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
-public class VehicleMovementService(ILoggingManager loggingManager,
+public class VehicleMovementService(ILogger<VehicleMovementService> logger,
     VehiclePositionService vehiclePositionService,
-    TrackSplineService trackSplineService) : SceneService(loggingManager)
+    TrackSplineService trackSplineService) : ISceneService
 {
     public Event<Id<Vehicle>> OnVehicleReachedTrackEnd { get; } = new();
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         foreach (var (vehicleId, trackPosition) in vehiclePositionService.TrackPositions)
         {
             var result = UpdateTrackPosition(vehicleId, deltaTime, trackPosition);
             if (result.TryPickProblems(out var problems))
             {
-                LoggingManager.Log(problems);
+                logger.LogWarning("Failed to update track position: {Problems}", problems);
             }
         }
 

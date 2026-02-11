@@ -1,19 +1,18 @@
 using System.Collections.Concurrent;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Utilities.Assertions;
 using Olve.Utilities.Types;
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 
-public class JunctionSignalRuleService(ILoggingManager loggingManager,
-    JunctionSignalService junctionSignalService) : BaseEntityListeningService<Junction>(loggingManager, junctionSignalService)
+public class JunctionSignalRuleService(ILogger<JunctionSignalRuleService> logger,
+    JunctionSignalService junctionSignalService) : BaseEntityListeningService<Junction>(junctionSignalService)
 {
     private readonly ConcurrentDictionary<Id<Junction>, List<JunctionSignalRule>> _rules = new();
     private readonly ConcurrentDictionary<Id<JunctionSignalRule>, Id<Junction>> _ruleJunctions = new();
     private static readonly Any Any = new();
-    private static readonly string[] LoggingTags = [nameof(JunctionSignalRuleService)];
     private static JunctionSignalRule GetDefaultRule(Id<Junction> junctionId) => new(Id.New<JunctionSignalRule>(), junctionId, [Any], [Any], [Any], new RoundRobin());
     private static List<JunctionSignalRule> GetDefaultRules(Id<Junction> junctionId) => [ GetDefaultRule(junctionId) ]; 
         
@@ -26,7 +25,7 @@ public class JunctionSignalRuleService(ILoggingManager loggingManager,
             return new ResultProblem("Failed to initialize rules for signal with junction id '{0}'", junctionId);
         }
 
-        LoggingManager.Log(LogLevel.Debug, $"Initialized junction signal rules for junction with id '{junctionId}'", LoggingTags);
+        logger.LogDebug("Initialized junction signal rules for junction with id '{JunctionId}'", junctionId);
         return Result.Success();
     }
 
@@ -37,7 +36,7 @@ public class JunctionSignalRuleService(ILoggingManager loggingManager,
             return new ResultProblem("Failed to remove rules for signal with junction id '{0}'", junctionId);
         }
 
-        LoggingManager.Log(LogLevel.Debug, $"Removed junction signal rules for junction with id '{junctionId}'", LoggingTags);
+        logger.LogDebug("Removed junction signal rules for junction with id '{JunctionId}'", junctionId);
         return Result.Success();
     }
 
@@ -60,7 +59,7 @@ public class JunctionSignalRuleService(ILoggingManager loggingManager,
 
         _ruleJunctions[junctionSignalId] = junctionId;
         
-        LoggingManager.Log(LogLevel.Debug, $"Added signal rule to junction with id '{junctionId}' (rule count = '{junctionRules.Count}'): {rule}", LoggingTags);
+        logger.LogDebug("Added signal rule to junction with id '{JunctionId}' (rule count = '{RuleCount}'): {Rule}", junctionId, junctionRules.Count, rule);
         
         return junctionSignalId;
     }

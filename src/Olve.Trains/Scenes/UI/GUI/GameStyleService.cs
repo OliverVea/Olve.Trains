@@ -1,17 +1,15 @@
 using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.Scenes;
-using Olve.Logging;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
 public class GameStyleService(
-    ILoggingManager loggingManager,
     GuiStyleApplierService guiStyleApplierService,
-    GuiStyleRegistry styleRegistry) : SceneService(loggingManager)
+    GuiStyleRegistry styleRegistry) : ISceneService
 {
-    public override int Priority => GetPriorityFromDependents([guiStyleApplierService]);
+    public int Priority => SceneServicePriority.FromDependents([guiStyleApplierService]);
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         styleRegistry.Register(Styles.MenuButtonStyle);
         styleRegistry.Register(Styles.MenuBarBackground);

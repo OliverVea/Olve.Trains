@@ -1,10 +1,10 @@
 using MemoryPack;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Paths;
 
 namespace Olve.Engine3D.Assets;
 
-public class AssetLoader(ILoggingManager loggingManager)
+public class AssetLoader(ILogger<AssetLoader> logger)
 {
     public IPath AssetFolder { get; } = Paths.Path.Create("assets");
 
@@ -14,7 +14,7 @@ public class AssetLoader(ILoggingManager loggingManager)
 
     public Result<T> LoadAsset<T>(AssetPath<T> assetPath)
     {
-        loggingManager.Log(LogLevel.Info, $"Loading asset '{assetPath.Path.Path}' of type '{typeof(T).Name}'");
+        logger.LogInformation("Loading asset '{AssetPath}' of type '{TypeName}'", assetPath.Path.Path, typeof(T).Name);
         var location = GetAssetLocation(assetPath);
 
         if (!location.Exists())

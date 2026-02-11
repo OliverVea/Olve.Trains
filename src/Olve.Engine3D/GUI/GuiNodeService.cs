@@ -1,15 +1,15 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
 using Olve.Utilities.CollectionExtensions;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI;
 
 // TODO: consider loop detection on creation.
-public class GuiNodeService(ILoggingManager loggingManager) : BaseEntityService<GuiNode>(loggingManager)
+public class GuiNodeService(ILogger<GuiNodeService> logger) : BaseEntityService<GuiNode>(logger)
 {
     public const int MaxAncestorTraversal = 4_000;
 
@@ -99,7 +99,7 @@ public class GuiNodeService(ILoggingManager loggingManager) : BaseEntityService<
                 }
                 else
                 {
-                    LoggingManager.Log(LogLevel.Warning, $"Parent children list missing for '{parentNodeId}' when removing child '{nodeId}'");
+                    logger.LogWarning("Parent children list missing for '{ParentNodeId}' when removing child '{NodeId}'", parentNodeId, nodeId);
                 }
             }
             else

@@ -1,12 +1,12 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Utilities.CollectionExtensions;
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 
-public class JunctionService(ILoggingManager loggingManager) : BaseEntityService<Junction>(loggingManager)
+public class JunctionService(ILogger<JunctionService> logger) : BaseEntityService<Junction>(logger)
 {
     private readonly Dictionary<Id<Junction>, HashSet<JunctionConnection>> _junctionConnections = new();
     private readonly Dictionary<TilePosition, Id<Junction>> _junctions = new();
@@ -23,7 +23,7 @@ public class JunctionService(ILoggingManager loggingManager) : BaseEntityService
         JunctionConnection connection = new(trackId, trackEndpoint);
         connections.Add(connection);
         
-        LoggingManager.Log(LogLevel.Debug, $"Connected {connections.Count} tracks at '{tilePosition}'");
+        logger.LogDebug("Connected {ConnectionCount} tracks at '{TilePosition}'", connections.Count, tilePosition);
 
         if (!Exists(junctionId) && Add(trackJunction).TryPickProblems(out var problems))
         {

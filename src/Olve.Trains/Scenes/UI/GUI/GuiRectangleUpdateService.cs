@@ -6,23 +6,21 @@ using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
 public class GuiRectangleUpdateService(
-    ILoggingManager loggingManager,
     GuiElementService guiElementService,
     TextureManager textureManager,
     TextureEntityManager textureEntityManager,
     TextureLoadingManager textureLoadingManager,
-    GuiRectangleRenderingService rectangleRenderingService) : SceneService(loggingManager)
+    GuiRectangleRenderingService rectangleRenderingService) : ISceneService
 {
     private readonly TextureId<RGBA> _singleWhitePixel = textureManager.RegisterTexture(TextureData<RGBA>.Single(RGBA.White));
     private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
     private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(_singleWhitePixel, new TextureUploadOptions())
             .TryPickProblems(out var problems))
@@ -36,7 +34,7 @@ public class GuiRectangleUpdateService(
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         return Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update);
     }

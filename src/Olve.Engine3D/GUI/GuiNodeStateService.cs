@@ -1,11 +1,11 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI;
 
-public class GuiNodeStateService(ILoggingManager loggingManager, GuiNodeService guiNodeService, GuiElementService guiElementService)
+public class GuiNodeStateService(ILogger<GuiNodeStateService> logger, GuiNodeService guiNodeService, GuiElementService guiElementService)
 {
     public readonly record struct GuiNodeStateChanged(
         Id<GuiNode> NodeId,
@@ -49,7 +49,7 @@ public class GuiNodeStateService(ILoggingManager loggingManager, GuiNodeService 
         {
             _stateRegistry[n] = after;
             var source = n == nodeId ? "direct" : "inherited";
-            loggingManager.Log(LogLevel.Debug, $"Node '{n}' changed from '{before}' to  '{after}' ({source})");
+            logger.LogDebug("Node '{NodeId}' changed from '{Before}' to '{After}' ({Source})", n, before, after, source);
             OnStateChanged.Invoke(new GuiNodeStateChanged(n, before, after));
         }
     }

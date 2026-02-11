@@ -10,7 +10,6 @@ using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Fonts;
-using Olve.Logging;
 
 namespace Olve.Trains.Scenes.UI.GUI
 {
@@ -19,19 +18,18 @@ namespace Olve.Trains.Scenes.UI.GUI
     /// text with GuiTextRenderingService when GUI elements are added/removed.
     /// </summary>
     public class GuiTextUpdateService(
-        ILoggingManager loggingManager,
         GuiElementService guiElementService,
         GuiLayoutService guiLayoutService,
         TextureLoadingManager textureLoadingManager,
         TextureEntityManager textureEntityManager,
         GuiTextRenderingService textRenderingService,
-        Provider<LayoutContext> layoutContextProvider) : SceneService(loggingManager)
+        Provider<LayoutContext> layoutContextProvider) : ISceneService
     {
         private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
         private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
         private readonly Dictionary<Id<GuiNode>, Text> _trackedTexts = new();
 
-        protected override Result OnLoad()
+        public Result Load()
         {
             _elementAddedQueue.SetHandler(OnGuiElementAdded).Init();
             _elementRemovedQueue.SetHandler(OnGuiElementRemoved).Init();
@@ -39,7 +37,7 @@ namespace Olve.Trains.Scenes.UI.GUI
             return Result.Success();
         }
 
-        protected override Result OnUpdate(TimeSpan deltaTime)
+        public Result Update(TimeSpan deltaTime)
         {
             if (Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update)
                 .TryPickProblems(out var problems))

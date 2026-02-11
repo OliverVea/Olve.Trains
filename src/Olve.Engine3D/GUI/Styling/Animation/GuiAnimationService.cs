@@ -1,17 +1,17 @@
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI.Styling.Animation;
 
 public class GuiAnimationService(
-    ILoggingManager loggingManager,
+    ILogger<GuiAnimationService> logger,
     GuiElementService guiElementService,
     GuiStyleRegistry guiStyleRegistry,
-    GuiNodeStateService guiNodeStateService) : SceneService(loggingManager)
+    GuiNodeStateService guiNodeStateService) : ISceneService
 {
 
     public readonly record struct GuiStateWeightsChangedMessage(Id<GuiNode> NodeId, StateWeights Weights);
@@ -29,7 +29,7 @@ public class GuiAnimationService(
 
     private readonly List<WeightAnimation> _animations = [];
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         _guiNodeStateChangedQueue
             .SetHandler(OnStateChanged)
@@ -38,7 +38,7 @@ public class GuiAnimationService(
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         if (_guiNodeStateChangedQueue
             .Update()
@@ -83,7 +83,7 @@ public class GuiAnimationService(
 
             if (!guiNodeStateService.TryGetState(nodeId, out var guiNodeState))
             {
-                LoggingManager.Log(LogLevel.Warning, $"Could not get state for node id '{nodeId}'");
+                logger.LogWarning("Could not get state for node id '{NodeId}'", nodeId);
                 continue;
             }
 
@@ -142,7 +142,7 @@ public class GuiAnimationService(
         stateTransitions = null;
         if (!guiElementService.TryGetElement(nodeId, out var guiElement))
         {
-            LoggingManager.Log(LogLevel.Warning, $"Could not get element for node id '{nodeId}'");
+            logger.LogWarning("Could not get element for node id '{NodeId}'", nodeId);
             return false;
         }
 
@@ -150,7 +150,7 @@ public class GuiAnimationService(
         {
             if (guiElement.StyleKey.HasValue)
             {
-                LoggingManager.Log(LogLevel.Warning, $"Could not get style for node id '{nodeId}' and style key '{guiElement.StyleKey}'");
+                logger.LogWarning("Could not get style for node id '{NodeId}' and style key '{StyleKey}'", nodeId, guiElement.StyleKey);
             }
             return false;
         }

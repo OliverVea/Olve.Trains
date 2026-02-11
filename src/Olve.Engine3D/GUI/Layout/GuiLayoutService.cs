@@ -1,17 +1,17 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI.Layout;
 
 public class GuiLayoutService(
-    ILoggingManager loggingManager,
+    ILogger<GuiLayoutService> logger,
     GuiNodeService guiNodeService,
     GuiAnchorService guiAnchorService,
-    Provider<LayoutContext> layoutContextProvider) : BaseEntityAuxiliaryService<GuiNode>(loggingManager, guiNodeService)
+    Provider<LayoutContext> layoutContextProvider) : BaseEntityAuxiliaryService<GuiNode>(guiNodeService)
 {
     private readonly Dictionary<Id<GuiNode>, int> _nodeIndexById = new();
 
@@ -35,7 +35,7 @@ public class GuiLayoutService(
     {
         if (!_nodeIndexById.Remove(id, out var index))
         {
-            LoggingManager.Log(LogLevel.Warning, $"GUI node with id '{id}' and no layout entry was removed");
+            logger.LogWarning("GUI node with id '{Id}' and no layout entry was removed", id);
             return;
         }
 
@@ -57,7 +57,7 @@ public class GuiLayoutService(
         position = default;
         if (ComputeLayout().TryPickProblems(out var problems))
         {
-            LoggingManager.Log(problems.Prepend("Failed to compute layout while getting box position for node with id '{0}'",  nodeId));
+            logger.LogError("Failed to compute layout while getting box position for node with id '{NodeId}': {Problems}", nodeId, problems);
             return false;
         }
 
@@ -70,7 +70,7 @@ public class GuiLayoutService(
             || _layoutData[index].Height is not { } dpHeight
             || _layoutData[index].Position is not { } dpPosition)
         {
-            LoggingManager.Log(LogLevel.Warning, $"Tried to get position from unpositioned node with id '{nodeId}'");
+            logger.LogWarning("Tried to get position from unpositioned node with id '{NodeId}'", nodeId);
             return false;
         }
 
@@ -122,7 +122,7 @@ public class GuiLayoutService(
                 || layoutData.Height is not { } dpHeight
                 || layoutData.Position is not { } dpPosition)
             {
-                LoggingManager.Log(LogLevel.Warning, $"Found node without a valid position '{layoutData.NodeId}'");
+                logger.LogWarning("Found node without a valid position '{NodeId}'", layoutData.NodeId);
                 continue;
             }
 
@@ -384,7 +384,7 @@ public class GuiLayoutService(
                 if (!_shrinkWarningLogged)
                 {
                     _shrinkWarningLogged = true;
-                    LoggingManager.Log(LogLevel.Warning, "Layout requires shrinking children but shrink logic is not implemented");
+                    logger.LogWarning("Layout requires shrinking children but shrink logic is not implemented");
                 }
             }
             else if (remaining.Value > Epsilon)

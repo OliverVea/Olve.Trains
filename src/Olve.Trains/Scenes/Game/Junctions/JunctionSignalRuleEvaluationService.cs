@@ -1,11 +1,11 @@
-﻿using Olve.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Game.Vehicles;
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 
 
-public class JunctionSignalRuleEvaluationService(ILoggingManager loggingManager, 
+public class JunctionSignalRuleEvaluationService(ILogger<JunctionSignalRuleEvaluationService> logger,
     VehicleJunctionService vehicleJunctionService,
     JunctionService junctionService,
     JunctionSignalRuleService junctionSignalRuleService)
@@ -71,7 +71,7 @@ public class JunctionSignalRuleEvaluationService(ILoggingManager loggingManager,
             any => true,
             vehicleGroup =>
             {
-                loggingManager.Log(LogLevel.Warning, "JunctionSignalRuleEvaluationService VehicleGroup is not implemented. Returning false.");
+                logger.LogWarning("JunctionSignalRuleEvaluationService VehicleGroup is not implemented. Returning false.");
                 return false;
             },
             vehicleId => sourceVehicleId == vehicleId);
@@ -94,7 +94,7 @@ public class JunctionSignalRuleEvaluationService(ILoggingManager loggingManager,
             any => true,
             cardinalDirection =>
             {
-                loggingManager.Log(LogLevel.Warning, "JunctionSignalRuleEvaluationService CardinalDirection is not implemented. Returning false.");
+                logger.LogWarning("JunctionSignalRuleEvaluationService CardinalDirection is not implemented. Returning false.");
                 return false;  
             },
             trackId => sourceTrackId == trackId);

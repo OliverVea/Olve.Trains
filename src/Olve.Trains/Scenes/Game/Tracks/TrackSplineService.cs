@@ -1,11 +1,10 @@
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Math.Splines;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 
-public class TrackSplineService(ILoggingManager loggingManager, TrackService trackService) : BaseEntityAuxiliaryService<Track>(loggingManager, trackService)
+public class TrackSplineService(TrackService trackService) : BaseEntityAuxiliaryService<Track>(trackService)
 {
     private readonly Dictionary<Id<Track>, UniformHermite<Vector3D<float>>> _trackSplines = [];
 

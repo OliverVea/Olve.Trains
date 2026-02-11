@@ -1,8 +1,8 @@
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Olve.Engine3D.Commands;
 
-public class CommandRunner(IEnumerable<ICommandHandler> commandHandlers, ILoggingManager loggingManager) : ICommandRunner
+public class CommandRunner(IEnumerable<ICommandHandler> commandHandlers, ILogger<CommandRunner> logger) : ICommandRunner
 {
     private readonly IReadOnlyDictionary<string, ICommandHandler> _commandHandlers = commandHandlers.ToDictionary(h => h.Verb);
 
@@ -46,7 +46,7 @@ public class CommandRunner(IEnumerable<ICommandHandler> commandHandlers, ILoggin
             if (result.TryPickProblems(out problems)) return problems;
         }
 
-        loggingManager.Log(LogLevel.Debug, "Ran '" + request.Command + "' successfully");
+        logger.LogDebug("Ran '{Command}' successfully", request.Command);
 
         return Result.Success();
     }

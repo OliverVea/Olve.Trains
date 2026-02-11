@@ -1,7 +1,7 @@
-﻿using Olve.Engine3D.GUI;
+using Microsoft.Extensions.Logging.Abstractions;
+using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
 using Olve.Results.TUnit;
 using Olve.Utilities.Ids;
 using Silk.NET.Maths;
@@ -20,24 +20,23 @@ public class GuiLayoutServiceTests
 
     private static readonly Id<GuiAnchor> DefaultAnchorId = Id.New<GuiAnchor>();
 
-    private static (InMemoryLoggingManager, GuiNodeService, Provider<LayoutContext>, GuiLayoutService) BuildSut(LayoutContext? layoutContext = null)
+    private static (GuiNodeService, Provider<LayoutContext>, GuiLayoutService) BuildSut(LayoutContext? layoutContext = null)
     {
-        InMemoryLoggingManager loggingManager = new ();
-        GuiNodeService guiNodeService = new(loggingManager);
+        GuiNodeService guiNodeService = new(NullLogger<GuiNodeService>.Instance);
         GuiAnchorService guiAnchorService = new();
         Provider<LayoutContext> layoutContextProvider = new(layoutContext ?? DefaultContext);
-        GuiLayoutService guiLayoutService = new(loggingManager, guiNodeService, guiAnchorService, layoutContextProvider);
+        GuiLayoutService guiLayoutService = new(NullLogger<GuiLayoutService>.Instance, guiNodeService, guiAnchorService, layoutContextProvider);
 
         // Register the default anchor
         guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight);
 
-        return (loggingManager, guiNodeService, layoutContextProvider, guiLayoutService);
+        return (guiNodeService, layoutContextProvider, guiLayoutService);
     }
 
     [Test, NotInParallel]
     public async Task ComputeLayout_EmptyConfiguration_Succeeds()
     {
-        var (_, _, _, sut) = BuildSut();
+        var (_, _, sut) = BuildSut();
         var result = sut.ComputeLayout();
         await Assert.That(result).Succeeded();
     }
@@ -52,7 +51,7 @@ public class GuiLayoutServiceTests
         IReadOnlyCollection<Vector2D<Px>> expectedChildrenSizes)
     {
         // Arrange
-        var (_, guiNodeService, _, sut) = BuildSut();
+        var (guiNodeService, _, sut) = BuildSut();
 
         var parentResult = guiNodeService.AddNode("Parent", DefaultAnchorId);
         await Assert.That(parentResult).Succeeded();
@@ -95,7 +94,7 @@ public class GuiLayoutServiceTests
     [Test, NotInParallel]
     public async Task TripleNested_Layout_Sizes_And_Positions()
     {
-        var (_, ge, _, sut) = BuildSut(DefaultContext);
+        var (ge, _, sut) = BuildSut(DefaultContext);
 
         // Create the tree
         var anchorId = DefaultAnchorId; // Parent anchored to root anchor

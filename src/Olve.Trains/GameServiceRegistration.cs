@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.GUI;
@@ -8,7 +9,6 @@ using Olve.Engine3D.Logging;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Rendering;
 using Olve.Trains.Scenes.UI;
@@ -19,6 +19,9 @@ public static class GameServiceRegistration
 {
     public static IServiceCollection AddAllServices(this IServiceCollection services)
     {
+        // Logging
+        services.AddLogging(builder => { builder.AddConsole(); });
+
         // Engine modules
         services.AddWindowingServices();
         services.AddOpenGLServices();
@@ -35,11 +38,6 @@ public static class GameServiceRegistration
         services.AddSingleton<TextureLoadingManager>();
         services.AddSingleton<CommandHandlerServiceCollection>();
 
-        // ILoggingManager (temporary, replaced in follow-up)
-        services.AddSingleton<InMemoryLoggingManager>();
-        services.AddSingleton<ILoggingManager>(sp =>
-            new ConsoleLoggingManager(sp.GetRequiredService<InMemoryLoggingManager>()));
-
         // Scene services
         services.AddGameSceneServices();
         services.AddRenderingSceneServices();
@@ -48,14 +46,14 @@ public static class GameServiceRegistration
         // Scenes
         services.AddSingleton<IEnumerable<IScene>>(sp =>
         {
-            var logging = sp.GetRequiredService<ILoggingManager>();
+            var logger = sp.GetRequiredService<ILogger<Scene>>();
             return
             [
-                new Scene(logging, sp.GetKeyedServices<SceneService>(SceneIds.GameScene),
+                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameScene),
                     SceneIds.GameScene, "GameScene"),
-                new Scene(logging, sp.GetKeyedServices<SceneService>(SceneIds.RenderingScene),
+                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.RenderingScene),
                     SceneIds.RenderingScene, "RenderingScene", 1),
-                new Scene(logging, sp.GetKeyedServices<SceneService>(SceneIds.UIScene),
+                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.UIScene),
                     SceneIds.UIScene, "UIScene", 2),
             ];
         });

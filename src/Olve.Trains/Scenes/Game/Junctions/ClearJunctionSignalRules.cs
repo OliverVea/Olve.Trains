@@ -1,15 +1,13 @@
 ﻿using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.Vehicles;
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 
 public class ClearJunctionSignalRules(
-    ILoggingManager loggingManager,
     CommandHandlerServiceCollection commandHandlerServiceCollection,
     JunctionSignalRuleService junctionSignalRuleService)
-    : CommandHandlerService(loggingManager, commandHandlerServiceCollection)
+    : CommandHandlerService(commandHandlerServiceCollection)
 {
     private static readonly CommandArgument JunctionArgument = new("junction", "The junction to add the rule to", true);
     public override string Verb => "clear-signal-rules";

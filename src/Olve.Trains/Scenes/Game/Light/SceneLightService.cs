@@ -1,12 +1,11 @@
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.ShaderExtensions;
 
 namespace Olve.Trains.Scenes.Game.Light;
 
-public class SceneLightService(ILoggingManager loggingManager, DayTimeManager dayTimeManager, DaylightManager daylightManager) : SceneService(loggingManager)
+public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager daylightManager) : ISceneService
 {
     
     private DaylightId _sunId, _moonId;
@@ -18,7 +17,7 @@ public class SceneLightService(ILoggingManager loggingManager, DayTimeManager da
     
     public Vector3D<float> AmbientLightColor => SunValue.AmbientColor * SunValue.AmbientIntensity + MoonValue.AmbientColor * MoonValue.AmbientIntensity;
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (daylightManager.AddLight(LightingConstants.SunData).TryPickProblems(out var problems, out _sunId)
             || daylightManager.AddLight(LightingConstants.MoonData).TryPickProblems(out problems, out _moonId))
@@ -29,7 +28,7 @@ public class SceneLightService(ILoggingManager loggingManager, DayTimeManager da
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         if (daylightManager.Sample(_sunId, dayTimeManager.CurrentTime).TryPickProblems(out var problems, out var sunValue)
             || daylightManager.Sample(_moonId, dayTimeManager.CurrentTime).TryPickProblems(out problems, out var moonValue))
@@ -51,7 +50,7 @@ public class SceneLightService(ILoggingManager loggingManager, DayTimeManager da
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         daylightManager.RemoveLight(_sunId);
         daylightManager.RemoveLight(_moonId);

@@ -1,9 +1,9 @@
 using Olve.Engine3D;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 
-public class TrackPlacingService(ILoggingManager loggingManager, TrackService trackService)
+public class TrackPlacingService(ILogger<TrackPlacingService> logger, TrackService trackService)
 {
     public Result PlaceTrack(TrackEndpoint startEndpoint, TrackEndpoint endEndpoint)
     {
@@ -48,7 +48,7 @@ public class TrackPlacingService(ILoggingManager loggingManager, TrackService tr
         var pointDistance = (startEndpoint.Point - endEndpoint.Point).Length;
         if (pointDistance < 0.01f)
         {
-            loggingManager.Log(LogLevel.Warning, "Tried to place track with distance 0");
+            logger.LogWarning("Tried to place track with distance 0");
             return Result.Success();
         }
         
@@ -59,8 +59,8 @@ public class TrackPlacingService(ILoggingManager loggingManager, TrackService tr
             return problems.Prepend("Failed to add track");
         }
                 
-        loggingManager.Log(LogLevel.Info, $"Created track with id '{trackId}'");
-        loggingManager.Log(LogLevel.Debug, $"Placed track from {startEndpoint} to {endEndpoint}");
+        logger.LogInformation("Created track with id '{TrackId}'", trackId);
+        logger.LogDebug("Placed track from {StartEndpoint} to {EndEndpoint}", startEndpoint, endEndpoint);
         
         return Result.Success();
     }

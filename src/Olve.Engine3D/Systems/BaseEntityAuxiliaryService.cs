@@ -1,23 +1,21 @@
-﻿using Olve.Engine3D.Scenes;
-using Olve.Logging;
+using Olve.Engine3D.Scenes;
 using Olve.Utilities.Ids;
 using Olve.Utilities.Lookup;
 
 namespace Olve.Engine3D.Systems;
 
 public abstract class BaseEntityAuxiliaryService<TEntity>(
-    ILoggingManager loggingManager,
-    IEntityService<TEntity> entityService) : SceneService(loggingManager)
+    IEntityService<TEntity> entityService) : ISceneService
     where TEntity : IHasId<Id<TEntity>>
 {
-    protected override Result OnLoad()
+    public Result Load()
     {
         entityService.OnAdded.Subscribe(OnAdded);
         entityService.OnRemoved.Subscribe(OnRemoved);
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         entityService.OnAdded.Unsubscribe(OnAdded);
         entityService.OnRemoved.Unsubscribe(OnRemoved);

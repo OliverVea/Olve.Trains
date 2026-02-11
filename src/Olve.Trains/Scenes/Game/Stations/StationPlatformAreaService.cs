@@ -1,14 +1,14 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Game.Stations;
 
-public class StationPlatformAreaService(ILoggingManager loggingManager,
+public class StationPlatformAreaService(ILogger<StationPlatformAreaService> logger,
     StationPlatformService stationPlatformService,
-    TrackSplineService trackSplineService) : BaseEntityListeningService<StationPlatform>(loggingManager, stationPlatformService)
+    TrackSplineService trackSplineService) : BaseEntityListeningService<StationPlatform>(stationPlatformService)
 {
     private readonly Dictionary<Id<StationPlatform>, Id<AABB>> _stationPlatformAABBLookup = new();
     private readonly AABBLinearLookup<Id<StationPlatform>> _stationPlatformLookup = new();
@@ -25,7 +25,7 @@ public class StationPlatformAreaService(ILoggingManager loggingManager,
     {
         if (_stationPlatformAABBLookup.TryGetValue(stationPlatformId, out var id))
         {
-            LoggingManager.Log(LogLevel.Warning, $"Skipping re-registering station platform with id '{stationPlatformId}' as it already has aabb with id '{id}'");
+            logger.LogWarning("Skipping re-registering station platform with id '{StationPlatformId}' as it already has aabb with id '{Id}'", stationPlatformId, id);
             return Result.Success();
         }
 
@@ -46,7 +46,7 @@ public class StationPlatformAreaService(ILoggingManager loggingManager,
         var aabbId = _stationPlatformLookup.Add(aabb, stationPlatformId);
         _stationPlatformAABBLookup.Add(stationPlatformId, aabbId);
 
-        LoggingManager.Log(LogLevel.Debug, $"Registered AABB '{aabb}' with id '{aabbId}' for station platform with id '{stationPlatformId}'");
+        logger.LogDebug("Registered AABB '{Aabb}' with id '{AabbId}' for station platform with id '{StationPlatformId}'", aabb, aabbId, stationPlatformId);
 
         return Result.Success();
     }
@@ -68,14 +68,14 @@ public class StationPlatformAreaService(ILoggingManager loggingManager,
         {
             if (!_stationPlatformLookup.Remove(aabbId))
             {
-                LoggingManager.Log(LogLevel.Warning, $"Platform '{stationPlatformId}' with no registered AABB was deleted");
+                logger.LogWarning("Platform '{StationPlatformId}' with no registered AABB was deleted", stationPlatformId);
             }
 
             _stationPlatformAABBLookup.Remove(stationPlatformId);
         }
         else
         {
-            LoggingManager.Log(LogLevel.Warning, $"Platform '{stationPlatformId}' with no registered AABB id was deleted");
+            logger.LogWarning("Platform '{StationPlatformId}' with no registered AABB id was deleted", stationPlatformId);
         }
 
         return Result.Success();

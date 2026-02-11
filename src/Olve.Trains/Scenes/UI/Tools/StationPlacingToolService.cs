@@ -1,7 +1,7 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Trains.Scenes.Game.Stations;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Rendering;
@@ -11,7 +11,7 @@ using Silk.NET.Input;
 namespace Olve.Trains.Scenes.UI.Tools;
 
 public sealed class StationPlacingToolService(
-    ILoggingManager loggingManager,
+    ILogger<StationPlacingToolService> logger,
     TerrainRaycastService terrainRaycastService,
     ToolManagementService toolManagementService,
     TrackArrowIndicatorService arrowIndicatorService,
@@ -19,7 +19,7 @@ public sealed class StationPlacingToolService(
     StationService stationService,
     StationPlatformService stationPlatformService,
     StationNameGenerator stationNameGenerator,
-    MouseManager mouseManager) : BaseToolService<StationPlacingToolService.State>(loggingManager, toolManagementService, new State())
+    MouseManager mouseManager) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
 {
     public record State(Vector3D<float>? From = null, bool ActivatedThisFrame = false);
 
@@ -28,24 +28,24 @@ public sealed class StationPlacingToolService(
 
     private Id<ArrowIndicator> _arrowIndicatorId;
 
-    protected override Result OnLoad()
+    public new Result Load()
     {
         if (arrowIndicatorService.AddArrowIndicator().TryPickProblems(out var problems, out _arrowIndicatorId))
         {
             return problems;
         }
 
-        return base.OnLoad();
+        return base.Load();
     }
 
-    protected override Result OnUnload()
+    public new Result Unload()
     {
         if (arrowIndicatorService.RemoveArrowIndicator(_arrowIndicatorId).TryPickProblems(out var problems))
         {
             return problems;
         }
 
-        return base.OnUnload();
+        return base.Unload();
     }
 
     protected override State OnToolSelected(State toolState)
@@ -96,7 +96,7 @@ public sealed class StationPlacingToolService(
 
         if (ToolState.From is not { } fromPoint)
         {
-            LoggingManager.Log(LogLevel.Debug, $"Set start of station placement to '{tileCenter}'");
+            logger.LogDebug("Set start of station placement to '{TileCenter}'", tileCenter);
             ToolState = ToolState with { From = tileCenter };
             return Result.Success();
         }
@@ -105,7 +105,7 @@ public sealed class StationPlacingToolService(
 
         if ((tileCenter - fromPoint).LengthSquared < MathConstants.Epsilon)
         {
-            LoggingManager.Log(LogLevel.Debug, "Rejected station placement: same tile");
+            logger.LogDebug("Rejected station placement: same tile");
             return Result.Success();
         }
 
@@ -128,7 +128,7 @@ public sealed class StationPlacingToolService(
             return problems;
         }
 
-        LoggingManager.Log(LogLevel.Debug, $"Created station '{name}' at {center}");
+        logger.LogDebug("Created station '{Name}' at {Center}", name, center);
 
         var direction = Vector3D.Normalize(delta);
         var tileCount = (int)float.Round(delta.Length);
@@ -151,7 +151,7 @@ public sealed class StationPlacingToolService(
                 return problems;
             }
 
-            LoggingManager.Log(LogLevel.Debug, $"Added platform track '{trackId}' (platform '{platformId}') to station '{name}'");
+            logger.LogDebug("Added platform track '{TrackId}' (platform '{PlatformId}') to station '{Name}'", trackId, platformId, name);
         }
 
         return Result.Success();

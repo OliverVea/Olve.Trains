@@ -2,11 +2,10 @@
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Time;
-using Olve.Logging;
 
 namespace Olve.Trains.Scenes.Game.Time;
 
-public class SetTimeHandlerService(ILoggingManager loggingManager, DayTimeManager dayTimeManager, CommandHandlerServiceCollection commandHandlerServiceCollection) : CommandHandlerService(loggingManager, commandHandlerServiceCollection)
+public class SetTimeHandlerService(DayTimeManager dayTimeManager, CommandHandlerServiceCollection commandHandlerServiceCollection) : CommandHandlerService(commandHandlerServiceCollection)
 {
     private static readonly CommandArgument TimeArgument = new("time", "The time as HH:MM", true);
     
