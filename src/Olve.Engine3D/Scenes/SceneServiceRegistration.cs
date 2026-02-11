@@ -6,10 +6,10 @@ namespace Olve.Engine3D.Scenes;
 public static class SceneServiceRegistration
 {
     public static IServiceCollection AddSceneService<T>(this IServiceCollection services, Id<IScene> sceneId)
-        where T : SceneService
+        where T : class, ISceneService
     {
         services.AddSingleton<T>();
-        services.AddKeyedSingleton<SceneService>(sceneId, (sp, _) => sp.GetRequiredService<T>());
+        services.AddKeyedSingleton<ISceneService>(sceneId, (sp, _) => sp.GetRequiredService<T>());
         return services;
     }
 }

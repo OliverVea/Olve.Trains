@@ -1,6 +1,6 @@
 ﻿using Olve.Engine3D.Systems;
-using Olve.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Olve.Trains.Scenes.Game.Industries;
 
-public class BuildingService(ILoggingManager loggingManager) : BaseEntityService<Building>(loggingManager);
+public class BuildingService() : BaseEntityService<Building>(NullLogger.Instance);

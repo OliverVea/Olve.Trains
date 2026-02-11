@@ -1,11 +1,11 @@
-﻿using Olve.Engine3D.Assets.Entities;
+using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Textures;
-using Olve.Logging;
 using Olve.Paths;
 
 namespace Olve.Engine3D.Assets;
 
-public class TextureLoadingManager(ILoggingManager loggingManager, AssetLoader assetLoader, TextureManager textureManager)
+public class TextureLoadingManager(ILogger<TextureLoadingManager> logger, AssetLoader assetLoader, TextureManager textureManager)
 {
     private readonly record struct PathKey
     {
@@ -32,7 +32,7 @@ public class TextureLoadingManager(ILoggingManager loggingManager, AssetLoader a
                 return cachedTextureId;
             }
 
-            loggingManager.Log(LogLevel.Error, $"Cached texture at path '{pathKey.Value}' was incorrect type '{typeof(T).Name}' expected '{cachedUntypedTextureId.Type.Name}'");
+            logger.LogError("Cached texture at path '{PathValue}' was incorrect type '{TypeName}' expected '{ExpectedType}'", pathKey.Value, typeof(T).Name, cachedUntypedTextureId.Type.Name);
         }
 
         if (assetLoader

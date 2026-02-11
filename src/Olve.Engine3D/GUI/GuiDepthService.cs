@@ -1,10 +1,10 @@
-﻿using Olve.Engine3D.Systems;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Systems;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI;
 
-public class GuiDepthService(ILoggingManager loggingManager, GuiNodeService guiNodeService) : BaseEntityAuxiliaryService<GuiNode>(loggingManager, guiNodeService)
+public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService guiNodeService) : BaseEntityAuxiliaryService<GuiNode>(guiNodeService)
 {
     private readonly Dictionary<Id<GuiNode>, int> _depths = [];
 
@@ -21,7 +21,7 @@ public class GuiDepthService(ILoggingManager loggingManager, GuiNodeService guiN
         }
         else
         {
-            LoggingManager.Log(LogLevel.Error, $"Could not get parent for node '{nodeId}'. Setting depth for node to 0.");
+            logger.LogError("Could not get parent for node '{NodeId}'. Setting depth for node to 0.", nodeId);
         }
 
         _depths[nodeId] = 0;
@@ -33,7 +33,7 @@ public class GuiDepthService(ILoggingManager loggingManager, GuiNodeService guiN
     {
         if (!_depths.TryGetValue(nodeId, out var depth))
         {
-            LoggingManager.Log(LogLevel.Error, $"Could not get depth for node '{nodeId}'. Returning int.MinValue");
+            logger.LogError("Could not get depth for node '{NodeId}'. Returning int.MinValue", nodeId);
             return int.MinValue;
         }
 

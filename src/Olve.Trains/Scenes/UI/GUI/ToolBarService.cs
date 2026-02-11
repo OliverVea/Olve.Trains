@@ -4,20 +4,18 @@ using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
-using Olve.Logging;
 using Olve.Trains.Scenes.UI.Tools;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
 public class ToolBarService(
-    ILoggingManager loggingManager,
     ToolManagementService toolManagementService,
     GuiElementService guiElementService,
     GuiNodeStateService stateService,
     GuiActivationService guiActivationService,
-    GuiAnchorService guiAnchorService) : SceneService(loggingManager)
+    GuiAnchorService guiAnchorService) : ISceneService
 {
-    public override int Priority => 100;
+    public int Priority => 100;
 
     private static readonly Layouts.ToolBar ToolBar = Layouts.BuildToolBar();
 
@@ -29,7 +27,7 @@ public class ToolBarService(
         (ToolBar.PlaceTrain, TrainPlacingToolService.ToolId)
     ];
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (guiAnchorService.RegisterAnchor(AnchorPosition.BottomCenter, GrowthDirection.Up)
             .TryPickProblems(out var problems, out var anchorId))

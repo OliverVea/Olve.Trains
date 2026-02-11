@@ -1,14 +1,13 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Scenes;
-using Olve.Logging;
 
 namespace Olve.Trains.Scenes.Game.Terrain;
 
-public class TerrainService(ILoggingManager loggingManager) : SceneService(loggingManager)
+public class TerrainService : ISceneService
 {
     public TerrainData? Terrain { get; private set; }
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         const int length = 50;
         const int width = 50;

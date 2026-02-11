@@ -1,17 +1,17 @@
 using System.Globalization;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
 public class PlaceVehicleHandlerService(
-    ILoggingManager loggingManager,
+    ILogger<PlaceVehicleHandlerService> logger,
     CommandHandlerServiceCollection commandHandlerServiceCollection,
     TrackService trackService,
     VehicleService vehicleService,
-    VehiclePositionService vehiclePositionService) : CommandHandlerService(loggingManager, commandHandlerServiceCollection)
+    VehiclePositionService vehiclePositionService) : CommandHandlerService(commandHandlerServiceCollection)
 {
     private static readonly CommandArgument TrackArgument = new ("track", "The track to place the vehicle on.", true);
     private static readonly CommandArgument VehicleIdArgument = new("vehicle", "The vehicle to place. If empty, a new vehicle will be created.");
@@ -51,7 +51,7 @@ public class PlaceVehicleHandlerService(
 
         vehiclePositionService.SetTrackPosition(vehicleId, vehicleTrackPosition);
 
-        LoggingManager.Log(LogLevel.Info, $"Placed vehicle '{vehicleId}' on track with id '{trackId}' with position '{vehicleTrackPosition}'");
+        logger.LogInformation("Placed vehicle '{VehicleId}' on track with id '{TrackId}' with position '{VehicleTrackPosition}'", vehicleId, trackId, vehicleTrackPosition);
 
         return Result.Success();
     }

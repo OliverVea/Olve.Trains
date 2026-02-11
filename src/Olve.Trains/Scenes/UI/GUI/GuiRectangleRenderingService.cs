@@ -9,20 +9,20 @@ using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
 public class GuiRectangleRenderingService(
-    ILoggingManager loggingManager,
+    ILogger<GuiRectangleRenderingService> logger,
     RenderingManager2D renderingManager2D,
     ShaderEntityManager shaderEntityManager,
     Provider<LayoutContext> layoutContext,
     GuiDepthService guiDepthService,
     GuiElementService guiElementService,
-    GuiLayoutService guiLayoutService) : SceneService(loggingManager)
+    GuiLayoutService guiLayoutService) : ISceneService
 {
-    public override int Priority => GetPriorityFromDependencies([guiLayoutService]);
+    public int Priority => SceneServicePriority.FromDependencies([guiLayoutService]);
 
     private readonly record struct InstanceData(RenderingInstanceId InstanceId, UntypedTextureId TextureId);
 
@@ -34,7 +34,7 @@ public class GuiRectangleRenderingService(
         BlendState = RenderState.AlphaBlend,
     };
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (shaderEntityManager.Register(_shader.ShaderData)
             .TryPickProblems(out var problems, out var shaderRenderingId))
@@ -47,7 +47,7 @@ public class GuiRectangleRenderingService(
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         var designSize = layoutContext.Value.ToPx(layoutContext.Value.DesignSize);
         _shader.UResolution = new Vector2D<float>(designSize.X.Value, designSize.Y.Value);
@@ -96,7 +96,7 @@ public class GuiRectangleRenderingService(
         return Result.Success();
     }
 
-    protected override Result OnRender(TimeSpan deltaTime)
+    public Result Render(TimeSpan deltaTime)
     {
         if (_instances.Count == 0)
         {
@@ -137,7 +137,7 @@ public class GuiRectangleRenderingService(
 
         _instances[nodeId] = new InstanceData(renderingInstanceId, textureId);
 
-        LoggingManager.Log(LogLevel.Debug, $"Registered rectangle rendering for node {nodeId}");
+        logger.LogDebug("Registered rectangle rendering for node {NodeId}", nodeId);
 
         return Result.Success();
     }
@@ -156,7 +156,7 @@ public class GuiRectangleRenderingService(
             return DeletionResult.Error(problems);
         }
 
-        LoggingManager.Log(LogLevel.Debug, $"Deregistered rectangle rendering for node {nodeId}");
+        logger.LogDebug("Deregistered rectangle rendering for node {NodeId}", nodeId);
 
         return DeletionResult.Success();
     }

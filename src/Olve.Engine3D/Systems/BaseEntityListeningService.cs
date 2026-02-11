@@ -1,11 +1,10 @@
-﻿using Olve.Engine3D.Scenes;
-using Olve.Logging;
+using Olve.Engine3D.Scenes;
 using Olve.Utilities.Ids;
 using Olve.Utilities.Lookup;
 
 namespace Olve.Engine3D.Systems;
 
-public abstract class BaseEntityListeningService<TEntity>(ILoggingManager loggingManager, IEntityService<TEntity> entityService) : SceneService(loggingManager) where TEntity : IHasId<Id<TEntity>>
+public abstract class BaseEntityListeningService<TEntity>(IEntityService<TEntity> entityService) : ISceneService where TEntity : IHasId<Id<TEntity>>
 {
     private readonly EventQueue<Id<TEntity>> _addedEventQueue = new(entityService.OnAdded);
     private readonly EventQueue<Id<TEntity>> _removedEventQueue = new(entityService.OnRemoved);
@@ -15,11 +14,11 @@ public abstract class BaseEntityListeningService<TEntity>(ILoggingManager loggin
     protected virtual Result OnRemoved(Id<TEntity> entityId) => Result.Success();
 
     private bool _addSubscribed, _deleteSubscribed;
-    
-    protected override Result OnLoad()
+
+    public Result Load()
     {
         (_addSubscribed, _deleteSubscribed) = GetSubscriptions();
-        
+
         if (_addSubscribed)
         {
             _addedEventQueue.SetHandler(OnAdded).Init();
@@ -29,11 +28,11 @@ public abstract class BaseEntityListeningService<TEntity>(ILoggingManager loggin
         {
             _removedEventQueue.SetHandler(OnRemoved).Init();
         }
-        
+
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         if (_addSubscribed)
         {
@@ -44,11 +43,11 @@ public abstract class BaseEntityListeningService<TEntity>(ILoggingManager loggin
         {
             _removedEventQueue.Cleanup();
         }
-        
+
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         if (_addSubscribed)
         {

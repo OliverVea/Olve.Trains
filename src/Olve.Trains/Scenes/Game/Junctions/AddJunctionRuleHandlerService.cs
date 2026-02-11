@@ -3,22 +3,20 @@ using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Game.Vehicles;
 using Olve.Utilities.Types;
-using RuleFields = (System.Collections.Generic.List<Olve.Trains.Scenes.Game.Junctions.SignalRuleVehicle> Vehicles, 
-    System.Collections.Generic.List<Olve.Trains.Scenes.Game.Junctions.SignalRuleSource> Sources, 
-    System.Collections.Generic.List<Olve.Trains.Scenes.Game.Junctions.SignalRuleDestination> Destinations, 
+using RuleFields = (System.Collections.Generic.List<Olve.Trains.Scenes.Game.Junctions.SignalRuleVehicle> Vehicles,
+    System.Collections.Generic.List<Olve.Trains.Scenes.Game.Junctions.SignalRuleSource> Sources,
+    System.Collections.Generic.List<Olve.Trains.Scenes.Game.Junctions.SignalRuleDestination> Destinations,
     Olve.Trains.Scenes.Game.Junctions.SignalRuleDistribution Distribution);
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 
 public class AddJunctionRuleHandlerService(
-    ILoggingManager loggingManager,
     CommandHandlerServiceCollection commandHandlerServiceCollection,
     JunctionSignalRuleService junctionSignalRuleService)
-    : CommandHandlerService(loggingManager, commandHandlerServiceCollection)
+    : CommandHandlerService(commandHandlerServiceCollection)
 {
     private static readonly CommandArgument JunctionArgument = new("junction", "The junction to add the rule to", true);
     private static readonly CommandArgument RuleArgument = new("rule", "The rule to add", true);

@@ -7,13 +7,11 @@ using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.Junctions;
 
 namespace Olve.Trains.Scenes.Rendering;
 
 public class JunctionSignalRenderingService(
-    ILoggingManager loggingManager,
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
@@ -22,7 +20,7 @@ public class JunctionSignalRenderingService(
     RenderingServiceHelper renderingServiceHelper,
     JunctionService junctionService,
     JunctionSignalService junctionSignalService)
-    : BaseEntityListeningService<Junction>(loggingManager, junctionSignalService)
+    : BaseEntityListeningService<Junction>(junctionSignalService)
 {
     private GeometryId _geometryId;
     private readonly Dictionary<Id<Junction>, RenderingInstanceId> _instanceIds = new();
@@ -30,7 +28,7 @@ public class JunctionSignalRenderingService(
 
     protected override (bool SubscribeAdd, bool SubscribeDelete) GetSubscriptions() => (true, true);
 
-    protected override Result OnLoad()
+    public new Result Load()
     {
         // Load texture and get its Id
         if (textureLoadingManager.LoadTexture(Textures.SimpleTrains_Texture_01)
@@ -78,7 +76,7 @@ public class JunctionSignalRenderingService(
 
         _geometryId = geometryId;
 
-        return base.OnLoad();
+        return base.Load();
     }
 
     protected override Result OnAdded(Id<Junction> junctionId)
@@ -118,15 +116,15 @@ public class JunctionSignalRenderingService(
         return renderingManager3D.DeregisterInstance(instanceId);
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public new Result Update(TimeSpan deltaTime)
     {
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
         cameraSceneService.ApplyCameraPositionParameters(_shader);
 
-        return base.OnUpdate(deltaTime);
+        return base.Update(deltaTime);
     }
 
-    protected override Result OnRender(TimeSpan deltaTime)
+    public Result Render(TimeSpan deltaTime)
     {
         return renderingManager3D.Render(_shader);
     }

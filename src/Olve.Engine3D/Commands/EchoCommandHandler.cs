@@ -1,9 +1,9 @@
 using System.Text;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Olve.Engine3D.Commands;
 
-public class EchoCommandHandler(ILoggingManager loggingManager) : ICommandHandler
+public class EchoCommandHandler(ILogger<EchoCommandHandler> logger) : ICommandHandler
 {
     private const string MessageKey = "message";
     private readonly StringBuilder _builder = new();
@@ -22,16 +22,7 @@ public class EchoCommandHandler(ILoggingManager loggingManager) : ICommandHandle
         }
 
         var output = _builder.ToString();
-        var logMessage = new LogMessage(
-            LogLevel.Info,
-            output,
-            null,
-            null,
-            DateTime.Now,
-            [Verb]
-        );
-
-        loggingManager.Log(logMessage);
+        logger.LogInformation("{Output}", output);
         _builder.Clear();
 
         return Result.Success();

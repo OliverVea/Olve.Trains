@@ -9,7 +9,7 @@ using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Trains.Scenes.Game.Light;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Game.Vehicles;
@@ -18,7 +18,7 @@ using RenderingServiceHelper = Olve.Engine3D.Rendering.RenderingServiceHelper;
 namespace Olve.Trains.Scenes.Rendering;
 
 public class VehicleRenderingService(
-    ILoggingManager loggingManager,
+    ILogger<VehicleRenderingService> logger,
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
@@ -30,9 +30,9 @@ public class VehicleRenderingService(
     VehiclePositionService vehiclePositionService,
     TrackSplineService trackSplineService,
     TrackRenderingService trackRenderingService
-    ) : SceneService(loggingManager)
+    ) : ISceneService
 {
-    public override int Priority => GetPriorityFromDependencies([trackRenderingService]);
+    public int Priority => SceneServicePriority.FromDependencies([trackRenderingService]);
 
     private GeometryId _geometryId;
     private readonly Dictionary<Id<Vehicle>, RenderingInstanceId> _instanceIds  = new();
@@ -43,7 +43,7 @@ public class VehicleRenderingService(
 
     private Result LoadShader(IShader shader) => renderingServiceHelper.LoadShader(shader);
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         // Load texture and get its Id
         if (textureLoadingManager.LoadTexture(Textures.SimpleTrains_Texture_01)
@@ -105,7 +105,7 @@ public class VehicleRenderingService(
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         _toAddQueue.Cleanup();
         _toRemoveQueue.Cleanup();
@@ -141,7 +141,7 @@ public class VehicleRenderingService(
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         _toAddQueue.Update();
         _toRemoveQueue.Update();
@@ -150,7 +150,7 @@ public class VehicleRenderingService(
         {
             if (!_instanceIds.TryGetValue(vehicleId, out var instanceId))
             {
-                LoggingManager.Log(LogLevel.Warning, $"Did not find rendering instance id for vehicle with id '{vehicleId}'. Enqueueing it for registration");
+                logger.LogWarning("Did not find rendering instance id for vehicle with id '{VehicleId}'. Enqueueing it for registration", vehicleId);
                 AddVehicle(vehicleId);
                 continue;
             }
@@ -174,7 +174,7 @@ public class VehicleRenderingService(
         return Result.Success();
     }
 
-    protected override Result OnRender(TimeSpan deltaTime)
+    public Result Render(TimeSpan deltaTime)
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         cameraSceneService.ApplyCameraDirectionParameters(_shader);

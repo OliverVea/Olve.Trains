@@ -1,11 +1,10 @@
 using System.Collections.Concurrent;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
 
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
-public class VehiclePositionService(ILoggingManager loggingManager,
-    VehicleService vehicleService) : BaseEntityAuxiliaryService<Vehicle>(loggingManager, vehicleService)
+public class VehiclePositionService(
+    VehicleService vehicleService) : BaseEntityAuxiliaryService<Vehicle>(vehicleService)
 {
     private readonly ConcurrentDictionary<Id<Vehicle>, VehiclePositionType> _positionTypes = new();
     private readonly ConcurrentDictionary<Id<Vehicle>, VehicleTrackPosition> _trackPositions = new();

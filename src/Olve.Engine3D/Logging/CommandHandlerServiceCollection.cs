@@ -1,24 +1,24 @@
-﻿using System.Collections;
+using System.Collections;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Commands;
-using Olve.Logging;
 
 namespace Olve.Engine3D.Logging;
 
-public class CommandHandlerServiceCollection(ILoggingManager loggingManager) : IEnumerable<ICommandHandler>
+public class CommandHandlerServiceCollection(ILogger<CommandHandlerServiceCollection> logger) : IEnumerable<ICommandHandler>
 {
     private readonly HashSet<CommandHandlerService> _commandHandlerServices = [];
-    
+
     public bool Add(CommandHandlerService commandHandlerService)
     {
         var serviceTypeName = commandHandlerService.GetType().Name;
-        loggingManager.Log(LogLevel.Debug, $"[CommandHandlerServiceCollection] Registering {serviceTypeName}", [serviceTypeName, nameof(CommandHandlerServiceCollection)]);
+        logger.LogDebug("[CommandHandlerServiceCollection] Registering {ServiceTypeName}", serviceTypeName);
         return _commandHandlerServices.Add(commandHandlerService);
     }
 
     public bool Remove(CommandHandlerService commandHandlerService)
     {
         var serviceTypeName = commandHandlerService.GetType().Name;
-        loggingManager.Log(LogLevel.Debug, $"[CommandHandlerServiceCollection] Deregistering {serviceTypeName}", [serviceTypeName, nameof(CommandHandlerServiceCollection)]);
+        logger.LogDebug("[CommandHandlerServiceCollection] Deregistering {ServiceTypeName}", serviceTypeName);
         return _commandHandlerServices.Remove(commandHandlerService);
     }
 

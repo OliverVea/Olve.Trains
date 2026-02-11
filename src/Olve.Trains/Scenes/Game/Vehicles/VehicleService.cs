@@ -1,9 +1,9 @@
 using Olve.Engine3D.Systems;
-using Olve.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
-public class VehicleService(ILoggingManager loggingManager) : BaseEntityService<Vehicle>(loggingManager)
+public class VehicleService() : BaseEntityService<Vehicle>(NullLogger.Instance)
 {
     public Result<Id<Vehicle>> AddVehicle(string name)
     {

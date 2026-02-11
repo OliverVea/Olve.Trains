@@ -11,7 +11,7 @@ using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
@@ -20,15 +20,15 @@ namespace Olve.Trains.Scenes.UI.GUI;
 /// Each text element maps to multiple glyph rendering instances.
 /// </summary>
 public class GuiTextRenderingService(
-    ILoggingManager loggingManager,
+    ILogger<GuiTextRenderingService> logger,
     RenderingManager2D renderingManager2D,
     ShaderEntityManager shaderEntityManager,
     Provider<LayoutContext> layoutContext,
     GuiDepthService guiDepthService,
     GuiElementService guiElementService,
-    GuiLayoutService guiLayoutService) : SceneService(loggingManager)
+    GuiLayoutService guiLayoutService) : ISceneService
 {
-    public override int Priority => GetPriorityFromDependencies([guiLayoutService]);
+    public int Priority => SceneServicePriority.FromDependencies([guiLayoutService]);
 
     /// <summary>
     /// Tracks one text element's glyph instances and cached layout data.
@@ -50,7 +50,7 @@ public class GuiTextRenderingService(
         BlendState = RenderState.AlphaBlend,
     };
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         if (shaderEntityManager.Register(_shader.ShaderData)
             .TryPickProblems(out var problems, out var shaderRenderingId))
@@ -63,7 +63,7 @@ public class GuiTextRenderingService(
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         var designSize = layoutContext.Value.ToPx(layoutContext.Value.DesignSize);
         _shader.UResolution = new Vector2D<float>(designSize.X.Value, designSize.Y.Value);
@@ -96,7 +96,7 @@ public class GuiTextRenderingService(
         return Result.Success();
     }
 
-    protected override Result OnRender(TimeSpan deltaTime)
+    public Result Render(TimeSpan deltaTime)
     {
         if (_instances.Count == 0)
         {
@@ -145,7 +145,7 @@ public class GuiTextRenderingService(
         _instances[nodeId] = new TextInstanceData(
             glyphIds, fontAtlasId, layout, font, content, fontSize);
 
-        LoggingManager.Log(LogLevel.Debug, $"Registered text rendering for node {nodeId} with {glyphIds.Count} glyphs");
+        logger.LogDebug("Registered text rendering for node {NodeId} with {GlyphCount} glyphs", nodeId, glyphIds.Count);
 
         return Result.Success();
     }
@@ -162,7 +162,7 @@ public class GuiTextRenderingService(
             renderingManager2D.Deregister(glyphId);
         }
 
-        LoggingManager.Log(LogLevel.Debug, $"Deregistered text rendering for node {nodeId}");
+        logger.LogDebug("Deregistered text rendering for node {NodeId}", nodeId);
 
         return DeletionResult.Success();
     }

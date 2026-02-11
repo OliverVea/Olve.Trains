@@ -9,11 +9,12 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.2" />
-    <PackageVersion Include="Olve.Logging" Version="0.36.1" />
     <PackageVersion Include="Olve.MsdfAtlasGen" Version="1.0.2" />
     <PackageVersion Include="Olve.OpenRaster" Version="0.1.5" />
     <PackageVersion Include="Olve.Operations" Version="0.36.1" />

@@ -1,15 +1,14 @@
 ﻿using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
-using Olve.Logging;
 
 namespace Olve.Trains.Scenes.Game.Time;
 
-public class DayTimeSteppingService(ILoggingManager loggingManager, DayTimeManager dayTimeManager) : SceneService(loggingManager)
+public class DayTimeSteppingService(DayTimeManager dayTimeManager) : ISceneService
 {
     private static readonly DayTime DayStart = new(5, 30);
     private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(6);
     
-    protected override Result OnLoad()
+    public Result Load()
     {
         dayTimeManager.CurrentTime = DayStart;
         dayTimeManager.DayLength = DayDuration;
@@ -17,7 +16,7 @@ public class DayTimeSteppingService(ILoggingManager loggingManager, DayTimeManag
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         dayTimeManager.Step(deltaTime);
 

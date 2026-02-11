@@ -1,29 +1,27 @@
-﻿using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
 
 namespace Olve.Engine3D.GUI.Layout;
 
 public class GuiLayoutUpdateService(
     GuiElementService guiElementService,
-    GuiLayoutService guiLayoutService,
-    ILoggingManager loggingManager
-) : SceneService(loggingManager)
+    GuiLayoutService guiLayoutService
+) : ISceneService
 {
     private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
     private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
 
-    public override int Priority => GetPriorityFromDependents([ guiLayoutService ]);
+    public int Priority => SceneServicePriority.FromDependents([ guiLayoutService ]);
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         _elementAddedQueue.SetHandler(OnAdded).Init();
         _elementRemovedQueue.SetHandler(OnRemoved).Init();
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         return Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update, guiLayoutService.ComputeLayout);
     }

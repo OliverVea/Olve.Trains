@@ -2,7 +2,7 @@
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Rendering;
 using Olve.Trains.Scenes.UI.Indicators;
@@ -10,7 +10,7 @@ using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.UI.Tools;
 
-public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
+public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> logger,
     TerrainRaycastService terrainRaycastService,
     ToolManagementService toolManagementService,
     TrackArrowIndicatorService arrowIndicatorService,
@@ -19,7 +19,7 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
     TrackPlacingService trackPlacingService,
     TrackRenderingService trackRenderingService,
     TrackLineStripDataService trackLineStripDataService,
-    TrackValidationService trackValidationService) : BaseToolService<TrackPlacingToolService.State>(loggingManager, toolManagementService, new State())
+    TrackValidationService trackValidationService) : BaseToolService<TrackPlacingToolService.State>(toolManagementService, new State())
 {
     public record State(TrackEndpoint? From = null, CardinalDirection Direction = CardinalDirection.North, bool ActivatedThisFrame = false);
 
@@ -36,17 +36,17 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
     private readonly Id<Track> _ghostTrackId = Id.New<Track>();
     private bool _ghostRegistered;
 
-    protected override Result OnLoad()
+    public new Result Load()
     {
         if (arrowIndicatorService.AddArrowIndicator().TryPickProblems(out var problems, out _arrowIndicatorId))
         {
             return problems;
         }
 
-        return base.OnLoad();
+        return base.Load();
     }
 
-    protected override Result OnUnload()
+    public new Result Unload()
     {
         UnregisterGhost();
 
@@ -55,7 +55,7 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
             return problems;
         }
 
-        return base.OnUnload();
+        return base.Unload();
     }
 
     protected override State OnToolSelected(State toolState)
@@ -107,7 +107,7 @@ public sealed class TrackPlacingToolService(ILoggingManager loggingManager,
 
         if (ToolState.From is not { } f)
         {
-            LoggingManager.Log(LogLevel.Debug, $"Set start of track placement to '{trackEndpoint}'");
+            logger.LogDebug("Set start of track placement to '{TrackEndpoint}'", trackEndpoint);
             ToolState = ToolState with { From = trackEndpoint };
             return Result.Success();
         }

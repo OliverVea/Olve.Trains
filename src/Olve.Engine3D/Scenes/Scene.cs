@@ -1,16 +1,16 @@
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Scenes;
 
 public sealed class Scene(
-    ILoggingManager loggingManager,
-    IEnumerable<SceneService> sceneServices,
+    ILogger<Scene> logger,
+    IEnumerable<ISceneService> sceneServices,
     Id<IScene> sceneId,
     string name,
     int layerOrder = 0) : IScene
 {
-    private readonly SceneService[] _sceneServices = sceneServices.OrderBy(x => x.Priority).ToArray();
+    private readonly ISceneService[] _sceneServices = sceneServices.OrderBy(x => x.Priority).ToArray();
     private readonly Result[] _serviceResults = new Result[sceneServices.Count()];
 
     public Id<IScene> Id { get; } = sceneId;
@@ -22,10 +22,11 @@ public sealed class Scene(
 
     public Result Load()
     {
-        loggingManager.Log(LogLevel.Debug, $"Loading scene: {name}");
+        logger.LogDebug("Loading scene: {SceneName}", name);
 
         for (var i = 0; i < _sceneServices.Length; i++)
         {
+            logger.LogDebug("Loading service {Service}", _sceneServices[i].GetType().Name);
             _serviceResults[i] = _sceneServices[i].Load();
         }
 
@@ -34,7 +35,7 @@ public sealed class Scene(
             return problems;
         }
 
-        loggingManager.Log(LogLevel.Debug, $"Finished loading scene: {name}");
+        logger.LogDebug("Finished loading scene: {SceneName}", name);
 
         return Result.Success();
     }
@@ -43,6 +44,7 @@ public sealed class Scene(
     {
         for (var i = 0; i < _sceneServices.Length; i++)
         {
+            logger.LogDebug("Unloading service {Service}", _sceneServices[i].GetType().Name);
             _serviceResults[i] = _sceneServices[i].Unload();
         }
 

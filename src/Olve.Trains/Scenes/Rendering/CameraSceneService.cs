@@ -8,13 +8,12 @@ using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.ShaderExtensions;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains.Scenes.Rendering;
 
-public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent) : SceneService(loggingManager)
+public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent) : ISceneService
 {
     private IsometricOrthographicCameraController _cameraController = null!;
 
@@ -29,7 +28,7 @@ public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow
     private Matrix4X4<float> _projectionMatrix;
     private Vector3D<float> _cameraViewDirection;
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         Vector3D<float> cameraTarget = new (0, 0, 0);
         Vector3D<float> cameraViewDirection = new(0.701f, -1, 0.701f);
@@ -44,7 +43,7 @@ public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         screenResizedEvent.OnWindowResize.Unsubscribe(OnWindowResize);
         return Result.Success();
@@ -52,7 +51,7 @@ public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow
 
     CameraMovementInput _movementInput;
 
-    protected override Result<Pass> OnInput(TimeSpan deltaTime)
+    public Result<Pass> Input(TimeSpan deltaTime)
     {
         _movementInput = new CameraMovementInput();
 
@@ -64,7 +63,7 @@ public class CameraSceneService(ILoggingManager loggingManager, Provider<IWindow
         return Pass.Pass;
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         _cameraController.Move(_movementInput.Direction, deltaTime);
         _cameraController.Zoom(_movementInput.Zoom, deltaTime);

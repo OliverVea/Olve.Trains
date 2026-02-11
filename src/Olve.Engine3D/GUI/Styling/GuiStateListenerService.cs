@@ -2,18 +2,16 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI.Styling;
 
 public class GuiStateListenerService(
-    ILoggingManager loggingManager,
     GuiElementService guiElementService,
     GuiNodeService guiNodeService,
     GuiNodeStateService stateService,
     GuiMouseInputService guiMouseInputService,
-    GuiFocusService guiFocusService) : SceneService(loggingManager)
+    GuiFocusService guiFocusService) : ISceneService
 {
     private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
     private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
@@ -23,7 +21,7 @@ public class GuiStateListenerService(
     private readonly EventQueue<Id<GuiNode>> _pressedQueue = new(guiMouseInputService.OnPressedNode);
     private readonly EventQueue<Id<GuiNode>> _releasedQueue = new(guiMouseInputService.OnReleasedNode);
 
-    protected override Result OnLoad() =>
+    public Result Load() =>
         Result.Try<Exception>(() =>
         {
             _elementAddedQueue.SetHandler(OnElementAdded).Init();
@@ -35,7 +33,7 @@ public class GuiStateListenerService(
             _releasedQueue .SetHandler(OnNodeReleased) .Init();
         });
 
-    protected override Result OnUpdate(TimeSpan deltaTime) =>
+    public Result Update(TimeSpan deltaTime) =>
         Result.Chain(
             _elementAddedQueue.Update,
             _elementRemovedQueue.Update,

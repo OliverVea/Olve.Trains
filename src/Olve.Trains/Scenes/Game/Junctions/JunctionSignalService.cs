@@ -1,10 +1,10 @@
 ﻿using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 
-public class JunctionSignalService(ILoggingManager loggingManager, JunctionService junctionService) : SceneService(loggingManager), IEntityService<Junction>
+public class JunctionSignalService(ILogger<JunctionSignalService> logger, JunctionService junctionService) : ISceneService, IEntityService<Junction>
 {
     private readonly HashSet<Id<Junction>> _signalJunctions = [];
 
@@ -17,25 +17,25 @@ public class JunctionSignalService(ILoggingManager loggingManager, JunctionServi
     public IEnumerable<Id<Junction>> SignalJunctions => _signalJunctions;
     public Result<bool> JunctionHasSignal(Id<Junction> junctionId) => _signalJunctions.Contains(junctionId);
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         _junctionConnectionQueue.SetHandler(OnJunctionConnectionsChanged).Init();
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         _junctionConnectionQueue.Cleanup();
         return Result.Success();
     }
 
-    protected override Result OnUpdate(TimeSpan deltaTime) => _junctionConnectionQueue.Update();
+    public Result Update(TimeSpan deltaTime) => _junctionConnectionQueue.Update();
 
     private Result OnJunctionConnectionsChanged(Id<Junction> junctionId)
     {
         if (!junctionService.Exists(junctionId))
         {
-            LoggingManager.Log(LogLevel.Warning, "OnAdded called on non-existant junction id");
+            logger.LogWarning("OnAdded called on non-existant junction id");
             return Result.Success();
         }
 
@@ -54,11 +54,11 @@ public class JunctionSignalService(ILoggingManager loggingManager, JunctionServi
     {
         if (!_signalJunctions.Add(junctionId))
         {
-            LoggingManager.Log(LogLevel.Warning, $"Tried to add signal for junction '{junctionId}' but it already exists");
+            logger.LogWarning("Tried to add signal for junction '{JunctionId}' but it already exists", junctionId);
             return Result.Success();
         }
-        
-        LoggingManager.Log(LogLevel.Info, $"Added signal for junction '{junctionId}'");
+
+        logger.LogInformation("Added signal for junction '{JunctionId}'", junctionId);
         OnAdded.Invoke(junctionId);
         return Result.Success();
     }
@@ -67,11 +67,11 @@ public class JunctionSignalService(ILoggingManager loggingManager, JunctionServi
     {
         if (!_signalJunctions.Remove(junctionId))
         {
-            LoggingManager.Log(LogLevel.Warning, $"Tried to remove signal for junction '{junctionId}' but it was not found");
+            logger.LogWarning("Tried to remove signal for junction '{JunctionId}' but it was not found", junctionId);
             return Result.Success();
         }
-        
-        LoggingManager.Log(LogLevel.Info, $"Removed signal for junction '{junctionId}'");
+
+        logger.LogInformation("Removed signal for junction '{JunctionId}'", junctionId);
         OnAdded.Invoke(junctionId);
         return Result.Success();
     }

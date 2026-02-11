@@ -1,9 +1,9 @@
 ﻿using Olve.Engine3D.Systems;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Olve.Trains.Scenes.UI.Tools;
 
-public sealed class ToolManagementService(ILoggingManager loggingManager)
+public sealed class ToolManagementService(ILogger<ToolManagementService> logger)
 {
     private readonly Dictionary<Id<Tool>, Tool> _tools = [];
     public Id<Tool>? ActiveToolId { get; private set; }
@@ -16,11 +16,11 @@ public sealed class ToolManagementService(ILoggingManager loggingManager)
 
         if (added)
         {
-            loggingManager.Log(LogLevel.Debug, $"Registered tool '{tool}' to {_tools.Count - 1} tools");
+            logger.LogDebug("Registered tool '{Tool}' to {ToolCount} tools", tool, _tools.Count - 1);
         }
         else
         {
-            loggingManager.Log(LogLevel.Warning, $"Failed to add tool '{tool} to {_tools.Count} tools'");
+            logger.LogWarning("Failed to add tool '{Tool}' to {ToolCount} tools", tool, _tools.Count);
         }
 
         return added
@@ -33,9 +33,7 @@ public sealed class ToolManagementService(ILoggingManager loggingManager)
         var removed = _tools.Remove(toolId);
         if (!removed)
         {
-            var message =
-                $"Tool with id '{toolId}' could not be removed as no tool with that id was found among {_tools.Count} tools.";
-            loggingManager.Log(LogLevel.Warning, message);
+            logger.LogWarning("Tool with id '{ToolId}' could not be removed as no tool with that id was found among {ToolCount} tools", toolId, _tools.Count);
         }
 
         return removed ? DeletionResult.Success() : DeletionResult.NotFound();
@@ -55,7 +53,7 @@ public sealed class ToolManagementService(ILoggingManager loggingManager)
 
         if (toolId != previousActiveTool)
         {
-            loggingManager.Log(LogLevel.Debug, $"Changed tool: {previousActiveTool} -> {toolId}");
+            logger.LogDebug("Changed tool: {PreviousActiveTool} -> {NewToolId}", previousActiveTool, toolId);
             ActiveToolChanged.Invoke(new ActiveToolChangedMessage(previousActiveTool, toolId));
         }
 

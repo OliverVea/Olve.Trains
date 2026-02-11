@@ -1,6 +1,5 @@
 ﻿using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
-using Olve.Logging;
 using Olve.Trains.Scenes.Game.Tracks;
 using Olve.Trains.Scenes.Game.Vehicles;
 using Olve.Trains.Scenes.Rendering;
@@ -9,7 +8,7 @@ using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.UI.Tools;
 
-public class TrainPlacingToolService(ILoggingManager loggingManager,
+public class TrainPlacingToolService(
     TerrainRaycastService terrainRaycastService,
     ToolManagementService toolManagementService,
     TrackArrowIndicatorService arrowIndicatorService,
@@ -17,7 +16,7 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
     VehicleService vehicleService,
     VehiclePositionService vehiclePositionService,
     MouseManager mouseManager,
-    KeyboardManager keyboardManager) : BaseToolService<TrainPlacingToolService.State>(loggingManager, toolManagementService, new State())
+    KeyboardManager keyboardManager) : BaseToolService<TrainPlacingToolService.State>(toolManagementService, new State())
 {
     public record State(bool Forward = true, bool ActivatedThisFrame = false);
 
@@ -28,24 +27,24 @@ public class TrainPlacingToolService(ILoggingManager loggingManager,
 
     private Id<ArrowIndicator> _arrowIndicatorId;
 
-    protected override Result OnLoad()
+    public new Result Load()
     {
         if (arrowIndicatorService.AddArrowIndicator().TryPickProblems(out var problems, out _arrowIndicatorId))
         {
             return problems;
         }
 
-        return base.OnLoad();
+        return base.Load();
     }
 
-    protected override Result OnUnload()
+    public new Result Unload()
     {
         if (arrowIndicatorService.RemoveArrowIndicator(_arrowIndicatorId).TryPickProblems(out var problems))
         {
             return problems;
         }
 
-        return base.OnUnload();
+        return base.Unload();
     }
 
     protected override State OnToolSelected(State toolState)

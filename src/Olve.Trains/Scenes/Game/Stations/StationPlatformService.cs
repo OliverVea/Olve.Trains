@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Olve.Engine3D.Systems;
-using Olve.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Game.Stations;
 
-public class StationPlatformService(ILoggingManager loggingManager) : BaseEntityService<StationPlatform>(loggingManager)
+public class StationPlatformService() : BaseEntityService<StationPlatform>(NullLogger.Instance)
 {
     private readonly Dictionary<Id<Track>, Id<StationPlatform>> _platformsByTrack = new();
 

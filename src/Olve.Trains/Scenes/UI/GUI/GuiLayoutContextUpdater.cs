@@ -2,28 +2,28 @@
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
-using Olve.Logging;
+using Microsoft.Extensions.Logging;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains.Scenes.UI.GUI;
 
-public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
+public class GuiLayoutContextUpdater(ILogger<GuiLayoutContextUpdater> logger,
     Provider<IWindow> windowProvider,
     Provider<LayoutContext> layoutContextProvider,
     GuiLayoutService guiLayoutService,
-    ScreenResizedEvent screenResizedEvent) : SceneService(loggingManager)
+    ScreenResizedEvent screenResizedEvent) : ISceneService
 {
     private const float UIScale = 1f;
 
     private bool _screenResized = true;
 
-    protected override Result OnLoad()
+    public Result Load()
     {
         screenResizedEvent.OnWindowResize.Subscribe(OnScreenResized);
         return Result.Success();
     }
 
-    protected override Result OnUnload()
+    public Result Unload()
     {
         screenResizedEvent.OnWindowResize.Unsubscribe(OnScreenResized);
         return Result.Success();
@@ -31,7 +31,7 @@ public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
 
     private void OnScreenResized(Vector2D<int> size) => _screenResized = true;
 
-    protected override Result OnUpdate(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         if (!_screenResized) return Result.Success();
         _screenResized = false;
@@ -55,7 +55,7 @@ public class GuiLayoutContextUpdater(ILoggingManager loggingManager,
         layoutContextProvider.Set(newLayoutContext);
         guiLayoutService.SetDirty();
 
-        LoggingManager.Log(LogLevel.Debug, $"Updated layout context: {newLayoutContext}");
+        logger.LogDebug("Updated layout context: {LayoutContext}", newLayoutContext);
 
         return Result.Success();
     }
