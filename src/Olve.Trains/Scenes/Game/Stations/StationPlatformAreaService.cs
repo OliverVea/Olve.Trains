@@ -1,56 +1,42 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Math;
-using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Game.Stations;
 
-public class StationPlatformAreaService(ILogger<StationPlatformAreaService> logger,
+public class StationPlatformAreaService(
+    EventQueueFactory eventQueueFactory,
     StationPlatformService stationPlatformService,
     TrackSplineService trackSplineService) : ISceneService
 {
     private readonly Dictionary<Id<StationPlatform>, Id<AABB>> _stationPlatformAABBLookup = new();
     private readonly AABBLinearLookup<Id<StationPlatform>> _stationPlatformLookup = new();
-    private readonly EventQueue<Id<StationPlatform>> _stationPlatformAddedQueue = new(stationPlatformService.OnAdded);
-    private readonly EventQueue<Id<StationPlatform>> _stationPlatformRemovedQueue = new(stationPlatformService.OnRemoved);
+
+    private readonly EventQueue<Id<StationPlatform>> _addedQueue =
+        eventQueueFactory.Create(stationPlatformService.OnAdded);
+    private readonly EventQueue<Id<StationPlatform>> _removedQueue =
+        eventQueueFactory.Create(stationPlatformService.OnRemoved);
 
     public Result Load()
     {
-        _stationPlatformAddedQueue
-            .SetHandler(OnAdded)
-            .Init();
-        _stationPlatformRemovedQueue
-            .SetHandler(OnRemoved)
-            .Init();
+        _addedQueue.SetHandler(OnAdded).Init();
+        _removedQueue.SetHandler(OnRemoved).Init();
         return Result.Success();
     }
 
     public Result Unload()
     {
-        _stationPlatformAddedQueue.Cleanup();
-        _stationPlatformRemovedQueue.Cleanup();
+        _addedQueue.Cleanup();
+        _removedQueue.Cleanup();
         return Result.Success();
     }
 
     public Result Update(TimeSpan deltaTime)
     {
-        if (_stationPlatformAddedQueue
-            .Update()
-            .TryPickProblems(out var problems))
-        {
-            logger.Log(problems);
-        }
-
-        if (_stationPlatformRemovedQueue
-            .Update()
-            .TryPickProblems(out problems))
-        {
-            logger.Log(problems);
-        }
-
+        _addedQueue.Update();
+        _removedQueue.Update();
         return Result.Success();
     }
 
@@ -62,9 +48,8 @@ public class StationPlatformAreaService(ILogger<StationPlatformAreaService> logg
 
     private Result OnAdded(Id<StationPlatform> stationPlatformId)
     {
-        if (_stationPlatformAABBLookup.TryGetValue(stationPlatformId, out var id))
+        if (_stationPlatformAABBLookup.ContainsKey(stationPlatformId))
         {
-            logger.LogWarning("Skipping re-registering station platform with id '{StationPlatformId}' as it already has aabb with id '{Id}'", stationPlatformId, id);
             return Result.Success();
         }
 
@@ -85,8 +70,6 @@ public class StationPlatformAreaService(ILogger<StationPlatformAreaService> logg
         var aabbId = _stationPlatformLookup.Add(aabb, stationPlatformId);
         _stationPlatformAABBLookup.Add(stationPlatformId, aabbId);
 
-        logger.LogDebug("Registered AABB '{Aabb}' with id '{AabbId}' for station platform with id '{StationPlatformId}'", aabb, aabbId, stationPlatformId);
-
         return Result.Success();
     }
 
@@ -105,16 +88,8 @@ public class StationPlatformAreaService(ILogger<StationPlatformAreaService> logg
     {
         if (_stationPlatformAABBLookup.TryGetValue(stationPlatformId, out var aabbId))
         {
-            if (!_stationPlatformLookup.Remove(aabbId))
-            {
-                logger.LogWarning("Platform '{StationPlatformId}' with no registered AABB was deleted", stationPlatformId);
-            }
-
+            _stationPlatformLookup.Remove(aabbId);
             _stationPlatformAABBLookup.Remove(stationPlatformId);
-        }
-        else
-        {
-            logger.LogWarning("Platform '{StationPlatformId}' with no registered AABB id was deleted", stationPlatformId);
         }
 
         return Result.Success();

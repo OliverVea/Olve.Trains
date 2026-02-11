@@ -9,6 +9,7 @@ using Olve.Engine3D.Light;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Systems;
 using Olve.Engine3D.Time;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Rendering;
@@ -39,6 +40,7 @@ public static class GameServiceRegistration
         services.AddSingleton<ScreenResizedEvent>();
         services.AddSingleton<TextureLoadingManager>();
         services.AddSingleton<CommandHandlerServiceCollection>();
+        services.AddSingleton<EventQueueFactory>();
 
         // Scene services
         services.AddGameSceneServices();

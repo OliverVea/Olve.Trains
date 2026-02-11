@@ -19,6 +19,7 @@ namespace Olve.Trains.Scenes.Rendering;
 
 public class VehicleRenderingService(
     ILogger<VehicleRenderingService> logger,
+    EventQueueFactory eventQueueFactory,
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
@@ -36,8 +37,8 @@ public class VehicleRenderingService(
 
     private GeometryId _geometryId;
     private readonly Dictionary<Id<Vehicle>, RenderingInstanceId> _instanceIds  = new();
-    private readonly EventQueue<Id<Vehicle>> _toAddQueue = new(vehicleService.OnAdded);
-    private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = new(vehicleService.OnRemoved);
+    private readonly EventQueue<Id<Vehicle>> _toAddQueue = eventQueueFactory.Create(vehicleService.OnAdded);
+    private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = eventQueueFactory.Create(vehicleService.OnRemoved);
     private readonly Shaders.Default _shader = new();
     private float _scale = 1;
 
@@ -84,7 +85,7 @@ public class VehicleRenderingService(
             indices[i * 3 + 2] = meshData.Indices[i].C;
         }
 
-        if (renderingManager3D.RegisterGeometry<Shaders.Default.Vertex>(vertices, indices)
+        if (renderingManager3D.RegisterGeometry(vertices, indices)
             .TryPickProblems(out problems, out var geometryId))
         {
             return problems.Prepend("Failed to register geometry");

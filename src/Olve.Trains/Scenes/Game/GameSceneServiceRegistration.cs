@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.Game.Junctions;
 using Olve.Trains.Scenes.Game.Light;
 using Olve.Trains.Scenes.Game.Stations;
@@ -26,7 +27,9 @@ public static class GameSceneServiceRegistration
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);
         services.AddSceneService<StationPlatformAreaService>(sceneId);
-        services.AddSceneService<StationPlatformTrackDeletionService>(sceneId);
+        services.AddEventSceneService(sceneId,
+            (TrackService ts) => ts.OnRemoved,
+            (StationPlatformService sps, Id<Track> trackId) => sps.RemoveForTrack(trackId).MapToResult());
         services.AddSceneService<TerrainService>(sceneId);
         services.AddSceneService<TrackSplineService>(sceneId);
         services.AddSceneService<VehicleJunctionCrossingService>(sceneId);
