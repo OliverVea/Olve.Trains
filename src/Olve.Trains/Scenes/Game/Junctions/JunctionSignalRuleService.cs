@@ -1,43 +1,52 @@
 using System.Collections.Concurrent;
-using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Scenes;
 using Olve.Utilities.Assertions;
 using Olve.Utilities.Types;
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 
-public class JunctionSignalRuleService(ILogger<JunctionSignalRuleService> logger,
-    JunctionSignalService junctionSignalService) : BaseEntityListeningService<Junction>(junctionSignalService)
+public sealed class JunctionSignalRuleService(ILogger<JunctionSignalRuleService> logger, JunctionSignalService junctionSignalService) : ISceneService
 {
     private readonly ConcurrentDictionary<Id<Junction>, List<JunctionSignalRule>> _rules = new();
     private readonly ConcurrentDictionary<Id<JunctionSignalRule>, Id<Junction>> _ruleJunctions = new();
     private static readonly Any Any = new();
     private static JunctionSignalRule GetDefaultRule(Id<Junction> junctionId) => new(Id.New<JunctionSignalRule>(), junctionId, [Any], [Any], [Any], new RoundRobin());
-    private static List<JunctionSignalRule> GetDefaultRules(Id<Junction> junctionId) => [ GetDefaultRule(junctionId) ]; 
-        
-    protected override (bool SubscribeAdd, bool SubscribeDelete) GetSubscriptions() => (true, true);
-    
-    protected override Result OnAdded(Id<Junction> junctionId)
-    {
-        if (!_rules.TryAdd(junctionId, GetDefaultRules(junctionId)))
-        {
-            return new ResultProblem("Failed to initialize rules for signal with junction id '{0}'", junctionId);
-        }
+    private static List<JunctionSignalRule> GetDefaultRules(Id<Junction> junctionId) => [ GetDefaultRule(junctionId) ];
 
-        logger.LogDebug("Initialized junction signal rules for junction with id '{JunctionId}'", junctionId);
+    public Result Load()
+    {
+        junctionSignalService.OnAdded.Subscribe(OnAdded);
+        junctionSignalService.OnRemoved.Subscribe(OnRemoved);
         return Result.Success();
     }
 
-    protected override Result OnRemoved(Id<Junction> junctionId)
+    public Result Unload()
+    {
+        junctionSignalService.OnAdded.Unsubscribe(OnAdded);
+        junctionSignalService.OnRemoved.Unsubscribe(OnRemoved);
+        return Result.Success();
+    }
+
+    private void OnAdded(Id<Junction> junctionId)
+    {
+        if (!_rules.TryAdd(junctionId, GetDefaultRules(junctionId)))
+        {
+            logger.LogError("Failed to initialize rules for signal with junction id '{JunctionId}'", junctionId);
+        }
+
+        logger.LogDebug("Initialized junction signal rules for junction with id '{JunctionId}'", junctionId);
+    }
+
+    private void OnRemoved(Id<Junction> junctionId)
     {
         if (!_rules.Remove(junctionId, out _))
         {
-            return new ResultProblem("Failed to remove rules for signal with junction id '{0}'", junctionId);
+            logger.LogError("Failed to remove rules for signal with junction id '{JunctionId}'", junctionId);
         }
 
         logger.LogDebug("Removed junction signal rules for junction with id '{JunctionId}'", junctionId);
-        return Result.Success();
     }
 
     public IReadOnlyList<JunctionSignalRule> GetRulesForJunction(Id<Junction> junctionId) => _rules.GetValueOrDefault(junctionId, []);
@@ -52,15 +61,15 @@ public class JunctionSignalRuleService(ILogger<JunctionSignalRuleService> logger
         {
             return new ResultProblem("Did not find list of signal rules for junction with id '{0}'", junctionId);
         }
-        
+
         var junctionSignalId = Id.New<JunctionSignalRule>();
         JunctionSignalRule rule = new(junctionSignalId, junctionId, vehicles, sources, destinations, distribution);
         junctionRules.Add(rule);
 
         _ruleJunctions[junctionSignalId] = junctionId;
-        
+
         logger.LogDebug("Added signal rule to junction with id '{JunctionId}' (rule count = '{RuleCount}'): {Rule}", junctionId, junctionRules.Count, rule);
-        
+
         return junctionSignalId;
     }
 
@@ -78,7 +87,7 @@ public class JunctionSignalRuleService(ILogger<JunctionSignalRuleService> logger
 
         var removedRules = rulesForJunction.RemoveAll(x => x.Id == junctionSignalRuleId);
         Assert.That(() => removedRules == 1, "One rule should always be removed with one rule id");
-        
+
         return Result.Success();
     }
 

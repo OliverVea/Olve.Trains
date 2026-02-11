@@ -27,7 +27,7 @@ public class TrainPlacingToolService(
 
     private Id<ArrowIndicator> _arrowIndicatorId;
 
-    public new Result Load()
+    public override Result Load()
     {
         if (arrowIndicatorService.AddArrowIndicator().TryPickProblems(out var problems, out _arrowIndicatorId))
         {
@@ -37,7 +37,7 @@ public class TrainPlacingToolService(
         return base.Load();
     }
 
-    public new Result Unload()
+    public override Result Unload()
     {
         if (arrowIndicatorService.RemoveArrowIndicator(_arrowIndicatorId).TryPickProblems(out var problems))
         {

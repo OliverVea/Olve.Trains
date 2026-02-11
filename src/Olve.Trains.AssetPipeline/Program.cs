@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Olve.Engine3D.Assets.Entities;
+using Olve.Engine3D.Utilities;
 using Olve.OpenRaster;
 using Olve.Trains.AssetPipeline;
 using Olve.Trains.AssetPipeline.Assets;
@@ -91,15 +92,7 @@ var timeout = TimeSpan.FromMilliseconds(s3Options.Value.TimeoutMs);
 var result = await runAssetPipeline.ExecuteAsync(new(targets, timeout, s3Options.Value.AllowFailure), cts.Token);
 if (result.TryPickProblems(out var mainProblems))
 {
-    foreach (var problem in mainProblems)
-    {
-        var message = $"{problem.Message} at {{{problem.Args.Length}}}";
-
-        var problemArgs = problem.Args.Append(problem.OriginInformation.LinkString).ToArray();
-
-        logger.LogError(message, problemArgs);
-    }
-
+    logger.Log(mainProblems);
     return 1;
 }
 

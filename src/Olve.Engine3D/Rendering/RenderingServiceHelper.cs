@@ -22,4 +22,14 @@ public class RenderingServiceHelper(ShaderEntityManager shaderEntityManager)
         return Result.Success();
     }
 
+    public Result UnloadShader(IShader shader)
+    {
+        if (shader.RenderingId == default)
+        {
+            return new ResultProblem("The RenderingId of shader with type '{0}' has not been set", shader.GetType().Name);
+        }
+
+        return shaderEntityManager.Unregister(shader.RenderingId);
+    }
+
 }

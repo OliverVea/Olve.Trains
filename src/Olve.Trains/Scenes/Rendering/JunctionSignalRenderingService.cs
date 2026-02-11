@@ -1,9 +1,11 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Textures;
+using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
+using Olve.Engine3D.Utilities;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
@@ -12,6 +14,7 @@ using Olve.Trains.Scenes.Game.Junctions;
 namespace Olve.Trains.Scenes.Rendering;
 
 public class JunctionSignalRenderingService(
+    ILogger<JunctionSignalRenderingService> logger,
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
@@ -20,17 +23,24 @@ public class JunctionSignalRenderingService(
     RenderingServiceHelper renderingServiceHelper,
     JunctionService junctionService,
     JunctionSignalService junctionSignalService)
-    : BaseEntityListeningService<Junction>(junctionSignalService)
+    : ISceneService
 {
     private GeometryId _geometryId;
     private readonly Dictionary<Id<Junction>, RenderingInstanceId> _instanceIds = new();
     private readonly Shaders.Default _shader = new();
 
-    protected override (bool SubscribeAdd, bool SubscribeDelete) GetSubscriptions() => (true, true);
+    private readonly EventQueue<Id<Junction>> _junctionSignalAddedQueue = new(junctionSignalService.OnAdded);
+    private readonly EventQueue<Id<Junction>> _junctionSignalRemovedQueue = new(junctionSignalService.OnRemoved);
 
-    public new Result Load()
+    public Result Load()
     {
-        // Load texture and get its Id
+        _junctionSignalAddedQueue
+            .SetHandler(OnAdded)
+            .Init();
+        _junctionSignalRemovedQueue
+            .SetHandler(OnRemoved)
+            .Init();
+
         if (textureLoadingManager.LoadTexture(Textures.SimpleTrains_Texture_01)
             .TryPickProblems(out var problems, out var textureId))
         {
@@ -76,10 +86,39 @@ public class JunctionSignalRenderingService(
 
         _geometryId = geometryId;
 
-        return base.Load();
+        foreach (var junctionId in junctionSignalService.SignalJunctions)
+        {
+            if (OnAdded(junctionId).TryPickProblems(out problems))
+            {
+                return problems.Prepend("Failed to add existing signal for junction '{0}'", junctionId);
+            }
+        }
+
+        return Result.Success();
     }
 
-    protected override Result OnAdded(Id<Junction> junctionId)
+    public Result Unload()
+    {
+        _junctionSignalAddedQueue.Cleanup();
+        _junctionSignalRemovedQueue.Cleanup();
+
+        var deregisterInstanceResults = _instanceIds.Select(ids => renderingManager3D.DeregisterInstance(ids.Value));
+
+        var result = Result.Concat([
+            ..deregisterInstanceResults,
+            renderingManager3D.DeregisterGeometry(_geometryId),
+            renderingServiceHelper.UnloadShader(_shader),
+        ]);
+
+        if (result.TryPickProblems(out var problems))
+        {
+            logger.Log(problems.Prepend("Failed to deregister rendering resources owned by {0}", nameof(JunctionSignalRenderingService)));
+        }
+
+        return Result.Success();
+    }
+
+    private Result OnAdded(Id<Junction> junctionId)
     {
         if (_instanceIds.ContainsKey(junctionId))
         {
@@ -106,7 +145,7 @@ public class JunctionSignalRenderingService(
         return Result.Success();
     }
 
-    protected override Result OnRemoved(Id<Junction> junctionId)
+    private Result OnRemoved(Id<Junction> junctionId)
     {
         if (!_instanceIds.TryGetValue(junctionId, out var instanceId))
         {
@@ -116,12 +155,26 @@ public class JunctionSignalRenderingService(
         return renderingManager3D.DeregisterInstance(instanceId);
     }
 
-    public new Result Update(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
         cameraSceneService.ApplyCameraPositionParameters(_shader);
 
-        return base.Update(deltaTime);
+        if (_junctionSignalRemovedQueue
+            .Update()
+            .TryPickProblems(out var problems))
+        {
+            logger.Log(problems.Prepend("Failed to remove junction signal"));
+        }
+
+        if (_junctionSignalAddedQueue
+            .Update()
+            .TryPickProblems(out problems))
+        {
+            logger.Log(problems.Prepend("Failed to add junction signal"));
+        }
+
+        return Result.Success();
     }
 
     public Result Render(TimeSpan deltaTime)

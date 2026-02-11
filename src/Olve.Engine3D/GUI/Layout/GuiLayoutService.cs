@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
-using Olve.Engine3D.Systems;
+using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Utilities.Ids;
 
@@ -11,7 +11,7 @@ public class GuiLayoutService(
     ILogger<GuiLayoutService> logger,
     GuiNodeService guiNodeService,
     GuiAnchorService guiAnchorService,
-    Provider<LayoutContext> layoutContextProvider) : BaseEntityAuxiliaryService<GuiNode>(guiNodeService)
+    Provider<LayoutContext> layoutContextProvider) : ISceneService
 {
     private readonly Dictionary<Id<GuiNode>, int> _nodeIndexById = new();
 
@@ -23,7 +23,21 @@ public class GuiLayoutService(
 
     private (Id<GuiNode> NodeId, BoxPosition Position)[]? _nodePositions;
 
-    protected override void OnAdded(Id<GuiNode> id)
+    public Result Load()
+    {
+        guiNodeService.OnAdded.Subscribe(OnAdded);
+        guiNodeService.OnRemoved.Subscribe(OnRemoved);
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        guiNodeService.OnAdded.Unsubscribe(OnAdded);
+        guiNodeService.OnRemoved.Unsubscribe(OnRemoved);
+        return Result.Success();
+    }
+
+    private void OnAdded(Id<GuiNode> id)
     {
         var index = _layoutData.Count;
         _nodeIndexById.Add(id, index);
@@ -31,7 +45,7 @@ public class GuiLayoutService(
         SetDirty();
     }
 
-    protected override void OnRemoved(Id<GuiNode> id)
+    private void OnRemoved(Id<GuiNode> id)
     {
         if (!_nodeIndexById.Remove(id, out var index))
         {

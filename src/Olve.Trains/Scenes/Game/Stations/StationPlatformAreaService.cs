@@ -1,19 +1,58 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Math;
-using Olve.Engine3D.Systems;
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Systems;
+using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.Game.Tracks;
 
 namespace Olve.Trains.Scenes.Game.Stations;
 
 public class StationPlatformAreaService(ILogger<StationPlatformAreaService> logger,
     StationPlatformService stationPlatformService,
-    TrackSplineService trackSplineService) : BaseEntityListeningService<StationPlatform>(stationPlatformService)
+    TrackSplineService trackSplineService) : ISceneService
 {
     private readonly Dictionary<Id<StationPlatform>, Id<AABB>> _stationPlatformAABBLookup = new();
     private readonly AABBLinearLookup<Id<StationPlatform>> _stationPlatformLookup = new();
+    private readonly EventQueue<Id<StationPlatform>> _stationPlatformAddedQueue = new(stationPlatformService.OnAdded);
+    private readonly EventQueue<Id<StationPlatform>> _stationPlatformRemovedQueue = new(stationPlatformService.OnRemoved);
 
-    protected override (bool SubscribeAdd, bool SubscribeDelete) GetSubscriptions() => (true, true);
+    public Result Load()
+    {
+        _stationPlatformAddedQueue
+            .SetHandler(OnAdded)
+            .Init();
+        _stationPlatformRemovedQueue
+            .SetHandler(OnRemoved)
+            .Init();
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        _stationPlatformAddedQueue.Cleanup();
+        _stationPlatformRemovedQueue.Cleanup();
+        return Result.Success();
+    }
+
+    public Result Update(TimeSpan deltaTime)
+    {
+        if (_stationPlatformAddedQueue
+            .Update()
+            .TryPickProblems(out var problems))
+        {
+            logger.Log(problems);
+        }
+
+        if (_stationPlatformRemovedQueue
+            .Update()
+            .TryPickProblems(out problems))
+        {
+            logger.Log(problems);
+        }
+
+        return Result.Success();
+    }
 
     public IReadOnlyCollection<Id<StationPlatform>> GetStationPlatformsIntersecting(AABB queryArea)
         => _stationPlatformLookup.Query(queryArea);
@@ -21,7 +60,7 @@ public class StationPlatformAreaService(ILogger<StationPlatformAreaService> logg
     public IReadOnlyCollection<Id<StationPlatform>> GetStationPlatformsContaining(Vector3D<float> queryPoint)
         => _stationPlatformLookup.Query(queryPoint);
 
-    protected override Result OnAdded(Id<StationPlatform> stationPlatformId)
+    private Result OnAdded(Id<StationPlatform> stationPlatformId)
     {
         if (_stationPlatformAABBLookup.TryGetValue(stationPlatformId, out var id))
         {
@@ -62,7 +101,7 @@ public class StationPlatformAreaService(ILogger<StationPlatformAreaService> logg
         static float GetMin(float fA, float fB) => float.Min(float.Floor(fA), float.Floor(fB));
     }
 
-    protected override Result OnRemoved(Id<StationPlatform> stationPlatformId)
+    private Result OnRemoved(Id<StationPlatform> stationPlatformId)
     {
         if (_stationPlatformAABBLookup.TryGetValue(stationPlatformId, out var aabbId))
         {
