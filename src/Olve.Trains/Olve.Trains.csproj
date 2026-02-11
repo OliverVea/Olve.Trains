@@ -2,17 +2,25 @@
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <PublishSelfContained>true</PublishSelfContained>
+        <AssemblyName>On Track To Grow</AssemblyName>
     </PropertyGroup>
     <ItemGroup>
-        <None Update="assets\**\*" CopyToOutputDirectory="PreserveNewest"/>
+        <None Update="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Duende.IdentityModel" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+        <PackageReference Include="NReco.Logging.File" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj"/>
+        <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
     </ItemGroup>
 
 </Project>

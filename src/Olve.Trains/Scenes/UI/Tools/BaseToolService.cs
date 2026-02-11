@@ -17,7 +17,7 @@ public abstract class BaseToolService<TToolState>(
     protected virtual Result OnSelectedUpdate(TimeSpan deltaTime) => Result.Success();
     protected virtual Result OnSelectedRender(TimeSpan deltaTime) => Result.Success();
 
-    public Result Load()
+    public virtual Result Load()
     {
         if (toolManagementService.AddTool(Tool).TryPickProblems(out var problems))
         {
@@ -28,7 +28,7 @@ public abstract class BaseToolService<TToolState>(
         return Result.Success();
     }
 
-    public Result Unload()
+    public virtual Result Unload()
     {
         if (toolManagementService.RemoveTool(Tool.Id).MapToResult(allowNotFound: false).TryPickProblems(out var problems))
         {
@@ -39,13 +39,13 @@ public abstract class BaseToolService<TToolState>(
         return Result.Success();
     }
 
-    public Result<Pass> Input(TimeSpan deltaTime)
+    public virtual Result<Pass> Input(TimeSpan deltaTime)
         => toolManagementService.ActiveToolId != Tool.Id ? Pass.Pass : OnSelectedInput(deltaTime);
 
-    public Result Update(TimeSpan deltaTime)
+    public virtual Result Update(TimeSpan deltaTime)
         => toolManagementService.ActiveToolId != Tool.Id ? Result.Success() : OnSelectedUpdate(deltaTime);
 
-    public Result Render(TimeSpan deltaTime)
+    public virtual Result Render(TimeSpan deltaTime)
         => toolManagementService.ActiveToolId != Tool.Id ? Result.Success() : OnSelectedRender(deltaTime);
 
     private void OnActiveToolChanged(ToolManagementService.ActiveToolChangedMessage activeToolChangedMessage)

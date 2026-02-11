@@ -1,14 +1,29 @@
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI;
 
-public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService guiNodeService) : BaseEntityAuxiliaryService<GuiNode>(guiNodeService)
+public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService guiNodeService) : ISceneService
 {
     private readonly Dictionary<Id<GuiNode>, int> _depths = [];
 
-    protected override void OnAdded(Id<GuiNode> nodeId)
+    public Result Load()
+    {
+        guiNodeService.OnAdded.Subscribe(OnAdded);
+        guiNodeService.OnRemoved.Subscribe(OnRemoved);
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        guiNodeService.OnAdded.Unsubscribe(OnAdded);
+        guiNodeService.OnRemoved.Unsubscribe(OnRemoved);
+        return Result.Success();
+    }
+
+    private void OnAdded(Id<GuiNode> nodeId)
     {
         if (guiNodeService.TryGetParent(nodeId, out var parent))
         {
@@ -27,7 +42,7 @@ public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService gui
         _depths[nodeId] = 0;
     }
 
-    protected override void OnRemoved(Id<GuiNode> nodeId) => _depths.Remove(nodeId);
+    private void OnRemoved(Id<GuiNode> nodeId) => _depths.Remove(nodeId);
 
     public int GetDepth(Id<GuiNode> nodeId)
     {

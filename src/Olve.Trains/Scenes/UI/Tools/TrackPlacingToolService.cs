@@ -36,7 +36,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
     private readonly Id<Track> _ghostTrackId = Id.New<Track>();
     private bool _ghostRegistered;
 
-    public new Result Load()
+    public override Result Load()
     {
         if (arrowIndicatorService.AddArrowIndicator().TryPickProblems(out var problems, out _arrowIndicatorId))
         {
@@ -46,7 +46,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
         return base.Load();
     }
 
-    public new Result Unload()
+    public override Result Unload()
     {
         UnregisterGhost();
 

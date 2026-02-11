@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
@@ -12,15 +13,16 @@ using Olve.Engine3D.Time;
 using Olve.Trains.Scenes.Game;
 using Olve.Trains.Scenes.Rendering;
 using Olve.Trains.Scenes.UI;
+using Olve.Trains.Telemetry;
 
 namespace Olve.Trains;
 
 public static class GameServiceRegistration
 {
-    public static IServiceCollection AddAllServices(this IServiceCollection services)
+    public static IServiceCollection AddAllServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Logging
-        services.AddLogging(builder => { builder.AddConsole(); });
+        services.AddLogging(builder => builder.AddConfiguredLogging(configuration));
 
         // Engine modules
         services.AddWindowingServices();

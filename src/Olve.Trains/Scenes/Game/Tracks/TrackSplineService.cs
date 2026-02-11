@@ -1,14 +1,26 @@
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Math.Splines;
-using Olve.Engine3D.Systems;
+using Olve.Engine3D.Scenes;
 
 namespace Olve.Trains.Scenes.Game.Tracks;
 
-public class TrackSplineService(TrackService trackService) : BaseEntityAuxiliaryService<Track>(trackService)
+public class TrackSplineService(TrackService trackService) : ISceneService
 {
     private readonly Dictionary<Id<Track>, UniformHermite<Vector3D<float>>> _trackSplines = [];
 
-    protected override void OnRemoved(Id<Track> id) => _trackSplines.Remove(id);
+    public Result Load()
+    {
+        trackService.OnRemoved.Subscribe(OnRemoved);
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        trackService.OnRemoved.Unsubscribe(OnRemoved);
+        return Result.Success();
+    }
+
+    private void OnRemoved(Id<Track> id) => _trackSplines.Remove(id);
 
     public Result<Vector3D<float>> GetPoint(Id<Track> trackId, float time)
         => WithTrackSpline(trackId, spline => spline.GetPoint(time));

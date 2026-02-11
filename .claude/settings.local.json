@@ -24,7 +24,10 @@
       "WebFetch(domain:www.gamedev.net)",
       "Bash(git check-ignore:*)",
       "Bash(git checkout:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(dotnet test:*)",
+      "Bash(xargs:*)",
+      "Bash(dotnet add:*)"
     ],
     "deny": [],
     "ask": []

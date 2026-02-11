@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
 using Silk.NET.Windowing;
@@ -15,8 +16,15 @@ public static class Program
 
     public static int Main()
     {
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.local.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
         var services = new ServiceCollection();
-        services.AddAllServices();
+        services.AddAllServices(configuration);
 
         using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
         {
