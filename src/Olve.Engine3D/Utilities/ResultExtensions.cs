@@ -2,6 +2,16 @@ namespace Olve.Engine3D.Utilities;
 
 public static class ResultExtensions
 {
+    public static Result Chain<T>(Func<Result<T>> first, Func<T, Result> second)
+    {
+        if (first().TryPickProblems(out var problems, out var value))
+        {
+            return problems;
+        }
+
+        return second(value);
+    }
+
     public static Result ToEmptyResult<T>(this Result<T> result) => result.TryPickProblems(out var problems) 
         ? problems
         : Result.Success();

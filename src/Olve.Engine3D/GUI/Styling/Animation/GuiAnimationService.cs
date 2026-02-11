@@ -9,6 +9,7 @@ namespace Olve.Engine3D.GUI.Styling.Animation;
 
 public class GuiAnimationService(
     ILogger<GuiAnimationService> logger,
+    EventQueueFactory eventQueueFactory,
     GuiElementService guiElementService,
     GuiStyleRegistry guiStyleRegistry,
     GuiNodeStateService guiNodeStateService) : ISceneService
@@ -25,7 +26,7 @@ public class GuiAnimationService(
         TimeSpan Elapsed);
 
     private readonly EventQueue<GuiNodeStateService.GuiNodeStateChanged> _guiNodeStateChangedQueue =
-        new(guiNodeStateService.OnStateChanged);
+        eventQueueFactory.Create(guiNodeStateService.OnStateChanged);
 
     private readonly List<WeightAnimation> _animations = [];
 

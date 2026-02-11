@@ -5,12 +5,13 @@ using Olve.Engine3D.Systems;
 namespace Olve.Engine3D.GUI.Layout;
 
 public class GuiLayoutUpdateService(
+    EventQueueFactory eventQueueFactory,
     GuiElementService guiElementService,
     GuiLayoutService guiLayoutService
 ) : ISceneService
 {
-    private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
-    private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
+    private readonly EventQueue<GuiElementArgs> _elementAddedQueue = eventQueueFactory.Create(guiElementService.OnAdded);
+    private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = eventQueueFactory.Create(guiElementService.OnRemoved);
 
     public int Priority => SceneServicePriority.FromDependents([ guiLayoutService ]);
 

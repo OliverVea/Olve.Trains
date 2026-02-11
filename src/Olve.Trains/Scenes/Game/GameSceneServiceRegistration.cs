@@ -22,7 +22,28 @@ public static class GameSceneServiceRegistration
         services.AddSceneService<ClearJunctionSignalRules>(sceneId);
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
         services.AddSceneService<JunctionSignalService>(sceneId);
-        services.AddSceneService<JunctionUpdatingService>(sceneId);
+        services.AddEventSceneService(sceneId,
+            (TrackService ts) => ts.OnAdded,
+            (TrackService ts, JunctionService js, Id<Track> trackId) =>
+            {
+                return ResultExtensions.Chain(
+                    () => ts.Get(trackId),
+                    track =>
+                        Result.Concat(
+                            js.AddJunctionConnection(track.Id, track.Start).ToEmptyResult(),
+                            js.AddJunctionConnection(track.Id, track.End).ToEmptyResult()));
+            });
+        services.AddEventSceneService(sceneId,
+            (TrackService ts) => ts.OnRemoved,
+            (TrackService ts, JunctionService js, Id<Track> trackId) =>
+            {
+                return ResultExtensions.Chain(
+                    () => ts.Get(trackId),
+                    track =>
+                        Result.Concat(
+                            js.RemoveJunctionConnection(track.Id, track.Start).MapToResult(),
+                            js.RemoveJunctionConnection(track.Id, track.End).MapToResult()));
+            });
         services.AddSceneService<PlaceVehicleHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);

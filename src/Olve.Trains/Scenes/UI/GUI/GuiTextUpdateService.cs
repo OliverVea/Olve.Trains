@@ -18,6 +18,7 @@ namespace Olve.Trains.Scenes.UI.GUI
     /// text with GuiTextRenderingService when GUI elements are added/removed.
     /// </summary>
     public class GuiTextUpdateService(
+        EventQueueFactory eventQueueFactory,
         GuiElementService guiElementService,
         GuiLayoutService guiLayoutService,
         TextureLoadingManager textureLoadingManager,
@@ -25,8 +26,8 @@ namespace Olve.Trains.Scenes.UI.GUI
         GuiTextRenderingService textRenderingService,
         Provider<LayoutContext> layoutContextProvider) : ISceneService
     {
-        private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
-        private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
+        private readonly EventQueue<GuiElementArgs> _elementAddedQueue = eventQueueFactory.Create(guiElementService.OnAdded);
+        private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = eventQueueFactory.Create(guiElementService.OnRemoved);
         private readonly Dictionary<Id<GuiNode>, Text> _trackedTexts = new();
 
         public Result Load()

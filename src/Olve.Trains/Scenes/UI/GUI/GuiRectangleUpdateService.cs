@@ -10,6 +10,7 @@ using Olve.Engine3D.Utilities;
 namespace Olve.Trains.Scenes.UI.GUI;
 
 public class GuiRectangleUpdateService(
+    EventQueueFactory eventQueueFactory,
     GuiElementService guiElementService,
     TextureManager textureManager,
     TextureEntityManager textureEntityManager,
@@ -17,8 +18,8 @@ public class GuiRectangleUpdateService(
     GuiRectangleRenderingService rectangleRenderingService) : ISceneService
 {
     private readonly TextureId<RGBA> _singleWhitePixel = textureManager.RegisterTexture(TextureData<RGBA>.Single(RGBA.White));
-    private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
-    private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
+    private readonly EventQueue<GuiElementArgs> _elementAddedQueue = eventQueueFactory.Create(guiElementService.OnAdded);
+    private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = eventQueueFactory.Create(guiElementService.OnRemoved);
 
     public Result Load()
     {

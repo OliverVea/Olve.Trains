@@ -4,12 +4,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Olve.Trains.Scenes.Game.Junctions;
 
-public class JunctionSignalService(ILogger<JunctionSignalService> logger, JunctionService junctionService) : ISceneService, IEntityService<Junction>
+public class JunctionSignalService(ILogger<JunctionSignalService> logger, EventQueueFactory eventQueueFactory, JunctionService junctionService) : ISceneService, IEntityService<Junction>
 {
     private readonly HashSet<Id<Junction>> _signalJunctions = [];
 
     private readonly EventQueue<Id<Junction>> _junctionConnectionQueue =
-        new(junctionService.OnJunctionConnectionsUpdated);
+        eventQueueFactory.Create(junctionService.OnJunctionConnectionsUpdated);
 
     public Event<Id<Junction>> OnAdded { get; } = new();
     public Event<Id<Junction>> OnRemoved { get; } = new();
@@ -72,7 +72,7 @@ public class JunctionSignalService(ILogger<JunctionSignalService> logger, Juncti
         }
 
         logger.LogInformation("Removed signal for junction '{JunctionId}'", junctionId);
-        OnAdded.Invoke(junctionId);
+        OnRemoved.Invoke(junctionId);
         return Result.Success();
     }
 }
