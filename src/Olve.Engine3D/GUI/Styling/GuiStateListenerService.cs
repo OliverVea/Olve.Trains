@@ -7,19 +7,20 @@ using Olve.Utilities.Ids;
 namespace Olve.Engine3D.GUI.Styling;
 
 public class GuiStateListenerService(
+    EventQueueFactory eventQueueFactory,
     GuiElementService guiElementService,
     GuiNodeService guiNodeService,
     GuiNodeStateService stateService,
     GuiMouseInputService guiMouseInputService,
     GuiFocusService guiFocusService) : ISceneService
 {
-    private readonly EventQueue<GuiElementArgs> _elementAddedQueue = new(guiElementService.OnAdded);
-    private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = new(guiElementService.OnRemoved);
-    private readonly EventQueue<Id<GuiNode>> _nodeEnabledQueue = new(guiNodeService.OnEnabled);
-    private readonly EventQueue<Id<GuiNode>> _nodeDisabledQueue = new(guiNodeService.OnDisabled);
-    private readonly EventQueue<GuiFocusChanged> _focusChangedQueue = new(guiFocusService.OnFocusChanged);
-    private readonly EventQueue<Id<GuiNode>> _pressedQueue = new(guiMouseInputService.OnPressedNode);
-    private readonly EventQueue<Id<GuiNode>> _releasedQueue = new(guiMouseInputService.OnReleasedNode);
+    private readonly EventQueue<GuiElementArgs> _elementAddedQueue = eventQueueFactory.Create(guiElementService.OnAdded);
+    private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = eventQueueFactory.Create(guiElementService.OnRemoved);
+    private readonly EventQueue<Id<GuiNode>> _nodeEnabledQueue = eventQueueFactory.Create(guiNodeService.OnEnabled);
+    private readonly EventQueue<Id<GuiNode>> _nodeDisabledQueue = eventQueueFactory.Create(guiNodeService.OnDisabled);
+    private readonly EventQueue<GuiFocusChanged> _focusChangedQueue = eventQueueFactory.Create(guiFocusService.OnFocusChanged);
+    private readonly EventQueue<Id<GuiNode>> _pressedQueue = eventQueueFactory.Create(guiMouseInputService.OnPressedNode);
+    private readonly EventQueue<Id<GuiNode>> _releasedQueue = eventQueueFactory.Create(guiMouseInputService.OnReleasedNode);
 
     public Result Load() =>
         Result.Try<Exception>(() =>

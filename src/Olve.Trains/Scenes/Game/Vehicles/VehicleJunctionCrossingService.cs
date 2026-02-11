@@ -7,6 +7,7 @@ using Olve.Trains.Scenes.Game.Tracks;
 namespace Olve.Trains.Scenes.Game.Vehicles;
 
 public class VehicleJunctionCrossingService(
+    EventQueueFactory eventQueueFactory,
     DayTimeManager dayTimeManager,
     VehiclePositionService vehiclePositionService,
     VehicleJunctionService vehicleJunctionService,
@@ -17,7 +18,7 @@ public class VehicleJunctionCrossingService(
 {
     private static readonly DayTimeSpan Delay = new(minutes: 5);
 
-    private readonly EventQueue<Id<Vehicle>> _vehicleReachedEndQueue = new(vehicleMovementService.OnVehicleReachedTrackEnd);
+    private readonly EventQueue<Id<Vehicle>> _vehicleReachedEndQueue = eventQueueFactory.Create(vehicleMovementService.OnVehicleReachedTrackEnd);
     private readonly PriorityQueue<Id<Vehicle>, long> _queue = new();
 
     public Result Load()

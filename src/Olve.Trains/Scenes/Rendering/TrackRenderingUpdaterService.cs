@@ -5,11 +5,12 @@ using Olve.Trains.Scenes.Game.Tracks;
 namespace Olve.Trains.Scenes.Rendering;
 
 public class TrackRenderingUpdaterService(
+    EventQueueFactory eventQueueFactory,
     TrackService trackService,
     TrackLineStripDataService trackLineStripDataService,
     TrackRenderingService trackRenderingService) : ISceneService
 {
-    private readonly EventQueue<Id<Track>> _onTrackAddedQueue = new(trackService.OnAdded);
+    private readonly EventQueue<Id<Track>> _onTrackAddedQueue = eventQueueFactory.Create(trackService.OnAdded);
 
     public int Priority => SceneServicePriority.FromDependents([trackRenderingService]);
 
