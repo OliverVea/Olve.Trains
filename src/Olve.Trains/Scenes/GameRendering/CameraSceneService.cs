@@ -15,11 +15,7 @@ namespace Olve.Trains.Scenes.GameRendering;
 
 public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent) : ISceneService
 {
-    private IsometricOrthographicCameraController _cameraController = IsometricOrthographicCameraController.Create(
-        new Vector2D<float>(windowProvider.Value.Size.X, windowProvider.Value.Size.Y),
-        new Vector3D<float>(0, 0, 0),
-        new Vector3D<float>(0.701f, -1, 0.701f),
-        40f);
+    private IsometricOrthographicCameraController _cameraController = null!;
 
     private readonly List<ICameraScheme> _cameraSchemes = [new WasdMovement(keyboardManager)];
 
@@ -32,6 +28,12 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
 
     public Result Load()
     {
+        _cameraController = IsometricOrthographicCameraController.Create(
+            new Vector2D<float>(windowProvider.Value.Size.X, windowProvider.Value.Size.Y),
+            new Vector3D<float>(0, 0, 0),
+            new Vector3D<float>(0.701f, -1, 0.701f),
+            40f);
+
         screenResizedEvent.OnWindowResize.Subscribe(OnWindowResize);
         return Result.Success();
     }
