@@ -1,5 +1,3 @@
-
-
 ## Requirements
 
 - MSVC for AssImp in Olve.Trains.AssetPipeline
@@ -7,7 +5,7 @@
 
 ## TODO
 
-(updated 07/02/2026 [mm/dd/yyyy])
+(updated 02/12/2026 [mm/dd/yyyy])
 
 - [x] Track creation epic:
   - [x] Allow ghost preview during track creation
@@ -31,4 +29,7 @@
   - [ ] Improve rendering of tracks by procedurally generating the track mesh from the underlying spline
   - [ ] Create and render procedurally generated station meshes
   - [ ] Improve positioning of track signals based on track positioning
-
+- OTEL support epic:
+  - [ ] Add OTEL support for logs
+  - [ ] Add OTEL support for metrics
+- [ ] Add main menu scene
