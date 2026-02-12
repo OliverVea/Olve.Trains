@@ -17,9 +17,9 @@ public class GuiRectangleUpdateService(
     TextureLoadingManager textureLoadingManager,
     GuiRectangleRenderingService rectangleRenderingService) : ISceneService
 {
-    private readonly TextureId<RGBA> _singleWhitePixel = textureManager.RegisterTexture(TextureData<RGBA>.Single(RGBA.White));
     private readonly EventQueue<GuiElementArgs> _elementAddedQueue = eventQueueFactory.Create(guiElementService.OnAdded);
     private readonly EventQueue<GuiElementArgs> _elementRemovedQueue = eventQueueFactory.Create(guiElementService.OnRemoved);
+    private readonly TextureId<RGBA> _singleWhitePixel = textureManager.RegisterTexture(TextureData<RGBA>.Single(RGBA.White));
 
     public Result Load()
     {
@@ -31,6 +31,15 @@ public class GuiRectangleUpdateService(
 
         _elementAddedQueue.SetHandler(OnGuiElementAdded).Init();
         _elementRemovedQueue.SetHandler(OnGuiElementRemoved).Init();
+
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        textureEntityManager.Unregister(_singleWhitePixel);
+        _elementAddedQueue.Cleanup();
+        _elementRemovedQueue.Cleanup();
 
         return Result.Success();
     }

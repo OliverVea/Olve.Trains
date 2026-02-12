@@ -75,6 +75,7 @@ public static class LoggingExtensions
                 logging.SetResourceBuilder(resource);
                 logging.IncludeScopes = true;
                 logging.IncludeFormattedMessage = true;
+                logging.AddProcessor(new SeverityNumberProcessor());
                 logging.AddOtlpExporter(options => _registrationHelper.RegisterLogs(options));
             });
         }
