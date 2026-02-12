@@ -40,6 +40,11 @@ namespace Olve.Trains.Scenes.GameUI.GUI
 
         public Result Unload()
         {
+            foreach (var (nodeId, _) in _trackedTexts)
+            {
+                textRenderingService.DeregisterText(nodeId);
+            }
+            _trackedTexts.Clear();
             _elementAddedQueue.Cleanup();
             _elementRemovedQueue.Cleanup();
 
