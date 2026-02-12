@@ -1,21 +1,21 @@
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
-using Olve.Trains.Scenes.Game.Junctions;
-using Olve.Trains.Scenes.Game.Light;
-using Olve.Trains.Scenes.Game.Stations;
-using Olve.Trains.Scenes.Game.Terrain;
-using Olve.Trains.Scenes.Game.Time;
-using Olve.Trains.Scenes.Game.Tracks;
-using Olve.Trains.Scenes.Game.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Junctions;
+using Olve.Trains.Scenes.GameLogic.Light;
+using Olve.Trains.Scenes.GameLogic.Stations;
+using Olve.Trains.Scenes.GameLogic.Terrain;
+using Olve.Trains.Scenes.GameLogic.Time;
+using Olve.Trains.Scenes.GameLogic.Tracks;
+using Olve.Trains.Scenes.GameLogic.Vehicles;
 
-namespace Olve.Trains.Scenes.Game;
+namespace Olve.Trains.Scenes.GameLogic;
 
-public static class GameSceneServiceRegistration
+public static class GameLogicSceneServiceRegistration
 {
-    public static IServiceCollection AddGameSceneServices(this IServiceCollection services)
+    public static IServiceCollection AddGameLogicSceneServices(this IServiceCollection services)
     {
-        var sceneId = SceneIds.GameScene;
+        var sceneId = SceneIds.GameLogicScene;
 
         // Scene services (participate in scene lifecycle)
         services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);

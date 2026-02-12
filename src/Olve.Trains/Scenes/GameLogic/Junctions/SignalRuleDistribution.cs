@@ -1,6 +1,6 @@
 using OneOf;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 [GenerateOneOf]
 public partial class SignalRuleDistribution : OneOfBase<RoundRobin>

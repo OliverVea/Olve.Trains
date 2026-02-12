@@ -1,7 +1,7 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Scenes;
 
-namespace Olve.Trains.Scenes.Game.Terrain;
+namespace Olve.Trains.Scenes.GameLogic.Terrain;
 
 public class TerrainService : ISceneService
 {

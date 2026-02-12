@@ -1,7 +1,7 @@
-using Olve.Engine3D.Systems;
 using Microsoft.Extensions.Logging.Abstractions;
+using Olve.Engine3D.Systems;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public class VehicleService() : BaseEntityService<Vehicle>(NullLogger.Instance)
 {

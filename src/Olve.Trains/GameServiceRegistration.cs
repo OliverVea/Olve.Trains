@@ -11,9 +11,9 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Time;
-using Olve.Trains.Scenes.Game;
-using Olve.Trains.Scenes.Rendering;
-using Olve.Trains.Scenes.UI;
+using Olve.Trains.Scenes.GameLogic;
+using Olve.Trains.Scenes.GameRendering;
+using Olve.Trains.Scenes.GameUI;
 using Olve.Trains.Telemetry;
 
 namespace Olve.Trains;
@@ -43,8 +43,8 @@ public static class GameServiceRegistration
         services.AddSingleton<EventQueueFactory>();
 
         // Scene services
-        services.AddGameSceneServices();
-        services.AddRenderingSceneServices();
+        services.AddGameLogicSceneServices();
+        services.AddGameRenderingSceneServices();
         services.AddUISceneServices();
 
         // Scenes
@@ -53,12 +53,12 @@ public static class GameServiceRegistration
             var logger = sp.GetRequiredService<ILogger<Scene>>();
             return
             [
-                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameScene),
-                    SceneIds.GameScene, "GameScene"),
-                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.RenderingScene),
-                    SceneIds.RenderingScene, "RenderingScene", 1),
-                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.UIScene),
-                    SceneIds.UIScene, "UIScene", 2),
+                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameLogicScene),
+                    SceneIds.GameLogicScene, "GameScene"),
+                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameRenderingScene),
+                    SceneIds.GameRenderingScene, "RenderingScene", 1),
+                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameUIScene),
+                    SceneIds.GameUIScene, "UIScene", 2),
             ];
         });
 

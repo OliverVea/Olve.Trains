@@ -5,13 +5,13 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Text;
 using Olve.Engine3D.Rendering.Textures;
-using Silk.NET.OpenGL;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Fonts;
+using Silk.NET.OpenGL;
 
-namespace Olve.Trains.Scenes.UI.GUI
+namespace Olve.Trains.Scenes.GameUI.GUI
 {
     /// <summary>
     /// Handles lifecycle for text elements: loads font atlases and registers/deregisters
@@ -34,6 +34,14 @@ namespace Olve.Trains.Scenes.UI.GUI
         {
             _elementAddedQueue.SetHandler(OnGuiElementAdded).Init();
             _elementRemovedQueue.SetHandler(OnGuiElementRemoved).Init();
+
+            return Result.Success();
+        }
+
+        public Result Unload()
+        {
+            _elementAddedQueue.Cleanup();
+            _elementRemovedQueue.Cleanup();
 
             return Result.Success();
         }

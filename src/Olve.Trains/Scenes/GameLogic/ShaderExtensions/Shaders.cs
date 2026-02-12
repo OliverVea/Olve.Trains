@@ -1,4 +1,4 @@
-﻿using Olve.Trains.Scenes.Game.ShaderExtensions;
+﻿using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
 
 // ReSharper disable once CheckNamespace
 namespace Olve.Generated.Shaders;

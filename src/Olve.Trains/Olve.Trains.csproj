@@ -22,8 +22,5 @@
     <ItemGroup>
         <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
     </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Scenes\MainMenu\" />
-    </ItemGroup>
 
 </Project>

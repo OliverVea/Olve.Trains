@@ -1,7 +1,7 @@
 ﻿using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 
-namespace Olve.Trains.Scenes.Game.Time;
+namespace Olve.Trains.Scenes.GameLogic.Time;
 
 public class DayTimeSteppingService(DayTimeManager dayTimeManager) : ISceneService
 {

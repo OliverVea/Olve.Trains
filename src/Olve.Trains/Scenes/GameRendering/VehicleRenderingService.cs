@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
@@ -9,13 +10,12 @@ using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
-using Microsoft.Extensions.Logging;
-using Olve.Trains.Scenes.Game.Light;
-using Olve.Trains.Scenes.Game.Tracks;
-using Olve.Trains.Scenes.Game.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Light;
+using Olve.Trains.Scenes.GameLogic.Tracks;
+using Olve.Trains.Scenes.GameLogic.Vehicles;
 using RenderingServiceHelper = Olve.Engine3D.Rendering.RenderingServiceHelper;
 
-namespace Olve.Trains.Scenes.Rendering;
+namespace Olve.Trains.Scenes.GameRendering;
 
 public class VehicleRenderingService(
     ILogger<VehicleRenderingService> logger,

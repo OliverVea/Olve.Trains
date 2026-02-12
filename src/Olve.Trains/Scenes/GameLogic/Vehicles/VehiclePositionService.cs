@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Olve.Engine3D.Scenes;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public class VehiclePositionService(VehicleService vehicleService) : ISceneService
 {

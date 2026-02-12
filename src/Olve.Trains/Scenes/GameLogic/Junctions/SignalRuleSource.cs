@@ -1,9 +1,9 @@
 using Olve.Engine3D;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Utilities.Types;
 using OneOf;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 [GenerateOneOf]
 public partial class SignalRuleSource : OneOfBase<Any, CardinalDirection, Id<Track>>

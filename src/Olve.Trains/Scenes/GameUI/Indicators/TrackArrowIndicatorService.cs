@@ -2,17 +2,15 @@ using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
-using Olve.Trains.Scenes.Rendering;
+using Olve.Trains.Scenes.GameRendering;
 
-namespace Olve.Trains.Scenes.UI.Indicators;
+namespace Olve.Trains.Scenes.GameUI.Indicators;
 
 public class TrackArrowIndicatorService(
     AssetLoader assetLoader,
@@ -32,28 +30,27 @@ public class TrackArrowIndicatorService(
         AmbientLightIntensity = 1f,
     };
 
+    private TextureId<RGBA>? _textureId;
     private GeometryId _geometryId;
     private RenderingInstanceId InstanceId { get; set; }
-
-    private Result LoadShader(IShader shader) => renderingServiceHelper.LoadShader(shader);
 
     public Result Load()
     {
         if (textureLoadingManager.LoadTexture(Textures.PolygonPrototype_Texture_01)
-            .TryPickProblems(out var problems, out var textureId))
+            .TryPickProblems(out var problems, out _textureId))
         {
             return problems.Prepend("Failed to load texture");
         }
 
-        if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(textureId, new TextureUploadOptions())
+        if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(_textureId, new TextureUploadOptions())
             .TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to register texture with OpenGL");
         }
 
-        _shader.TextureSampler = textureId;
+        _shader.TextureSampler = _textureId;
 
-        if (LoadShader(_shader).TryPickProblems(out problems))
+        if (renderingServiceHelper.LoadShader(_shader).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to load shader");
         }
@@ -77,13 +74,11 @@ public class TrackArrowIndicatorService(
             indices[i * 3 + 2] = meshData.Indices[i].C;
         }
 
-        if (renderingManager3D.RegisterGeometry<Shaders.Default.Vertex>(vertices, indices)
-            .TryPickProblems(out problems, out var geometryId))
+        if (renderingManager3D.RegisterGeometry(vertices, indices)
+            .TryPickProblems(out problems, out _geometryId))
         {
             return problems.Prepend("Failed to register geometry");
         }
-
-        _geometryId = geometryId;
 
         AABB aabbTarget = new(Vector3D<float>.Zero, Vector3D<float>.One);
         var scaleResult = AABBHelper.GetUniformScaleToFitInside(meshData, aabbTarget);
@@ -100,6 +95,20 @@ public class TrackArrowIndicatorService(
 
         InstanceId = instanceId;
 
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        renderingManager3D.DeregisterInstance(InstanceId);
+        renderingManager3D.DeregisterGeometry(_geometryId);
+        renderingServiceHelper.UnloadShader(_shader);
+        if (_textureId is { } textureId)
+        {
+            textureEntityManager.Unregister(textureId);
+        }
+        // TODO: Unregister with dependency count?
+        // textureLoadingManager.LoadTexture()
         return Result.Success();
     }
 

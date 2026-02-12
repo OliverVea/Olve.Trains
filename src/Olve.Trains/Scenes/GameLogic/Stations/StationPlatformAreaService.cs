@@ -2,9 +2,9 @@ using Olve.Engine3D;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.Game.Stations;
+namespace Olve.Trains.Scenes.GameLogic.Stations;
 
 public class StationPlatformAreaService(
     EventQueueFactory eventQueueFactory,

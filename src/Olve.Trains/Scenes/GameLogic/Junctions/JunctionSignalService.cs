@@ -1,8 +1,8 @@
-﻿using Olve.Engine3D.Scenes;
+﻿using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Microsoft.Extensions.Logging;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 public class JunctionSignalService(ILogger<JunctionSignalService> logger, EventQueueFactory eventQueueFactory, JunctionService junctionService) : ISceneService, IEntityService<Junction>
 {

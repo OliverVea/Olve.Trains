@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
-using Olve.Trains.Scenes.Game.Tracks;
-using Olve.Trains.Scenes.Game.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Tracks;
+using Olve.Trains.Scenes.GameLogic.Vehicles;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 
 public class JunctionSignalRuleEvaluationService(ILogger<JunctionSignalRuleEvaluationService> logger,

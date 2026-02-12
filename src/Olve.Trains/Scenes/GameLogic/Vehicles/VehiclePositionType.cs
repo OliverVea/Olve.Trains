@@ -1,4 +1,4 @@
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public enum VehiclePositionType
 {

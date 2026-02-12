@@ -1,8 +1,8 @@
-﻿using Olve.Trains.Scenes.Game.Junctions;
+﻿using Olve.Trains.Scenes.GameLogic.Junctions;
 using OneOf;
 using OneOf.Types;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 [GenerateOneOf]
 public partial class VehicleJunction : OneOfBase<None, Id<Junction>>

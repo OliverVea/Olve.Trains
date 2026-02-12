@@ -1,8 +1,8 @@
 ﻿using Olve.Engine3D;
-using Olve.Trains.Scenes.Game.Junctions;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Junctions;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public class VehicleJunctionService(VehiclePositionService vehiclePositionService, TrackService trackService, TrackSplineService trackSplineService, JunctionService junctionService)
 {

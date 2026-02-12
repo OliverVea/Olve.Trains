@@ -1,8 +1,8 @@
-using Olve.Trains.Scenes.Game.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Vehicles;
 using Olve.Utilities.Types;
 using OneOf;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 [GenerateOneOf]
 public partial class SignalRuleVehicle : OneOfBase<Any, Id<VehicleGroup>, Id<Vehicle>>

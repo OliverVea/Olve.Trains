@@ -1,3 +1,3 @@
-﻿namespace Olve.Trains.Scenes.UI.Indicators;
+﻿namespace Olve.Trains.Scenes.GameUI.Indicators;
 
 public readonly record struct ArrowIndicator;

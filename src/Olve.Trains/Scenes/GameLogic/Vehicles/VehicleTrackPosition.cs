@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 [StructLayout(LayoutKind.Sequential)]
 public readonly record struct VehicleTrackPosition(TrackPoint TrackPoint, float Velocity)

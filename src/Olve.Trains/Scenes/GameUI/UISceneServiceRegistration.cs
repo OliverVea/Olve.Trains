@@ -1,23 +1,22 @@
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.GUI;
-using Olve.Engine3D.GUI.Collision;
 using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.GUI.Styling.Animation;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
-using Olve.Trains.Scenes.UI.GUI;
-using Olve.Trains.Scenes.UI.Indicators;
-using Olve.Trains.Scenes.UI.Tools;
+using Olve.Trains.Scenes.GameUI.GUI;
+using Olve.Trains.Scenes.GameUI.Indicators;
+using Olve.Trains.Scenes.GameUI.Tools;
 
-namespace Olve.Trains.Scenes.UI;
+namespace Olve.Trains.Scenes.GameUI;
 
 public static class UISceneServiceRegistration
 {
     public static IServiceCollection AddUISceneServices(this IServiceCollection services)
     {
-        var sceneId = SceneIds.UIScene;
+        var sceneId = SceneIds.GameUIScene;
 
         // Tool / indicator services
         services.AddSceneService<TrackArrowIndicatorService>(sceneId);

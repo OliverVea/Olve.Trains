@@ -1,4 +1,4 @@
-﻿namespace Olve.Trains.Scenes.Game.ShaderExtensions;
+﻿namespace Olve.Trains.Scenes.GameLogic.ShaderExtensions;
 
 public interface IDaylightShader
 {

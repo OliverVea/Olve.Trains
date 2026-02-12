@@ -1,7 +1,7 @@
 ﻿using OneOf;
 using OneOf.Types;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 [GenerateOneOf]
 public partial class RuleEvaluationResult : OneOfBase<None, TransferredTracks>

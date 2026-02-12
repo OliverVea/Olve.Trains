@@ -9,9 +9,9 @@ using Olve.Engine3D.Utilities;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
-using Olve.Trains.Scenes.Game.Junctions;
+using Olve.Trains.Scenes.GameLogic.Junctions;
 
-namespace Olve.Trains.Scenes.Rendering;
+namespace Olve.Trains.Scenes.GameRendering;
 
 public class JunctionSignalRenderingService(
     ILogger<JunctionSignalRenderingService> logger,

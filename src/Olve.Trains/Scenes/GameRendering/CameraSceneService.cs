@@ -8,20 +8,22 @@ using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
-using Olve.Trains.Scenes.Game.ShaderExtensions;
+using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
 using Silk.NET.Windowing;
 
-namespace Olve.Trains.Scenes.Rendering;
+namespace Olve.Trains.Scenes.GameRendering;
 
 public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent) : ISceneService
 {
-    private IsometricOrthographicCameraController _cameraController = null!;
+    private IsometricOrthographicCameraController _cameraController = IsometricOrthographicCameraController.Create(
+        new Vector2D<float>(windowProvider.Value.Size.X, windowProvider.Value.Size.Y),
+        new Vector3D<float>(0, 0, 0),
+        new Vector3D<float>(0.701f, -1, 0.701f),
+        40f);
 
-    private readonly List<ICameraScheme> _cameraSchemes = [];
+    private readonly List<ICameraScheme> _cameraSchemes = [new WasdMovement(keyboardManager)];
 
     public Camera<IsometricView, OrthographicProjection> Camera => _cameraController.Camera;
-    private Vector2D<float> WindowSize => new (windowProvider.Value.Size.X, windowProvider.Value.Size.Y);
-
 
     private Matrix4X4<float> _viewMatrix;
     private Matrix4X4<float> _rotationMatrix;
@@ -30,16 +32,7 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
 
     public Result Load()
     {
-        Vector3D<float> cameraTarget = new (0, 0, 0);
-        Vector3D<float> cameraViewDirection = new(0.701f, -1, 0.701f);
-
-        const float orthographicSize = 40f;
-
-        _cameraController = IsometricOrthographicCameraController.Create(WindowSize, cameraTarget, cameraViewDirection, orthographicSize);
-
-        _cameraSchemes.Add(new WasdMovement(keyboardManager));
         screenResizedEvent.OnWindowResize.Subscribe(OnWindowResize);
-
         return Result.Success();
     }
 
