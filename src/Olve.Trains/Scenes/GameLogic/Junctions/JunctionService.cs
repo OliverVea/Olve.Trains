@@ -1,10 +1,10 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Systems;
-using Microsoft.Extensions.Logging;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Utilities.CollectionExtensions;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 public class JunctionService(ILogger<JunctionService> logger) : BaseEntityService<Junction>(logger)
 {

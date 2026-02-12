@@ -1,7 +1,7 @@
-﻿using Olve.Engine3D.Systems;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Systems;
 
-namespace Olve.Trains.Scenes.UI.Tools;
+namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public sealed class ToolManagementService(ILogger<ToolManagementService> logger)
 {

@@ -4,9 +4,9 @@ using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
-using Olve.Trains.Scenes.UI.Tools;
+using Olve.Trains.Scenes.GameUI.Tools;
 
-namespace Olve.Trains.Scenes.UI.GUI;
+namespace Olve.Trains.Scenes.GameUI.GUI;
 
 public class ToolBarService(
     ToolManagementService toolManagementService,
@@ -19,6 +19,7 @@ public class ToolBarService(
 
     private static readonly Layouts.ToolBar ToolBar = Layouts.BuildToolBar();
 
+    private Id<GuiAnchor> _anchorId;
     private Id<GuiElementRegistrations> _registrationId;
 
     private readonly (Box, Id<Tool>)[] _toolElements = [
@@ -30,7 +31,7 @@ public class ToolBarService(
     public Result Load()
     {
         if (guiAnchorService.RegisterAnchor(AnchorPosition.BottomCenter, GrowthDirection.Up)
-            .TryPickProblems(out var problems, out var anchorId))
+            .TryPickProblems(out var problems, out _anchorId))
         {
             return problems;
         }
@@ -39,8 +40,19 @@ public class ToolBarService(
         toolManagementService.ActiveToolChanged.Subscribe(OnActiveToolChanged);
 
         return guiElementService
-            .RegisterElementAndChildren(anchorId, ToolBar.Root)
+            .RegisterElementAndChildren(_anchorId, ToolBar.Root)
             .TryPickProblems(out problems, out _registrationId) ? problems : Result.Success();
+    }
+
+    public Result Unload()
+    {
+        guiActivationService.GuiElementActivated.Unsubscribe(OnGuiElementActivated);
+        toolManagementService.ActiveToolChanged.Unsubscribe(OnActiveToolChanged);
+
+        guiAnchorService.UnregisterAnchor(_anchorId);
+
+        // Todo: Unregister element and children
+        return Result.Success();
     }
 
     private void OnGuiElementActivated(GuiActivationService.GuiElementActivatedMessage message)

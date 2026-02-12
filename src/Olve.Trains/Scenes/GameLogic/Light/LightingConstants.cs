@@ -3,7 +3,7 @@ using Olve.Engine3D.Time;
 using Curve1 = Olve.Engine3D.Light.Curve<float>;
 using Curve3 = Olve.Engine3D.Light.Curve<Silk.NET.Maths.Vector3D<float>>;
 
-namespace Olve.Trains.Scenes.Game.Light;
+namespace Olve.Trains.Scenes.GameLogic.Light;
 
 public static class LightingConstants
 {

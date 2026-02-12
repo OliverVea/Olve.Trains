@@ -1,11 +1,10 @@
-using System.ComponentModel;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.GUI.Styling.Animation;
 
-namespace Olve.Trains.Scenes.UI.GUI;
+namespace Olve.Trains.Scenes.GameUI.GUI;
 
 public static class Styles
 {

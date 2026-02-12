@@ -1,7 +1,7 @@
 using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.Scenes;
 
-namespace Olve.Trains.Scenes.UI.GUI;
+namespace Olve.Trains.Scenes.GameUI.GUI;
 
 public class GameStyleService(
     GuiStyleApplierService guiStyleApplierService,
@@ -9,14 +9,29 @@ public class GameStyleService(
 {
     public int Priority => SceneServicePriority.FromDependents([guiStyleApplierService]);
 
+    private static readonly IGuiElementStyling[] GameStyles =
+    [
+        Styles.MenuButtonStyle, Styles.MenuBarBackground,
+        Styles.ToolIconStyle, Styles.InfoBarBackground,
+        Styles.InfoBarSection, Styles.InfoBarClockText
+    ];
+
     public Result Load()
     {
-        styleRegistry.Register(Styles.MenuButtonStyle);
-        styleRegistry.Register(Styles.MenuBarBackground);
-        styleRegistry.Register(Styles.ToolIconStyle);
-        styleRegistry.Register(Styles.InfoBarBackground);
-        styleRegistry.Register(Styles.InfoBarSection);
-        styleRegistry.Register(Styles.InfoBarClockText);
+        foreach (var style in GameStyles)
+        {
+            styleRegistry.Register(style);
+        }
+
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        foreach (var style in GameStyles)
+        {
+            styleRegistry.Unregister(style);
+        }
 
         return Result.Success();
     }

@@ -1,10 +1,10 @@
-﻿using Olve.Engine3D.Scenes;
+﻿using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
-using Microsoft.Extensions.Logging;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public class VehicleMovementService(ILogger<VehicleMovementService> logger,
     VehiclePositionService vehiclePositionService,

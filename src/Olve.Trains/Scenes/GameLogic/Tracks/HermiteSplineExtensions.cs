@@ -2,7 +2,7 @@
 using Olve.Engine3D.Math.Splines;
 using Olve.Engine3D.Utilities;
 
-namespace Olve.Trains.Scenes.Game.Tracks;
+namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
 public static class HermiteSplineExtensions
 {

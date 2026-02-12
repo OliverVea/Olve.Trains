@@ -1,10 +1,9 @@
 using System.Drawing;
-using Olve.Engine3D;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Silk.NET.OpenGL;
 
-namespace Olve.Trains.Scenes.Rendering;
+namespace Olve.Trains.Scenes.GameRendering;
 
 public class GLService(Provider<GL> glProvider) : ISceneService
 {

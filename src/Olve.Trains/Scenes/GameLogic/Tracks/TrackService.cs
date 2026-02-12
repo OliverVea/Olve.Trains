@@ -1,7 +1,7 @@
-using Olve.Engine3D.Systems;
 using Microsoft.Extensions.Logging.Abstractions;
+using Olve.Engine3D.Systems;
 
-namespace Olve.Trains.Scenes.Game.Tracks;
+namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
 public class TrackService() : BaseEntityService<Track>(NullLogger.Instance)
 {

@@ -3,7 +3,7 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Time;
 
-namespace Olve.Trains.Scenes.Game.Time;
+namespace Olve.Trains.Scenes.GameLogic.Time;
 
 public class SetTimeHandlerService(DayTimeManager dayTimeManager, CommandHandlerServiceCollection commandHandlerServiceCollection) : CommandHandlerService(commandHandlerServiceCollection)
 {

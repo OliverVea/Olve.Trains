@@ -1,10 +1,10 @@
 ﻿using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Time;
-using Olve.Trains.Scenes.Game.Junctions;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Junctions;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public class VehicleJunctionCrossingService(
     EventQueueFactory eventQueueFactory,

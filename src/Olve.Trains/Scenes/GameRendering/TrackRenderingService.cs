@@ -1,13 +1,13 @@
-using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Assets.Entities;
+using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 using Silk.NET.OpenGL;
 
-namespace Olve.Trains.Scenes.Rendering;
+namespace Olve.Trains.Scenes.GameRendering;
 
 public class TrackRenderingService(
     RenderingManager3D renderingManager3D,

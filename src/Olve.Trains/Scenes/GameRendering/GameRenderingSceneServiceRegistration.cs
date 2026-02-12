@@ -1,13 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.Scenes;
 
-namespace Olve.Trains.Scenes.Rendering;
+namespace Olve.Trains.Scenes.GameRendering;
 
-public static class RenderingSceneServiceRegistration
+public static class GameRenderingSceneServiceRegistration
 {
-    public static IServiceCollection AddRenderingSceneServices(this IServiceCollection services)
+    public static IServiceCollection AddGameRenderingSceneServices(this IServiceCollection services)
     {
-        var sceneId = SceneIds.RenderingScene;
+        var sceneId = SceneIds.GameRenderingScene;
 
         services.AddSceneService<GLService>(sceneId);
         services.AddSceneService<CameraSceneService>(sceneId);

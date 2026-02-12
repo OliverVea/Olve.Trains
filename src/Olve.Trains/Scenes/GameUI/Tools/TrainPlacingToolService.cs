@@ -1,12 +1,12 @@
 ﻿using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
-using Olve.Trains.Scenes.Game.Tracks;
-using Olve.Trains.Scenes.Game.Vehicles;
-using Olve.Trains.Scenes.Rendering;
-using Olve.Trains.Scenes.UI.Indicators;
+using Olve.Trains.Scenes.GameLogic.Tracks;
+using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameRendering;
+using Olve.Trains.Scenes.GameUI.Indicators;
 using Silk.NET.Input;
 
-namespace Olve.Trains.Scenes.UI.Tools;
+namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public class TrainPlacingToolService(
     TerrainRaycastService terrainRaycastService,

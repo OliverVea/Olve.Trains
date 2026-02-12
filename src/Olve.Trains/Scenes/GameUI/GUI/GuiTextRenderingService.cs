@@ -1,19 +1,19 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Text;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
-using Microsoft.Extensions.Logging;
 
-namespace Olve.Trains.Scenes.UI.GUI;
+namespace Olve.Trains.Scenes.GameUI.GUI;
 
 /// <summary>
 /// Renders text elements using MSDF font atlas rendering.
@@ -59,6 +59,19 @@ public class GuiTextRenderingService(
         }
 
         _shader.RenderingId = shaderRenderingId;
+
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        foreach (var (nodeId, _) in _instances)
+        {
+            if (DeregisterText(nodeId).TryPickProblems(out var problems))
+            {
+                logger.Log(problems);
+            }
+        }
 
         return Result.Success();
     }

@@ -5,11 +5,11 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
-using Olve.Trains.Scenes.Game.Light;
-using Olve.Trains.Scenes.Game.Terrain;
+using Olve.Trains.Scenes.GameLogic.Light;
+using Olve.Trains.Scenes.GameLogic.Terrain;
 using Silk.NET.OpenGL;
 
-namespace Olve.Trains.Scenes.Rendering;
+namespace Olve.Trains.Scenes.GameRendering;
 
 public class TerrainRenderingService(
     TerrainService terrainService,
@@ -39,7 +39,6 @@ public class TerrainRenderingService(
         {
             return new ResultProblem("TerrainService.Terrain is null");
         }
-
 
         // TODO: investigate this
         var heightmap = terrain.Heightmap;

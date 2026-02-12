@@ -1,9 +1,9 @@
 using Olve.Engine3D.Light;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
-using Olve.Trains.Scenes.Game.ShaderExtensions;
+using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
 
-namespace Olve.Trains.Scenes.Game.Light;
+namespace Olve.Trains.Scenes.GameLogic.Light;
 
 public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager daylightManager) : ISceneService
 {

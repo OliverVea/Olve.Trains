@@ -1,6 +1,6 @@
 using Olve.Engine3D.Assets.Entities;
 
-namespace Olve.Trains.Scenes.Game.Tracks;
+namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
 public class TrackLineStripDataService(TrackSplineService trackSplineService)
 {

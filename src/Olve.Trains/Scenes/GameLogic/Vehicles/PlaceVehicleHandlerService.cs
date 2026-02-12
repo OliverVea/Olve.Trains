@@ -1,10 +1,10 @@
 using System.Globalization;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
-using Microsoft.Extensions.Logging;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public class PlaceVehicleHandlerService(
     ILogger<PlaceVehicleHandlerService> logger,

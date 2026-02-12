@@ -1,6 +1,6 @@
-﻿using Olve.Trains.Scenes.Game.Junctions;
+﻿using Olve.Trains.Scenes.GameLogic.Junctions;
 
-namespace Olve.Trains.Scenes.Game.Tracks;
+namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
 public class TrackConnectionService(JunctionService junctionService)
 {

@@ -1,6 +1,6 @@
 using Olve.Utilities.Lookup;
 
-namespace Olve.Trains.Scenes.Game.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public class Vehicle(Id<Vehicle> id, string name) : IHasId<Id<Vehicle>>, IEquatable<Vehicle?>
 {

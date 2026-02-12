@@ -1,14 +1,14 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
-using Microsoft.Extensions.Logging;
-using Olve.Trains.Scenes.Game.Stations;
-using Olve.Trains.Scenes.Game.Tracks;
-using Olve.Trains.Scenes.Rendering;
-using Olve.Trains.Scenes.UI.Indicators;
+using Olve.Trains.Scenes.GameLogic.Stations;
+using Olve.Trains.Scenes.GameLogic.Tracks;
+using Olve.Trains.Scenes.GameRendering;
+using Olve.Trains.Scenes.GameUI.Indicators;
 using Silk.NET.Input;
 
-namespace Olve.Trains.Scenes.UI.Tools;
+namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public sealed class StationPlacingToolService(
     ILogger<StationPlacingToolService> logger,

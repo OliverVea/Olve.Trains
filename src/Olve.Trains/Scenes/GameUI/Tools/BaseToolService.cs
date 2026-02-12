@@ -1,7 +1,7 @@
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 
-namespace Olve.Trains.Scenes.UI.Tools;
+namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public abstract class BaseToolService<TToolState>(
     ToolManagementService toolManagementService,

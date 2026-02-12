@@ -1,4 +1,4 @@
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 public class RoundRobin
 {

@@ -1,4 +1,4 @@
-﻿namespace Olve.Trains.Scenes.Game.Industries;
+﻿namespace Olve.Trains.Scenes.GameLogic.Industries;
 
 public class BuildingOccupancyService
 {

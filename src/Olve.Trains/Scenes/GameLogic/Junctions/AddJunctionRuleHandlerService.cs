@@ -3,15 +3,15 @@ using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Utilities;
-using Olve.Trains.Scenes.Game.Tracks;
-using Olve.Trains.Scenes.Game.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Tracks;
+using Olve.Trains.Scenes.GameLogic.Vehicles;
 using Olve.Utilities.Types;
-using RuleFields = (System.Collections.Generic.List<Olve.Trains.Scenes.Game.Junctions.SignalRuleVehicle> Vehicles,
-    System.Collections.Generic.List<Olve.Trains.Scenes.Game.Junctions.SignalRuleSource> Sources,
-    System.Collections.Generic.List<Olve.Trains.Scenes.Game.Junctions.SignalRuleDestination> Destinations,
-    Olve.Trains.Scenes.Game.Junctions.SignalRuleDistribution Distribution);
+using RuleFields = (System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleVehicle> Vehicles,
+    System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleSource> Sources,
+    System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleDestination> Destinations,
+    Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleDistribution Distribution);
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 public class AddJunctionRuleHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,

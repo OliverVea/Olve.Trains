@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Olve.Engine3D.Systems;
 using Microsoft.Extensions.Logging.Abstractions;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Engine3D.Systems;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.Game.Stations;
+namespace Olve.Trains.Scenes.GameLogic.Stations;
 
 public class StationPlatformService() : BaseEntityService<StationPlatform>(NullLogger.Instance)
 {

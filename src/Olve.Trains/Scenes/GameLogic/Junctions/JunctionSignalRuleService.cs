@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
-using Olve.Engine3D.Utilities;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Utilities;
 using Olve.Utilities.Assertions;
 using Olve.Utilities.Types;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 public sealed class JunctionSignalRuleService(ILogger<JunctionSignalRuleService> logger, JunctionSignalService junctionSignalService) : ISceneService
 {

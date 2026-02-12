@@ -1,8 +1,8 @@
 ﻿using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
-using Olve.Trains.Scenes.Game.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Vehicles;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 public class ClearJunctionSignalRules(
     CommandHandlerServiceCollection commandHandlerServiceCollection,

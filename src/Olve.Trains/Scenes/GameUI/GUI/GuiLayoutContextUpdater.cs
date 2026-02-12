@@ -1,11 +1,11 @@
-﻿using Olve.Engine3D;
+﻿using Microsoft.Extensions.Logging;
+using Olve.Engine3D;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
-using Microsoft.Extensions.Logging;
 using Silk.NET.Windowing;
 
-namespace Olve.Trains.Scenes.UI.GUI;
+namespace Olve.Trains.Scenes.GameUI.GUI;
 
 public class GuiLayoutContextUpdater(ILogger<GuiLayoutContextUpdater> logger,
     Provider<IWindow> windowProvider,

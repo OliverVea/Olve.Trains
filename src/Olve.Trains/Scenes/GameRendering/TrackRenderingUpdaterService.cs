@@ -1,8 +1,8 @@
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Trains.Scenes.Game.Tracks;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.Rendering;
+namespace Olve.Trains.Scenes.GameRendering;
 
 public class TrackRenderingUpdaterService(
     EventQueueFactory eventQueueFactory,

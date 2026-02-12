@@ -1,7 +1,7 @@
-using Olve.Engine3D;
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D;
 
-namespace Olve.Trains.Scenes.Game.Tracks;
+namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
 public class TrackPlacingService(ILogger<TrackPlacingService> logger, TrackService trackService)
 {

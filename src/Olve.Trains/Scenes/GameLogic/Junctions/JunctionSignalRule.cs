@@ -1,6 +1,6 @@
 using Olve.Utilities.Lookup;
 
-namespace Olve.Trains.Scenes.Game.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 public readonly record struct JunctionSignalRule(
     Id<JunctionSignalRule> Id,

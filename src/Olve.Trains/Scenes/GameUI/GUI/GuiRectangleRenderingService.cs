@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
@@ -9,9 +10,8 @@ using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
-using Microsoft.Extensions.Logging;
 
-namespace Olve.Trains.Scenes.UI.GUI;
+namespace Olve.Trains.Scenes.GameUI.GUI;
 
 public class GuiRectangleRenderingService(
     ILogger<GuiRectangleRenderingService> logger,
@@ -43,6 +43,19 @@ public class GuiRectangleRenderingService(
         }
 
         _shader.RenderingId = shaderRenderingId;
+
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        foreach (var (nodeId, _) in _instances)
+        {
+            if (DeregisterTexturedRectangle(nodeId).TryPickProblems(out var problems))
+            {
+                logger.Log(problems);
+            }
+        }
 
         return Result.Success();
     }
