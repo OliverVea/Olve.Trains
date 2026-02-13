@@ -1,9 +1,10 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI;
 
-public class GuiAnchorService
+public class GuiAnchorService(ILogger<GuiAnchorService> logger)
 {
     private readonly Dictionary<Id<GuiAnchor>, GuiAnchor> _anchors = new();
 
@@ -12,6 +13,9 @@ public class GuiAnchorService
         var anchorId = Id.New<GuiAnchor>();
         var anchor = new GuiAnchor(anchorId, position, growth);
         _anchors[anchorId] = anchor;
+        logger.LogDebug(
+            "Registered anchor '{AnchorId}' at position ({HPos}, {VPos}) with growth ({HGrowth}, {VGrowth}). Total anchors: {Count}",
+            anchorId, position.Horizontal, position.Vertical, growth.Horizontal, growth.Vertical, _anchors.Count);
         return anchorId;
     }
 
@@ -19,5 +23,14 @@ public class GuiAnchorService
         => _anchors.TryGetValue(anchorId, out anchor);
 
     public void UnregisterAnchor(Id<GuiAnchor> anchorId)
-        => _anchors.Remove(anchorId);
+    {
+        if (_anchors.Remove(anchorId))
+        {
+            logger.LogDebug("Unregistered anchor '{AnchorId}'. Total anchors: {Count}", anchorId, _anchors.Count);
+        }
+        else
+        {
+            logger.LogWarning("Failed to unregister anchor '{AnchorId}': anchor not found. Total anchors: {Count}", anchorId, _anchors.Count);
+        }
+    }
 }

@@ -39,6 +39,13 @@ public class GuiAnimationService(
         return Result.Success();
     }
 
+    public Result Unload()
+    {
+        _guiNodeStateChangedQueue.Cleanup();
+        _animations.Clear();
+        return Result.Success();
+    }
+
     public Result Update(TimeSpan deltaTime)
     {
         if (_guiNodeStateChangedQueue

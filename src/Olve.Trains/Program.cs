@@ -35,9 +35,7 @@ public static class Program
         var window = Window.Create(WindowOptions);
         var gameManager = serviceProvider.GetRequiredService<GameManager>();
         var result = gameManager.Run(window, [
-            SceneIds.GameLogicScene,
-            SceneIds.GameRenderingScene,
-            SceneIds.GameUIScene,
+            SceneIds.MainMenuScene,
         ]);
 
         return LogResult(result);

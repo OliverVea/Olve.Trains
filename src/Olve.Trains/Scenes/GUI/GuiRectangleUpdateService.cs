@@ -7,7 +7,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 
-namespace Olve.Trains.Scenes.GameUI.GUI;
+namespace Olve.Trains.Scenes.GUI;
 
 public class GuiRectangleUpdateService(
     EventQueueFactory eventQueueFactory,
@@ -90,4 +90,3 @@ public class GuiRectangleUpdateService(
 #endif
     }
 }
-

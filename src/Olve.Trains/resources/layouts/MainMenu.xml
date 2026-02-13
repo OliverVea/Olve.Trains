@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Root" Justify="Justify.Center" Align="Align.Center">
+    <Box id="StartGameButton" Style="MainMenuButtonStyle" Interactive="true">
+        <Text id="StartGameText" Style="MainMenuButtonTextStyle" />
+    </Box>
+</Box>
