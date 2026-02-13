@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameUI.GUI;
 using Olve.Trains.Scenes.GameUI.Indicators;
@@ -28,7 +29,7 @@ public static class UISceneServiceRegistration
         services.AddSceneService<GameStyleService>(sceneId);
 
         // Non-scene singletons
-        services.AddSingleton<ToolManagementService>();
+        services.TryAddScoped<ToolManagementService>();
 
         return services;
     }

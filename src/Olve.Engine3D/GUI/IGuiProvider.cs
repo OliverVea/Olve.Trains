@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.GUI.Collision;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Input;
@@ -12,19 +13,19 @@ public static class GuiServiceRegistration
 {
     public static IServiceCollection AddGuiServices(this IServiceCollection services)
     {
-        services.AddSingleton<GuiAnchorService>();
-        services.AddSingleton<GuiLayoutService>();
-        services.AddSingleton<GuiNodeStateService>();
-        services.AddSingleton<GuiActivationService>();
-        services.AddSingleton<GuiStateListenerService>();
-        services.AddSingleton<GuiStyleApplierService>();
-        services.AddSingleton<GuiAnimationService>();
-        services.AddSingleton<GuiStyleRegistry>();
-        services.AddSingleton<GuiElementService>();
-        services.AddSingleton<GuiNodeService>();
-        services.AddSingleton<GuiCollisionService>();
-        services.AddSingleton<GuiFocusService>();
-        services.AddSingleton<GuiMouseInputService>();
+        services.TryAddScoped<GuiAnchorService>();
+        services.TryAddScoped<GuiLayoutService>();
+        services.TryAddScoped<GuiNodeStateService>();
+        services.TryAddScoped<GuiActivationService>();
+        services.TryAddScoped<GuiStateListenerService>();
+        services.TryAddScoped<GuiStyleApplierService>();
+        services.TryAddScoped<GuiAnimationService>();
+        services.TryAddScoped<GuiStyleRegistry>();
+        services.TryAddScoped<GuiElementService>();
+        services.TryAddScoped<GuiNodeService>();
+        services.TryAddScoped<GuiCollisionService>();
+        services.TryAddScoped<GuiFocusService>();
+        services.TryAddScoped<GuiMouseInputService>();
         return services;
     }
 }

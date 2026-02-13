@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.GameLogic.Junctions;
@@ -18,10 +19,6 @@ public static class GameLogicSceneServiceRegistration
         var sceneId = SceneIds.GameLogicScene;
 
         // Scene services (participate in scene lifecycle)
-        services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);
-        services.AddSceneService<ClearJunctionSignalRules>(sceneId);
-        services.AddSceneService<JunctionSignalRuleService>(sceneId);
-        services.AddSceneService<JunctionSignalService>(sceneId);
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnAdded,
             (TrackService ts, JunctionService js, Id<Track> trackId) =>
@@ -44,13 +41,17 @@ public static class GameLogicSceneServiceRegistration
                             js.RemoveJunctionConnection(track.Id, track.Start).MapToResult(),
                             js.RemoveJunctionConnection(track.Id, track.End).MapToResult()));
             });
+        services.AddEventSceneService(sceneId,
+            (TrackService ts) => ts.OnRemoved,
+            (StationPlatformService sps, Id<Track> trackId) => sps.RemoveForTrack(trackId).MapToResult());
+        services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);
+        services.AddSceneService<ClearJunctionSignalRules>(sceneId);
+        services.AddSceneService<JunctionSignalRuleService>(sceneId);
+        services.AddSceneService<JunctionSignalService>(sceneId);
         services.AddSceneService<PlaceVehicleHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);
         services.AddSceneService<StationPlatformAreaService>(sceneId);
-        services.AddEventSceneService(sceneId,
-            (TrackService ts) => ts.OnRemoved,
-            (StationPlatformService sps, Id<Track> trackId) => sps.RemoveForTrack(trackId).MapToResult());
         services.AddSceneService<TerrainService>(sceneId);
         services.AddSceneService<TrackSplineService>(sceneId);
         services.AddSceneService<VehicleJunctionCrossingService>(sceneId);
@@ -58,19 +59,19 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<DayTimeSteppingService>(sceneId);
 
         // Non-scene singletons (dependencies only, not in scene lifecycle)
-        services.AddSingleton<JunctionService>();
-        services.AddSingleton<JunctionSignalRuleEvaluationService>();
-        services.AddSingleton<StationPlatformService>();
-        services.AddSingleton<StationNameGenerator>();
-        services.AddSingleton<StationService>();
-        services.AddSingleton<TrackConnectionService>();
-        services.AddSingleton<TrackService>();
-        services.AddSingleton<TrackPlacingService>();
-        services.AddSingleton<TrackLineStripDataService>();
-        services.AddSingleton<TrackValidationService>();
-        services.AddSingleton<VehicleJunctionService>();
-        services.AddSingleton<VehiclePositionService>();
-        services.AddSingleton<VehicleService>();
+        services.TryAddScoped<JunctionService>();
+        services.TryAddScoped<JunctionSignalRuleEvaluationService>();
+        services.TryAddScoped<StationPlatformService>();
+        services.TryAddScoped<StationNameGenerator>();
+        services.TryAddScoped<StationService>();
+        services.TryAddScoped<TrackConnectionService>();
+        services.TryAddScoped<TrackService>();
+        services.TryAddScoped<TrackPlacingService>();
+        services.TryAddScoped<TrackLineStripDataService>();
+        services.TryAddScoped<TrackValidationService>();
+        services.TryAddScoped<VehicleJunctionService>();
+        services.TryAddScoped<VehiclePositionService>();
+        services.TryAddScoped<VehicleService>();
 
         return services;
     }

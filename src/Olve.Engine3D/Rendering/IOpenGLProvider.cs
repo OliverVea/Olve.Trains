@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.OpenGL;
@@ -12,22 +13,22 @@ public static class OpenGLServiceRegistration
 {
     public static IServiceCollection AddOpenGLServices(this IServiceCollection services)
     {
-        services.AddSingleton<OpenGLBufferManager>();
-        services.AddSingleton<OpenGLInstancedBufferManager>();
-        services.AddSingleton<OpenGLModelRenderingManager>();
-        services.AddSingleton<OpenGLQuadRenderingManager>();
-        services.AddSingleton<OpenGLShaderManager>();
-        services.AddSingleton<OpenGLTextureManager>();
-        services.AddSingleton<Provider<GL>>();
-        services.AddSingleton<RenderingManager2D>();
-        services.AddSingleton<RenderingManager3D>();
-        services.AddSingleton<RenderingServiceHelper>();
-        services.AddSingleton<ShaderEntityManager>();
-        services.AddSingleton<TextureEntityManager>();
-        services.AddSingleton<TextureManager>();
-        services.AddSingleton<TextureSlotManager>();
-        services.AddSingleton<AssetLoader>();
-        services.AddSingleton<TextureLoadingManager>();
+        services.TryAddSingleton<Provider<GL>>();
+        services.TryAddScoped<OpenGLBufferManager>();
+        services.TryAddScoped<OpenGLInstancedBufferManager>();
+        services.TryAddScoped<OpenGLModelRenderingManager>();
+        services.TryAddScoped<OpenGLQuadRenderingManager>();
+        services.TryAddScoped<OpenGLShaderManager>();
+        services.TryAddScoped<OpenGLTextureManager>();
+        services.TryAddScoped<RenderingManager2D>();
+        services.TryAddScoped<RenderingManager3D>();
+        services.TryAddScoped<RenderingServiceHelper>();
+        services.TryAddScoped<ShaderEntityManager>();
+        services.TryAddScoped<TextureEntityManager>();
+        services.TryAddScoped<TextureManager>();
+        services.TryAddScoped<TextureSlotManager>();
+        services.TryAddScoped<AssetLoader>();
+        services.TryAddScoped<TextureLoadingManager>();
         return services;
     }
 }
