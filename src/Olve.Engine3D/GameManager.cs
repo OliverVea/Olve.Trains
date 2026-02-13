@@ -12,11 +12,11 @@ namespace Olve.Engine3D;
 public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvider, Provider<IInputContext> inputContextProvider, KeyboardManager keyboardManager, MouseManager mouseManager, SceneManager sceneManager, ScreenResizedEvent screenResizedEvent)
 {
     private Result _result = Result.Success();
-    private Id<IScene>[] _initialScenes = [];
+    private Id<IScene> _initialScene;
 
-    public Result Run(IWindow window, Id<IScene>[] initialScenes)
+    public Result Run(IWindow window, Id<IScene> initialScene)
     {
-        _initialScenes = initialScenes;
+        _initialScene = initialScene;
         windowProvider.Set(window);
 
         window.Load += OnLoad;
@@ -58,22 +58,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
             return problems.Prepend("Error while initializing input");
         }
 
-        foreach (var sceneId in _initialScenes)
-        {
-            var result = sceneManager.LoadScene(sceneId);
-            if (result.TryPickProblems(out problems))
-            {
-                return problems.Prepend("Error while loading scene with id '{0}'", sceneId);
-            }
-
-            result = sceneManager.ActivateScene(sceneId);
-            if (result.TryPickProblems(out problems))
-            {
-                return problems.Prepend("Error while activating scene with id '{0}'", sceneId);
-            }
-        }
-
-        return Result.Success();
+        return sceneManager.LoadAndActivateScene(_initialScene);
     }
 
     private Result<(GL, IInputContext)> SetupContexts() =>
