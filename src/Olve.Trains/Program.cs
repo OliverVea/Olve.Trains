@@ -30,15 +30,11 @@ public static class Program
         {
             ValidateOnBuild = true,
             ValidateScopes = true,
-        }).CreateScope().ServiceProvider;
+        });
 
         var window = Window.Create(WindowOptions);
         var gameManager = serviceProvider.GetRequiredService<GameManager>();
-        var result = gameManager.Run(window, [
-            SceneIds.GameLogicScene,
-            SceneIds.GameRenderingScene,
-            SceneIds.GameUIScene
-        ]);
+        var result = gameManager.Run(window, SceneIds.MainMenuScene);
 
         return LogResult(result);
     }

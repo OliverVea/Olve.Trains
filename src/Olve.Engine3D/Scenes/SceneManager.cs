@@ -1,58 +1,187 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Scenes;
 
-public class SceneManager(IEnumerable<IScene> scenes)
+public class SceneManager(
+    IServiceProvider rootProvider,
+    IEnumerable<SceneDefinition> definitions,
+    ILoggerFactory loggerFactory)
 {
-    private readonly List<IScene> _scenes = scenes.OrderBy(x => x.LayerOrder).ThenBy(x => x.Layer).ToList();
+    private readonly ILogger<SceneManager> _logger = loggerFactory.CreateLogger<SceneManager>();
+    private readonly ILogger<Scene> _sceneLogger = loggerFactory.CreateLogger<Scene>();
+
+    private readonly Dictionary<Id<IScene>, SceneDefinition> _definitions =
+        definitions.ToDictionary(d => d.Id);
+
+    // Loaded scene tracking
+    private readonly Dictionary<Id<IScene>, IScene> _loadedScenes = new();
+    private readonly Dictionary<Id<IScene>, List<Id<IScene>>> _children = new();
+
+    // Scope tracking: root scene ID -> scope
+    private readonly Dictionary<Id<IScene>, IServiceScope> _scopes = new();
+    private readonly Dictionary<Id<IScene>, Id<IScene>> _scopeOwner = new(); // scene -> root scene
+
+    private List<IScene>? _orderedCache;
 
     public Result LoadScene(Id<IScene> sceneId)
     {
-        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
+        if (!_definitions.TryGetValue(sceneId, out var definition))
         {
-            return new ResultProblem("IScene with id '{0}' does not exist", sceneId);
+            return new ResultProblem("Scene definition with id '{0}' does not exist", sceneId);
         }
 
-        if (scene.State != SceneState.Unloaded)
+        if (_loadedScenes.ContainsKey(sceneId))
         {
-            return new ResultProblem("IScene with id '{0}' is not unloaded", sceneId);
+            return Result.Success(); // already loaded
         }
+
+        // If has parent and parent not loaded, load parent first
+        if (definition.ParentId is { } parentId && !_loadedScenes.ContainsKey(parentId))
+        {
+            var parentResult = LoadScene(parentId);
+            if (parentResult.TryPickProblems(out var parentProblems))
+            {
+                return parentProblems.Prepend("Failed to load parent scene '{0}' for scene '{1}'", parentId, sceneId);
+            }
+        }
+
+        // Get or create scope
+        IServiceScope scope;
+        Id<IScene> rootId;
+        if (definition.ParentId is { } pid && _scopeOwner.TryGetValue(pid, out var existingRoot))
+        {
+            // Child scene: reuse parent's scope
+            rootId = existingRoot;
+            scope = _scopes[rootId];
+        }
+        else if (definition.ParentId is null)
+        {
+            // Root scene: create new scope
+            rootId = sceneId;
+            scope = rootProvider.CreateScope();
+            _scopes[rootId] = scope;
+        }
+        else
+        {
+            return new ResultProblem("Parent scene '{0}' is loaded but has no scope owner", definition.ParentId);
+        }
+
+        _scopeOwner[sceneId] = rootId;
+
+        // Resolve scene services from the scope
+        var sp = scope.ServiceProvider;
+        var sceneServices = sp.GetKeyedServices<ISceneService>(sceneId);
+
+        var scene = new Scene(_sceneLogger, sceneServices, sceneId, definition.Name, definition.LayerOrder);
+
+        _logger.LogDebug("Loading scene '{SceneName}' (id: {SceneId})", definition.Name, sceneId);
 
         var loadResult = scene.Load();
         if (loadResult.TryPickProblems(out var problems))
         {
-            scene.State = SceneState.Unloaded;
-            return problems.Prepend("Error occurred while loading scene with id '{0}'", sceneId);
+            // Cleanup on failure
+            _scopeOwner.Remove(sceneId);
+            if (rootId == sceneId)
+            {
+                scope.Dispose();
+                _scopes.Remove(rootId);
+            }
+
+            return problems.Prepend("Error occurred while loading scene '{0}'", sceneId);
         }
 
         scene.State = SceneState.Inactive;
-        
+        _loadedScenes[sceneId] = scene;
+
+        // Track parent-child relationship
+        if (definition.ParentId is { } parentSceneId)
+        {
+            if (!_children.TryGetValue(parentSceneId, out var childList))
+            {
+                childList = [];
+                _children[parentSceneId] = childList;
+            }
+
+            childList.Add(sceneId);
+        }
+
+        _orderedCache = null;
+
         return Result.Success();
     }
 
     public Result UnloadScene(Id<IScene> sceneId)
     {
-        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
+        if (!_loadedScenes.TryGetValue(sceneId, out var scene))
         {
-            return new ResultProblem("IScene with id '{0}' does not exist", sceneId);
+            return new ResultProblem("Scene with id '{0}' is not loaded", sceneId);
         }
+
+        // Unload children first (depth-first cascading)
+        if (_children.TryGetValue(sceneId, out var childIds))
+        {
+            foreach (var childId in childIds.ToArray())
+            {
+                var childResult = UnloadScene(childId);
+                if (childResult.TryPickProblems(out var childProblems))
+                {
+                    return childProblems.Prepend("Failed to unload child scene '{0}'", childId);
+                }
+            }
+
+            _children.Remove(sceneId);
+        }
+
+        // Deactivate if active
+        if (scene.State == SceneState.Active)
+        {
+            scene.State = SceneState.Inactive;
+        }
+
+        _logger.LogDebug("Unloading scene '{SceneId}'", sceneId);
 
         scene.Unload();
         scene.State = SceneState.Unloaded;
-        
+        _loadedScenes.Remove(sceneId);
+
+        // Remove from parent's child list
+        if (_definitions.TryGetValue(sceneId, out var definition) && definition.ParentId is { } parentId)
+        {
+            if (_children.TryGetValue(parentId, out var parentChildren))
+            {
+                parentChildren.Remove(sceneId);
+            }
+        }
+
+        // If this is the scope owner (root), dispose the scope
+        if (_scopeOwner.TryGetValue(sceneId, out var rootId))
+        {
+            _scopeOwner.Remove(sceneId);
+
+            if (rootId == sceneId && _scopes.TryGetValue(rootId, out var scope))
+            {
+                scope.Dispose();
+                _scopes.Remove(rootId);
+            }
+        }
+
+        _orderedCache = null;
+
         return Result.Success();
     }
 
     public Result ActivateScene(Id<IScene> sceneId)
     {
-        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
+        if (!_loadedScenes.TryGetValue(sceneId, out var scene))
         {
-            return new ResultProblem("IScene with id '{0}' does not exist", sceneId);
+            return new ResultProblem("Scene with id '{0}' is not loaded", sceneId);
         }
 
         if (scene.State != SceneState.Inactive)
         {
-            return new ResultProblem("IScene with id '{0}' is not inactive", sceneId);
+            return new ResultProblem("Scene with id '{0}' is not inactive (state: {1})", sceneId, scene.State);
         }
 
         scene.State = SceneState.Active;
@@ -62,14 +191,30 @@ public class SceneManager(IEnumerable<IScene> scenes)
 
     public Result DeactivateScene(Id<IScene> sceneId)
     {
-        if (_scenes.FirstOrDefault(x => x.Id == sceneId) is not {} scene)
+        if (!_loadedScenes.TryGetValue(sceneId, out var scene))
         {
-            return new ResultProblem("IScene with id '{0}' does not exist", sceneId);
+            return new ResultProblem("Scene with id '{0}' is not loaded", sceneId);
         }
 
         if (scene.State != SceneState.Active)
         {
-            return new ResultProblem("IScene with id '{0}' is not active", sceneId);
+            return new ResultProblem("Scene with id '{0}' is not active (state: {1})", sceneId, scene.State);
+        }
+
+        // Deactivate children first
+        if (_children.TryGetValue(sceneId, out var childIds))
+        {
+            foreach (var childId in childIds.ToArray())
+            {
+                if (_loadedScenes.TryGetValue(childId, out var child) && child.State == SceneState.Active)
+                {
+                    var childResult = DeactivateScene(childId);
+                    if (childResult.TryPickProblems(out var childProblems))
+                    {
+                        return childProblems.Prepend("Failed to deactivate child scene '{0}'", childId);
+                    }
+                }
+            }
         }
 
         scene.State = SceneState.Inactive;
@@ -77,9 +222,78 @@ public class SceneManager(IEnumerable<IScene> scenes)
         return Result.Success();
     }
 
+    public Result LoadAndActivateScene(Id<IScene> sceneId)
+    {
+        // LoadScene auto-loads parents. Collect all scenes that get loaded.
+        var loadedInOrder = new List<Id<IScene>>();
+        CollectLoadOrder(sceneId, loadedInOrder);
+
+        foreach (var id in loadedInOrder)
+        {
+            var loadResult = LoadScene(id);
+            if (loadResult.TryPickProblems(out var problems))
+            {
+                return problems.Prepend("Failed to load scene '{0}'", id);
+            }
+        }
+
+        // Activate in parent-first order
+        foreach (var id in loadedInOrder)
+        {
+            if (_loadedScenes.TryGetValue(id, out var scene) && scene.State == SceneState.Inactive)
+            {
+                var activateResult = ActivateScene(id);
+                if (activateResult.TryPickProblems(out var problems))
+                {
+                    return problems.Prepend("Failed to activate scene '{0}'", id);
+                }
+            }
+        }
+
+        return Result.Success();
+    }
+
+    public Result DeactivateAndUnloadScene(Id<IScene> sceneId)
+    {
+        if (_loadedScenes.TryGetValue(sceneId, out var scene) && scene.State == SceneState.Active)
+        {
+            var deactivateResult = DeactivateScene(sceneId);
+            if (deactivateResult.TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+        }
+
+        return UnloadScene(sceneId);
+    }
+
+    private void CollectLoadOrder(Id<IScene> sceneId, List<Id<IScene>> result)
+    {
+        if (result.Contains(sceneId)) return;
+
+        if (_definitions.TryGetValue(sceneId, out var definition) && definition.ParentId is { } parentId)
+        {
+            CollectLoadOrder(parentId, result);
+        }
+
+        result.Add(sceneId);
+    }
+
+    private List<IScene> GetOrderedScenes()
+    {
+        if (_orderedCache != null) return _orderedCache;
+
+        _orderedCache = _loadedScenes.Values
+            .OrderBy(x => x.LayerOrder)
+            .ThenBy(x => x.Layer)
+            .ToList();
+
+        return _orderedCache;
+    }
+
     public Result Input(TimeSpan gameTime)
     {
-        foreach (var scene in _scenes)
+        foreach (var scene in GetOrderedScenes())
         {
             if (scene.State != SceneState.Active)
             {
@@ -103,7 +317,7 @@ public class SceneManager(IEnumerable<IScene> scenes)
 
     public Result Update(TimeSpan gameTime)
     {
-        foreach (var scene in _scenes)
+        foreach (var scene in GetOrderedScenes())
         {
             if (scene.State != SceneState.Active)
             {
@@ -122,7 +336,7 @@ public class SceneManager(IEnumerable<IScene> scenes)
 
     public Result Render(TimeSpan deltaTime)
     {
-        foreach (var scene in _scenes)
+        foreach (var scene in GetOrderedScenes())
         {
             if (scene.State != SceneState.Active)
             {
@@ -141,14 +355,14 @@ public class SceneManager(IEnumerable<IScene> scenes)
 
     public void Close()
     {
-        foreach (var scene in _scenes)
-        {
-            if (scene.State == SceneState.Unloaded)
-            {
-                continue;
-            }
+        // Unload all root scenes (cascading to children)
+        var rootSceneIds = _loadedScenes.Keys
+            .Where(id => _definitions.TryGetValue(id, out var def) && def.ParentId is null)
+            .ToArray();
 
-            scene.Unload();
+        foreach (var rootId in rootSceneIds)
+        {
+            UnloadScene(rootId);
         }
     }
 }

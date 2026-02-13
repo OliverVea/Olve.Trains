@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.GUI;
@@ -32,17 +31,16 @@ public static class GameServiceRegistration
         services.AddOpenGLServices();
         services.AddGuiServices();
 
-        // Core singletons
-        services.TryAddScoped<GameManager>();
-        services.TryAddScoped<SceneManager>();
-        services.TryAddScoped<KeyboardManager>();
-        services.TryAddScoped<MouseManager>();
-        services.TryAddScoped<DayTimeManager>();
-        services.TryAddScoped<DaylightManager>();
-        services.TryAddScoped<ScreenResizedEvent>();
-        services.TryAddScoped<TextureLoadingManager>();
-        services.TryAddScoped<CommandHandlerServiceCollection>();
-        services.TryAddScoped<EventQueueFactory>();
+        // Engine infrastructure (singletons - shared across all scopes)
+        services.AddSingleton<GameManager>();
+        services.AddSingleton<SceneManager>();
+        services.AddSingleton<KeyboardManager>();
+        services.AddSingleton<MouseManager>();
+        services.AddSingleton<DayTimeManager>();
+        services.AddSingleton<DaylightManager>();
+        services.AddSingleton<ScreenResizedEvent>();
+        services.AddSingleton<CommandHandlerServiceCollection>();
+        services.AddSingleton<EventQueueFactory>();
 
         // Scene services
         services.AddMainMenuSceneServices();
@@ -50,22 +48,16 @@ public static class GameServiceRegistration
         services.AddGameRenderingSceneServices();
         services.AddUISceneServices();
 
-        // Scenes
-        services.TryAddScoped<IEnumerable<IScene>>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<Scene>>();
-            return
-            [
-                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.MainMenuScene),
-                    SceneIds.MainMenuScene, "MainMenuScene", 0),
-                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameLogicScene),
-                    SceneIds.GameLogicScene, "GameScene"),
-                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameRenderingScene),
-                    SceneIds.GameRenderingScene, "RenderingScene", 1),
-                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameUIScene),
-                    SceneIds.GameUIScene, "UIScene", 2),
-            ];
-        });
+        // Scene definitions
+        services.AddSingleton<IEnumerable<SceneDefinition>>(_ =>
+        [
+            new(SceneIds.MainMenuScene, "MainMenuScene", LayerOrder: 0),
+            new(SceneIds.GameLogicScene, "GameScene"),
+            new(SceneIds.GameRenderingScene, "RenderingScene", LayerOrder: 1,
+                ParentId: SceneIds.GameLogicScene),
+            new(SceneIds.GameUIScene, "UIScene", LayerOrder: 2,
+                ParentId: SceneIds.GameRenderingScene),
+        ]);
 
         return services;
     }

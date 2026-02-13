@@ -27,7 +27,11 @@
       "Bash(git add:*)",
       "Bash(dotnet test:*)",
       "Bash(xargs:*)",
-      "Bash(dotnet add:*)"
+      "Bash(dotnet add:*)",
+      "WebFetch(domain:www.nuget.org)",
+      "WebFetch(domain:olivervea.github.io)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(dotnet list:*)"
     ],
     "deny": [],
     "ask": []

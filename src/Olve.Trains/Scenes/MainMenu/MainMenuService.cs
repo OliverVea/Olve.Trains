@@ -73,36 +73,12 @@ public class MainMenuService(
     {
         var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
 
-        if (sceneManager.DeactivateScene(SceneIds.MainMenuScene).TryPickProblems(out var problems))
+        if (sceneManager.DeactivateAndUnloadScene(SceneIds.MainMenuScene)
+            .TryPickProblems(out var problems))
         {
             return problems;
         }
 
-        if (sceneManager.UnloadScene(SceneIds.MainMenuScene).TryPickProblems(out problems))
-        {
-            return problems;
-        }
-
-        Id<IScene>[] gameScenes =
-        [
-            SceneIds.GameLogicScene,
-            SceneIds.GameRenderingScene,
-            SceneIds.GameUIScene,
-        ];
-
-        foreach (var sceneId in gameScenes)
-        {
-            if (sceneManager.LoadScene(sceneId).TryPickProblems(out problems))
-            {
-                return problems.Prepend("Failed to load scene '{0}'", sceneId);
-            }
-
-            if (sceneManager.ActivateScene(sceneId).TryPickProblems(out problems))
-            {
-                return problems.Prepend("Failed to activate scene '{0}'", sceneId);
-            }
-        }
-
-        return Result.Success();
+        return sceneManager.LoadAndActivateScene(SceneIds.GameUIScene);
     }
 }
