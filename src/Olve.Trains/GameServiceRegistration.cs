@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
@@ -32,16 +33,16 @@ public static class GameServiceRegistration
         services.AddGuiServices();
 
         // Core singletons
-        services.AddSingleton<GameManager>();
-        services.AddSingleton<SceneManager>();
-        services.AddSingleton<KeyboardManager>();
-        services.AddSingleton<MouseManager>();
-        services.AddSingleton<DayTimeManager>();
-        services.AddSingleton<DaylightManager>();
-        services.AddSingleton<ScreenResizedEvent>();
-        services.AddSingleton<TextureLoadingManager>();
-        services.AddSingleton<CommandHandlerServiceCollection>();
-        services.AddSingleton<EventQueueFactory>();
+        services.TryAddScoped<GameManager>();
+        services.TryAddScoped<SceneManager>();
+        services.TryAddScoped<KeyboardManager>();
+        services.TryAddScoped<MouseManager>();
+        services.TryAddScoped<DayTimeManager>();
+        services.TryAddScoped<DaylightManager>();
+        services.TryAddScoped<ScreenResizedEvent>();
+        services.TryAddScoped<TextureLoadingManager>();
+        services.TryAddScoped<CommandHandlerServiceCollection>();
+        services.TryAddScoped<EventQueueFactory>();
 
         // Scene services
         services.AddMainMenuSceneServices();
@@ -50,7 +51,7 @@ public static class GameServiceRegistration
         services.AddUISceneServices();
 
         // Scenes
-        services.AddSingleton<IEnumerable<IScene>>(sp =>
+        services.TryAddScoped<IEnumerable<IScene>>(sp =>
         {
             var logger = sp.GetRequiredService<ILogger<Scene>>();
             return

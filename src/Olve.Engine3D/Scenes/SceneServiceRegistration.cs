@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Systems;
 using Olve.Utilities.Ids;
 
@@ -11,8 +12,8 @@ public static class SceneServiceRegistration
         public IServiceCollection AddSceneService<T>(Id<IScene> sceneId)
             where T : class, ISceneService
         {
-            services.AddSingleton<T>();
-            services.AddKeyedSingleton<ISceneService>(sceneId, (sp, _) => sp.GetRequiredService<T>());
+            services.TryAddScoped<T>();
+            services.AddKeyedScoped<ISceneService>(sceneId, (sp, _) => sp.GetRequiredService<T>());
             return services;
         }
 
@@ -22,7 +23,7 @@ public static class SceneServiceRegistration
             Func<TEvent, Result> handler, bool propagateFailedUpdate = false)
             where TEventSource : notnull
         {
-            services.AddKeyedSingleton<ISceneService>(sceneId, (sp, _) =>
+            services.AddKeyedScoped<ISceneService>(sceneId, (sp, _) =>
             {
                 var factory = sp.GetRequiredService<EventQueueFactory>();
                 var queue = factory.Create(eventSelector(sp.GetRequiredService<TEventSource>()), handler);
@@ -39,7 +40,7 @@ public static class SceneServiceRegistration
             where TEventSource : notnull
             where THandler : notnull
         {
-            services.AddKeyedSingleton<ISceneService>(sceneId, (sp, _) =>
+            services.AddKeyedScoped<ISceneService>(sceneId, (sp, _) =>
             {
                 var eventSource = sp.GetRequiredService<TEventSource>();
                 var handlerService = sp.GetRequiredService<THandler>();
@@ -59,7 +60,7 @@ public static class SceneServiceRegistration
             where THandler1 : notnull
             where THandler2 : notnull
         {
-            services.AddKeyedSingleton<ISceneService>(sceneId, (sp, _) =>
+            services.AddKeyedScoped<ISceneService>(sceneId, (sp, _) =>
             {
                 var eventSource = sp.GetRequiredService<TEventSource>();
                 var handler1 = sp.GetRequiredService<THandler1>();

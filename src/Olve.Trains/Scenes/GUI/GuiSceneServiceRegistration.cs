@@ -39,7 +39,7 @@ public static class GuiSceneServiceRegistration
     private static void AddGuiSceneService<T>(IServiceCollection services, Id<IScene> sceneId)
         where T : class, ISceneService
     {
-        services.TryAddSingleton<T>();
-        services.AddKeyedSingleton<ISceneService>(sceneId, (sp, _) => sp.GetRequiredService<T>());
+        services.TryAddScoped<T>();
+        services.AddKeyedTransient<ISceneService>(sceneId, (sp, _) => sp.GetRequiredService<T>());
     }
 }

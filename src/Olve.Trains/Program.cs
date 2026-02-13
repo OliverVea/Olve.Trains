@@ -26,16 +26,18 @@ public static class Program
         var services = new ServiceCollection();
         services.AddAllServices(configuration);
 
-        using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
+        var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,
             ValidateScopes = true,
-        });
+        }).CreateScope().ServiceProvider;
 
         var window = Window.Create(WindowOptions);
         var gameManager = serviceProvider.GetRequiredService<GameManager>();
         var result = gameManager.Run(window, [
-            SceneIds.MainMenuScene,
+            SceneIds.GameLogicScene,
+            SceneIds.GameRenderingScene,
+            SceneIds.GameUIScene
         ]);
 
         return LogResult(result);
