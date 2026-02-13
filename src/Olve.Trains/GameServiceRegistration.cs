@@ -14,6 +14,7 @@ using Olve.Engine3D.Time;
 using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameRendering;
 using Olve.Trains.Scenes.GameUI;
+using Olve.Trains.Scenes.MainMenu;
 using Olve.Trains.Telemetry;
 
 namespace Olve.Trains;
@@ -43,6 +44,7 @@ public static class GameServiceRegistration
         services.AddSingleton<EventQueueFactory>();
 
         // Scene services
+        services.AddMainMenuSceneServices();
         services.AddGameLogicSceneServices();
         services.AddGameRenderingSceneServices();
         services.AddUISceneServices();
@@ -53,6 +55,8 @@ public static class GameServiceRegistration
             var logger = sp.GetRequiredService<ILogger<Scene>>();
             return
             [
+                new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.MainMenuScene),
+                    SceneIds.MainMenuScene, "MainMenuScene", 0),
                 new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameLogicScene),
                     SceneIds.GameLogicScene, "GameScene"),
                 new Scene(logger, sp.GetKeyedServices<ISceneService>(SceneIds.GameRenderingScene),

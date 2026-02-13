@@ -124,5 +124,48 @@ public class GuiElementService
         }
     }
 
+    public Result UnregisterElementAndChildren(Id<GuiElementRegistrations> registrationId)
+    {
+        // Collect all entries for this registration
+        var entriesToRemove = _forwardLookup
+            .Where(kvp => kvp.Key.RegistrationId == registrationId)
+            .ToList();
+
+        if (entriesToRemove.Count == 0)
+        {
+            return new ResultProblem("No elements found for registration '{0}'", registrationId);
+        }
+
+        var nodeIds = new HashSet<Id<GuiNode>>(entriesToRemove.Select(e => e.Value));
+
+        // Find root nodes (parent is an anchor, not another node in this registration)
+        var rootNodeIds = nodeIds
+            .Where(nodeId =>
+                _guiNodeService.TryGetParent(nodeId, out var parent)
+                && parent.TryGetT1(out _, out _))
+            .ToList();
+
+        // Remove root nodes via GuiNodeService (cascades to children)
+        foreach (var rootNodeId in rootNodeIds)
+        {
+            _guiNodeService.RemoveNode(rootNodeId);
+        }
+
+        // Clean up element maps
+        foreach (var (key, nodeId) in entriesToRemove)
+        {
+            _forwardLookup.Remove(key);
+            _backwardLookup.Remove(nodeId);
+            if (_guiElements.Remove(nodeId, out var element))
+            {
+                OnRemoved.Invoke(new GuiElementArgs(element.Id, registrationId, nodeId));
+            }
+        }
+
+        VerifyMapConsistency();
+
+        return Result.Success();
+    }
+
     public bool TryGetElement(Id<GuiNode> nodeId, [MaybeNullWhen(false)] out GuiElement guiElement) => _guiElements.TryGetValue(nodeId, out guiElement);
 }

@@ -25,6 +25,12 @@ public class GuiStyleApplierService(
         return Result.Success();
     }
 
+    public Result Unload()
+    {
+        _guiStateWeightsChangedQueue.Cleanup();
+        return Result.Success();
+    }
+
     public Result Update(TimeSpan deltaTime)
     {
         return _guiStateWeightsChangedQueue.Update();
@@ -35,8 +41,8 @@ public class GuiStyleApplierService(
     {
         if (!guiElementService.TryGetElement(message.NodeId, out var guiElement))
         {
-            return new ResultProblem(
-                "Could not find GUI element with node id '{0}'", message.NodeId);
+            logger.LogDebug("Ignoring state weight change for removed node '{NodeId}'", message.NodeId);
+            return Result.Success();
         }
 
         if (!styleRegistry.TryGetStyle(guiElement, out var style))

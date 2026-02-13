@@ -49,9 +49,9 @@ public class ToolBarService(
         guiActivationService.GuiElementActivated.Unsubscribe(OnGuiElementActivated);
         toolManagementService.ActiveToolChanged.Unsubscribe(OnActiveToolChanged);
 
+        guiElementService.UnregisterElementAndChildren(_registrationId);
         guiAnchorService.UnregisterAnchor(_anchorId);
 
-        // Todo: Unregister element and children
         return Result.Success();
     }
 

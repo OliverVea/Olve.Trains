@@ -1,14 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
-using Olve.Engine3D.GUI;
-using Olve.Engine3D.GUI.Input;
-using Olve.Engine3D.GUI.Layout;
-using Olve.Engine3D.GUI.Styling;
-using Olve.Engine3D.GUI.Styling.Animation;
 using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.GameUI.GUI;
 using Olve.Trains.Scenes.GameUI.Indicators;
 using Olve.Trains.Scenes.GameUI.Tools;
+using Olve.Trains.Scenes.GUI;
 
 namespace Olve.Trains.Scenes.GameUI;
 
@@ -18,6 +13,9 @@ public static class UISceneServiceRegistration
     {
         var sceneId = SceneIds.GameUIScene;
 
+        // Shared GUI services (rendering, layout, text, input, etc.)
+        services.AddGuiSceneServices(sceneId);
+
         // Tool / indicator services
         services.AddSceneService<TrackArrowIndicatorService>(sceneId);
         services.AddSceneService<TrackPlacingToolService>(sceneId);
@@ -26,26 +24,11 @@ public static class UISceneServiceRegistration
         services.AddSceneService<ToolBarService>(sceneId);
         services.AddSceneService<InfoBarService>(sceneId);
 
-        // GUI services
-        services.AddSceneService<GuiLayoutContextUpdater>(sceneId);
-        services.AddSceneService<GuiLayoutUpdateService>(sceneId);
-        services.AddSceneService<GuiRectangleRenderingService>(sceneId);
-        services.AddSceneService<GuiRectangleUpdateService>(sceneId);
-        services.AddSceneService<GuiTextRenderingService>(sceneId);
-        services.AddSceneService<GuiTextUpdateService>(sceneId);
+        // Game-specific GUI services
         services.AddSceneService<GameStyleService>(sceneId);
-
-        // GUI engine scene services (from engine's GuiServiceRegistration)
-        services.AddSceneService<GuiDepthService>(sceneId);
-        services.AddSceneService<GuiLayoutService>(sceneId);
-        services.AddSceneService<GuiStateListenerService>(sceneId);
-        services.AddSceneService<GuiStyleApplierService>(sceneId);
-        services.AddSceneService<GuiAnimationService>(sceneId);
-        services.AddSceneService<GuiMouseInputService>(sceneId);
 
         // Non-scene singletons
         services.AddSingleton<ToolManagementService>();
-        services.AddSingleton<Provider<LayoutContext>>();
 
         return services;
     }

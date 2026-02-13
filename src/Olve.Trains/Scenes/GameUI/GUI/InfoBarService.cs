@@ -35,9 +35,9 @@ public class InfoBarService(
 
     public Result Unload()
     {
+        guiElementService.UnregisterElementAndChildren(_registrationId);
         guiAnchorService.UnregisterAnchor(_anchorId);
 
-        // Todo: Unregister element and children
         return Result.Success();
     }
 

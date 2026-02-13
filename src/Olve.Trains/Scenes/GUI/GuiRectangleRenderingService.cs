@@ -11,7 +11,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
 
-namespace Olve.Trains.Scenes.GameUI.GUI;
+namespace Olve.Trains.Scenes.GUI;
 
 public class GuiRectangleRenderingService(
     ILogger<GuiRectangleRenderingService> logger,
