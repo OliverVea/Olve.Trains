@@ -1,4 +1,3 @@
-using Olve.Engine3D.Assets;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;

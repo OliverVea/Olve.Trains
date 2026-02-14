@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Systems;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI;
