@@ -3,6 +3,7 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.GUI.Styling.Animation;
+using Olve.Trains.Scenes.GameUI.GUI;
 
 namespace Olve.Trains.Scenes.MainMenu;
 
@@ -17,15 +18,7 @@ public static class MainMenuStyles
     public static readonly GuiElementStyling<Box> MainMenuButtonStyle = new()
     {
         StyleKey = new StyleKey(nameof(MainMenuButtonStyle)),
-        StateTransitions = new()
-        {
-            [GuiNodeState.Focused] = new StateTransition(
-                In: new GuiTransition(new Ms(100), Easing.EaseOut),
-                Out: new GuiTransition(new Ms(100), Easing.EaseIn)),
-            [GuiNodeState.Pressed] = new StateTransition(
-                In: new GuiTransition(new Ms(25), Easing.EaseIn),
-                Out: new GuiTransition(new Ms(50), Easing.EaseOut)),
-        },
+        StateTransitions = Styles.ButtonTransitions,
         OnStateChanged = (box, weights) =>
         {
             var pressed = weights[GuiNodeState.Pressed];

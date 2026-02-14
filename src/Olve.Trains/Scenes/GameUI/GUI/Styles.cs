@@ -1,3 +1,4 @@
+using Olve.Engine3D;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
@@ -12,34 +13,49 @@ public static class Styles
     public const float DefaultPadding = 2;
     public const float DefaultBorderWidth = 1.5f;
 
-    public static readonly (float R, float G, float B, float A) DefaultBorder = (0.2f, 0.2f, 0.2f, 0.3f);
-    public static readonly (float R, float G, float B, float A) PanelBackground = (0.27f, 0.3f, 0.28f, 0.65f);
-    public static readonly (float R, float G, float B, float A) FocusBorder = (1, 1, 1, 1);
+    public static readonly RGBA DefaultBorder = (0.2f, 0.2f, 0.2f, 0.3f);
+    public static readonly RGBA PanelBackground = (0.27f, 0.3f, 0.28f, 0.65f);
+    public static readonly RGBA FocusBorder = (1, 1, 1, 1);
+    public static readonly RGBA DimTextColor = (0.75f, 0.75f, 0.75f, 1f);
+
+    public static readonly Dictionary<GuiNodeState, StateTransition> ButtonTransitions = new()
+    {
+        [GuiNodeState.Focused] = new StateTransition(
+            In: new GuiTransition(new Ms(100), Easing.EaseOut),
+            Out: new GuiTransition(new Ms(100), Easing.EaseIn)),
+        [GuiNodeState.Pressed] = new StateTransition(
+            In: new GuiTransition(new Ms(25), Easing.EaseIn),
+            Out: new GuiTransition(new Ms(50), Easing.EaseOut)),
+    };
+
+    private static Action<Box, StateWeights> ButtonOnStateChanged(int? width, int? height, int? aspectRatio) => (box, weights) =>
+    {
+        var pressed = weights[GuiNodeState.Pressed];
+        var focused = weights[GuiNodeState.Focused];
+
+        box.Height = height;
+        box.AspectRatio = aspectRatio;
+        box.Width = width;
+        box.BorderRadius = DefaultBorderRadius;
+        box.BorderWidth = DefaultBorderWidth + 0.5f * pressed;
+        box.BorderColor = Lerp(DefaultBorder, FocusBorder, focused);
+        box.Padding = Lerp(DefaultPadding, DefaultPadding * 2, pressed);
+        box.Justify = Justify.Center;
+        box.Align = Align.Center;
+    };
 
     public static readonly GuiElementStyling<Box> MenuButtonStyle = new()
     {
         StyleKey = new StyleKey(nameof(MenuButtonStyle)),
-        StateTransitions = new()
-        {
-            [GuiNodeState.Focused] = new StateTransition(
-                In: new GuiTransition(new Ms(100), Easing.EaseOut),
-                Out: new GuiTransition(new Ms(100), Easing.EaseIn)),
-            [GuiNodeState.Pressed] = new StateTransition(
-                In: new GuiTransition(new Ms(25), Easing.EaseIn),
-                Out: new GuiTransition(new Ms(50), Easing.EaseOut)),
-        },
-        OnStateChanged = (b, weights) =>
-        {
-            var pressed = weights[GuiNodeState.Pressed];
-            var focused = weights[GuiNodeState.Focused];
+        StateTransitions = ButtonTransitions,
+        OnStateChanged = ButtonOnStateChanged(null, 60, 1)
+    };
 
-            b.Height = 60;
-            b.AspectRatio = 1;
-            b.BorderRadius = DefaultBorderRadius;
-            b.BorderWidth = DefaultBorderWidth + 0.5f * pressed;
-            b.BorderColor = Lerp(DefaultBorder, FocusBorder, focused);
-            b.Padding = Lerp(DefaultPadding, DefaultPadding * 2, pressed);
-        }
+    public static readonly GuiElementStyling<Box> InfoBarButtonStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(InfoBarButtonStyle)),
+        StateTransitions = ButtonTransitions,
+        OnStateChanged = ButtonOnStateChanged(80, 25, null)
     };
 
     public static readonly GuiElementStyling<Box> MenuBarBackground = new()
@@ -69,14 +85,14 @@ public static class Styles
             var active = weights[GuiNodeState.Active];
 
             img.AspectRatio = 1;
-            img.Tint = Lerp((0.75f, 0.75f, 0.75f), (1f, 1f, 1f), active);
+            img.Tint = Lerp(RGBA.LightGrey, RGBA.White, active);
         }
     };
 
     public static readonly GuiElementStyling<Box> InfoBarBackground = new()
     {
         StyleKey = new StyleKey(nameof(InfoBarBackground)),
-        OnStateChanged =  (box, weights) =>
+        OnStateChanged =  (box, _) =>
         {
             box.BackgroundColor = PanelBackground;
             box.Align = Align.Stretch;
@@ -87,44 +103,31 @@ public static class Styles
     public static readonly GuiElementStyling<Box> InfoBarSection = new()
     {
         StyleKey = new StyleKey(nameof(InfoBarSection)),
-        OnStateChanged = (box, weights) =>
+        OnStateChanged = (box, _) =>
         {
             box.Weight = 1f;
             box.Align = Align.Center;
         }
     };
 
-    public static readonly GuiElementStyling<Text> InfoBarClockText = new()
+    public static readonly GuiElementStyling<Text> InfoTextMedium = new()
     {
-        StyleKey = new StyleKey(nameof(InfoBarClockText)),
-        OnStateChanged = (text, weights) =>
+        StyleKey = new StyleKey(nameof(InfoTextMedium)),
+        OnStateChanged = (text, _) =>
         {
-            text.Color = (0.75f, 0.75f, 0.75f, 1f);
+            text.Color = DimTextColor;
+            text.FontSize = 12f;
         }
     };
 
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
-    private static (float R, float G, float B, float A) Lerp(
-        (float R, float G, float B, float A) a,
-        (float R, float G, float B, float A) b,
-        float t)
+    private static RGBA Lerp(RGBA a, RGBA b, float t)
     {
         return (
             Lerp(a.R, b.R, t),
             Lerp(a.G, b.G, t),
             Lerp(a.B, b.B, t),
             Lerp(a.A, b.A, t));
-    }
-
-    private static (float R, float G, float B) Lerp(
-        (float R, float G, float B) a,
-        (float R, float G, float B) b,
-        float t)
-    {
-        return (
-            Lerp(a.R, b.R, t),
-            Lerp(a.G, b.G, t),
-            Lerp(a.B, b.B, t));
     }
 }

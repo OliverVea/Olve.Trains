@@ -7,6 +7,7 @@ public record TextRenderData(
     FontData? Font,
     string Content,
     float FontSize,
+    float FontWeight,
     RGBA Color,
     Align Align
 );

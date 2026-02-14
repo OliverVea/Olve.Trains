@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<Box id="Root" Justify="Justify.Center" Align="Align.Center">
+<Box id="Root" Justify="Justify.Center" Align="Align.Center" Vertical="true" Gap="4">
     <Box id="StartGameButton" Style="MainMenuButtonStyle" Interactive="true">
-        <Text id="StartGameText" Style="MainMenuButtonTextStyle" />
+        <Text Content='"Start Game"' Style="MainMenuButtonTextStyle" />
+    </Box>
+    <Box id="OptionsButton" Style="MainMenuButtonStyle" Interactive="true">
+        <Text Content='"Options"' Style="MainMenuButtonTextStyle" />
+    </Box>
+    <Box id="ExitGameButton" Style="MainMenuButtonStyle" Interactive="true">
+        <Text Content='"Exit Game"' Style="MainMenuButtonTextStyle" />
     </Box>
 </Box>

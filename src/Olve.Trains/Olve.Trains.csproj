@@ -7,6 +7,9 @@
     <ItemGroup>
         <None Update="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
         <None Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="logs\olve-trains.log">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Duende.IdentityModel" />
