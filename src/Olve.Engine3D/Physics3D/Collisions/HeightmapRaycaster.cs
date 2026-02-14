@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
+using System.Runtime.InteropServices.ComTypes;
 using Olve.Engine3D.Assets.Entities;
 
 namespace Olve.Engine3D.Physics3D.Collisions;
@@ -49,14 +51,19 @@ public class HeightmapRaycaster
                     return false;
                 }
 
-                var i = (int)float.Clamp(point.Value.X + 0.5f, 0, _heightmapData.Width - 1);
-                var j = (int)float.Clamp(point.Value.Z + 0.5f, 0, _heightmapData.Length - 1);
+                if (point.X < 0 || point.Z < 0 || point.X > _heightmapData.Width - 1 || point.Z > _heightmapData.Length - 1)
+                {
+                    return false;
+                }
+
+                var i = (int)float.Clamp(point.X + 0.5f, 0, _heightmapData.Width - 1);
+                var j = (int)float.Clamp(point.Z + 0.5f, 0, _heightmapData.Length - 1);
 
                 var height = _heightmapData.Heights[j * _heightmapData.Width + i] * _heightmapData.Step;
 
                 if (float.Abs(mid - height) < _epsilon + _heightmapData.Step)
                 {
-                    raycastHit = point.Value;
+                    raycastHit = point;
                     return true;
                 }
                 if (mid < height)

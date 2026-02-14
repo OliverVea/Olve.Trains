@@ -53,6 +53,7 @@ public class TerrainRaycastService(
     public Result Update(TimeSpan deltaTime)
     {
         TerrainIntersection = null;
+        TerrainIntersectionTileCenter = null;
 
         if (_heightmapRaycaster is null)
         {
@@ -68,7 +69,6 @@ public class TerrainRaycastService(
         {
             TerrainIntersection = intersection;
 
-            // Convert to 2D index
             var x = (int)intersection.Value.X;
             var z = (int)intersection.Value.Z;
 
