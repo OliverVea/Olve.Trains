@@ -34,7 +34,7 @@ public class Text : GuiElement, IRenderableAsText, IRenderableAsRectangle
             field = value;
             ComputedSize = null;
         }
-    } = 1f;
+    } = 0f;
     public Align Align { get; set; } = Align.Start;
 
     // Layout properties

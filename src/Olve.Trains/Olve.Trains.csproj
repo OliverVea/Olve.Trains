@@ -3,11 +3,15 @@
         <OutputType>WinExe</OutputType>
         <PublishSelfContained>true</PublishSelfContained>
         <AssemblyName>On Track To Grow</AssemblyName>
+        <UserSecretsId>51374f73-c6cc-486d-a620-dc72d2a4af28</UserSecretsId>
     </PropertyGroup>
     <ItemGroup>
         <None Update="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
         <None Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="logs\olve-trains.log">
+        <None Update="appsettings.local.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="appsettings.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
@@ -24,6 +28,9 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Olve.Engine3D\Olve.Engine3D.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="logs\" />
     </ItemGroup>
 
 </Project>

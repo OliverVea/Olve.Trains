@@ -25,13 +25,19 @@ public static class LoggingExtensions
             builder.AddConsole();
         }
 
-        if (loggingSection.GetValue("File:Enabled", false))
+        if (loggingSection.GetValue("File:Enabled", true))
         {
-            var path = loggingSection["File:Path"] ?? "logs/olve-trains.log";
-            builder.AddFile(path, append: true);
+            var today =  DateTime.Today;
+            var todayString = today.ToString("yyyy-MM-dd");
+            var path = loggingSection["File:Directory"] + $"/olve.trains-{todayString}.log";
+            builder.AddFile(path,
+                o =>
+                {
+                    o.Append = true;
+                });
         }
 
-        if (loggingSection.GetValue("OpenTelemetry:Enabled", false))
+        if (loggingSection.GetValue("OpenTelemetry:Enabled", true))
         {
             var otelSection = configuration.GetSection("OpenTelemetry");
             var endpoint = otelSection["Endpoint"];

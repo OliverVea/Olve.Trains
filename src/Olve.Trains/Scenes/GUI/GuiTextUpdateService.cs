@@ -83,7 +83,7 @@ public class GuiTextUpdateService(
                 guiLayoutService.SetNodeBox(nodeId, layoutBox);
             }
 
-            textRenderingService.UpdateText(nodeId, textData.Content, textData.FontSize);
+            textRenderingService.UpdateText(nodeId, textData.Content, textData.FontSize, textData.FontWeight);
         }
     }
 
@@ -131,7 +131,8 @@ public class GuiTextUpdateService(
             font,
             textureId,
             textData.Content,
-            textData.FontSize
+            textData.FontSize,
+            textData.FontWeight
         );
     }
 

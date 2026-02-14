@@ -10,6 +10,8 @@ out vec4 fragColor;
 // @pixelType(RGB)
 uniform sampler2D uFontAtlas;
 
+uniform float uFontWeight;
+
 // Median of RGB channels for MSDF
 float median(float r, float g, float b)
 {
@@ -22,7 +24,8 @@ void main()
     vec3 msd = texture(uFontAtlas, fs_in.texCoord).rgb;
 
     // Signed distance in range [-0.5, +0.5]
-    float sd = median(msd.r, msd.g, msd.b) - 0.5;
+    // uFontWeight: 0 = normal, 1 = bold (scaled to usable MSDF range)
+    float sd = median(msd.r, msd.g, msd.b) - 0.5 + uFontWeight * 0.15;
 
     // Convert distance to screen-space pixels
     float pxDist = sd / fwidth(sd);

@@ -17,10 +17,9 @@ public static class Program
     public static int Main()
     {
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: true)
+            //.SetBasePath(AppContext.BaseDirectory)
+            //.AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.local.json", optional: true)
-            .AddEnvironmentVariables()
             .Build();
 
         var services = new ServiceCollection();

@@ -2,7 +2,6 @@ using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
-using Olve.Engine3D.GUI.Styling.Animation;
 using Olve.Trains.Scenes.GameUI.GUI;
 
 namespace Olve.Trains.Scenes.MainMenu;
@@ -39,10 +38,15 @@ public static class MainMenuStyles
     public static readonly GuiElementStyling<Text> MainMenuButtonTextStyle = new()
     {
         StyleKey = new StyleKey(nameof(MainMenuButtonTextStyle)),
-        OnStateChanged = (text, _) =>
+        StateTransitions =  Styles.ButtonTransitions,
+        OnStateChanged = (text, weights) =>
         {
+            var focused = weights[GuiNodeState.Focused];
+
             text.Color = (0.9f, 0.9f, 0.9f, 1f);
             text.FontSize = 20;
+            text.FontWeight = focused * 1.5f;
+            text.FontSize = Lerp(16f, 18f, focused);
         }
     };
 
