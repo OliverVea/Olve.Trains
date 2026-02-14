@@ -20,29 +20,33 @@ public static class GameLogicSceneServiceRegistration
 
         // Scene services (participate in scene lifecycle)
         services.AddEventSceneService(sceneId,
-            (TrackService ts) => ts.OnAdded,
+            (TrackService ts) => ts.OnTrackAdded,
             (TrackService ts, JunctionService js, Id<Track> trackId) =>
             {
-                return ResultExtensions.Chain(
-                    () => ts.Get(trackId),
-                    track =>
-                        Result.Concat(
-                            js.AddJunctionConnection(track.Id, track.Start).ToEmptyResult(),
-                            js.AddJunctionConnection(track.Id, track.End).ToEmptyResult()));
+                if (!ts.TryGetTrack(trackId, out var track))
+                {
+                    return new ResultProblem("Track not found: '{0}'", trackId);
+                }
+
+                return Result.Concat(
+                    js.AddJunctionConnection(track.Id, track.Start).ToEmptyResult(),
+                    js.AddJunctionConnection(track.Id, track.End).ToEmptyResult());
             });
         services.AddEventSceneService(sceneId,
-            (TrackService ts) => ts.OnRemoved,
+            (TrackService ts) => ts.OnTrackRemoved,
             (TrackService ts, JunctionService js, Id<Track> trackId) =>
             {
-                return ResultExtensions.Chain(
-                    () => ts.Get(trackId),
-                    track =>
-                        Result.Concat(
-                            js.RemoveJunctionConnection(track.Id, track.Start).MapToResult(),
-                            js.RemoveJunctionConnection(track.Id, track.End).MapToResult()));
+                if (!ts.TryGetTrack(trackId, out var track))
+                {
+                    return new ResultProblem("Track not found: '{0}'", trackId);
+                }
+
+                return Result.Concat(
+                    js.RemoveJunctionConnection(track.Id, track.Start).MapToResult(),
+                    js.RemoveJunctionConnection(track.Id, track.End).MapToResult());
             });
         services.AddEventSceneService(sceneId,
-            (TrackService ts) => ts.OnRemoved,
+            (TrackService ts) => ts.OnTrackRemoved,
             (StationPlatformService sps, Id<Track> trackId) => sps.RemoveForTrack(trackId).MapToResult());
         services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);
         services.AddSceneService<ClearJunctionSignalRules>(sceneId);

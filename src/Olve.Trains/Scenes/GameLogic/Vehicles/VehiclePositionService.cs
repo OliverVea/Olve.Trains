@@ -10,13 +10,13 @@ public class VehiclePositionService(VehicleService vehicleService) : ISceneServi
 
     public Result Load()
     {
-        vehicleService.OnRemoved.Subscribe(OnRemoved);
+        vehicleService.OnVehicleRemoved.Subscribe(OnRemoved);
         return Result.Success();
     }
 
     public Result Unload()
     {
-        vehicleService.OnRemoved.Unsubscribe(OnRemoved);
+        vehicleService.OnVehicleRemoved.Unsubscribe(OnRemoved);
         return Result.Success();
     }
 

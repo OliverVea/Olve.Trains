@@ -1,14 +1,30 @@
-using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 using Olve.Engine3D.Systems;
 
 namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
-public class TrackService() : BaseEntityService<Track>(NullLogger.Instance)
+public class TrackService
 {
+    private readonly EntityStore<Track> _tracks = new();
+
+    public Event<Id<Track>> OnTrackAdded => _tracks.OnAdded;
+    public Event<Id<Track>> OnTrackRemoved => _tracks.OnRemoved;
+
     public Result<Id<Track>> AddTrack(TrackEndpoint start, TrackEndpoint end)
     {
         var trackId = Id.New<Track>();
         Track track = new(trackId, start, end);
-        return Add(track);
+        if (!_tracks.TryAdd(track))
+        {
+            return new ResultProblem("Track already exists: '{0}'", trackId);
+        }
+
+        return trackId;
     }
+
+    public bool TrackExists(Id<Track> trackId) => _tracks.Exists(trackId);
+
+    public bool TryGetTrack(Id<Track> trackId, out Track track) =>
+        _tracks.TryGet(trackId, out track);
+
 }

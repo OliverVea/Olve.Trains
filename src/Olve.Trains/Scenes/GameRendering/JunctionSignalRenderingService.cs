@@ -30,8 +30,8 @@ public class JunctionSignalRenderingService(
     private readonly Dictionary<Id<Junction>, RenderingInstanceId> _instanceIds = new();
     private readonly Shaders.Default _shader = new();
 
-    private readonly EventQueue<Id<Junction>> _junctionSignalAddedQueue = eventQueueFactory.Create(junctionSignalService.OnAdded);
-    private readonly EventQueue<Id<Junction>> _junctionSignalRemovedQueue = eventQueueFactory.Create(junctionSignalService.OnRemoved);
+    private readonly EventQueue<Id<Junction>> _junctionSignalAddedQueue = eventQueueFactory.Create(junctionSignalService.OnJunctionAdded);
+    private readonly EventQueue<Id<Junction>> _junctionSignalRemovedQueue = eventQueueFactory.Create(junctionSignalService.OnJunctionRemoved);
 
     public Result Load()
     {
@@ -126,9 +126,9 @@ public class JunctionSignalRenderingService(
             return new ResultProblem("Tried to add rendering instance of junction that already has rendering instance");
         }
 
-        if (junctionService.Get(junctionId).TryPickProblems(out var problems, out var junction))
+        if (!junctionService.TryGetJunction(junctionId, out var junction))
         {
-            return problems;
+            return new ResultProblem("Junction not found: '{0}'", junctionId);
         }
 
         var junctionWorld = Matrix4X4.CreateScale(0.2f)
@@ -137,7 +137,7 @@ public class JunctionSignalRenderingService(
                             * junction.Position.ToWorldMatrix();
 
         var renderingResult = renderingManager3D.RegisterInstance(_geometryId, _shader.RenderingId, junctionWorld);
-        if (renderingResult.TryPickProblems(out problems, out var junctionInstanceId))
+        if (renderingResult.TryPickProblems(out var problems, out var junctionInstanceId))
         {
             return problems;
         }

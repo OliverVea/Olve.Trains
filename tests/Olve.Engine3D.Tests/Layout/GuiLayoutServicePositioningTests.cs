@@ -25,7 +25,7 @@ public class GuiLayoutServicePositioningTests
         LayoutContext? ctx = null)
     {
         var svc = ge ?? new GuiNodeService(NullLogger<GuiNodeService>.Instance);
-        GuiAnchorService guiAnchorService = new();
+        GuiAnchorService guiAnchorService = new(NullLogger<GuiAnchorService>.Instance);
         Provider<LayoutContext> lcp = new(ctx ?? DefaultContext);
 
         // Register the default anchor

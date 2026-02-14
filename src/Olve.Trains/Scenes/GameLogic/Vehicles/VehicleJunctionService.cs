@@ -1,4 +1,4 @@
-﻿using Olve.Engine3D;
+using Olve.Engine3D;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
@@ -11,11 +11,11 @@ public class VehicleJunctionService(VehiclePositionService vehiclePositionServic
         if (!vehiclePositionService.TryGetTrackPosition(vehicleId, out var trackPosition))
         {
             return new ResultProblem("Vehicle does not have a track position - likely not on a track");
-        } 
-        
-        if (trackService.Get(trackPosition.TrackId).TryPickProblems(out var problems, out var track))
+        }
+
+        if (!trackService.TryGetTrack(trackPosition.TrackId, out var track))
         {
-            return problems;
+            return new ResultProblem("Track not found: '{0}'", trackPosition.TrackId);
         }
 
         if (trackPosition.Time < MathConstants.Epsilon && junctionService.TryGetJunctionId(track.Start, out var junctionId)
@@ -26,24 +26,24 @@ public class VehicleJunctionService(VehiclePositionService vehiclePositionServic
 
         return VehicleJunction.None;
     }
-    
+
     public Result<TrackEndpoint> GetVehicleTrackPoint(Id<Vehicle> vehicleId)
     {
         if (!vehiclePositionService.TryGetTrackPosition(vehicleId, out var trackPosition))
         {
             return new ResultProblem("Vehicle does not have a track position - likely not on a track");
-        } 
-        
-        if (trackService.Get(trackPosition.TrackId).TryPickProblems(out var problems, out var track))
+        }
+
+        if (!trackService.TryGetTrack(trackPosition.TrackId, out var track))
         {
-            return problems;
+            return new ResultProblem("Track not found: '{0}'", trackPosition.TrackId);
         }
 
         if (trackPosition.Time < 0.5f)
         {
             return track.Start;
         }
-        
+
         return track.End;
     }
 
@@ -52,21 +52,20 @@ public class VehicleJunctionService(VehiclePositionService vehiclePositionServic
         if (!vehiclePositionService.TryGetTrackPosition(vehicleId, out var trackPosition))
         {
             return new ResultProblem("Vehicle does not have a track position - likely not on a track");
-        } 
-
-        if (trackService.Get(trackId).TryPickProblems(out var problems, out var track))
-        {
-            return problems;
         }
-            
-        if (trackSplineService.GetPosition(trackPosition.TrackId, trackPosition.Time).TryPickProblems(out problems, out var position))
+
+        if (!trackService.TryGetTrack(trackId, out var track))
+        {
+            return new ResultProblem("Track not found: '{0}'", trackId);
+        }
+
+        if (trackSplineService.GetPosition(trackPosition.TrackId, trackPosition.Time).TryPickProblems(out var problems, out var position))
         {
             return problems.Prepend("Failed to sample point with t '{0}' on track with id '{1}' for vehicle with id '{2}'", trackPosition.Time, trackPosition.TrackId, vehicleId);
         }
-        
+
         var endDelta = position.Position - track.End.Point;
-        
+
         return endDelta.Length < MathConstants.Epsilon;
     }
 }
-

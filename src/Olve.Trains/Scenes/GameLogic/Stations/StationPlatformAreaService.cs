@@ -14,10 +14,11 @@ public class StationPlatformAreaService(
     private readonly Dictionary<Id<StationPlatform>, Id<AABB>> _stationPlatformAABBLookup = new();
     private readonly AABBLinearLookup<Id<StationPlatform>> _stationPlatformLookup = new();
 
+    // TODO: Use event service
     private readonly EventQueue<Id<StationPlatform>> _addedQueue =
-        eventQueueFactory.Create(stationPlatformService.OnAdded);
+        eventQueueFactory.Create(stationPlatformService.OnPlatformAdded);
     private readonly EventQueue<Id<StationPlatform>> _removedQueue =
-        eventQueueFactory.Create(stationPlatformService.OnRemoved);
+        eventQueueFactory.Create(stationPlatformService.OnPlatformRemoved);
 
     public Result Load()
     {
@@ -53,7 +54,7 @@ public class StationPlatformAreaService(
             return Result.Success();
         }
 
-        if (!stationPlatformService.TryGet(stationPlatformId, out var stationPlatform))
+        if (!stationPlatformService.TryGetPlatform(stationPlatformId, out var stationPlatform))
         {
             return new ResultProblem("Could not find station platform with id '{0}'", stationPlatformId);
         }

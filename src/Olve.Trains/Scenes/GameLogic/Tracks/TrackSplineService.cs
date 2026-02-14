@@ -10,13 +10,13 @@ public class TrackSplineService(TrackService trackService) : ISceneService
 
     public Result Load()
     {
-        trackService.OnRemoved.Subscribe(OnRemoved);
+        trackService.OnTrackRemoved.Subscribe(OnRemoved);
         return Result.Success();
     }
 
     public Result Unload()
     {
-        trackService.OnRemoved.Unsubscribe(OnRemoved);
+        trackService.OnTrackRemoved.Unsubscribe(OnRemoved);
         return Result.Success();
     }
 
@@ -132,7 +132,7 @@ public class TrackSplineService(TrackService trackService) : ISceneService
 
     private Result<UniformHermite<Vector3D<float>>> CreateSpline(Id<Track> trackId)
     {
-        if (!trackService.TryGet(trackId, out var track))
+        if (!trackService.TryGetTrack(trackId, out var track))
         {
             return new ResultProblem("Failed to get track");
         }

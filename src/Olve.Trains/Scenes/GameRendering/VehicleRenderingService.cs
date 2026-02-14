@@ -37,8 +37,8 @@ public class VehicleRenderingService(
 
     private GeometryId _geometryId;
     private readonly Dictionary<Id<Vehicle>, RenderingInstanceId> _instanceIds  = new();
-    private readonly EventQueue<Id<Vehicle>> _toAddQueue = eventQueueFactory.Create(vehicleService.OnAdded);
-    private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = eventQueueFactory.Create(vehicleService.OnRemoved);
+    private readonly EventQueue<Id<Vehicle>> _toAddQueue = eventQueueFactory.Create(vehicleService.OnVehicleAdded);
+    private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = eventQueueFactory.Create(vehicleService.OnVehicleRemoved);
     private readonly Shaders.Default _shader = new();
     private float _scale = 1;
 

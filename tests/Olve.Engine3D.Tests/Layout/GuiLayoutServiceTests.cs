@@ -23,7 +23,7 @@ public class GuiLayoutServiceTests
     private static (GuiNodeService, Provider<LayoutContext>, GuiLayoutService) BuildSut(LayoutContext? layoutContext = null)
     {
         GuiNodeService guiNodeService = new(NullLogger<GuiNodeService>.Instance);
-        GuiAnchorService guiAnchorService = new();
+        GuiAnchorService guiAnchorService = new(NullLogger<GuiAnchorService>.Instance);
         Provider<LayoutContext> layoutContextProvider = new(layoutContext ?? DefaultContext);
         GuiLayoutService guiLayoutService = new(NullLogger<GuiLayoutService>.Instance, guiNodeService, guiAnchorService, layoutContextProvider);
 

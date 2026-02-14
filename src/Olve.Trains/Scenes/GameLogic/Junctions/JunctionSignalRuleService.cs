@@ -17,15 +17,15 @@ public sealed class JunctionSignalRuleService(ILogger<JunctionSignalRuleService>
 
     public Result Load()
     {
-        junctionSignalService.OnAdded.Subscribe(OnAdded);
-        junctionSignalService.OnRemoved.Subscribe(OnRemoved);
+        junctionSignalService.OnJunctionAdded.Subscribe(OnAdded);
+        junctionSignalService.OnJunctionRemoved.Subscribe(OnRemoved);
         return Result.Success();
     }
 
     public Result Unload()
     {
-        junctionSignalService.OnAdded.Unsubscribe(OnAdded);
-        junctionSignalService.OnRemoved.Unsubscribe(OnRemoved);
+        junctionSignalService.OnJunctionAdded.Unsubscribe(OnAdded);
+        junctionSignalService.OnJunctionRemoved.Unsubscribe(OnRemoved);
         return Result.Success();
     }
 
