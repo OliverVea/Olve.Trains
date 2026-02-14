@@ -4,11 +4,11 @@ namespace Olve.Engine3D.Physics3D.Collisions;
 
 public static class RayExtensions
 {
-    public static bool TryEvaluateWithY(this Ray3D<float> ray, float y, [NotNullWhen(true)] out Vector3D<float>? point)
+    public static bool TryEvaluateWithY(this Ray3D<float> ray, float y, [MaybeNullWhen(false)] out Vector3D<float> point)
     {
         if (float.Abs(ray.Direction.Y) <= 1e-10)
         {
-            point = null;
+            point = default;
             return false;
         }
 
