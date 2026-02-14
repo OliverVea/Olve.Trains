@@ -13,7 +13,8 @@ public class GameStyleService(
     [
         Styles.MenuButtonStyle, Styles.MenuBarBackground,
         Styles.ToolIconStyle, Styles.InfoBarBackground,
-        Styles.InfoBarSection, Styles.InfoBarClockText
+        Styles.InfoBarSection, Styles.InfoTextMedium,
+        Styles.InfoBarButtonStyle
     ];
 
     public Result Load()

@@ -3,8 +3,11 @@
     <Box Style="InfoBarSection" Justify="Justify.Start">
     </Box>
     <Box Style="InfoBarSection" Justify="Justify.Center">
-        <Text Id="Clock" Style="InfoBarClockText" />
+        <Text Id="Clock" Style="InfoTextMedium" />
     </Box>
     <Box Style="InfoBarSection" Justify="Justify.End">
+        <Box id="MenuButton" Style="InfoBarButtonStyle" Interactive="true">
+            <Text Style="InfoTextMedium" Content='"Main Menu"' />
+        </Box>
     </Box>
 </Box>

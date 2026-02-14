@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Olve.Engine3D;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Input;
@@ -20,12 +21,9 @@ public class MainMenuService(
 
     private Id<GuiAnchor> _anchorId;
     private Id<GuiElementRegistrations> _registrationId;
-    private bool _startGame;
 
     public Result Load()
     {
-        MainMenu.StartGameText.Content = "Start Game";
-
         if (guiAnchorService.RegisterAnchor(AnchorPosition.Center, GrowthDirection.Center)
             .TryPickProblems(out var problems, out _anchorId))
         {
@@ -48,24 +46,17 @@ public class MainMenuService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
-    {
-        if (!_startGame) return Result.Success();
-        _startGame = false;
-
-        return TransitionToGame();
-    }
-
     private void OnGuiElementActivated(GuiActivationService.GuiElementActivatedMessage message)
     {
-        if (!guiElementService.TryGetGuiNodeId(MainMenu.StartGameButton.Id, _registrationId, out var buttonNodeId))
+        if (guiElementService.IsElementNodeId(message.NodeId, MainMenu.StartGameButton, _registrationId))
         {
-            return;
+            TransitionToGame();
         }
 
-        if (message.NodeId == buttonNodeId)
+        if (guiElementService.IsElementNodeId(message.NodeId, MainMenu.ExitGameButton, _registrationId))
         {
-            _startGame = true;
+            var gameManager = serviceProvider.GetRequiredService<GameManager>();
+            gameManager.Stop();
         }
     }
 

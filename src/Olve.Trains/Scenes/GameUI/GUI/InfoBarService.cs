@@ -1,5 +1,7 @@
-﻿using Olve.Engine3D.GUI;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
@@ -8,8 +10,10 @@ using Olve.Generated.Layouts;
 namespace Olve.Trains.Scenes.GameUI.GUI;
 
 public class InfoBarService(
+    IServiceProvider serviceProvider,
     DayTimeManager dayTimeManager,
     GuiElementService guiElementService,
+    GuiActivationService guiActivationService,
     GuiAnchorService guiAnchorService) : ISceneService
 {
 
@@ -27,6 +31,8 @@ public class InfoBarService(
         {
             return problems;
         }
+
+        guiActivationService.GuiElementActivated.Subscribe(OnGuiElementActivated);
 
         return guiElementService
             .RegisterElementAndChildren(_anchorId, InfoBar.BarBackground)
@@ -46,5 +52,36 @@ public class InfoBarService(
         var dayTime = dayTimeManager.CurrentTime;
         InfoBar.Clock.Content = $"{dayTime.Hours:D2} : {dayTime.Minutes:D2}";
         return Result.Success();
+    }
+
+    private void OnGuiElementActivated(GuiActivationService.GuiElementActivatedMessage message)
+    {
+        if (NodeIdMatches(InfoBar.MenuButton, message.NodeId))
+        {
+            TransitionToMainMenu();
+        }
+    }
+
+    private bool NodeIdMatches(GuiElement guiElement, Id<GuiNode> nodeId)
+    {
+        if (!guiElementService.TryGetGuiNodeId(guiElement.Id, _registrationId, out var guiElementNodeId))
+        {
+            return false;
+        }
+
+        return nodeId == guiElementNodeId;
+    }
+
+    private Result TransitionToMainMenu()
+    {
+        var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
+
+        if (sceneManager.DeactivateAndUnloadScene(SceneIds.GameLogicScene)
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
+        return sceneManager.LoadAndActivateScene(SceneIds.MainMenuScene);
     }
 }

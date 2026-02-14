@@ -26,6 +26,15 @@ public class Text : GuiElement, IRenderableAsText, IRenderableAsRectangle
             ComputedSize = null;
         }
     } = 16f;
+    public float FontWeight
+    {
+        get;
+        set
+        {
+            field = value;
+            ComputedSize = null;
+        }
+    } = 1f;
     public Align Align { get; set; } = Align.Start;
 
     // Layout properties
@@ -50,6 +59,7 @@ public class Text : GuiElement, IRenderableAsText, IRenderableAsRectangle
         Font,
         Content,
         FontSize,
+        FontWeight,
         Color ?? RGBA.Black,
         Align
     );
