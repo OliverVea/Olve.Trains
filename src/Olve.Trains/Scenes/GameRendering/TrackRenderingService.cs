@@ -53,7 +53,7 @@ public class TrackRenderingService(
 
         var vertices = MarshalVertices(data);
 
-        if (renderingManager3D.RegisterGeometry<Shaders.LineStrip.Vertex>(
+        if (renderingManager3D.RegisterGeometry(
                 vertices, PrimitiveType.LineStrip, BufferUsageARB.DynamicDraw)
             .TryPickProblems(out problems, out var geometryId))
         {
@@ -93,7 +93,7 @@ public class TrackRenderingService(
             }
 
             var vertices = MarshalVertices(data);
-            renderingManager3D.UpdateGeometry<Shaders.LineStrip.Vertex>(entry.GeometryId, vertices);
+            renderingManager3D.UpdateGeometry(entry.GeometryId, vertices);
         }
 
         renderingManager3D.SetInstanceParameters(entry.InstanceId, shaderParameters);
