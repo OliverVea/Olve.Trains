@@ -39,7 +39,8 @@ public class GuiTextRenderingService(
         IReadOnlyList<TextLayoutEngine.GlyphLayout> CachedLayout,
         FontData Font,
         string CachedContent,
-        float CachedFontSize
+        float CachedFontSize,
+        float CachedFontWeight
     );
 
     private readonly Dictionary<Id<GuiNode>, TextInstanceData> _instances = new();
@@ -124,7 +125,8 @@ public class GuiTextRenderingService(
         FontData font,
         TextureId<RGB> fontAtlasId,
         string content,
-        float fontSize)
+        float fontSize,
+        float fontWeight)
     {
         DeregisterText(nodeId);
 
@@ -141,7 +143,8 @@ public class GuiTextRenderingService(
                 iUvMax: glyph.UvMax);
 
             var entityParams = new Shaders.MsdfText.EntityParameters(
-                UFontAtlas: fontAtlasId
+                UFontAtlas: fontAtlasId,
+                UFontWeight: fontWeight
             );
 
             if (renderingManager2D.Register(_shader.RenderingId, glyphInstance, 0f, entityParams)
@@ -156,7 +159,7 @@ public class GuiTextRenderingService(
         }
 
         _instances[nodeId] = new TextInstanceData(
-            glyphIds, fontAtlasId, layout, font, content, fontSize);
+            glyphIds, fontAtlasId, layout, font, content, fontSize, fontWeight);
 
         logger.LogDebug("Registered text rendering for node {NodeId} with {GlyphCount} glyphs", nodeId, glyphIds.Count);
 
@@ -180,7 +183,7 @@ public class GuiTextRenderingService(
         return DeletionResult.Success();
     }
 
-    public Result UpdateText(Id<GuiNode> nodeId, string newContent, float? fontSize = null)
+    public Result UpdateText(Id<GuiNode> nodeId, string newContent, float? fontSize = null, float? fontWeight = null)
     {
         if (!_instances.TryGetValue(nodeId, out var data))
         {
@@ -188,8 +191,11 @@ public class GuiTextRenderingService(
         }
 
         var effectiveFontSize = fontSize ?? data.CachedFontSize;
+        var effectiveFontWeight = fontWeight ?? data.CachedFontWeight;
 
-        if (data.CachedContent == newContent && float.Abs(effectiveFontSize - data.CachedFontSize) < 0.001f)
+        if (data.CachedContent == newContent
+            && float.Abs(effectiveFontSize - data.CachedFontSize) < 0.001f
+            && float.Abs(effectiveFontWeight - data.CachedFontWeight) < 0.001f)
         {
             return Result.Success();
         }
@@ -198,7 +204,10 @@ public class GuiTextRenderingService(
         var oldGlyphIds = data.GlyphInstanceIds;
         var newGlyphIds = new List<RenderingInstanceId>(oldGlyphIds);
 
-        var entityParams = new Shaders.MsdfText.EntityParameters(UFontAtlas: data.FontAtlasId);
+        var entityParams = new Shaders.MsdfText.EntityParameters(
+            UFontAtlas: data.FontAtlasId,
+            UFontWeight: effectiveFontWeight
+        );
 
         // Update existing glyphs
         var minCount = int.Min(oldGlyphIds.Count, newLayout.Count);
@@ -258,7 +267,8 @@ public class GuiTextRenderingService(
             GlyphInstanceIds = newGlyphIds,
             CachedLayout = newLayout,
             CachedContent = newContent,
-            CachedFontSize = effectiveFontSize
+            CachedFontSize = effectiveFontSize,
+            CachedFontWeight = effectiveFontWeight
         };
 
         return Result.Success();
@@ -301,7 +311,8 @@ public class GuiTextRenderingService(
                 iUvMax: glyphLayout.UvMax);
 
             var entityParams = new Shaders.MsdfText.EntityParameters(
-                UFontAtlas: instanceData.FontAtlasId
+                UFontAtlas: instanceData.FontAtlasId,
+                UFontWeight: instanceData.CachedFontWeight
             );
 
             if (renderingManager2D.Update(glyphId, glyphInstance, -depth, entityParams)
