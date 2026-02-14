@@ -10,7 +10,7 @@ public class TrackRenderingUpdaterService(
     TrackLineStripDataService trackLineStripDataService,
     TrackRenderingService trackRenderingService) : ISceneService
 {
-    private readonly EventQueue<Id<Track>> _onTrackAddedQueue = eventQueueFactory.Create(trackService.OnAdded);
+    private readonly EventQueue<Id<Track>> _onTrackAddedQueue = eventQueueFactory.Create(trackService.OnTrackAdded);
 
     public int Priority => SceneServicePriority.FromDependents([trackRenderingService]);
 

@@ -4,15 +4,15 @@ using Olve.Engine3D.Systems;
 
 namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
-public class JunctionSignalService(ILogger<JunctionSignalService> logger, EventQueueFactory eventQueueFactory, JunctionService junctionService) : ISceneService, IEntityService<Junction>
+public class JunctionSignalService(ILogger<JunctionSignalService> logger, EventQueueFactory eventQueueFactory, JunctionService junctionService) : ISceneService
 {
     private readonly HashSet<Id<Junction>> _signalJunctions = [];
 
     private readonly EventQueue<Id<Junction>> _junctionConnectionQueue =
         eventQueueFactory.Create(junctionService.OnJunctionConnectionsUpdated);
 
-    public Event<Id<Junction>> OnAdded { get; } = new();
-    public Event<Id<Junction>> OnRemoved { get; } = new();
+    public Event<Id<Junction>> OnJunctionAdded { get; } = new();
+    public Event<Id<Junction>> OnJunctionRemoved { get; } = new();
 
     public IEnumerable<Id<Junction>> SignalJunctions => _signalJunctions;
     public Result<bool> JunctionHasSignal(Id<Junction> junctionId) => _signalJunctions.Contains(junctionId);
@@ -33,7 +33,7 @@ public class JunctionSignalService(ILogger<JunctionSignalService> logger, EventQ
 
     private Result OnJunctionConnectionsChanged(Id<Junction> junctionId)
     {
-        if (!junctionService.Exists(junctionId))
+        if (!junctionService.JunctionExists(junctionId))
         {
             logger.LogWarning("OnAdded called on non-existant junction id");
             return Result.Success();
@@ -59,7 +59,7 @@ public class JunctionSignalService(ILogger<JunctionSignalService> logger, EventQ
         }
 
         logger.LogInformation("Added signal for junction '{JunctionId}'", junctionId);
-        OnAdded.Invoke(junctionId);
+        OnJunctionAdded.Invoke(junctionId);
         return Result.Success();
     }
 
@@ -72,7 +72,7 @@ public class JunctionSignalService(ILogger<JunctionSignalService> logger, EventQ
         }
 
         logger.LogInformation("Removed signal for junction '{JunctionId}'", junctionId);
-        OnRemoved.Invoke(junctionId);
+        OnJunctionRemoved.Invoke(junctionId);
         return Result.Success();
     }
 }

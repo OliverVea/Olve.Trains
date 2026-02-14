@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Olve.Engine3D.Systems;
+using Olve.Utilities.Ids;
 using Olve.Utilities.Lookup;
 
-namespace Olve.Trains.Scenes.GameLogic.Industries;
+namespace Olve.Engine3D.Systems;
 
 public sealed class EntityStore<T> where T :  IHasId<Id<T>>
 {
@@ -24,8 +24,7 @@ public sealed class EntityStore<T> where T :  IHasId<Id<T>>
 
     public void Set(T entity)
     {
-        var hasExisting = _entities.TryGetValue(entity.Id, out var existing) && existing.Equals(entity);
-        if (hasExisting)
+        if (Exists(entity))
         {
             return;
         }
@@ -47,8 +46,7 @@ public sealed class EntityStore<T> where T :  IHasId<Id<T>>
         return DeletionResult.Success();
     }
 
-    public bool TryGet(Id<T> id, [MaybeNullWhen(false)] out T entity)
-    {
-        return _entities.TryGetValue(id, out entity);
-    }
+    public bool TryGet(Id<T> id, [MaybeNullWhen(false)] out T entity) => _entities.TryGetValue(id, out entity);
+    public bool Exists(Id<T> id) => _entities.ContainsKey(id);
+    public bool Exists(T entity) => _entities.TryGetValue(entity.Id, out var existing) && existing.Equals(entity);
 }

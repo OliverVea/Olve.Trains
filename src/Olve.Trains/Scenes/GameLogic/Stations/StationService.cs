@@ -1,15 +1,15 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using Olve.Engine3D.Systems;
 
 namespace Olve.Trains.Scenes.GameLogic.Stations;
 
-public class StationService() : BaseEntityService<Station>(NullLogger.Instance)
+public class StationService
 {
-    public Result<Id<Station>> CreateStation(string name, Vector3D<float> center)
-    {
-        var id = Id.New<Station>();
-        Station station = new(id, name, center);
+    private readonly EntityStore<Station> _stations = new();
 
-        return Add(station);
+    public Id<Station> CreateStation(string name, Vector3D<float> center)
+    {
+        Station station = new(Id.New<Station>(), name, center);
+        _stations.Set(station);
+        return station.Id;
     }
 }

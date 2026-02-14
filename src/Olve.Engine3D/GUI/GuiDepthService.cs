@@ -10,15 +10,17 @@ public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService gui
 
     public Result Load()
     {
-        guiNodeService.OnAdded.Subscribe(OnAdded);
-        guiNodeService.OnRemoved.Subscribe(OnRemoved);
+        // TODO: (maybe) Move these to DI registration method as event services instead
+        guiNodeService.OnNodeAdded.Subscribe(OnAdded);
+        guiNodeService.OnNodeRemoved.Subscribe(OnRemoved);
         return Result.Success();
     }
 
     public Result Unload()
     {
-        guiNodeService.OnAdded.Unsubscribe(OnAdded);
-        guiNodeService.OnRemoved.Unsubscribe(OnRemoved);
+        // TODO: (maybe) Move these to DI registration method as event services instead
+        guiNodeService.OnNodeAdded.Unsubscribe(OnAdded);
+        guiNodeService.OnNodeRemoved.Unsubscribe(OnRemoved);
         return Result.Success();
     }
 

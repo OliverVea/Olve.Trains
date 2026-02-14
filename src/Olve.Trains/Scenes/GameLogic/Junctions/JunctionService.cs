@@ -6,30 +6,27 @@ using Olve.Utilities.CollectionExtensions;
 
 namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
-public class JunctionService(ILogger<JunctionService> logger) : BaseEntityService<Junction>(logger)
+public class JunctionService(ILogger<JunctionService> logger)
 {
+    private readonly EntityStore<Junction> _junctions = new();
     private readonly Dictionary<Id<Junction>, HashSet<JunctionConnection>> _junctionConnections = new();
-    private readonly Dictionary<TilePosition, Id<Junction>> _junctions = new();
+    private readonly Dictionary<TilePosition, Id<Junction>> _junctionPositions = new();
 
     public Event<Id<Junction>> OnJunctionConnectionsUpdated { get; } = new();
-    
+
     public Result<Id<Junction>> AddJunctionConnection(Id<Track> trackId, TrackEndpoint trackEndpoint)
     {
         var tilePosition = ToTilePosition(trackEndpoint.Point);
-        var junctionId = _junctions.GetOrAdd(tilePosition, Id.New<Junction>);
+        var junctionId = _junctionPositions.GetOrAdd(tilePosition, Id.New<Junction>);
         Junction trackJunction = new(junctionId, tilePosition);
 
         var connections = _junctionConnections.GetOrAdd(junctionId, NewJunctionConnections);
         JunctionConnection connection = new(trackId, trackEndpoint);
         connections.Add(connection);
-        
+
         logger.LogDebug("Connected {ConnectionCount} tracks at '{TilePosition}'", connections.Count, tilePosition);
 
-        if (!Exists(junctionId) && Add(trackJunction).TryPickProblems(out var problems))
-        {
-            return problems;
-        }
-        
+        _junctions.Set(trackJunction);
         OnJunctionConnectionsUpdated.Invoke(junctionId);
         return junctionId;
     }
@@ -37,7 +34,7 @@ public class JunctionService(ILogger<JunctionService> logger) : BaseEntityServic
     public DeletionResult RemoveJunctionConnection(Id<Track> trackId, TrackEndpoint trackEndpoint)
     {
         var tilePosition = ToTilePosition(trackEndpoint.Point);
-        if (!_junctions.TryGetValue(tilePosition, out var junctionId))
+        if (!_junctionPositions.TryGetValue(tilePosition, out var junctionId))
         {
             return DeletionResult.NotFound();
         }
@@ -55,21 +52,21 @@ public class JunctionService(ILogger<JunctionService> logger) : BaseEntityServic
 
         if (connections is null)
         {
-            _junctions.Remove(tilePosition);
-            if (Remove(junctionId).TryPickProblems(out var problems))
+            _junctionPositions.Remove(tilePosition);
+            if (_junctions.Remove(junctionId).TryPickProblems(out var problems))
             {
                 return DeletionResult.Error(problems);
             }
         }
-        
+
         OnJunctionConnectionsUpdated.Invoke(junctionId);
-        
+
         return DeletionResult.Success();
     }
 
     public bool TryGetJunctionId(TrackEndpoint trackEndpoint, out Id<Junction> junctionId)
     {
-        return _junctions.TryGetValue(ToTilePosition(trackEndpoint.Point), out junctionId);
+        return _junctionPositions.TryGetValue(ToTilePosition(trackEndpoint.Point), out junctionId);
     }
 
     public IReadOnlyCollection<JunctionConnection> GetConnections(TrackEndpoint trackEndpoint)
@@ -94,14 +91,19 @@ public class JunctionService(ILogger<JunctionService> logger) : BaseEntityServic
 
         return [];
     }
-    
+
     private static TilePosition ToTilePosition(Vector3D<float> point) => new((int)point.X, (int)(point.Y * 8), (int)point.Z);
     private static HashSet<JunctionConnection> NewJunctionConnections() => new(1);
 
     public bool IsConnected(Id<Track> trackId, TrackEndpoint trackEndpoint)
     {
-        return _junctions.TryGetValue(ToTilePosition(trackEndpoint.Point), out var junctionId)
+        return _junctionPositions.TryGetValue(ToTilePosition(trackEndpoint.Point), out var junctionId)
                && _junctionConnections.TryGetValue(junctionId, out var connections)
                && connections.Any(x => x.TrackId == trackId);
     }
+
+    public bool JunctionExists(Id<Junction> junctionId) => _junctions.Exists(junctionId);
+
+    public bool TryGetJunction(Id<Junction> junctionId, out Junction junction) =>
+        _junctions.TryGet(junctionId, out junction);
 }

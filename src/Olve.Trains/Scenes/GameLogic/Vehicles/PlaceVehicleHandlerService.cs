@@ -35,7 +35,7 @@ public class PlaceVehicleHandlerService(
 
         var (trackId, vehicleId) = trackAndVehicleId;
 
-        if (!trackService.Exists(trackId))
+        if (!trackService.TrackExists(trackId))
         {
             return new ResultProblem("Track with id '{0}' doesnt exist", trackId);
         }
