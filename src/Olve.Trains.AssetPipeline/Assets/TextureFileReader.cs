@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Results;
-using Silk.NET.Maths;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 

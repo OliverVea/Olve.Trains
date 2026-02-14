@@ -2,7 +2,6 @@ using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Meshes;

@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-
-namespace Olve.Trains.AssetPipeline.Options;
+﻿namespace Olve.Trains.AssetPipeline.Options;
 
 public class BuildOptions : IAssetOptions
 {

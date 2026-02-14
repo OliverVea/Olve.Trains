@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D;
-using Olve.Engine3D.Assets;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
