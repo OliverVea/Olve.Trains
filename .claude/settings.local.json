@@ -31,7 +31,8 @@
       "WebFetch(domain:www.nuget.org)",
       "WebFetch(domain:olivervea.github.io)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(dotnet list:*)"
+      "Bash(dotnet list:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []
