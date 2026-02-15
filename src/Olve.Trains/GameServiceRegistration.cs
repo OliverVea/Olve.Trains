@@ -25,6 +25,7 @@ public static class GameServiceRegistration
         services.AddLogging(builder => builder.AddConfiguredLogging(configuration));
 
         // Engine modules
+        services.AddCoreEngineServices();
         services.AddWindowingServices();
         services.AddOpenGLServices();
         services.AddGuiServices();

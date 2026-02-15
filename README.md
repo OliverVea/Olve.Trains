@@ -25,14 +25,25 @@
 - Building epic:
   - [x] Add basic support for buildings
   - [ ] Add building validation and validation failure rendering
+  - [ ] Validate collisions
   - [ ] Add station with station track
   - [ ] BUG: don't show building ghost when there's no terrain intersection with mouse
+  - [ ] Add residence buildings from ORA data
+- Deletion epic:
+  - [ ] Add deletion tool
+  - [ ] Allow deleting tracks
+  - [ ] Allow deleting trains
+  - [ ] Allow deleting vehicles
 - Industry epic:
   - [ ] Add basic support for industries
   - [ ] Add building for industries
+  - [ ] Add 'harvest range' for buildings and register entities within range
   - [ ] Create game-side logic for supporting cargo and train inventories
   - [ ] Create game-side logic for generating cargo in stations next to industries
   - [ ] Create game-side logic for consuming cargo delivered to stations
+- Building upgrading epic:
+  - [ ] Add basic support for building upgrades
+  - [ ] Require resources for building upgrades
 - Track rendering epic:
   - [ ] Improve rendering of tracks by procedurally generating the track mesh from the underlying spline
   - [ ] Create and render procedurally generated station meshes
