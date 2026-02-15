@@ -48,7 +48,7 @@ public class GuiTextRenderingService(
     private readonly List<ResultProblem> _updateProblems = [];
     private readonly Shaders.MsdfText _shader = new()
     {
-        BlendState = RenderState.AlphaBlend,
+        BlendState = RenderState.AlphaBlendNoDepthWrite,
     };
 
     public Result Load()

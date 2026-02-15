@@ -28,7 +28,7 @@ public class TerrainRenderingService(
     private readonly Shaders.TerrainWireframe _terrainWireframe = new()
     {
         MouseRadius = 5f,
-        BlendState = RenderState.Additive
+        BlendState = RenderState.AdditiveNoDepthWrite
     };
 
     public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, terrainRaycastService, sceneLightService]);
