@@ -51,13 +51,25 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);
         services.AddSceneService<ClearJunctionSignalRules>(sceneId);
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
-        services.AddSceneService<JunctionSignalService>(sceneId);
+        services.AddEventSceneService(sceneId,
+            (JunctionService js) => js.OnJunctionConnectionsUpdated,
+            (JunctionSignalService jss, Id<Junction> id) => jss.EvaluateSignal(id));
         services.AddSceneService<PlaceVehicleHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);
-        services.AddSceneService<StationPlatformAreaService>(sceneId);
+        services.AddEventSceneService(sceneId,
+            (StationPlatformService sps) => sps.OnPlatformAdded,
+            (StationPlatformAreaService spas, Id<StationPlatform> id) => spas.RegisterPlatform(id));
+        services.AddEventSceneService(sceneId,
+            (StationPlatformService sps) => sps.OnPlatformRemoved,
+            (StationPlatformAreaService spas, Id<StationPlatform> id) => spas.DeregisterPlatform(id));
         services.AddSceneService<TerrainService>(sceneId);
         services.AddSceneService<TrackSplineService>(sceneId);
+        services.AddEventSceneService(sceneId,
+            (VehicleMovementService vms) => vms.OnVehicleReachedTrackEnd,
+            (VehicleJunctionCrossingService vjcs, Id<Vehicle> id) => vjcs.OnVehicleReachedEnd(id),
+            after: [new SceneServiceType<VehicleMovementService>()],
+            before: [new SceneServiceType<VehicleJunctionCrossingService>()]);
         services.AddSceneService<VehicleJunctionCrossingService>(sceneId);
         services.AddSceneService<VehicleMovementService>(sceneId);
         services.AddSceneService<DayTimeSteppingService>(sceneId);
@@ -65,9 +77,11 @@ public static class GameLogicSceneServiceRegistration
         // Non-scene singletons (dependencies only, not in scene lifecycle)
         services.TryAddScoped<JunctionService>();
         services.TryAddScoped<JunctionSignalRuleEvaluationService>();
+        services.TryAddScoped<JunctionSignalService>();
         services.TryAddScoped<StationPlatformService>();
         services.TryAddScoped<StationNameGenerator>();
         services.TryAddScoped<StationService>();
+        services.TryAddScoped<StationPlatformAreaService>();
         services.TryAddScoped<TrackConnectionService>();
         services.TryAddScoped<TrackService>();
         services.TryAddScoped<TrackPlacingService>();
