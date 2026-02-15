@@ -86,7 +86,8 @@ public static class Program
             ? new GameInstanceId(instanceId).GetPipeName()
             : GameInstanceId.GetDefaultPipeName();
 
-        var result = await CommandPipeClient.SendCommand(pipeName, command, TimeSpan.FromSeconds(10));
+        CancellationTokenSource cts = new(TimeSpan.FromSeconds(20));
+        var result = await CommandPipeClient.SendCommandAsync(pipeName, command, cts.Token);
 
         if (result.TryPickProblems(out var problems, out var response))
         {
