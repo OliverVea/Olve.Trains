@@ -11,17 +11,17 @@ public class BuildingService(ILogger<BuildingService> logger)
     public Event<Id<Building>> OnBuildingAdded => _buildings.OnAdded;
     public Event<Id<Building>> OnBuildingRemoved => _buildings.OnRemoved;
 
-    public Id<Building> AddBuilding(Id<BuildingBlueprint> blueprintId, TilePosition origin)
+    public Id<Building> AddBuilding(Id<BuildingBlueprint> blueprintId, BuildingPosition position)
     {
-        Building building = new(Id.New<Building>(), blueprintId, origin);
+        Building building = new(Id.New<Building>(), blueprintId, position);
 
         if (!_buildings.TryAdd(building))
         {
-            logger.LogWarning("Failed to add building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, origin);
+            logger.LogWarning("Failed to add building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
         }
         else
         {
-            logger.LogInformation("Added building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, origin);
+            logger.LogInformation("Added building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
         }
 
         return building.Id;

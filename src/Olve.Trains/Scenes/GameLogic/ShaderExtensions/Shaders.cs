@@ -10,5 +10,6 @@ public partial class Shaders
 
     public partial class TerrainWireframe : ICameraPositionShader, IWorldMousePositionShader;
     public partial class LineStrip : ICameraPositionShader;
+    public partial class Building : ICameraPositionShader;
 }
 
