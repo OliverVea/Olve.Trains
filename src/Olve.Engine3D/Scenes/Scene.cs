@@ -79,6 +79,11 @@ public sealed class Scene(
     {
         for (var i = 0; i < _sceneServices.Length; i++)
         {
+            if (State != SceneState.Active)
+            {
+                break;
+            }
+
             _serviceResults[i] = _sceneServices[i].Update(deltaTime);
         }
 
@@ -94,6 +99,11 @@ public sealed class Scene(
     {
         for (var i = 0; i < _sceneServices.Length; i++)
         {
+            if (State != SceneState.Active)
+            {
+                break;
+            }
+
             _serviceResults[i] = _sceneServices[i].Render(deltaTime);
         }
 
