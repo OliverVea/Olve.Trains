@@ -31,7 +31,7 @@ public class GuiRectangleRenderingService(
     private readonly List<ResultProblem> _updateProblems = [];
     private readonly Shaders.TexturedRectangle _shader = new()
     {
-        BlendState = RenderState.AlphaBlend,
+        BlendState = RenderState.AlphaBlendNoDepthWrite,
     };
 
     public Result Load()
