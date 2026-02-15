@@ -73,6 +73,8 @@ public class BuildingService
     }
     public bool TryGetBuilding(Id<Building> buildingId, out Building building)
         => _buildings.TryGet(buildingId, out building);
+    public IEnumerable<Building> GetAllBuildings()
+        => _buildings.Where(_ => true);
     public IReadOnlyCollection<Id<Building>> GetBuildingsWithBlueprint(Id<BuildingBlueprint> blueprintId) =>
         _buildingsByBlueprint.GetForKey(blueprintId);
 }

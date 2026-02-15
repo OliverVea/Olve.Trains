@@ -33,6 +33,8 @@ public class BuildingRenderingService(
         }
 
         _shader.UOpacity = 1.0f;
+        _shader.UColorOverride = new Vector3D<float>(0, 0, 0);
+        _shader.UColorMix = 0.0f;
 
         // Generate a unit cube: 24 vertices (4 per face with normals), 36 indices
         // TODO: Extract unit cube (and unit quad) to a BaseGeometryService in Olve.Trains/Rendering/

@@ -4,6 +4,8 @@ in vec3 FragNormal;
 out vec4 fragColor;
 
 uniform vec3 uColor;
+uniform vec3 uColorOverride;
+uniform float uColorMix;
 uniform float uOpacity;
 
 void main()
@@ -15,6 +17,7 @@ void main()
     float ambient = 0.3;
     float lighting = ambient + diff * 0.7;
 
-    vec3 color = uColor * lighting;
+    vec3 baseColor = mix(uColor, uColorOverride, uColorMix);
+    vec3 color = baseColor * lighting;
     fragColor = vec4(color, uOpacity);
 }

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
@@ -6,16 +5,17 @@ using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Industries;
 using Olve.Trains.Scenes.GameRendering;
 using Silk.NET.Input;
+using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public sealed class StationPlacingToolService(
-    ILogger<StationPlacingToolService> logger,
     TerrainRaycastService terrainRaycastService,
     ToolManagementService toolManagementService,
     BuildingBlueprintLibraryService libraryService,
     BuildingBlueprintService buildingBlueprintService,
     BuildingService buildingService,
+    BuildingValidationService buildingValidationService,
     BuildingRenderingService buildingRenderingService,
     MouseManager mouseManager,
     KeyboardManager keyboardManager) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
@@ -25,7 +25,12 @@ public sealed class StationPlacingToolService(
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Place Stations");
 
-    private static readonly Shaders.Building.EntityParameters GhostParameters = new(UOpacity: 0.5f);
+    private static readonly Shaders.Building.EntityParameters ValidGhostParameters = new(UOpacity: 0.5f, UColorMix: 0.0f);
+
+    private static readonly Shaders.Building.EntityParameters InvalidGhostParameters = new(
+        UOpacity: 0.7f,
+        UColorOverride: new Vector3D<float>(1, 0, 0),
+        UColorMix: 1.0f);
 
     private readonly Id<Building> _ghostBuildingId = Id.New<Building>();
     private bool _ghostRegistered;
@@ -59,7 +64,7 @@ public sealed class StationPlacingToolService(
     {
         if (terrainRaycastService.TerrainIntersectionTile is not { } tilePosition)
         {
-            logger.LogDebug("Station placement click missed terrain");
+            UnregisterGhost();
             return Result.Success();
         }
 
@@ -71,9 +76,11 @@ public sealed class StationPlacingToolService(
             return new ResultProblem("Station blueprint not found");
         }
 
-        UpdateGhost(position, blueprint.Footprint);
+        var isValid = buildingValidationService.IsValid(position, blueprint.Footprint);
 
-        if (!ToolState.ActivatedThisFrame)
+        UpdateGhost(position, blueprint.Footprint, isValid);
+
+        if (!ToolState.ActivatedThisFrame || !isValid)
         {
             return Result.Success();
         }
@@ -83,16 +90,18 @@ public sealed class StationPlacingToolService(
         return Result.Success();
     }
 
-    private void UpdateGhost(BuildingPosition position, TileFootprint footprint)
+    private void UpdateGhost(BuildingPosition position, TileFootprint footprint, bool isValid)
     {
+        var ghostParams = isValid ? ValidGhostParameters : InvalidGhostParameters;
+
         if (_ghostRegistered)
         {
-            buildingRenderingService.UpdateDirect(_ghostBuildingId, position, footprint, GhostParameters);
+            buildingRenderingService.UpdateDirect(_ghostBuildingId, position, footprint, ghostParams);
         }
         else
         {
             var color = BuildingRenderingService.GetBuildingColor(BuildingType.Station);
-            var ghostParams = GhostParameters with { UColor = color.ToVector() };
+            ghostParams = ghostParams with { UColor = color.ToVector() };
             buildingRenderingService.RegisterDirect(_ghostBuildingId, position, footprint, ghostParams);
             _ghostRegistered = true;
         }
