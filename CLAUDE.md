@@ -48,6 +48,62 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "help" --insta
 
 Listening is off by default. Commands are processed on the main game thread via a `CommandProcessingService` scene service.
 
+### Command Reference
+
+Use `help` to see all available commands. Key commands:
+
+**place-track** - Place track segments between two points with optional direction control.
+```bash
+# Straight track (directions auto-calculated from start to end)
+--send "place-track start=0,0.125,0 end=4,0.125,0"
+
+# Curved track (explicit directions for curves)
+--send "place-track start=0,0.125,0 end=4,0.125,4 start-dir=east end-dir=north"
+```
+
+Directions: `north`, `south`, `east`, `west` (or `n`, `s`, `e`, `w`)
+
+**place-vehicle** - Place a vehicle (train) on a track.
+```bash
+--send "place-vehicle track=<track-id>"
+```
+
+**screenshot** - Take a screenshot.
+```bash
+--send "screenshot path=~/screenshot.png"
+```
+
+### Example: Creating a 4x4 Circle Track with Train
+
+Build a complete circular track loop in 4 segments (4 units per side) and place a train:
+
+```bash
+# Start game in listening mode
+dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --listen &
+
+# Wait for game to initialize
+sleep 3
+
+# Build the 4x4 square loop (Y=0.125 is track height)
+# Bottom edge: east then curve to north
+dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-track start=0,0.125,0 end=4,0.125,0 start-dir=east end-dir=north"
+
+# Right edge: north then curve to west
+dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-track start=4,0.125,0 end=4,0.125,4 start-dir=north end-dir=west"
+
+# Top edge: west then curve to south
+dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-track start=4,0.125,4 end=0,0.125,4 start-dir=west end-dir=south"
+
+# Left edge: south then curve to east (completing the loop)
+dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-track start=0,0.125,4 end=0,0.125,0 start-dir=south end-dir=east"
+
+# Place a train on the first track segment (use track ID from place-track output)
+dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-vehicle track=<track-id-from-output>"
+
+# Take a screenshot
+dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "screenshot path=~/circle-track.png"
+```
+
 ## Workflow
 
 1. **Modify shaders/layouts** in `src/Olve.Trains/resources/`
