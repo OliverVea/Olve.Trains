@@ -14,7 +14,7 @@ public class EchoCommandHandler(ILogger<EchoCommandHandler> logger) : ICommandHa
         new(MessageKey, "the message to echo", true)
     ];
 
-    public Result Handle(CommandContext context)
+    public Result<CommandOutput> Handle(CommandContext context)
     {
         if (context.Arguments.TryGetValue(MessageKey, out var message))
         {
@@ -25,6 +25,6 @@ public class EchoCommandHandler(ILogger<EchoCommandHandler> logger) : ICommandHa
         logger.LogInformation("{Output}", output);
         _builder.Clear();
 
-        return Result.Success();
+        return new CommandOutput(output);
     }
 }

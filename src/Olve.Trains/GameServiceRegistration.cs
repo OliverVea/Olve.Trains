@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D;
+using Olve.Engine3D.Commands;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Light;
@@ -19,7 +20,7 @@ namespace Olve.Trains;
 
 public static class GameServiceRegistration
 {
-    public static IServiceCollection AddAllServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddAllServices(this IServiceCollection services, IConfiguration configuration, GameInstanceId instanceId, bool listen)
     {
         // Logging
         services.AddLogging(builder => builder.AddConfiguredLogging(configuration));
@@ -40,6 +41,18 @@ public static class GameServiceRegistration
         services.AddSingleton<ScreenResizedEvent>();
         services.AddSingleton<CommandHandlerServiceCollection>();
         services.AddSingleton<EventQueueFactory>();
+
+        // Command infrastructure
+        services.AddSingleton(instanceId);
+        services.AddSingleton<CommandRunner>();
+        services.AddSingleton<CommandQueue>();
+        services.AddSingleton<EchoCommandHandler>();
+        services.AddSingleton<HelpCommandHandler>();
+        services.AddSingleton<ExitCommandHandler>();
+        if (listen)
+        {
+            services.AddSingleton<CommandPipeServer>();
+        }
 
         // Scene services
         services.AddMainMenuSceneServices();

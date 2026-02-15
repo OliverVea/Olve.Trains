@@ -1,9 +1,10 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Logging;
 
 namespace Olve.Engine3D.Commands;
 
-public class HelpCommandHandler(IEnumerable<ICommandHandler> commandHandlers, ILogger<HelpCommandHandler> logger) : ICommandHandler
+public class HelpCommandHandler(CommandHandlerServiceCollection commandHandlers, ILogger<HelpCommandHandler> logger) : ICommandHandler
 {
     public static readonly CommandArgument CommandArgument = new("command", "the command to provide help with");
 
@@ -14,7 +15,7 @@ public class HelpCommandHandler(IEnumerable<ICommandHandler> commandHandlers, IL
 
     public IReadOnlyList<CommandArgument> Arguments { get; } = [CommandArgument];
 
-    public Result Handle(CommandContext context)
+    public Result<CommandOutput> Handle(CommandContext context)
     {
         if (context.GetArgument(CommandArgument) is {} command)
         {
@@ -30,7 +31,7 @@ public class HelpCommandHandler(IEnumerable<ICommandHandler> commandHandlers, IL
 
         _builder.Clear();
 
-        return Result.Success();
+        return new CommandOutput(messageText);
     }
 
     private void HandleNoCommand()

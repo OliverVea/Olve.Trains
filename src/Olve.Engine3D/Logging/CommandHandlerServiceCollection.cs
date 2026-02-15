@@ -6,23 +6,23 @@ namespace Olve.Engine3D.Logging;
 
 public class CommandHandlerServiceCollection(ILogger<CommandHandlerServiceCollection> logger) : IEnumerable<ICommandHandler>
 {
-    private readonly HashSet<CommandHandlerService> _commandHandlerServices = [];
+    private readonly HashSet<ICommandHandler> _commandHandlers = [];
 
-    public bool Add(CommandHandlerService commandHandlerService)
+    public bool Add(ICommandHandler commandHandler)
     {
-        var serviceTypeName = commandHandlerService.GetType().Name;
+        var serviceTypeName = commandHandler.GetType().Name;
         logger.LogDebug("[CommandHandlerServiceCollection] Registering {ServiceTypeName}", serviceTypeName);
-        return _commandHandlerServices.Add(commandHandlerService);
+        return _commandHandlers.Add(commandHandler);
     }
 
-    public bool Remove(CommandHandlerService commandHandlerService)
+    public bool Remove(ICommandHandler commandHandler)
     {
-        var serviceTypeName = commandHandlerService.GetType().Name;
+        var serviceTypeName = commandHandler.GetType().Name;
         logger.LogDebug("[CommandHandlerServiceCollection] Deregistering {ServiceTypeName}", serviceTypeName);
-        return _commandHandlerServices.Remove(commandHandlerService);
+        return _commandHandlers.Remove(commandHandler);
     }
 
-    public IEnumerator<ICommandHandler> GetEnumerator() => _commandHandlerServices.GetEnumerator();
+    public IEnumerator<ICommandHandler> GetEnumerator() => _commandHandlers.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

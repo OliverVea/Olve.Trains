@@ -13,7 +13,7 @@ public class SetTimeHandlerService(DayTimeManager dayTimeManager, CommandHandler
     public override string HelpString => "Sets the current in-game time";
     public override IReadOnlyList<CommandArgument> Arguments { get; } = [TimeArgument];
 
-    public override Result Handle(CommandContext commandContext)
+    public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
         var dayTimeString = commandContext.GetArgument(TimeArgument)!;
         if (!TryParseDayTime(dayTimeString, out var dayTime))
@@ -23,7 +23,7 @@ public class SetTimeHandlerService(DayTimeManager dayTimeManager, CommandHandler
 
         dayTimeManager.CurrentTime = dayTime;
 
-        return Result.Success();
+        return CommandOutput.Empty;
     }
 
     private static bool TryParseDayTime(string dayTimeString, out DayTime dayTime)

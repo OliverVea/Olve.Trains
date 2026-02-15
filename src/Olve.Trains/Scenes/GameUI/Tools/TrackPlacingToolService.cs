@@ -2,6 +2,7 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameRendering;
@@ -120,7 +121,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
 
         UnregisterGhost();
         ToolState = ToolState with { From = null };
-        return trackPlacingService.PlaceTrack(f, trackEndpoint);
+        return trackPlacingService.PlaceTrack(f, trackEndpoint).ToEmptyResult();
     }
 
     private Result UpdateGhost(Vector3D<float> mousePosition)

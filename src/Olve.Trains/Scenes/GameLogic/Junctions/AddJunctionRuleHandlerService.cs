@@ -25,7 +25,7 @@ public class AddJunctionRuleHandlerService(
     public override string HelpString => "Adds a signal rule to the specified junction signal";
     public override IReadOnlyList<CommandArgument> Arguments { get; } = [JunctionArgument, RuleArgument];
 
-    public override Result Handle(CommandContext commandContext)
+    public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
         if (commandContext.GetId<Junction>(JunctionArgument).TryPickProblems(out var problems, out var junctionId)
             || ParseRule(commandContext.Arguments[RuleArgument.Key]).TryPickProblems(out problems, out var ruleFields))
@@ -33,11 +33,16 @@ public class AddJunctionRuleHandlerService(
             return problems;
         }
 
-        return junctionSignalRuleService.AddRuleForJunction(junctionId,
-            ruleFields.Vehicles,
-            ruleFields.Sources,
-            ruleFields.Destinations,
-            ruleFields.Distribution).ToEmptyResult();
+        if (junctionSignalRuleService.AddRuleForJunction(junctionId,
+                ruleFields.Vehicles,
+                ruleFields.Sources,
+                ruleFields.Destinations,
+                ruleFields.Distribution).ToEmptyResult().TryPickProblems(out problems))
+        {
+            return problems;
+        }
+
+        return CommandOutput.Empty;
     }
 
     private const string RulePattern = @"^\s*
