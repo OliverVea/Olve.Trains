@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Silk.NET.Windowing;
 
@@ -18,7 +19,7 @@ public static class Program
     {
         var configuration = new ConfigurationBuilder()
             //.SetBasePath(AppContext.BaseDirectory)
-            //.AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.local.json", optional: true)
             .Build();
 
@@ -33,6 +34,15 @@ public static class Program
 
         var window = Window.Create(WindowOptions);
         var gameManager = serviceProvider.GetRequiredService<GameManager>();
+        var logger = serviceProvider.GetRequiredService<ILogger<GameManager>>();
+        logger.LogInformation("""
+                              
+                              
+                              ----------------------------------------
+                              |       Starting On Track to Grow      |
+                              ----------------------------------------
+                              """);
+
         var result = gameManager.Run(window, SceneIds.MainMenuScene);
 
         return LogResult(result);

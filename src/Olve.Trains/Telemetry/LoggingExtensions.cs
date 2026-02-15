@@ -19,9 +19,15 @@ public static class LoggingExtensions
         var loggingSection = configuration.GetSection("Logging");
         builder.AddConfiguration(loggingSection);
 
+
         if (loggingSection.GetValue("Console:Enabled", true))
         {
-            builder.AddConsole();
+            builder.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.SingleLine = true;
+                options.TimestampFormat = "hh:mm:ss ";
+            });
         }
 
         if (loggingSection.GetValue("File:Enabled", true))
@@ -69,11 +75,10 @@ public static class LoggingExtensions
             var resource = ResourceBuilder
                 .CreateDefault()
                 .AddService("olve.trains")
-                .AddAttributes(new KeyValuePair<string, object>[]
-                {
+                .AddAttributes([
                     new("deployment.environment", buildConfig),
-                    new("host.name", Environment.MachineName),
-                });
+                    new("host.name", Environment.MachineName)
+                ]);
 
             builder.AddOpenTelemetry(logging =>
             {
