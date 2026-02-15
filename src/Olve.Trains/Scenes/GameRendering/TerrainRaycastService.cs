@@ -1,3 +1,4 @@
+using Olve.Engine3D;
 using Olve.Engine3D.Camera;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
@@ -14,9 +15,12 @@ public class TerrainRaycastService(
 {
     private HeightmapRaycaster? _heightmapRaycaster;
 
-    public Ray3D<float>? MouseRay { get; set; }
-    public Vector3D<float>? TerrainIntersection { get; set; }
-    public Vector3D<float>? TerrainIntersectionTileCenter { get; set; }
+    public Ray3D<float>? MouseRay { get; private set; }
+    public Vector3D<float>? TerrainIntersection { get; private set; }
+    public Vector3D<float>? TerrainIntersectionTileCenter => FromTerrainIntersection((x, y, z) =>
+        new Vector3D<float>(float.Floor(x) + 0.5f, float.Floor(y), float.Floor(z) + 0.5f));
+    public TilePosition? TerrainIntersectionTile => FromTerrainIntersection((x, y, z) =>
+        new TilePosition((int)x, (int)y, (int)z));
 
     public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService]);
 
@@ -53,7 +57,6 @@ public class TerrainRaycastService(
     public Result Update(TimeSpan deltaTime)
     {
         TerrainIntersection = null;
-        TerrainIntersectionTileCenter = null;
 
         if (_heightmapRaycaster is null)
         {
@@ -65,14 +68,9 @@ public class TerrainRaycastService(
             return Result.Success();
         }
 
-        if (_heightmapRaycaster.TryRaycast(MouseRay.Value, out var intersection))
+        if (_heightmapRaycaster.TryRaycast(MouseRay.Value, out var terrainIntersection))
         {
-            TerrainIntersection = intersection;
-
-            var x = (int)intersection.Value.X;
-            var z = (int)intersection.Value.Z;
-
-            TerrainIntersectionTileCenter = new Vector3D<float>(x + 0.5f, intersection.Value.Y, z + 0.5f);
+            TerrainIntersection = terrainIntersection;
         }
 
         return Result.Success();
@@ -89,4 +87,6 @@ public class TerrainRaycastService(
             shader.MousePosition = new Vector3D<float>(-1000f, -1000f, -1000f);
         }
     }
+
+    private T? FromTerrainIntersection<T>(Func<float, float, float, T> xyzTransform) => TerrainIntersection is {X: var x, Y: var y, Z: var z} ? xyzTransform(x, y, z) : default;
 }

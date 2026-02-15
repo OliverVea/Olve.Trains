@@ -49,4 +49,9 @@ public sealed class EntityStore<T> where T :  IHasId<Id<T>>
     public bool TryGet(Id<T> id, [MaybeNullWhen(false)] out T entity) => _entities.TryGetValue(id, out entity);
     public bool Exists(Id<T> id) => _entities.ContainsKey(id);
     public bool Exists(T entity) => _entities.TryGetValue(entity.Id, out var existing) && existing.Equals(entity);
+
+    public IEnumerable<T> Where(Func<T, bool> selector)
+    {
+        return _entities.Values.Where(selector);
+    }
 }
