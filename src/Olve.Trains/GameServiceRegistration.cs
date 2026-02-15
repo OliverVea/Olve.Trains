@@ -39,6 +39,8 @@ public static class GameServiceRegistration
         services.AddSingleton<DayTimeManager>();
         services.AddSingleton<DaylightManager>();
         services.AddSingleton<ScreenResizedEvent>();
+        services.AddSingleton<AfterRenderEvent>();
+        services.AddSingleton<ScreenshotManager>();
         services.AddSingleton<CommandHandlerServiceCollection>();
         services.AddSingleton<EventQueueFactory>();
 
@@ -49,6 +51,7 @@ public static class GameServiceRegistration
         services.AddSingleton<EchoCommandHandler>();
         services.AddSingleton<HelpCommandHandler>();
         services.AddSingleton<ExitCommandHandler>();
+        services.AddSingleton<ScreenshotCommandHandler>();
         if (listen)
         {
             services.AddSingleton<CommandPipeServer>();
