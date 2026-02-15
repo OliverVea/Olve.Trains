@@ -1,15 +1,17 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
+using Olve.Trains.Scenes.GameLogic.Industries;
 using Olve.Trains.Scenes.GameRendering;
 using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public sealed class StationPlacingToolService(
-    ILogger<StationPlacingToolService> logger,
     TerrainRaycastService terrainRaycastService,
     ToolManagementService toolManagementService,
+    BuildingBlueprintLibraryService libraryService,
+    BuildingService buildingService,
     MouseManager mouseManager) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
 {
     public record State(bool ActivatedThisFrame = false);
@@ -28,13 +30,19 @@ public sealed class StationPlacingToolService(
 
     protected override Result OnSelectedUpdate(TimeSpan deltaTime)
     {
-        if (!ToolState.ActivatedThisFrame
-            || terrainRaycastService.TerrainIntersectionTileCenter is not { } tileCenter)
+        if (!ToolState.ActivatedThisFrame)
         {
             return Result.Success();
         }
 
-        logger.LogInformation("Placing stations at {Center}", tileCenter);
+        if (terrainRaycastService.TerrainIntersectionTile is not { } tilePosition)
+        {
+            return Result.Success();
+        }
+
+        var stationBlueprint = libraryService.StationBlueprint;
+        buildingService.AddBuilding(stationBlueprint, tilePosition);
+
         return Result.Success();
     }
 }

@@ -8,9 +8,9 @@ public class BuildingBlueprintService
     public Event<Id<BuildingBlueprint>> OnBlueprintAdded => _blueprints.OnAdded;
     public Event<Id<BuildingBlueprint>> OnBlueprintRemoved => _blueprints.OnRemoved;
 
-    public Id<BuildingBlueprint> AddBuilding(string description, TileFootprint footprint)
+    public Id<BuildingBlueprint> AddBlueprint(string description, TileFootprint footprint, BuildingType buildingType)
     {
-        BuildingBlueprint blueprint = new(Id.New<BuildingBlueprint>(), description, footprint);
+        BuildingBlueprint blueprint = new(Id.New<BuildingBlueprint>(), description, footprint, buildingType);
         _blueprints.TryAdd(blueprint);
         return blueprint.Id;
     }
