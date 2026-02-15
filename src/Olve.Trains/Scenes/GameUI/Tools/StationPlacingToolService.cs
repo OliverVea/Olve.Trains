@@ -8,6 +8,7 @@ using Silk.NET.Input;
 namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public sealed class StationPlacingToolService(
+    ILogger<StationPlacingToolService> logger,
     TerrainRaycastService terrainRaycastService,
     ToolManagementService toolManagementService,
     BuildingBlueprintLibraryService libraryService,
@@ -37,6 +38,7 @@ public sealed class StationPlacingToolService(
 
         if (terrainRaycastService.TerrainIntersectionTile is not { } tilePosition)
         {
+            logger.LogDebug("Station placement click missed terrain");
             return Result.Success();
         }
 

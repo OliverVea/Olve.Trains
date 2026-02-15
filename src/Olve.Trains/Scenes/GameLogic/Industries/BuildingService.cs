@@ -14,12 +14,35 @@ public class BuildingService(ILogger<BuildingService> logger)
     public Id<Building> AddBuilding(Id<BuildingBlueprint> blueprintId, TilePosition origin)
     {
         Building building = new(Id.New<Building>(), blueprintId, origin);
-        _buildings.TryAdd(building);
+
+        if (!_buildings.TryAdd(building))
+        {
+            logger.LogWarning("Failed to add building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, origin);
+        }
+        else
+        {
+            logger.LogInformation("Added building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, origin);
+        }
+
         return building.Id;
     }
 
     public DeletionResult DeleteBuilding(Building building) => DeleteBuilding(building.Id);
-    public DeletionResult DeleteBuilding(Id<Building> buildingId) => _buildings.Remove(buildingId);
+
+    public DeletionResult DeleteBuilding(Id<Building> buildingId)
+    {
+        var result = _buildings.Remove(buildingId);
+        if (result.WasNotFound)
+        {
+            logger.LogWarning("Tried to delete building {BuildingId} but it was not found", buildingId);
+        }
+        else
+        {
+            logger.LogInformation("Deleted building {BuildingId}", buildingId);
+        }
+
+        return result;
+    }
 
     public Result DeleteBuildingsWithBlueprint(Id<BuildingBlueprint> blueprintId)
     {
