@@ -1,3 +1,4 @@
+using Olve.Engine3D.Commands;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
@@ -8,7 +9,7 @@ using Silk.NET.Windowing;
 
 namespace Olve.Engine3D;
 
-public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvider, Provider<IInputContext> inputContextProvider, KeyboardManager keyboardManager, MouseManager mouseManager, SceneManager sceneManager, ScreenResizedEvent screenResizedEvent)
+public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvider, Provider<IInputContext> inputContextProvider, KeyboardManager keyboardManager, MouseManager mouseManager, SceneManager sceneManager, ScreenResizedEvent screenResizedEvent, CommandPipeServer? commandPipeServer = null)
 {
     private Result _result = Result.Success();
     private Id<IScene> _initialScene;
@@ -56,6 +57,8 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
         {
             return problems.Prepend("Error while initializing input");
         }
+
+        commandPipeServer?.Start();
 
         return sceneManager.LoadAndActivateScene(_initialScene);
     }
@@ -129,6 +132,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
 
     private void OnClose()
     {
+        commandPipeServer?.Dispose();
         sceneManager.Close();
     }
 

@@ -20,7 +20,7 @@ public class PlaceVehicleHandlerService(
     public override string Verb => "place-vehicle";
     public override string HelpString => "Places the specified vehicle on the specified track";
     public override IReadOnlyList<CommandArgument> Arguments { get; } = [VehicleIdArgument, TrackArgument, SpeedArgument];
-    public override Result Handle(CommandContext commandContext)
+    public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
         var trackIdResult = commandContext.GetId<Track>(TrackArgument);
 
@@ -53,7 +53,7 @@ public class PlaceVehicleHandlerService(
 
         logger.LogInformation("Placed vehicle '{VehicleId}' on track with id '{TrackId}' with position '{VehicleTrackPosition}'", vehicleId, trackId, vehicleTrackPosition);
 
-        return Result.Success();
+        return CommandOutput.Empty;
     }
 
     private Result<Id<Vehicle>> CreateVehicle()

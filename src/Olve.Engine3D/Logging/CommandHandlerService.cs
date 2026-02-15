@@ -8,7 +8,7 @@ public abstract class CommandHandlerService(CommandHandlerServiceCollection comm
     public abstract string Verb { get; }
     public abstract string HelpString { get; }
     public abstract IReadOnlyList<CommandArgument> Arguments { get; }
-    public abstract Result Handle(CommandContext commandContext);
+    public abstract Result<CommandOutput> Handle(CommandContext commandContext);
 
     public Result Load()
     {

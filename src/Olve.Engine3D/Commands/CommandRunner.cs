@@ -1,12 +1,11 @@
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Logging;
 
 namespace Olve.Engine3D.Commands;
 
-public class CommandRunner(IEnumerable<ICommandHandler> commandHandlers, ILogger<CommandRunner> logger) : ICommandRunner
+public class CommandRunner(CommandHandlerServiceCollection commandHandlers, ILogger<CommandRunner> logger) : ICommandRunner
 {
-    private readonly IReadOnlyDictionary<string, ICommandHandler> _commandHandlers = commandHandlers.ToDictionary(h => h.Verb);
-
-    public Result Run(RunCommandRequest request)
+    public Result<CommandOutput> Run(RunCommandRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Command))
         {
@@ -20,7 +19,8 @@ public class CommandRunner(IEnumerable<ICommandHandler> commandHandlers, ILogger
 
         var (verb, args) = verbAndArgs;
 
-        if (!_commandHandlers.TryGetValue(verb, out var handler))
+        var handler = commandHandlers.FirstOrDefault(h => h.Verb == verb);
+        if (handler is null)
         {
             return new ResultProblem("No handler found for verb '{0}'", verb);
         }
@@ -40,14 +40,15 @@ public class CommandRunner(IEnumerable<ICommandHandler> commandHandlers, ILogger
             }
         }
 
+        Result<CommandOutput> lastResult = CommandOutput.Empty;
         for (var i = 0; i < request.Times; i++)
         {
-            var result = handler.Handle(new CommandContext(args));
-            if (result.TryPickProblems(out problems)) return problems;
+            lastResult = handler.Handle(new CommandContext(args));
+            if (lastResult.TryPickProblems(out problems)) return problems;
         }
 
         logger.LogDebug("Ran '{Command}' successfully", request.Command);
 
-        return Result.Success();
+        return lastResult;
     }
 }

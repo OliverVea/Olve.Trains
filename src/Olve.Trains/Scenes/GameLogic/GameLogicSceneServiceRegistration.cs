@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Olve.Engine3D.Commands;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.GameLogic.Industries;
@@ -19,10 +20,14 @@ public static class GameLogicSceneServiceRegistration
     {
         var sceneId = SceneIds.GameLogicScene;
 
+        // Command processing
+        services.AddSceneService<CommandProcessingService>(sceneId);
+
         // Scene services (participate in scene lifecycle)
         services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);
         services.AddSceneService<ClearJunctionSignalRules>(sceneId);
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
+        services.AddSceneService<PlaceTrackHandlerService>(sceneId);
         services.AddSceneService<PlaceVehicleHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);

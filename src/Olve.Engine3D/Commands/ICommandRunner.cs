@@ -2,5 +2,5 @@ namespace Olve.Engine3D.Commands;
 
 public interface ICommandRunner
 {
-    Result Run(RunCommandRequest request);
+    Result<CommandOutput> Run(RunCommandRequest request);
 }

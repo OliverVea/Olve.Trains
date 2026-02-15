@@ -13,13 +13,18 @@ public class ClearJunctionSignalRules(
     public override string Verb => "clear-signal-rules";
     public override string HelpString => "Clears all signal rules for a junction";
     public override IReadOnlyList<CommandArgument> Arguments { get; } = [JunctionArgument];
-    public override Result Handle(CommandContext commandContext)
+    public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
         if (commandContext.GetId<Junction>(JunctionArgument).TryPickProblems(out var problems, out var junctionId))
         {
             return problems;
         }
 
-        return junctionSignalRuleService.ClearRulesForJunction(junctionId);
+        if (junctionSignalRuleService.ClearRulesForJunction(junctionId).TryPickProblems(out problems))
+        {
+            return problems;
+        }
+
+        return CommandOutput.Empty;
     }
 }
