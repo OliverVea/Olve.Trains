@@ -5,8 +5,14 @@ namespace Olve.Trains.Scenes.GameLogic.Stations;
 
 public class StationPlatformService
 {
-    private readonly EntityStore<StationPlatform> _platforms = new();
-    private readonly Dictionary<Id<Track>, Id<StationPlatform>> _platformsByTrack = new();
+    private readonly EntityStore<StationPlatform> _platforms;
+    private readonly EntityStoreUniqueIndex<StationPlatform, Id<Track>> _platformsByTrack;
+
+    public StationPlatformService(EntityStoreFactory entityStoreFactory)
+    {
+        _platforms = entityStoreFactory.Create<StationPlatform>();
+        _platformsByTrack = _platforms.CreateUniqueIndex(x => x.TrackId);
+    }
 
     public Event<Id<StationPlatform>> OnPlatformAdded => _platforms.OnAdded;
     public Event<Id<StationPlatform>> OnPlatformRemoved => _platforms.OnRemoved;
@@ -19,15 +25,13 @@ public class StationPlatformService
         }
 
         StationPlatform platform = new(Id.New<StationPlatform>(), trackId, stationId);
-        _platformsByTrack.Add(trackId, platform.Id);
-
         _platforms.Set(platform);
         return platform.Id;
     }
 
     public DeletionResult RemoveForTrack(Id<Track> trackId)
     {
-        if (!_platformsByTrack.Remove(trackId, out var platformId))
+        if (!_platformsByTrack.TryGet(trackId, out var platformId))
         {
             return DeletionResult.NotFound();
         }
@@ -35,7 +39,9 @@ public class StationPlatformService
         return _platforms.Remove(platformId);
     }
 
-    public bool TryGetPlatform(Id<Track> trackId, out Id<StationPlatform> platformId) => _platformsByTrack.TryGetValue(trackId, out platformId);
-    public bool TryGetPlatform(Id<StationPlatform> stationPlatformId, out StationPlatform platform) => _platforms.TryGet(stationPlatformId, out platform);
+    public bool TryGetPlatform(Id<Track> trackId, out Id<StationPlatform> platformId) =>
+        _platformsByTrack.TryGet(trackId, out platformId);
+    public bool TryGetPlatform(Id<StationPlatform> stationPlatformId, out StationPlatform platform)
+        => _platforms.TryGet(stationPlatformId, out platform);
 
 }

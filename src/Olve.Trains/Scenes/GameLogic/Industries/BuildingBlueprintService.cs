@@ -3,9 +3,9 @@ using Olve.Engine3D.Systems;
 
 namespace Olve.Trains.Scenes.GameLogic.Industries;
 
-public class BuildingBlueprintService(ILogger<BuildingBlueprintService> logger)
+public class BuildingBlueprintService(ILogger<BuildingBlueprintService> logger, EntityStoreFactory entityStoreFactory)
 {
-    private readonly EntityStore<BuildingBlueprint> _blueprints = new();
+    private readonly EntityStore<BuildingBlueprint> _blueprints = entityStoreFactory.Create<BuildingBlueprint>();
     public Event<Id<BuildingBlueprint>> OnBlueprintAdded => _blueprints.OnAdded;
     public Event<Id<BuildingBlueprint>> OnBlueprintRemoved => _blueprints.OnRemoved;
 

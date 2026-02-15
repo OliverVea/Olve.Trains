@@ -1,13 +1,22 @@
 ﻿using Microsoft.Extensions.Logging;
-using Olve.Engine3D;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 
 namespace Olve.Trains.Scenes.GameLogic.Industries;
 
-public class BuildingService(ILogger<BuildingService> logger)
+public class BuildingService
 {
-    private readonly EntityStore<Building> _buildings = new();
+    private readonly ILogger<BuildingService> _logger;
+    private readonly EntityStore<Building> _buildings;
+    private readonly EntityStoreIndex<Building, Id<BuildingBlueprint>> _buildingsByBlueprint;
+
+    public BuildingService(ILogger<BuildingService> logger, EntityStoreFactory entityStoreFactory)
+    {
+        _logger = logger;
+        _buildings = entityStoreFactory.Create<Building>();
+        _buildingsByBlueprint = _buildings.CreateIndex(x => x.BlueprintId);
+    }
+
     public Event<Id<Building>> OnBuildingAdded => _buildings.OnAdded;
     public Event<Id<Building>> OnBuildingRemoved => _buildings.OnRemoved;
 
@@ -17,11 +26,11 @@ public class BuildingService(ILogger<BuildingService> logger)
 
         if (!_buildings.TryAdd(building))
         {
-            logger.LogWarning("Failed to add building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
+            _logger.LogWarning("Failed to add building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
         }
         else
         {
-            logger.LogInformation("Added building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
+            _logger.LogInformation("Added building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
         }
 
         return building.Id;
@@ -34,11 +43,11 @@ public class BuildingService(ILogger<BuildingService> logger)
         var result = _buildings.Remove(buildingId);
         if (result.WasNotFound)
         {
-            logger.LogWarning("Tried to delete building {BuildingId} but it was not found", buildingId);
+            _logger.LogWarning("Tried to delete building {BuildingId} but it was not found", buildingId);
         }
         else
         {
-            logger.LogInformation("Deleted building {BuildingId}", buildingId);
+            _logger.LogInformation("Deleted building {BuildingId}", buildingId);
         }
 
         return result;
@@ -46,25 +55,24 @@ public class BuildingService(ILogger<BuildingService> logger)
 
     public Result DeleteBuildingsWithBlueprint(Id<BuildingBlueprint> blueprintId)
     {
-        var toDelete = _buildings
-            .Where(x => x.BlueprintId == blueprintId)
-            .ToArray();
-
-        foreach (var building in toDelete)
+        foreach (var buildingId in _buildingsByBlueprint.GetForKey(blueprintId).ToArray())
         {
-            var result = DeleteBuilding(building.Id);
+            var result = DeleteBuilding(buildingId);
             if (result.WasNotFound)
             {
-                logger.LogWarning("Building with id '{BuildingId}' was not found while deleting all buildings with blueprint '{BlueprintId}'", building.Id, blueprintId);
+                _logger.LogWarning("Building with id '{BuildingId}' was not found while deleting all buildings with blueprint '{BlueprintId}'", buildingId, blueprintId);
             }
 
             if (result.TryPickProblems(out var problems))
             {
-                logger.Log(problems.Prepend("Failed to delete building with id '{0}' while deleting all buildings with blueprint '{1}'",  building.Id, blueprintId));
+                _logger.Log(problems.Prepend("Failed to delete building with id '{0}' while deleting all buildings with blueprint '{1}'", buildingId, blueprintId));
             }
         }
 
         return Result.Success();
     }
-    public bool TryGetBuilding(Id<Building> buildingId, out Building building) => _buildings.TryGet(buildingId, out building);
+    public bool TryGetBuilding(Id<Building> buildingId, out Building building)
+        => _buildings.TryGet(buildingId, out building);
+    public IReadOnlyCollection<Id<Building>> GetBuildingsWithBlueprint(Id<BuildingBlueprint> blueprintId) =>
+        _buildingsByBlueprint.GetForKey(blueprintId);
 }
