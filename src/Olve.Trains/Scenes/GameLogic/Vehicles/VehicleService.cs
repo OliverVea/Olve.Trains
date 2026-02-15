@@ -2,9 +2,9 @@ using Olve.Engine3D.Systems;
 
 namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
-public class VehicleService
+public class VehicleService(EntityStoreFactory entityStoreFactory)
 {
-    private readonly EntityStore<Vehicle> _vehicles = new();
+    private readonly EntityStore<Vehicle> _vehicles = entityStoreFactory.Create<Vehicle>();
     private int _count;
 
     public Event<Id<Vehicle>> OnVehicleAdded => _vehicles.OnAdded;

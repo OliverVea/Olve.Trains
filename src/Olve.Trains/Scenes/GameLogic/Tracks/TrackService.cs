@@ -1,11 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
 using Olve.Engine3D.Systems;
 
 namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
-public class TrackService
+public class TrackService(EntityStoreFactory entityStoreFactory)
 {
-    private readonly EntityStore<Track> _tracks = new();
+    private readonly EntityStore<Track> _tracks = entityStoreFactory.Create<Track>();
 
     public Event<Id<Track>> OnTrackAdded => _tracks.OnAdded;
     public Event<Id<Track>> OnTrackRemoved => _tracks.OnRemoved;

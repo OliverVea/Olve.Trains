@@ -8,6 +8,10 @@ public sealed class EntityStore<T> where T :  IHasId<Id<T>>
 {
     private readonly IdDictionary<T> _entities = new();
 
+    internal EntityStore()
+    {
+    }
+
     public Event<Id<T>> OnAdded { get; } = new();
     public Event<Id<T>> OnRemoved  { get; } = new();
 
@@ -54,4 +58,10 @@ public sealed class EntityStore<T> where T :  IHasId<Id<T>>
     {
         return _entities.Values.Where(selector);
     }
+
+    public EntityStoreIndex<T, TKey> CreateIndex<TKey>(Func<T, TKey> keySelector) where TKey : notnull
+        => new(this, keySelector);
+
+    public EntityStoreUniqueIndex<T, TKey> CreateUniqueIndex<TKey>(Func<T, TKey> keySelector) where TKey : notnull
+        => new(this, keySelector);
 }

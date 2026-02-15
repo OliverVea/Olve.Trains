@@ -6,9 +6,9 @@ using Olve.Utilities.CollectionExtensions;
 
 namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
-public class JunctionService(ILogger<JunctionService> logger)
+public class JunctionService(ILogger<JunctionService> logger, EntityStoreFactory entityStoreFactory)
 {
-    private readonly EntityStore<Junction> _junctions = new();
+    private readonly EntityStore<Junction> _junctions = entityStoreFactory.Create<Junction>();
     private readonly Dictionary<Id<Junction>, HashSet<JunctionConnection>> _junctionConnections = new();
     private readonly Dictionary<TilePosition, Id<Junction>> _junctionPositions = new();
 
