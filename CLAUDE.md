@@ -68,6 +68,42 @@ dotnet outdated -u
 pkg-trim --sln-dir . --fix
 ```
 
+## Olve.* Packages
+
+Documentation base URL: https://olivervea.github.io/Olve.Utilities/
+
+API docs follow the pattern: `https://olivervea.github.io/Olve.Utilities/api/{Namespace}.html`
+
+Key packages used in this project:
+
+- **Olve.Results** - Result type for error handling (used throughout the codebase)
+- **Olve.Paths** - Path manipulation inspired by Python's pathlib (API: https://olivervea.github.io/Olve.Utilities/api/Olve.Paths.html)
+- **Olve.Utilities** - General utilities
+
+### Olve.Paths Example
+
+```csharp
+using Olve.Paths;
+
+// Create paths
+var path = Paths.Path.Create("/home/user/documents");
+var file = Paths.Path.Create("screenshots/image.png");
+
+// Path operations
+var parent = path.Parent;                    // /home/user
+var joined = path / "subfolder" / "file.txt"; // Path joining with /
+var absolute = file.Absolute;                // Resolves to absolute path
+
+// File system checks
+if (path.Exists()) { ... }
+path.TryGetElementType(out var elementType); // Directory, File, etc.
+
+// Get special paths
+var cwd = Paths.Path.GetCurrentDirectory();
+var home = Paths.Path.GetHomeDirectory();
+Paths.Path.TryGetAssemblyExecutable(out var exe);
+```
+
 ## Notes
 
 ### OpenGL State Management

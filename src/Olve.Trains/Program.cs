@@ -57,6 +57,7 @@ public static class Program
         collection.Add(serviceProvider.GetRequiredService<EchoCommandHandler>());
         collection.Add(serviceProvider.GetRequiredService<HelpCommandHandler>());
         collection.Add(serviceProvider.GetRequiredService<ExitCommandHandler>());
+        collection.Add(serviceProvider.GetRequiredService<ScreenshotCommandHandler>());
 
         var window = Window.Create(WindowOptions);
         var gameManager = serviceProvider.GetRequiredService<GameManager>();

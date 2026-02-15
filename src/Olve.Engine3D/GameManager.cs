@@ -9,7 +9,7 @@ using Silk.NET.Windowing;
 
 namespace Olve.Engine3D;
 
-public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvider, Provider<IInputContext> inputContextProvider, KeyboardManager keyboardManager, MouseManager mouseManager, SceneManager sceneManager, ScreenResizedEvent screenResizedEvent, CommandPipeServer? commandPipeServer = null)
+public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvider, Provider<IInputContext> inputContextProvider, KeyboardManager keyboardManager, MouseManager mouseManager, SceneManager sceneManager, ScreenResizedEvent screenResizedEvent, AfterRenderEvent afterRenderEvent, CommandPipeServer? commandPipeServer = null)
 {
     private Result _result = Result.Success();
     private Id<IScene> _initialScene;
@@ -127,7 +127,9 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
 
     private Result Render(TimeSpan deltaTime)
     {
-        return sceneManager.Render(deltaTime);
+        var result = sceneManager.Render(deltaTime);
+        afterRenderEvent.OnAfterRender.Invoke();
+        return result;
     }
 
     private void OnClose()
