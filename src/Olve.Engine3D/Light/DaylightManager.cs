@@ -6,6 +6,7 @@ namespace Olve.Engine3D.Light;
 public class DaylightManager
 {
     private readonly Dictionary<DaylightId, DaylightInterpolator> _lights = [];
+    private int _nextId;
 
     public Result<DaylightId> AddLight(DaylightData data)
     {
@@ -24,7 +25,7 @@ public class DaylightManager
         }
 
         var interpolator = CreateInterpolator(data);
-        var daylightId = new DaylightId(_lights.Count);
+        var daylightId = new DaylightId(_nextId++);
 
         _lights.Add(daylightId, interpolator);
 
@@ -35,7 +36,7 @@ public class DaylightManager
     {
         if (!_lights.Remove(daylightId))
         {
-            DeletionResult.NotFound();
+            return DeletionResult.NotFound();
         }
 
         return DeletionResult.Success();
