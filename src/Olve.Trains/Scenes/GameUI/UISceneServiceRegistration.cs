@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Olve.Engine3D;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameUI.GUI;
 using Olve.Trains.Scenes.GameUI.Indicators;
@@ -24,6 +25,8 @@ public static class UISceneServiceRegistration
         services.AddSceneService<StationPlacingToolService>(sceneId);
         services.AddSceneService<ToolBarService>(sceneId);
         services.AddSceneService<InfoBarService>(sceneId);
+
+        services.AddSceneService<ScreenshotService>(sceneId);
 
         // Game-specific GUI services
         services.AddSceneService<GameStyleService>(sceneId);

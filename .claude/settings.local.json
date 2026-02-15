@@ -38,7 +38,8 @@
       "Bash(SEND=\"dotnet run --project $PROJ --\")",
       "Bash(INST=\"--instance demo\")",
       "Bash($SEND --send \"place-vehicle track=416d2193-dc80-4572-a205-6e9e67e287aa speed=3\" $INST)",
-      "Bash($SEND --send \"exit\" $INST)"
+      "Bash($SEND --send \"exit\" $INST)",
+      "Bash(dotnet restore:*)"
     ],
     "deny": [],
     "ask": []
