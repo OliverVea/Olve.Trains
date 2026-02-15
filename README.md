@@ -50,11 +50,11 @@
   - [ ] Improve positioning of track signals based on track positioning
 - Detached mode:
   - Description: For e.g. Agentic AI access to the game for debugging, we want to be able to run with --detached or -d. Then, we should be able to use the cli to interact with the game, enumerating options (for main menu it could be clicking buttons, for the game it could be listing and placing tracks, buildings, trains). We should also be able to take screenshots of the screen as .pngs.
-  - [ ] Launch game in detached mode
-  - [ ] Add argument to send command to detached game by id
-  - [ ] Add a simple echo command
-  - [ ] Add commands for navigating the main menu
-  - [ ] Add support for taking screenshots of the current state of the game
+  - [x] Launch game in detached mode
+  - [x] Add argument to send command to detached game by id
+  - [x] Add a simple echo command
+  - [x] Add commands for navigating the main menu
+  - [x] Add support for taking screenshots of the current state of the game
 - Main menu improvements:
   - [ ] Add FPS counter to the info bar (right subsection, left of main menu button)
   - [ ] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now
