@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.Scenes;
+using Olve.Trains.Scenes.GameLogic.Industries;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
 namespace Olve.Trains.Scenes.GameRendering;
@@ -7,6 +8,7 @@ namespace Olve.Trains.Scenes.GameRendering;
 public static class GameRenderingSceneServiceRegistration
 {
     private static readonly ISceneServiceType[] BeforeTrackRendering = [new SceneServiceType<TrackRenderingService>()];
+    private static readonly ISceneServiceType[] BeforeBuildingRendering = [new SceneServiceType<BuildingRenderingService>()];
 
     public static IServiceCollection AddGameRenderingSceneServices(this IServiceCollection services)
     {
@@ -32,6 +34,15 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<VehicleRenderingService>(sceneId);
         services.AddSceneService<JunctionSignalRenderingService>(sceneId);
         services.AddSceneService<TerrainRaycastService>(sceneId);
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingAdded,
+            (BuildingRenderingService brs, Id<Building> id) => brs.Register(id),
+            before: BeforeBuildingRendering);
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingRemoved,
+            (BuildingRenderingService brs, Id<Building> id) => brs.Unregister(id),
+            before: BeforeBuildingRendering);
+        services.AddSceneService<BuildingRenderingService>(sceneId);
 
         return services;
     }

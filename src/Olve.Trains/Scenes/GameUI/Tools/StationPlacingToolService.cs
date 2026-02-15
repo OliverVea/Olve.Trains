@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Industries;
@@ -13,9 +14,10 @@ public sealed class StationPlacingToolService(
     ToolManagementService toolManagementService,
     BuildingBlueprintLibraryService libraryService,
     BuildingService buildingService,
-    MouseManager mouseManager) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
+    MouseManager mouseManager,
+    KeyboardManager keyboardManager) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
 {
-    public record State(bool ActivatedThisFrame = false);
+    public record State(bool ActivatedThisFrame = false, CardinalDirection CardinalDirection = CardinalDirection.North);
 
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Place Stations");
@@ -24,7 +26,12 @@ public sealed class StationPlacingToolService(
     protected override Result<Pass> OnSelectedInput(TimeSpan deltaTime)
     {
         var activatedThisFrame = mouseManager.State.IsButtonPressed(MouseButton.Left);
-        ToolState = new State(ActivatedThisFrame: activatedThisFrame);
+        ToolState = ToolState with { ActivatedThisFrame = activatedThisFrame };
+
+        if (keyboardManager.State.IsKeyPressed(Key.R))
+        {
+            ToolState = ToolState with { CardinalDirection = ToolState.CardinalDirection.RotateClockwise() };
+        }
 
         return Pass.Pass;
     }
@@ -43,7 +50,8 @@ public sealed class StationPlacingToolService(
         }
 
         var stationBlueprint = libraryService.StationBlueprint;
-        buildingService.AddBuilding(stationBlueprint, tilePosition);
+        BuildingPosition position = new(tilePosition, ToolState.CardinalDirection);
+        buildingService.AddBuilding(stationBlueprint, position);
 
         return Result.Success();
     }
