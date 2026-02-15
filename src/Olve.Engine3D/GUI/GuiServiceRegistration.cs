@@ -17,7 +17,6 @@ public static class GuiServiceRegistration
         services.TryAddScoped<GuiLayoutService>();
         services.TryAddScoped<GuiNodeStateService>();
         services.TryAddScoped<GuiActivationService>();
-        services.TryAddScoped<GuiStateListenerService>();
         services.TryAddScoped<GuiStyleApplierService>();
         services.TryAddScoped<GuiAnimationService>();
         services.TryAddScoped<GuiStyleRegistry>();

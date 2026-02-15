@@ -1,15 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using Olve.Engine3D.Scenes;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Systems;
 
 namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
-public class JunctionSignalService(ILogger<JunctionSignalService> logger, EventQueueFactory eventQueueFactory, JunctionService junctionService) : ISceneService
+public class JunctionSignalService(ILogger<JunctionSignalService> logger, JunctionService junctionService)
 {
     private readonly HashSet<Id<Junction>> _signalJunctions = [];
-
-    private readonly EventQueue<Id<Junction>> _junctionConnectionQueue =
-        eventQueueFactory.Create(junctionService.OnJunctionConnectionsUpdated);
 
     public Event<Id<Junction>> OnJunctionAdded { get; } = new();
     public Event<Id<Junction>> OnJunctionRemoved { get; } = new();
@@ -17,21 +13,7 @@ public class JunctionSignalService(ILogger<JunctionSignalService> logger, EventQ
     public IEnumerable<Id<Junction>> SignalJunctions => _signalJunctions;
     public Result<bool> JunctionHasSignal(Id<Junction> junctionId) => _signalJunctions.Contains(junctionId);
 
-    public Result Load()
-    {
-        _junctionConnectionQueue.SetHandler(OnJunctionConnectionsChanged).Init();
-        return Result.Success();
-    }
-
-    public Result Unload()
-    {
-        _junctionConnectionQueue.Cleanup();
-        return Result.Success();
-    }
-
-    public Result Update(TimeSpan deltaTime) => _junctionConnectionQueue.Update();
-
-    private Result OnJunctionConnectionsChanged(Id<Junction> junctionId)
+    public Result EvaluateSignal(Id<Junction> junctionId)
     {
         if (!junctionService.JunctionExists(junctionId))
         {

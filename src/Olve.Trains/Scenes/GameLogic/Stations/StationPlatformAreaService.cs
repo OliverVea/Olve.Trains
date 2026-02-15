@@ -1,45 +1,15 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Math;
-using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Systems;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
 namespace Olve.Trains.Scenes.GameLogic.Stations;
 
 public class StationPlatformAreaService(
-    EventQueueFactory eventQueueFactory,
     StationPlatformService stationPlatformService,
-    TrackSplineService trackSplineService) : ISceneService
+    TrackSplineService trackSplineService)
 {
     private readonly Dictionary<Id<StationPlatform>, Id<AABB>> _stationPlatformAABBLookup = new();
     private readonly AABBLinearLookup<Id<StationPlatform>> _stationPlatformLookup = new();
-
-    // TODO: Use event service
-    private readonly EventQueue<Id<StationPlatform>> _addedQueue =
-        eventQueueFactory.Create(stationPlatformService.OnPlatformAdded);
-    private readonly EventQueue<Id<StationPlatform>> _removedQueue =
-        eventQueueFactory.Create(stationPlatformService.OnPlatformRemoved);
-
-    public Result Load()
-    {
-        _addedQueue.SetHandler(OnAdded).Init();
-        _removedQueue.SetHandler(OnRemoved).Init();
-        return Result.Success();
-    }
-
-    public Result Unload()
-    {
-        _addedQueue.Cleanup();
-        _removedQueue.Cleanup();
-        return Result.Success();
-    }
-
-    public Result Update(TimeSpan deltaTime)
-    {
-        _addedQueue.Update();
-        _removedQueue.Update();
-        return Result.Success();
-    }
 
     public IReadOnlyCollection<Id<StationPlatform>> GetStationPlatformsIntersecting(AABB queryArea)
         => _stationPlatformLookup.Query(queryArea);
@@ -47,7 +17,7 @@ public class StationPlatformAreaService(
     public IReadOnlyCollection<Id<StationPlatform>> GetStationPlatformsContaining(Vector3D<float> queryPoint)
         => _stationPlatformLookup.Query(queryPoint);
 
-    private Result OnAdded(Id<StationPlatform> stationPlatformId)
+    public Result RegisterPlatform(Id<StationPlatform> stationPlatformId)
     {
         if (_stationPlatformAABBLookup.ContainsKey(stationPlatformId))
         {
@@ -85,7 +55,7 @@ public class StationPlatformAreaService(
         static float GetMin(float fA, float fB) => float.Min(float.Floor(fA), float.Floor(fB));
     }
 
-    private Result OnRemoved(Id<StationPlatform> stationPlatformId)
+    public Result DeregisterPlatform(Id<StationPlatform> stationPlatformId)
     {
         if (_stationPlatformAABBLookup.TryGetValue(stationPlatformId, out var aabbId))
         {

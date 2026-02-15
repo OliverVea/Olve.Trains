@@ -4,10 +4,8 @@ using Olve.Engine3D.Scenes;
 namespace Olve.Trains.Scenes.MainMenu;
 
 public class MainMenuStyleService(
-    GuiStyleApplierService guiStyleApplierService,
     GuiStyleRegistry styleRegistry) : ISceneService
 {
-    public int Priority => SceneServicePriority.FromDependents([guiStyleApplierService]);
 
     private static readonly IGuiElementStyling[] Styles =
     [

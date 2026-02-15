@@ -2,8 +2,6 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling.Animation;
-using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Systems;
 
 namespace Olve.Engine3D.GUI.Styling;
 
@@ -11,32 +9,9 @@ public class GuiStyleApplierService(
     ILogger<GuiStyleApplierService> logger,
     GuiElementService guiElementService,
     GuiLayoutService guiLayoutService,
-    GuiAnimationService guiAnimationService,
-    GuiStyleRegistry styleRegistry) : ISceneService
+    GuiStyleRegistry styleRegistry)
 {
-    public int Priority => SceneServicePriority.FromDependencies([guiAnimationService]);
-
-    private readonly EventQueue<GuiAnimationService.GuiStateWeightsChangedMessage> _guiStateWeightsChangedQueue
-        = new(guiAnimationService.GuiStateWeightsChanged);
-
-    public Result Load()
-    {
-        _guiStateWeightsChangedQueue.SetHandler(OnStateWeightsChanged).Init();
-        return Result.Success();
-    }
-
-    public Result Unload()
-    {
-        _guiStateWeightsChangedQueue.Cleanup();
-        return Result.Success();
-    }
-
-    public Result Update(TimeSpan deltaTime)
-    {
-        return _guiStateWeightsChangedQueue.Update();
-    }
-
-    private Result OnStateWeightsChanged(
+    public Result ApplyStateWeights(
         GuiAnimationService.GuiStateWeightsChangedMessage message)
     {
         if (!guiElementService.TryGetElement(message.NodeId, out var guiElement))
@@ -71,5 +46,4 @@ public class GuiStyleApplierService(
                     "Failed to update LayoutBox following GUI element state change '{0}'",
                     message));
     }
-
 }
