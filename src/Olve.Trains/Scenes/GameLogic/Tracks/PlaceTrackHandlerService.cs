@@ -13,10 +13,16 @@ public class PlaceTrackHandlerService(
 {
     private static readonly CommandArgument StartArgument = new("start", "Start position as x,y,z", true);
     private static readonly CommandArgument EndArgument = new("end", "End position as x,y,z", true);
+    private static readonly CommandArgument StartDirArgument = new("start-dir", "Start direction: north, south, east, west (optional)", false);
+    private static readonly CommandArgument EndDirArgument = new("end-dir", "End direction: north, south, east, west (optional)", false);
 
     public override string Verb => "place-track";
-    public override string HelpString => "Places a straight track between two positions";
-    public override IReadOnlyList<CommandArgument> Arguments { get; } = [StartArgument, EndArgument];
+    public override string HelpString => """
+        Places a track between two positions with optional direction control.
+        Example: place-track start=0,0.125,0 end=4,0.125,0 start-dir=east end-dir=east
+        Example (curved): place-track start=0,0.125,0 end=4,0.125,4 start-dir=east end-dir=north
+        """;
+    public override IReadOnlyList<CommandArgument> Arguments { get; } = [StartArgument, EndArgument, StartDirArgument, EndDirArgument];
 
     public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
@@ -32,9 +38,32 @@ public class PlaceTrackHandlerService(
             return problems;
         }
 
-        var direction = Vector3D.Normalize(end - start);
-        var startEndpoint = new TrackEndpoint(start, direction);
-        var endEndpoint = new TrackEndpoint(end, direction);
+        var defaultDirection = Vector3D.Normalize(end - start);
+
+        var startDirArg = commandContext.GetArgument(StartDirArgument);
+        var startDirection = defaultDirection;
+        if (startDirArg is not null)
+        {
+            if (TryParseDirection(startDirArg, out var parsedStartDir).TryPickProblems(out problems))
+            {
+                return problems;
+            }
+            startDirection = parsedStartDir.ToVector3D();
+        }
+
+        var endDirArg = commandContext.GetArgument(EndDirArgument);
+        var endDirection = defaultDirection;
+        if (endDirArg is not null)
+        {
+            if (TryParseDirection(endDirArg, out var parsedEndDir).TryPickProblems(out problems))
+            {
+                return problems;
+            }
+            endDirection = parsedEndDir.ToVector3D();
+        }
+
+        var startEndpoint = new TrackEndpoint(start, startDirection);
+        var endEndpoint = new TrackEndpoint(end, endDirection);
 
         if (trackPlacingService.PlaceTrack(startEndpoint, endEndpoint)
             .TryPickProblems(out problems, out var trackIds))
@@ -64,6 +93,25 @@ public class PlaceTrackHandlerService(
         }
 
         result = new Vector3D<float>(x, y, z);
+        return Result.Success();
+    }
+
+    private static Result TryParseDirection(string input, out CardinalDirection result)
+    {
+        result = input.ToLowerInvariant() switch
+        {
+            "north" or "n" => CardinalDirection.North,
+            "south" or "s" => CardinalDirection.South,
+            "east" or "e" => CardinalDirection.East,
+            "west" or "w" => CardinalDirection.West,
+            _ => CardinalDirection.None
+        };
+
+        if (result == CardinalDirection.None)
+        {
+            return new ResultProblem("Invalid direction '{0}'. Use: north, south, east, west (or n, s, e, w)", input);
+        }
+
         return Result.Success();
     }
 }
