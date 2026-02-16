@@ -112,8 +112,8 @@ jobs:
           name: built-assets
           path: src/Olve.Trains/assets
 
-      - name: Install Xvfb and Mesa software renderer
-        run: sudo apt-get update && sudo apt-get install -y xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libegl-mesa0
+      - name: Install Xvfb, GLFW, and Mesa software renderer
+        run: sudo apt-get update && sudo apt-get install -y xvfb libglfw3 mesa-utils libgl1-mesa-dri libglx-mesa0 libegl-mesa0
 
       - name: Build Release
         run: dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release
