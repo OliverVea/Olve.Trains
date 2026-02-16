@@ -13,6 +13,11 @@ public class S3Options : IAssetOptions
     public string? Bucket { get; set; }
 
     /// <summary>
+    /// S3 bucket prefix for asset files.
+    /// </summary>
+    public string Prefix { get; set; } = "/";
+
+    /// <summary>
     /// S3 access key.
     /// </summary>
     public string? Key { get; set; }
