@@ -94,6 +94,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
 
         if (terrainRaycastService.TerrainIntersectionTileCenter is not { } terrainIntersectionTileCenter)
         {
+            UnregisterGhost();
             return Result.Success();
         }
 

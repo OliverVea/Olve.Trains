@@ -16,6 +16,7 @@ public static class GameRenderingSceneServiceRegistration
 
         services.AddSceneService<GLService>(sceneId);
         services.AddSceneService<CameraSceneService>(sceneId);
+        services.AddSceneService<SetCameraHandlerService>(sceneId);
         services.AddSceneService<TerrainRenderingService>(sceneId);
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
