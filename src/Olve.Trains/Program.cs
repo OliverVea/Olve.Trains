@@ -32,8 +32,8 @@ public static class Program
     private static int StartGame(ParsedArgs parsedArgs)
     {
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: true)
-            .AddJsonFile("appsettings.local.json", optional: true)
+            .AddJsonFile("Properties/appsettings.json", optional: true)
+            .AddJsonFile("Properties/appsettings.local.json", optional: true)
             .Build();
 
         var listen = parsedArgs.Listen
