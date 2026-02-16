@@ -27,7 +27,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
     {
         logger.LogDebug("Getting S3 configuration");
 
-        if (string.IsNullOrWhiteSpace(s3Options.Value.Bucket) || string.IsNullOrWhiteSpace(s3Options.Value.Key) || string.IsNullOrWhiteSpace(s3Options.Value.Secret))
+        if (string.IsNullOrWhiteSpace(s3Options.Value.Bucket) || string.IsNullOrWhiteSpace(s3Options.Value.Prefix) || string.IsNullOrWhiteSpace(s3Options.Value.Key) || string.IsNullOrWhiteSpace(s3Options.Value.Secret))
         {
             var problem = new ResultProblem("S3 configuration is incomplete. Ensure Bucket, Key, and Secret are configured.");
             if (!request.AllowFailure)
@@ -42,7 +42,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
 
         logger.LogInformation("Got configuration - Bucket: {Bucket}", s3Options.Value.Bucket);
 
-        var retrievalResult = await RetrieveS3BucketAsync(s3Options.Value.Bucket, s3Options.Value.Key, s3Options.Value.Secret, request.InitialTimeout, ct);
+        var retrievalResult = await RetrieveS3BucketAsync(s3Options.Value.Bucket, s3Options.Value.Prefix, s3Options.Value.Key, s3Options.Value.Secret, request.InitialTimeout, ct);
         if (retrievalResult.TryPickProblems(out var retrievalProblems, out var files))
         {
             if (!request.AllowFailure)
@@ -62,7 +62,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
         return new Response(files);
     }
 
-    private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(string bucket, string key, string secret, TimeSpan initialTimeout, CancellationToken ct)
+    private async Task<Result<List<FileInfo>>> RetrieveS3BucketAsync(string bucket, string prefix, string key, string secret, TimeSpan initialTimeout, CancellationToken ct)
     {
         try
         {
@@ -72,7 +72,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
             };
             using var s3Client = new AmazonS3Client(key, secret, config);
 
-            var listRequest = new ListObjectsV2Request { BucketName = bucket };
+            var listRequest = new ListObjectsV2Request { BucketName = bucket, Prefix = prefix};
 
             using var initialTimeoutCts = new CancellationTokenSource(initialTimeout);
             using var combinedInitialCts = CancellationTokenSource.CreateLinkedTokenSource(ct, initialTimeoutCts.Token);
@@ -98,9 +98,16 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
 
             foreach (var s3Object in listResponse.S3Objects ?? [])
             {
+                var relativePath = s3Object.Key[prefix.Length..];
+                if (string.IsNullOrEmpty(relativePath) || relativePath.EndsWith('/'))
+                {
+                    logger.LogDebug("Skipping folder marker '{0}'", s3Object.Key);
+                    continue;
+                }
+
                 logger.LogDebug("Retrieving object '{0}' from S3 bucket '{1}'", s3Object.Key, bucket);
 
-                var destFilePath = Path.Combine(pathProvider.BuildS3CachePath.Path, s3Object.Key);
+                var destFilePath = Path.Combine(pathProvider.BuildS3CachePath.Path, relativePath);
                 var destDirectory = Path.GetDirectoryName(destFilePath);
 
                 if (!Directory.Exists(destDirectory))
