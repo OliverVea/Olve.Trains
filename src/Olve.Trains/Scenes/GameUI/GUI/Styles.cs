@@ -107,6 +107,7 @@ public static class Styles
         {
             box.Weight = 1f;
             box.Align = Align.Center;
+            box.Gap = 8;
         }
     };
 

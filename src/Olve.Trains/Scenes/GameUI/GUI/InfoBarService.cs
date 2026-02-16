@@ -24,6 +24,10 @@ public class InfoBarService(
     private Id<GuiElementRegistrations> _registrationId;
     private Id<GuiAnchor> _anchorId;
 
+    private const int FpsWindowSize = 60;
+    private readonly Queue<double> _frameTimes = new(FpsWindowSize);
+    private TimeSpan _fpsUpdateElapsed;
+
     public Result Load()
     {
         if (guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight)
@@ -51,6 +55,22 @@ public class InfoBarService(
     {
         var dayTime = dayTimeManager.CurrentTime;
         InfoBar.Clock.Content = $"{dayTime.Hours:D2} : {dayTime.Minutes:D2}";
+
+        if (_frameTimes.Count >= FpsWindowSize)
+        {
+            _frameTimes.Dequeue();
+        }
+        _frameTimes.Enqueue(deltaTime.TotalSeconds);
+
+        _fpsUpdateElapsed += deltaTime;
+        if (_fpsUpdateElapsed.TotalSeconds >= 0.25 && _frameTimes.Count > 0)
+        {
+            var averageFrameTime = _frameTimes.Average();
+            var fps = averageFrameTime > 0 ? 1.0 / averageFrameTime : 0;
+            InfoBar.FpsCounter.Content = $"{fps:F0} FPS";
+            _fpsUpdateElapsed = TimeSpan.Zero;
+        }
+
         return Result.Success();
     }
 
