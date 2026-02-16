@@ -5,9 +5,24 @@
 - MSVC for AssImp in Olve.Trains.AssetPipeline
 
 
+## Validation
+
+A build+screenshot validation script verifies the full pipeline end-to-end: asset compilation, build, headless game launch, entity placement, and screenshot capture.
+
+```bash
+# Full validation (asset pipeline + build + headless screenshot)
+./scripts/validate-build.sh
+
+# Skip build steps (for CI, when binary already exists)
+./scripts/validate-build.sh --skip-build
+```
+
+This runs automatically in CI as the `validate-screenshot` job after the build completes. The screenshot is uploaded as a build artifact for visual inspection.
+
+
 ## TODO
 
-(updated 07/02/2026 [mm/dd/yyyy])
+(updated 02/16/2026 [mm/dd/yyyy])
 
 - [x] Track creation epic:
   - [x] Allow ghost preview during track creation
@@ -29,11 +44,11 @@
   - [ ] Add station with station track
   - [ ] BUG: don't show building ghost when there's no terrain intersection with mouse
   - [ ] Add residence buildings from ORA data
-- Deletion epic:
-  - [ ] Add deletion tool
-  - [ ] Allow deleting tracks
-  - [ ] Allow deleting trains
-  - [ ] Allow deleting vehicles
+- [x] Deletion epic:
+  - [x] Add deletion tool
+  - [x] Allow deleting tracks
+  - [x] Allow deleting trains
+  - [x] Allow deleting vehicles
 - Industry epic:
   - [ ] Add basic support for industries
   - [ ] Add building for industries

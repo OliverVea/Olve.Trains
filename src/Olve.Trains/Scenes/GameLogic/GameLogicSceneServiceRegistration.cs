@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
+using Olve.Trains.Scenes.GameLogic.Commands;
 using Olve.Trains.Scenes.GameLogic.Industries;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Light;
@@ -25,10 +26,12 @@ public static class GameLogicSceneServiceRegistration
 
         // Scene services (participate in scene lifecycle)
         services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);
-        services.AddSceneService<ClearJunctionSignalRules>(sceneId);
+        services.AddSceneService<ClearJunctionSignalRulesHandlerService>(sceneId);
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
         services.AddSceneService<PlaceTrackHandlerService>(sceneId);
+        services.AddSceneService<DeleteTrackHandlerService>(sceneId);
         services.AddSceneService<PlaceVehicleHandlerService>(sceneId);
+        services.AddSceneService<DeleteVehicleHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);
         services.AddSceneService<TerrainService>(sceneId);

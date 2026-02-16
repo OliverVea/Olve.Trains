@@ -1,6 +1,6 @@
 using Olve.Engine3D.Commands;
 
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Commands;
 
 public static class CommandContextExtensions
 {

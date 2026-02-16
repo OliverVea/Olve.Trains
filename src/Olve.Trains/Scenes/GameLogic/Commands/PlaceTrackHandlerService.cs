@@ -3,8 +3,9 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
+using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.GameLogic.Tracks;
+namespace Olve.Trains.Scenes.GameLogic.Commands;
 
 public class PlaceTrackHandlerService(
     ILogger<PlaceTrackHandlerService> logger,
