@@ -86,6 +86,17 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
         shader.CameraDirection = _cameraViewDirection;
     }
 
+    /// <summary>
+    /// Sets the camera to look at a target position with a specified zoom level.
+    /// </summary>
+    /// <param name="target">The world position to center on</param>
+    /// <param name="tilesAcross">Number of tiles visible across the X axis (controls zoom)</param>
+    public void SetCameraPosition(Vector3D<float> target, float tilesAcross)
+    {
+        _cameraController.Camera.View.Position = target + Vector3D.Normalize(new Vector3D<float>(0.701f, -1, 0.701f));
+        _cameraController.Camera.Projection.OrthographicSize = tilesAcross;
+    }
+
     private void OnWindowResize(Vector2D<int> newWindowSize)
     {
         var aspectRatio = (float)newWindowSize.X / newWindowSize.Y;

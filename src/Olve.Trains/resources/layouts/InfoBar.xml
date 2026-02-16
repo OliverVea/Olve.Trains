@@ -6,6 +6,7 @@
         <Text Id="Clock" Style="InfoTextMedium" />
     </Box>
     <Box Style="InfoBarSection" Justify="Justify.End">
+        <Text Id="FpsCounter" Style="InfoTextMedium" />
         <Box id="MenuButton" Style="InfoBarButtonStyle" Interactive="true">
             <Text Style="InfoTextMedium" Content='"Main Menu"' />
         </Box>
