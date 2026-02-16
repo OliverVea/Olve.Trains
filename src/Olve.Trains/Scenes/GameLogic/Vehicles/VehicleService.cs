@@ -24,4 +24,11 @@ public class VehicleService(EntityStoreFactory entityStoreFactory)
         _count++;
         return vehicleId;
     }
+
+    public DeletionResult DeleteVehicle(Id<Vehicle> vehicleId)
+    {
+        var result = _vehicles.Remove(vehicleId);
+        if (!result.WasNotFound) _count--;
+        return result;
+    }
 }
