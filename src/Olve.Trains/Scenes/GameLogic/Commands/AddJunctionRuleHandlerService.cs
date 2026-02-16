@@ -3,6 +3,7 @@ using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Utilities;
+using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
 using Olve.Utilities.Types;
@@ -11,7 +12,7 @@ using RuleFields = (System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic
     System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleDestination> Destinations,
     Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleDistribution Distribution);
 
-namespace Olve.Trains.Scenes.GameLogic.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Commands;
 
 public class AddJunctionRuleHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,
@@ -79,12 +80,12 @@ public class AddJunctionRuleHandlerService(
         {
             return problems.Prepend("Failed to parse rule fields");
         }
-        
+
         var vehiclesResult = ParseVehicles(ruleFields.Vehicles.Trim());
         var sourcesResult = ParseSources(ruleFields.Sources.Trim());
         var destinationsResult = ParseDestinations(ruleFields.Destinations.Trim());
         var distributionResult = ParseDistribution(ruleFields.Distribution.Trim());
-        
+
         return Result.Concat<List<SignalRuleVehicle>, List<SignalRuleSource>, List<SignalRuleDestination>, SignalRuleDistribution>(
             vehiclesResult, sourcesResult, destinationsResult, distributionResult);
     }
@@ -154,7 +155,7 @@ public class AddJunctionRuleHandlerService(
     private static Result<List<T>> ParseField<T>(string s, Func<string, Result<T>> parseSingle)
     {
         return !IsList(s)
-            ? parseSingle(s).TryPickProblems(out var problems, out var value) 
+            ? parseSingle(s).TryPickProblems(out var problems, out var value)
                 ? problems
                 : new List<T> { value }
             : ParseList(s).Select(parseSingle).TryPickProblems(out problems, out var values)
@@ -182,7 +183,7 @@ public class AddJunctionRuleHandlerService(
 
         return new ResultProblem("Could not convert value '{0}' into '{1}'", enumString, nameof(T));
     }
-    
+
     private static Result<string> GetArgument(string stringWithArgument)
     {
         var start = stringWithArgument.IndexOf('(');

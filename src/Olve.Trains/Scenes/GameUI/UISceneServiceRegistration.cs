@@ -23,6 +23,7 @@ public static class UISceneServiceRegistration
         services.AddSceneService<TrackPlacingToolService>(sceneId);
         services.AddSceneService<TrainPlacingToolService>(sceneId);
         services.AddSceneService<StationPlacingToolService>(sceneId);
+        services.AddSceneService<DeletionToolService>(sceneId);
         services.AddSceneService<ToolBarService>(sceneId);
         services.AddSceneService<InfoBarService>(sceneId);
 

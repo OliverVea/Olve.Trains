@@ -1,10 +1,10 @@
-﻿using Olve.Engine3D.Commands;
+using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
-using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Junctions;
 
-namespace Olve.Trains.Scenes.GameLogic.Junctions;
+namespace Olve.Trains.Scenes.GameLogic.Commands;
 
-public class ClearJunctionSignalRules(
+public class ClearJunctionSignalRulesHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,
     JunctionSignalRuleService junctionSignalRuleService)
     : CommandHandlerService(commandHandlerServiceCollection)

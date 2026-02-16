@@ -93,3 +93,38 @@ jobs:
         with:
           name: ${{ steps.version.outputs.artifact-name }}
           path: build/${{ matrix.rid }}
+
+  # 3️⃣ Screenshot validation (Linux only)
+  validate-screenshot:
+    needs: build-dotnet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download built assets
+        uses: actions/download-artifact@v4
+        with:
+          name: built-assets
+          path: src/Olve.Trains/assets
+
+      - name: Install Xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Build Release
+        run: dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release
+
+      - name: Run screenshot validation
+        run: bash scripts/validate-build.sh --skip-build
+
+      - name: Upload validation screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-screenshot
+          path: validation-screenshot.png
+          if-no-files-found: ignore

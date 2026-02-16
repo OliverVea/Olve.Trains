@@ -21,6 +21,8 @@ public class TrackService(EntityStoreFactory entityStoreFactory)
         return trackId;
     }
 
+    public DeletionResult DeleteTrack(Id<Track> trackId) => _tracks.Remove(trackId);
+
     public bool TrackExists(Id<Track> trackId) => _tracks.Exists(trackId);
 
     public bool TryGetTrack(Id<Track> trackId, out Track track) =>
