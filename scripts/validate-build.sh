@@ -49,10 +49,11 @@ pkill -f "Xvfb :99" 2>/dev/null || true
 pkill -f "On Track To Grow" 2>/dev/null || true
 sleep 1
 
-# Start Xvfb
+# Start Xvfb with software rendering
 Xvfb :99 -screen 0 1920x1080x24 &
 XVFB_PID=$!
 export DISPLAY=:99
+export LIBGL_ALWAYS_SOFTWARE=1
 sleep 2
 
 # Function to send command to game
