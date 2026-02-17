@@ -30,8 +30,16 @@ public sealed class EventQueue<T>
         return this;
     }
 
-    public EventQueue<T> Init()
+    public EventQueue<T> Init(IEnumerable<T>? prefill = null)
     {
+        if (prefill is not null)
+        {
+            foreach (var item in prefill)
+            {
+                _queue.Enqueue(item);
+            }
+        }
+
         _event.Subscribe(_queue.Enqueue);
         return this;
     }

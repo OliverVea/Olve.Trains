@@ -2,12 +2,12 @@ using Olve.Engine3D.Scenes;
 
 namespace Olve.Engine3D.Systems;
 
-public sealed class EventSceneService<T>(EventQueue<T> queue, bool propagateFailedUpdate = false, int priority = 0) : ISceneService
+public sealed class EventSceneService<T>(EventQueue<T> queue, Func<IEnumerable<T>>? prefill = null, bool propagateFailedUpdate = false, int priority = 0) : ISceneService
 {
     public int Priority => priority;
     public Result Load()
     {
-        queue.Init();
+        queue.Init(prefill?.Invoke());
         return Result.Success();
     }
 

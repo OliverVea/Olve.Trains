@@ -38,6 +38,7 @@ public static class GameRenderingSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
             (BuildingRenderingService brs, Id<Building> id) => brs.Register(id),
+            prefill: bs => bs.GetAllBuildings().Select(b => b.Id),
             before: BeforeBuildingRendering);
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
