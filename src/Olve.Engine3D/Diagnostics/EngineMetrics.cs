@@ -6,6 +6,13 @@ public static class EngineMetrics
 {
     public static readonly Meter Meter = new("Olve.Engine3D");
 
+    /// <summary>
+    /// Set to true by the host application when a metrics listener (e.g. OTel MeterProvider)
+    /// is configured. When false, <see cref="GameManager"/> skips Stopwatch timing to avoid
+    /// unnecessary overhead.
+    /// </summary>
+    public static bool IsEnabled { get; set; }
+
     public static readonly Histogram<double> FrameDuration =
         Meter.CreateHistogram<double>("engine.frame.duration", "ms", "Total frame duration");
 
