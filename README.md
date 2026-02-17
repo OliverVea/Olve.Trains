@@ -73,6 +73,17 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
 - OpenTelemetry metrics epic:
   - [ ] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
   - [ ] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
+- Replay & scripting epic:
+  - Description: Enable deterministic replay of game sessions for bug investigation and integration testing. An LLM should be able to take a game log and generate a replay script. The game should support a script file syntax that can be passed as a replay, and manual simulation stepping (disabling auto-step) via a command.
+  - [ ] Define script file syntax for replay sequences (commands + timing/step triggers)
+  - [ ] Add `--replay <script>` CLI argument to load and execute a script file
+  - [ ] Add manual simulation stepping command (pause auto-step, advance frame-by-frame)
+  - [ ] Add game state logging sufficient for LLM-based replay script generation
+- Test coverage epic:
+  - [ ] Add tests for core engine services (SceneManager lifecycle, GameManager)
+  - [ ] Add tests for command pipe communication (CommandPipeServer/Client)
+  - [ ] Add tests for game logic services (tracks, vehicles, buildings)
+  - [ ] Add test execution step to CI pipeline
 - Main menu improvements:
   - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
   - [ ] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now
