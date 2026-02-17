@@ -47,7 +47,7 @@ public static class Program
         var services = new ServiceCollection();
         services.AddAllServices(configuration, instanceId, listen);
 
-        var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
+        using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,
             ValidateScopes = true,
@@ -80,7 +80,6 @@ public static class Program
         var result = gameManager.Run(window, SceneIds.MainMenuScene);
 
         MetricsExtensions.ShutdownMetrics();
-        serviceProvider.Dispose();
 
         return LogResult(result);
     }

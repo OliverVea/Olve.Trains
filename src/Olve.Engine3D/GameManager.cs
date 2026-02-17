@@ -16,6 +16,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
     private Result _result = Result.Success();
     private Id<IScene> _initialScene;
     private readonly Stopwatch _frameSw = new();
+    private bool MetricsEnabled => EngineMetrics.IsEnabled;
 
     public Result Run(IWindow window, Id<IScene> initialScene)
     {
@@ -80,7 +81,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
 
     private void OnUpdate(double deltaSeconds)
     {
-        _frameSw.Restart();
+        if (MetricsEnabled) _frameSw.Restart();
 
         var deltaTime = TimeSpan.FromSeconds(deltaSeconds);
         if (Update(deltaTime).TryPickProblems(out var problems))
@@ -92,7 +93,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
 
     private Result Update(TimeSpan deltaTime)
     {
-        var inputSw = Stopwatch.StartNew();
+        Stopwatch? inputSw = MetricsEnabled ? Stopwatch.StartNew() : null;
 
         var keyboardInputResult = keyboardManager.Input(deltaTime);
         if (keyboardInputResult.TryPickProblems(out var problems))
@@ -112,10 +113,13 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
             return problems.Prepend("Got problem while processing input for SceneManager");
         }
 
-        inputSw.Stop();
-        EngineMetrics.InputDuration.Record(inputSw.Elapsed.TotalMilliseconds);
+        if (inputSw is not null)
+        {
+            inputSw.Stop();
+            EngineMetrics.InputDuration.Record(inputSw.Elapsed.TotalMilliseconds);
+        }
 
-        var updateSw = Stopwatch.StartNew();
+        Stopwatch? updateSw = MetricsEnabled ? Stopwatch.StartNew() : null;
 
         var sceneUpdateResult = sceneManager.Update(deltaTime);
         if (sceneUpdateResult.TryPickProblems(out problems))
@@ -123,8 +127,11 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
             return problems.Prepend("Got problem while updating SceneManager");
         }
 
-        updateSw.Stop();
-        EngineMetrics.UpdateDuration.Record(updateSw.Elapsed.TotalMilliseconds);
+        if (updateSw is not null)
+        {
+            updateSw.Stop();
+            EngineMetrics.UpdateDuration.Record(updateSw.Elapsed.TotalMilliseconds);
+        }
 
         return Result.Success();
     }
@@ -138,19 +145,25 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
             Stop();
         }
 
-        _frameSw.Stop();
-        EngineMetrics.FrameDuration.Record(_frameSw.Elapsed.TotalMilliseconds);
+        if (MetricsEnabled)
+        {
+            _frameSw.Stop();
+            EngineMetrics.FrameDuration.Record(_frameSw.Elapsed.TotalMilliseconds);
+        }
     }
 
     private Result Render(TimeSpan deltaTime)
     {
-        var renderSw = Stopwatch.StartNew();
+        Stopwatch? renderSw = MetricsEnabled ? Stopwatch.StartNew() : null;
 
         var result = sceneManager.Render(deltaTime);
         afterRenderEvent.OnAfterRender.Invoke();
 
-        renderSw.Stop();
-        EngineMetrics.RenderDuration.Record(renderSw.Elapsed.TotalMilliseconds);
+        if (renderSw is not null)
+        {
+            renderSw.Stop();
+            EngineMetrics.RenderDuration.Record(renderSw.Elapsed.TotalMilliseconds);
+        }
 
         return result;
     }

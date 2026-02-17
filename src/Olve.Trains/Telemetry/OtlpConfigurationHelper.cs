@@ -32,7 +32,7 @@ public static class OtlpConfigurationHelper
         return new OtlpRegistrationHelper(endpoint, protocol, headers);
     }
 
-    public static ResourceBuilder CreateResourceBuilder()
+    public static ResourceBuilder CreateResourceBuilder(IConfiguration? configuration = null)
     {
         var buildConfig =
 #if DEBUG
@@ -41,12 +41,23 @@ public static class OtlpConfigurationHelper
             "Release";
 #endif
 
+        var otelSection = configuration?.GetSection("OpenTelemetry");
+
+        var attributes = new List<KeyValuePair<string, object>>
+        {
+            new("deployment.environment", buildConfig),
+            new("host.name", Environment.MachineName),
+        };
+
+        var hostClass = otelSection?["HostClass"];
+        if (!string.IsNullOrEmpty(hostClass))
+        {
+            attributes.Add(new("host.class", hostClass));
+        }
+
         return ResourceBuilder
             .CreateDefault()
             .AddService("olve.trains")
-            .AddAttributes([
-                new("deployment.environment", buildConfig),
-                new("host.name", Environment.MachineName)
-            ]);
+            .AddAttributes(attributes);
     }
 }
