@@ -45,6 +45,7 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [x] Validate collisions
   - [ ] Add station with station track
   - [x] BUG: don't show building ghost when there's no terrain intersection with mouse
+  - [ ] Design building aspect system — buildings can have multiple aspects (residential, station, industry) as supplementary systems that are notified on building add/remove
 - Collision system epic:
   - Description: Centralized collision system (e.g. Id<Collider>) queryable when placing tracks, buildings, or future obstacles like trees. Replaces per-type validation with a unified approach.
   - [ ] Design generalized collision system with typed collider IDs
