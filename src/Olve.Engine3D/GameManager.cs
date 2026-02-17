@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using Olve.Engine3D.Commands;
+using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
@@ -13,6 +15,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
 {
     private Result _result = Result.Success();
     private Id<IScene> _initialScene;
+    private readonly Stopwatch _frameSw = new();
 
     public Result Run(IWindow window, Id<IScene> initialScene)
     {
@@ -77,6 +80,8 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
 
     private void OnUpdate(double deltaSeconds)
     {
+        _frameSw.Restart();
+
         var deltaTime = TimeSpan.FromSeconds(deltaSeconds);
         if (Update(deltaTime).TryPickProblems(out var problems))
         {
@@ -87,6 +92,8 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
 
     private Result Update(TimeSpan deltaTime)
     {
+        var inputSw = Stopwatch.StartNew();
+
         var keyboardInputResult = keyboardManager.Input(deltaTime);
         if (keyboardInputResult.TryPickProblems(out var problems))
         {
@@ -105,11 +112,19 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
             return problems.Prepend("Got problem while processing input for SceneManager");
         }
 
+        inputSw.Stop();
+        EngineMetrics.InputDuration.Record(inputSw.Elapsed.TotalMilliseconds);
+
+        var updateSw = Stopwatch.StartNew();
+
         var sceneUpdateResult = sceneManager.Update(deltaTime);
         if (sceneUpdateResult.TryPickProblems(out problems))
         {
             return problems.Prepend("Got problem while updating SceneManager");
         }
+
+        updateSw.Stop();
+        EngineMetrics.UpdateDuration.Record(updateSw.Elapsed.TotalMilliseconds);
 
         return Result.Success();
     }
@@ -123,12 +138,20 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
             Stop();
         }
 
+        _frameSw.Stop();
+        EngineMetrics.FrameDuration.Record(_frameSw.Elapsed.TotalMilliseconds);
     }
 
     private Result Render(TimeSpan deltaTime)
     {
+        var renderSw = Stopwatch.StartNew();
+
         var result = sceneManager.Render(deltaTime);
         afterRenderEvent.OnAfterRender.Invoke();
+
+        renderSw.Stop();
+        EngineMetrics.RenderDuration.Record(renderSw.Elapsed.TotalMilliseconds);
+
         return result;
     }
 
