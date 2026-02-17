@@ -71,7 +71,8 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [x] Add commands for navigating the main menu
   - [x] Add support for taking screenshots of the current state of the game
 - OpenTelemetry metrics epic:
-  - [ ] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
+  - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
+  - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)
   - [ ] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
 - Main menu improvements:
   - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
