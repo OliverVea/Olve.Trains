@@ -40,7 +40,7 @@ public static class LoggingExtensions
         {
             var tempLoggerFactory = LoggerFactory.Create(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning));
             _registrationHelper = OtlpConfigurationHelper.CreateRegistrationHelper(configuration, tempLoggerFactory);
-            var resource = OtlpConfigurationHelper.CreateResourceBuilder();
+            var resource = OtlpConfigurationHelper.CreateResourceBuilder(configuration);
 
             builder.AddOpenTelemetry(logging =>
             {
