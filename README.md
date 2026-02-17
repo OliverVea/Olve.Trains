@@ -22,7 +22,7 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
 
 ## TODO
 
-(updated 02/16/2026 [mm/dd/yyyy])
+(updated 02/17/2026 [mm/dd/yyyy])
 
 - [x] Track creation epic:
   - [x] Allow ghost preview during track creation
@@ -39,8 +39,8 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [ ] Allow UI source generated elements to reference key bind keys. E.g. 'SELECT_PLACE_TRACK' is looked up in config and then used to activate PlaceTrackButton.
 - Building epic:
   - [x] Add basic support for buildings
-  - [ ] Add building validation and validation failure rendering
-  - [ ] Validate collisions
+  - [x] Add building validation and validation failure rendering
+  - [x] Validate collisions
   - [ ] Add station with station track
   - [x] BUG: don't show building ghost when there's no terrain intersection with mouse
   - [ ] Add residence buildings from ORA data
@@ -70,6 +70,9 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [x] Add a simple echo command
   - [x] Add commands for navigating the main menu
   - [x] Add support for taking screenshots of the current state of the game
+- OpenTelemetry metrics epic:
+  - [ ] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
+  - [ ] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
 - Main menu improvements:
   - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
   - [ ] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now
