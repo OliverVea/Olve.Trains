@@ -10,8 +10,11 @@ public class BuildingBlueprintService(ILogger<BuildingBlueprintService> logger, 
     public Event<Id<BuildingBlueprint>> OnBlueprintRemoved => _blueprints.OnRemoved;
 
     public Id<BuildingBlueprint> AddBlueprint(string description, TileFootprint footprint)
+        => AddBlueprint(Id.New<BuildingBlueprint>(), description, footprint);
+
+    public Id<BuildingBlueprint> AddBlueprint(Id<BuildingBlueprint> id, string description, TileFootprint footprint)
     {
-        BuildingBlueprint blueprint = new(Id.New<BuildingBlueprint>(), description, footprint);
+        BuildingBlueprint blueprint = new(id, description, footprint);
 
         if (!_blueprints.TryAdd(blueprint))
         {

@@ -12,6 +12,9 @@ public sealed class ResidencePlacingToolService(
     TerrainRaycastService terrainRaycastService,
     ToolManagementService toolManagementService,
     BuildingRenderingService buildingRenderingService,
+    BuildingBlueprintService buildingBlueprintService,
+    BuildingValidationService buildingValidationService,
+    BuildingService buildingService,
     MouseManager mouseManager,
     KeyboardManager keyboardManager) : BaseToolService<ResidencePlacingToolService.State>(toolManagementService, new State())
 {
@@ -65,8 +68,7 @@ public sealed class ResidencePlacingToolService(
 
         BuildingPosition position = new(tilePosition, ToolState.CardinalDirection);
 
-        /*
-        if (!buildingBlueprintService.TryGetBlueprint(residentialBlueprint, out var blueprint))
+        if (!buildingBlueprintService.TryGetBlueprint(BuildingBlueprintCatalog.Residential, out var blueprint))
         {
             return new ResultProblem("Residential blueprint not found");
         }
@@ -80,8 +82,7 @@ public sealed class ResidencePlacingToolService(
             return Result.Success();
         }
 
-        buildingService.AddBuilding(residentialBlueprint, position);
-        */
+        buildingService.AddBuilding(BuildingBlueprintCatalog.Residential, position);
 
         return Result.Success();
     }
