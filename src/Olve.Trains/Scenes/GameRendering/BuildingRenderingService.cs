@@ -182,6 +182,7 @@ public class BuildingRenderingService(
     public static RGB GetBuildingColor(BuildingType buildingType) => buildingType switch
     {
         BuildingType.Station => new RGB(0.3f, 0.5f, 0.9f),
+        BuildingType.Residential => new RGB(0.85f, 0.85f, 0.85f),
         _ => new RGB(0.7f, 0.7f, 0.7f),
     };
 
