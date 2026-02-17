@@ -26,7 +26,9 @@ public static class GameRenderingSceneServiceRegistration
                 if (tls.GetLineStripData(trackId).TryPickProblems(out var problems, out var data))
                     return problems.Prepend("Failed to get line strip data for track");
                 return trs.Register(trackId, data);
-            }, before: BeforeTrackRendering);
+            },
+            prefill: ts => ts.TrackIds,
+            before: BeforeTrackRendering);
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackRemoved,
             (TrackRenderingService trs, Id<Track> trackId) => trs.Unregister(trackId),
@@ -38,7 +40,7 @@ public static class GameRenderingSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
             (BuildingRenderingService brs, Id<Building> id) => brs.Register(id),
-            prefill: bs => bs.GetAllBuildings().Select(b => b.Id),
+            prefill: bs => bs.BuildingIds,
             before: BeforeBuildingRendering);
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,

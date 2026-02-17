@@ -75,7 +75,8 @@ public static class GameLogicSceneServiceRegistration
                 return Result.Concat(
                     js.AddJunctionConnection(track.Id, track.Start).ToEmptyResult(),
                     js.AddJunctionConnection(track.Id, track.End).ToEmptyResult());
-            });
+            },
+            prefill: ts => ts.TrackIds);
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackRemoved,
             (TrackService ts, JunctionService js, Id<Track> trackId) =>
@@ -97,7 +98,8 @@ public static class GameLogicSceneServiceRegistration
             (JunctionSignalService jss, Id<Junction> id) => jss.EvaluateSignal(id));
         services.AddEventSceneService(sceneId,
             (StationPlatformService sps) => sps.OnPlatformAdded,
-            (StationPlatformAreaService spas, Id<StationPlatform> id) => spas.RegisterPlatform(id));
+            (StationPlatformAreaService spas, Id<StationPlatform> id) => spas.RegisterPlatform(id),
+            prefill: sps => sps.PlatformIds);
         services.AddEventSceneService(sceneId,
             (StationPlatformService sps) => sps.OnPlatformRemoved,
             (StationPlatformAreaService spas, Id<StationPlatform> id) => spas.DeregisterPlatform(id));

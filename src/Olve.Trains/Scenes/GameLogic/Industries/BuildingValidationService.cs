@@ -10,7 +10,7 @@ public class BuildingValidationService(
     {
         var (minX, minZ, maxX, maxZ) = GetBounds(position, footprint);
 
-        foreach (var building in buildingService.GetAllBuildings())
+        foreach (var building in buildingService.Buildings)
         {
             if (!buildingBlueprintService.TryGetBlueprint(building.BlueprintId, out var existingBlueprint))
             {

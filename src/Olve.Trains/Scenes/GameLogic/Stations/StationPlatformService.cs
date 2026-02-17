@@ -39,9 +39,11 @@ public class StationPlatformService
         return _platforms.Remove(platformId);
     }
 
+    public IEnumerable<Id<StationPlatform>> PlatformIds => _platforms.Keys;
+    public IEnumerable<StationPlatform> Platforms => _platforms.Values;
+
     public bool TryGetPlatform(Id<Track> trackId, out Id<StationPlatform> platformId) =>
         _platformsByTrack.TryGet(trackId, out platformId);
     public bool TryGetPlatform(Id<StationPlatform> stationPlatformId, out StationPlatform platform)
         => _platforms.TryGet(stationPlatformId, out platform);
-
 }
