@@ -87,6 +87,7 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [x] Add a simple echo command
   - [x] Add commands for navigating the main menu
   - [x] Add support for taking screenshots of the current state of the game
+  - [ ] Add predefined command handler argument parsers (e.g. TilePosition, Vector3, CardinalDirection)
 - OpenTelemetry metrics epic:
   - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
   - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)
