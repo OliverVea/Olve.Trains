@@ -72,7 +72,16 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [ ] Add random terrain generation
   - [ ] Add random residential building generation
 - Cities epic:
-  - [ ] Design city system built on residential buildings
+  - Description: Cities form automatically from clusters of residential buildings. On building placement, unassigned houses are checked against a density map — if a density spike exceeds a threshold, a new city is created. Houses near existing cities are assigned to them. Cities have a level that can be upgraded by delivering cargo. When a city upgrades, buildings in the city gradually upgrade to match the city level. A designated town hall upgrades immediately. Cities can also merge when they grow into each other.
+  - [ ] Create city entity with name, level, and assigned buildings
+  - [ ] Listen to building added/removed events to trigger city evaluation
+  - [ ] Calculate density map from unassigned residential buildings
+  - [ ] Create new city when density spike exceeds threshold
+  - [ ] Assign nearby buildings to existing cities
+  - [ ] Add city merging when cities grow into each other
+  - [ ] Add city level and cargo-based upgrading
+  - [ ] Add town hall designation (upgrades immediately with city level)
+  - [ ] Gradually upgrade city buildings to match city level
 - Building upgrading epic:
   - [ ] Add basic support for building upgrades
   - [ ] Require resources for building upgrades
