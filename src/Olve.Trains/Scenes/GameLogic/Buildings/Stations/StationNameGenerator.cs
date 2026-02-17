@@ -1,6 +1,6 @@
 using Olve.Utilities.CollectionExtensions;
 
-namespace Olve.Trains.Scenes.GameLogic.Stations;
+namespace Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 
 public class StationNameGenerator
 {

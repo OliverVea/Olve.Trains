@@ -41,7 +41,8 @@
       "Bash($SEND --send \"exit\" $INST)",
       "Bash(dotnet restore:*)",
       "Bash(chmod:*)",
-      "Bash(/home/oliver/projects/Olve.Trains/scripts/screenshot-loop-track.sh:*)"
+      "Bash(/home/oliver/projects/Olve.Trains/scripts/screenshot-loop-track.sh:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

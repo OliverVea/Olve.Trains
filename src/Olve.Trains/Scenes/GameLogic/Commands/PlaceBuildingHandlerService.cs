@@ -1,18 +1,11 @@
 using System.Globalization;
-using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
-using Olve.Trains.Scenes.GameLogic.Industries;
 
 namespace Olve.Trains.Scenes.GameLogic.Commands;
 
-public class PlaceBuildingHandlerService(
-    ILogger<PlaceBuildingHandlerService> logger,
-    CommandHandlerServiceCollection commandHandlerServiceCollection,
-    BuildingBlueprintLibraryService blueprintLibraryService,
-    BuildingBlueprintService blueprintService,
-    BuildingService buildingService) : CommandHandlerService(commandHandlerServiceCollection)
+public class PlaceBuildingHandlerService(CommandHandlerServiceCollection commandHandlerServiceCollection) : CommandHandlerService(commandHandlerServiceCollection)
 {
     private static readonly CommandArgument PositionArgument = new("pos", "Tile position as x,z (y defaults to terrain height) or x,y,z", true);
     private static readonly CommandArgument TypeArgument = new("type", "Building type: residential, station (default: residential)");
@@ -34,6 +27,7 @@ public class PlaceBuildingHandlerService(
             return problems;
         }
 
+        /*
         var typeArg = commandContext.GetArgument(TypeArgument) ?? "residential";
         var blueprintId = typeArg.ToLowerInvariant() switch
         {
@@ -72,6 +66,8 @@ public class PlaceBuildingHandlerService(
 
         logger.LogInformation("Placed {Type} building '{BuildingId}' at {Position}", blueprint.Description, buildingId, tilePosition);
         return new CommandOutput($"Placed {blueprint.Description} building: {buildingId}");
+        */
+        return new CommandOutput("Building placement is currently not supported");
     }
 
     private static Result TryParseTilePosition(string input, out TilePosition result)

@@ -2,7 +2,7 @@ using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
-using Olve.Trains.Scenes.GameLogic.Industries;
+using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameRendering;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -12,10 +12,6 @@ namespace Olve.Trains.Scenes.GameUI.Tools;
 public sealed class StationPlacingToolService(
     TerrainRaycastService terrainRaycastService,
     ToolManagementService toolManagementService,
-    BuildingBlueprintLibraryService libraryService,
-    BuildingBlueprintService buildingBlueprintService,
-    BuildingService buildingService,
-    BuildingValidationService buildingValidationService,
     BuildingRenderingService buildingRenderingService,
     MouseManager mouseManager,
     KeyboardManager keyboardManager) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
@@ -68,9 +64,9 @@ public sealed class StationPlacingToolService(
             return Result.Success();
         }
 
-        var stationBlueprint = libraryService.StationBlueprint;
         BuildingPosition position = new(tilePosition, ToolState.CardinalDirection);
 
+        /*
         if (!buildingBlueprintService.TryGetBlueprint(stationBlueprint, out var blueprint))
         {
             return new ResultProblem("Station blueprint not found");
@@ -86,6 +82,7 @@ public sealed class StationPlacingToolService(
         }
 
         buildingService.AddBuilding(stationBlueprint, position);
+        */
 
         return Result.Success();
     }
@@ -100,8 +97,10 @@ public sealed class StationPlacingToolService(
         }
         else
         {
+            /*
             var color = BuildingRenderingService.GetBuildingColor(BuildingType.Station);
             ghostParams = ghostParams with { UColor = color.ToVector() };
+            */
             buildingRenderingService.RegisterDirect(_ghostBuildingId, position, footprint, ghostParams);
             _ghostRegistered = true;
         }

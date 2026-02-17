@@ -1,16 +1,10 @@
-using Olve.Engine3D;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Scenes;
-using Olve.Trains.Scenes.GameLogic.Industries;
 
 namespace Olve.Trains.Scenes.GameLogic.Terrain;
 
-public class TerrainService
-    (BuildingService buildingService, BuildingBlueprintLibraryService blueprintLibraryService)
-    : ISceneService
+public class TerrainService : ISceneService
 {
-    public int Priority => SceneServicePriority.FromDependencies([blueprintLibraryService]);
-
     public TerrainData? Terrain { get; private set; }
 
     public Result Load()
@@ -33,8 +27,6 @@ public class TerrainService
         {
             Heightmap = heightmap
         };
-
-        buildingService.AddBuilding(blueprintLibraryService.ResidentialBlueprint, new BuildingPosition(new TilePosition(3,1,10)));
 
         return Result.Success();
     }

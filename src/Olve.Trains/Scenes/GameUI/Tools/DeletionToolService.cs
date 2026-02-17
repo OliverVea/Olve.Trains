@@ -3,7 +3,7 @@ using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
-using Olve.Trains.Scenes.GameLogic.Industries;
+using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
 using Olve.Trains.Scenes.GameRendering;

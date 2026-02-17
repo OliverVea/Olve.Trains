@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Systems;
 
-namespace Olve.Trains.Scenes.GameLogic.Industries;
+namespace Olve.Trains.Scenes.GameLogic.Buildings;
 
 public class BuildingBlueprintService(ILogger<BuildingBlueprintService> logger, EntityStoreFactory entityStoreFactory)
 {
@@ -9,9 +9,9 @@ public class BuildingBlueprintService(ILogger<BuildingBlueprintService> logger, 
     public Event<Id<BuildingBlueprint>> OnBlueprintAdded => _blueprints.OnAdded;
     public Event<Id<BuildingBlueprint>> OnBlueprintRemoved => _blueprints.OnRemoved;
 
-    public Id<BuildingBlueprint> AddBlueprint(string description, TileFootprint footprint, BuildingType buildingType)
+    public Id<BuildingBlueprint> AddBlueprint(string description, TileFootprint footprint)
     {
-        BuildingBlueprint blueprint = new(Id.New<BuildingBlueprint>(), description, footprint, buildingType);
+        BuildingBlueprint blueprint = new(Id.New<BuildingBlueprint>(), description, footprint);
 
         if (!_blueprints.TryAdd(blueprint))
         {
@@ -19,7 +19,7 @@ public class BuildingBlueprintService(ILogger<BuildingBlueprintService> logger, 
         }
         else
         {
-            logger.LogDebug("Added blueprint {BlueprintId} '{Description}' ({BuildingType}, {Footprint})", blueprint.Id, description, buildingType, footprint);
+            logger.LogDebug("Added blueprint {BlueprintId} '{Description}' ({Footprint})", blueprint.Id, description, footprint);
         }
 
         return blueprint.Id;

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.Scenes;
-using Olve.Trains.Scenes.GameLogic.Industries;
+using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
 namespace Olve.Trains.Scenes.GameRendering;

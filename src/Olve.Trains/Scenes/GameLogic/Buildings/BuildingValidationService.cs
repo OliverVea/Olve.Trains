@@ -1,6 +1,6 @@
 using Olve.Engine3D;
 
-namespace Olve.Trains.Scenes.GameLogic.Industries;
+namespace Olve.Trains.Scenes.GameLogic.Buildings;
 
 public class BuildingValidationService(
     BuildingService buildingService,
