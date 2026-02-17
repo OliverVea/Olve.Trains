@@ -31,6 +31,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<PlaceTrackHandlerService>(sceneId);
         services.AddSceneService<DeleteTrackHandlerService>(sceneId);
         services.AddSceneService<PlaceVehicleHandlerService>(sceneId);
+        services.AddSceneService<PlaceBuildingHandlerService>(sceneId);
         services.AddSceneService<DeleteVehicleHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);

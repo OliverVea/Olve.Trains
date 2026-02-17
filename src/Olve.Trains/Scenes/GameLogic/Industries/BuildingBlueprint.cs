@@ -8,4 +8,5 @@ public enum BuildingType
 {
     None = 0,
     Station,
+    Residential,
 }
