@@ -108,7 +108,7 @@ public class DeletionToolService(
 
     private bool TryDeleteBuildingAtTile(TilePosition tilePosition)
     {
-        foreach (var building in buildingService.GetAllBuildings())
+        foreach (var building in buildingService.Buildings)
         {
             if (!buildingBlueprintService.TryGetBlueprint(building.BlueprintId, out var blueprint))
             {

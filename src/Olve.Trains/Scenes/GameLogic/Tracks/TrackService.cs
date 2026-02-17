@@ -25,7 +25,9 @@ public class TrackService(EntityStoreFactory entityStoreFactory)
 
     public bool TrackExists(Id<Track> trackId) => _tracks.Exists(trackId);
 
+    public IEnumerable<Id<Track>> TrackIds => _tracks.Keys;
+    public IEnumerable<Track> Tracks => _tracks.Values;
+
     public bool TryGetTrack(Id<Track> trackId, out Track track) =>
         _tracks.TryGet(trackId, out track);
-
 }
