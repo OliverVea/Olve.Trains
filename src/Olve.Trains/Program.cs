@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
+using Olve.Trains.Telemetry;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains;
@@ -77,6 +78,9 @@ public static class Program
                               """);
 
         var result = gameManager.Run(window, SceneIds.MainMenuScene);
+
+        MetricsExtensions.ShutdownMetrics();
+        serviceProvider.Dispose();
 
         return LogResult(result);
     }
