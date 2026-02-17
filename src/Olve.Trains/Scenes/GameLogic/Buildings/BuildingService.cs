@@ -2,7 +2,7 @@
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 
-namespace Olve.Trains.Scenes.GameLogic.Industries;
+namespace Olve.Trains.Scenes.GameLogic.Buildings;
 
 public class BuildingService
 {
@@ -71,6 +71,7 @@ public class BuildingService
 
         return Result.Success();
     }
+
     public bool TryGetBuilding(Id<Building> buildingId, out Building building)
         => _buildings.TryGet(buildingId, out building);
     public IEnumerable<Id<Building>> BuildingIds => _buildings.Keys;

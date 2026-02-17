@@ -3,11 +3,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
+using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Commands;
-using Olve.Trains.Scenes.GameLogic.Industries;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Light;
-using Olve.Trains.Scenes.GameLogic.Stations;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Time;
 using Olve.Trains.Scenes.GameLogic.Tracks;
@@ -40,7 +40,6 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<VehicleJunctionCrossingService>(sceneId);
         services.AddSceneService<VehicleMovementService>(sceneId);
         services.AddSceneService<DayTimeSteppingService>(sceneId);
-        services.AddSceneService<BuildingBlueprintLibraryService>(sceneId);
 
         // Non-scene singletons (dependencies only, not in scene lifecycle)
         services.TryAddScoped<JunctionService>();
@@ -48,10 +47,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<JunctionSignalService>();
         services.TryAddScoped<BuildingService>();
         services.TryAddScoped<BuildingBlueprintService>();
-        services.TryAddScoped<StationPlatformService>();
         services.TryAddScoped<StationNameGenerator>();
-        services.TryAddScoped<StationService>();
-        services.TryAddScoped<StationPlatformAreaService>();
         services.TryAddScoped<TrackConnectionService>();
         services.TryAddScoped<TrackService>();
         services.TryAddScoped<TrackPlacingService>();
@@ -91,18 +87,8 @@ public static class GameLogicSceneServiceRegistration
                     js.RemoveJunctionConnection(track.Id, track.End).MapToResult());
             });
         services.AddEventSceneService(sceneId,
-            (TrackService ts) => ts.OnTrackRemoved,
-            (StationPlatformService sps, Id<Track> trackId) => sps.RemoveForTrack(trackId).MapToResult());
-        services.AddEventSceneService(sceneId,
             (JunctionService js) => js.OnJunctionConnectionsUpdated,
             (JunctionSignalService jss, Id<Junction> id) => jss.EvaluateSignal(id));
-        services.AddEventSceneService(sceneId,
-            (StationPlatformService sps) => sps.OnPlatformAdded,
-            (StationPlatformAreaService spas, Id<StationPlatform> id) => spas.RegisterPlatform(id),
-            prefill: sps => sps.PlatformIds);
-        services.AddEventSceneService(sceneId,
-            (StationPlatformService sps) => sps.OnPlatformRemoved,
-            (StationPlatformAreaService spas, Id<StationPlatform> id) => spas.DeregisterPlatform(id));
         services.AddEventSceneService(sceneId,
             (BuildingBlueprintService blueprintService) => blueprintService.OnBlueprintRemoved,
             (BuildingService buildingService, Id<BuildingBlueprint> id) => buildingService.DeleteBuildingsWithBlueprint(id));

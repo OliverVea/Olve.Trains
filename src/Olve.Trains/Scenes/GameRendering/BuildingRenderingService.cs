@@ -5,7 +5,7 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
-using Olve.Trains.Scenes.GameLogic.Industries;
+using Olve.Trains.Scenes.GameLogic.Buildings;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -82,7 +82,7 @@ public class BuildingRenderingService(
             return new ResultProblem("Blueprint not found: '{0}'", building.BlueprintId);
         }
 
-        var color = GetBuildingColor(blueprint.BuildingType);
+        var color = new RGB(0.7f, 0.7f, 0.7f);
         var entityParams = new Shaders.Building.EntityParameters(UColor: color.ToVector());
 
         return RegisterDirect(buildingId, building.Position, blueprint.Footprint, entityParams);
@@ -178,13 +178,6 @@ public class BuildingRenderingService(
     {
         return renderingManager3D.Render(_shader);
     }
-
-    public static RGB GetBuildingColor(BuildingType buildingType) => buildingType switch
-    {
-        BuildingType.Station => new RGB(0.3f, 0.5f, 0.9f),
-        BuildingType.Residential => new RGB(0.85f, 0.85f, 0.85f),
-        _ => new RGB(0.7f, 0.7f, 0.7f),
-    };
 
     private static Shaders.Building.Vertex[] GenerateUnitCubeVertices()
     {

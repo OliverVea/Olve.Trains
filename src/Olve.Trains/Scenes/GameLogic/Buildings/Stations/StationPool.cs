@@ -1,4 +1,4 @@
-namespace Olve.Trains.Scenes.GameLogic.Stations;
+namespace Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 
 public record StationPool(IReadOnlyCollection<string> StationNames)
 {
