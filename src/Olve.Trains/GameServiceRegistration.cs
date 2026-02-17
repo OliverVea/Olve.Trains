@@ -22,8 +22,9 @@ public static class GameServiceRegistration
 {
     public static IServiceCollection AddAllServices(this IServiceCollection services, IConfiguration configuration, GameInstanceId instanceId, bool listen)
     {
-        // Logging
+        // Logging & Metrics
         services.AddLogging(builder => builder.AddConfiguredLogging(configuration));
+        services.AddConfiguredMetrics(configuration);
 
         // Engine modules
         services.AddCoreEngineServices();

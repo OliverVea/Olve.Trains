@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Diagnostics;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Scenes;
@@ -138,6 +139,7 @@ public class SceneManager(
         if (scene.State == SceneState.Active)
         {
             scene.State = SceneState.Inactive;
+            EngineMetrics.ActiveScenes.Add(-1);
         }
 
         _logger.LogDebug("Unloading scene '{SceneId}'", sceneId);
@@ -185,6 +187,7 @@ public class SceneManager(
         }
 
         scene.State = SceneState.Active;
+        EngineMetrics.ActiveScenes.Add(1);
 
         return Result.Success();
     }
@@ -218,6 +221,7 @@ public class SceneManager(
         }
 
         scene.State = SceneState.Inactive;
+        EngineMetrics.ActiveScenes.Add(-1);
 
         return Result.Success();
     }

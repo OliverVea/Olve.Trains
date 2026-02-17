@@ -36,6 +36,7 @@ public class OtlpRegistrationHelper : IDisposable
     }
 
     public void RegisterLogs(OtlpExporterOptions options) => Register(options, "/v1/logs");
+    public void RegisterMetrics(OtlpExporterOptions options) => Register(options, "/v1/metrics");
 
     private void Register(OtlpExporterOptions options, string signalPath)
     {
