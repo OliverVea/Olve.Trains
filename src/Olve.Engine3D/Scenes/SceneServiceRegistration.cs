@@ -54,6 +54,7 @@ public static class SceneServiceRegistration
             Id<IScene> sceneId,
             Func<TEventSource, Event<TEvent>> eventSelector,
             Action<TEvent> handler,
+            Func<TEventSource, IEnumerable<TEvent>>? prefill = null,
             ISceneServiceType[]? after = null, ISceneServiceType[]? before = null)
             where TEventSource : notnull
         {
@@ -61,13 +62,14 @@ public static class SceneServiceRegistration
             {
                 handler(e);
                 return Result.Success();
-            }, after: after, before: before);
+            }, prefill: prefill, after: after, before: before);
         }
 
         public IServiceCollection AddEventSceneService<TEventSource, THandler, TEvent>(
             Id<IScene> sceneId,
             Func<TEventSource, Event<TEvent>> eventSelector,
             Action<THandler, TEvent> handler,
+            Func<TEventSource, IEnumerable<TEvent>>? prefill = null,
             ISceneServiceType[]? after = null, ISceneServiceType[]? before = null)
             where TEventSource : notnull
             where THandler : notnull
@@ -77,21 +79,25 @@ public static class SceneServiceRegistration
                 {
                     handler(h, e);
                     return Result.Success();
-                }, after: after, before: before);
+                }, prefill: prefill, after: after, before: before);
         }
 
         public IServiceCollection AddEventSceneService<TEventSource, TEvent>(
             Id<IScene> sceneId,
             Func<TEventSource, Event<TEvent>> eventSelector,
-            Func<TEvent, Result> handler, bool propagateFailedUpdate = false,
+            Func<TEvent, Result> handler,
+            Func<TEventSource, IEnumerable<TEvent>>? prefill = null,
+            bool propagateFailedUpdate = false,
             ISceneServiceType[]? after = null, ISceneServiceType[]? before = null)
             where TEventSource : notnull
         {
             services.AddKeyedScoped<ISceneService>(sceneId, (sp, _) =>
             {
+                var eventSource = sp.GetRequiredService<TEventSource>();
                 var factory = sp.GetRequiredService<EventQueueFactory>();
-                var queue = factory.Create(eventSelector(sp.GetRequiredService<TEventSource>()), handler);
-                return new EventSceneService<TEvent>(queue, propagateFailedUpdate, ResolvePriority(sp, after, before));
+                var queue = factory.Create(eventSelector(eventSource), handler);
+                Func<IEnumerable<TEvent>>? prefillFunc = prefill is not null ? () => prefill(eventSource) : null;
+                return new EventSceneService<TEvent>(queue, prefillFunc, propagateFailedUpdate, ResolvePriority(sp, after, before));
             });
 
             return services;
@@ -100,7 +106,9 @@ public static class SceneServiceRegistration
         public IServiceCollection AddEventSceneService<TEventSource, THandler, TEvent>(
             Id<IScene> sceneId,
             Func<TEventSource, Event<TEvent>> eventSelector,
-            Func<THandler, TEvent, Result> handler, bool propagateFailedUpdate = false,
+            Func<THandler, TEvent, Result> handler,
+            Func<TEventSource, IEnumerable<TEvent>>? prefill = null,
+            bool propagateFailedUpdate = false,
             ISceneServiceType[]? after = null, ISceneServiceType[]? before = null)
             where TEventSource : notnull
             where THandler : notnull
@@ -111,7 +119,8 @@ public static class SceneServiceRegistration
                 var handlerService = sp.GetRequiredService<THandler>();
                 var factory = sp.GetRequiredService<EventQueueFactory>();
                 var queue = factory.Create(eventSelector(eventSource), item => handler(handlerService, item));
-                return new EventSceneService<TEvent>(queue, propagateFailedUpdate, ResolvePriority(sp, after, before));
+                Func<IEnumerable<TEvent>>? prefillFunc = prefill is not null ? () => prefill(eventSource) : null;
+                return new EventSceneService<TEvent>(queue, prefillFunc, propagateFailedUpdate, ResolvePriority(sp, after, before));
             });
 
             return services;
@@ -120,7 +129,9 @@ public static class SceneServiceRegistration
         public IServiceCollection AddEventSceneService<TEventSource, THandler1, THandler2, TEvent>(
             Id<IScene> sceneId,
             Func<TEventSource, Event<TEvent>> eventSelector,
-            Func<THandler1, THandler2, TEvent, Result> handler, bool propagateFailedUpdate = false,
+            Func<THandler1, THandler2, TEvent, Result> handler,
+            Func<TEventSource, IEnumerable<TEvent>>? prefill = null,
+            bool propagateFailedUpdate = false,
             ISceneServiceType[]? after = null, ISceneServiceType[]? before = null)
             where TEventSource : notnull
             where THandler1 : notnull
@@ -133,7 +144,8 @@ public static class SceneServiceRegistration
                 var handler2 = sp.GetRequiredService<THandler2>();
                 var factory = sp.GetRequiredService<EventQueueFactory>();
                 var queue = factory.Create(eventSelector(eventSource), item => handler(handler1, handler2, item));
-                return new EventSceneService<TEvent>(queue, propagateFailedUpdate, ResolvePriority(sp, after, before));
+                Func<IEnumerable<TEvent>>? prefillFunc = prefill is not null ? () => prefill(eventSource) : null;
+                return new EventSceneService<TEvent>(queue, prefillFunc, propagateFailedUpdate, ResolvePriority(sp, after, before));
             });
 
             return services;
