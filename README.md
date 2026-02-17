@@ -1,5 +1,19 @@
 
 
+## Platform Support
+
+| Platform | Status |
+|---|---|
+| Windows | Supported |
+| Linux | Supported |
+| macOS | Planned |
+| Nintendo Switch | Planned |
+| Xbox Series | Planned |
+| PlayStation 5 | Planned |
+| iOS / Android | Planned |
+
+See [docs/platform-strategy.md](docs/platform-strategy.md) for priority analysis and porting notes.
+
 ## Requirements
 
 - MSVC for AssImp in Olve.Trains.AssetPipeline
@@ -113,6 +127,14 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [ ] Add tests for command pipe communication (CommandPipeServer/Client)
   - [ ] Add tests for game logic services (tracks, vehicles, buildings)
   - [ ] Add test execution step to CI pipeline
+- Localization epic:
+  - Description: A system for managing translated strings across multiple languages. GUI elements and other user-facing text reference string IDs instead of hardcoded text. The active locale determines which translation is returned at lookup time.
+  - [ ] Design localization system with string ID lookup (e.g. `ILocalizer.Get(StringId)`)
+  - [ ] Define a storage format for translation files (e.g. JSON/TOML per locale)
+  - [ ] Integrate with UI system so GUI elements reference string IDs instead of hardcoded text
+  - [ ] Add fallback behavior (missing translation falls back to default locale)
+  - [ ] Add initial English locale as the default/baseline
+  - [ ] Add tooling or workflow for adding new locales
 - Main menu improvements:
   - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
   - [ ] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now
