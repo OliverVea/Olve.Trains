@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Systems;
 using Olve.Trains.Scenes.GameLogic.Tracks;
@@ -10,22 +10,22 @@ public class StationService(ILogger<StationService> logger, StationBlueprintServ
     private readonly Dictionary<Id<Building>, Station> _stations = [];
 
     public Event<Id<Building>> StationCreated { get; } = new();
+    public Event<Id<Building>> StationDeleted { get; } = new();
 
     public Result<bool> CreateStationForBuilding(Id<Building> buildingId)
     {
         if (!buildingService.TryGetBuilding(buildingId, out var building))
         {
-            return new ResultProblem("TODO");
+            return new ResultProblem("Building not found: '{0}'", buildingId);
         }
 
         if (!buildingBlueprintService.TryGetBlueprint(building.BlueprintId, out var blueprint))
         {
-            return new ResultProblem("TODO");
+            return new ResultProblem("Blueprint not found: '{0}'", building.BlueprintId);
         }
 
         if (!stationBlueprintService.HasProperties(building.BlueprintId))
         {
-            logger.LogDebug("TODO: NOT A STATION");
             return false;
         }
 
@@ -36,17 +36,37 @@ public class StationService(ILogger<StationService> logger, StationBlueprintServ
         TrackEndpoint trackStart = new(start, -direction);
         TrackEndpoint trackEnd = new(end, direction);
 
-        if (!trackService
+        if (trackService
                 .AddTrack(trackStart, trackEnd)
                 .TryPickProblems(out var problems, out var trackId))
         {
-            return new ResultProblem("TODO");
+            return problems.Prepend("Failed to add station track for building '{0}'", buildingId);
         }
 
         Station station = new(buildingId, trackId);
         _stations[buildingId] = station;
         StationCreated.Invoke(buildingId);
 
+        logger.LogInformation("Created station for building {BuildingId} with track {TrackId}", buildingId, trackId);
+
         return true;
     }
+
+    public Result DeleteStationForBuilding(Id<Building> buildingId)
+    {
+        if (!_stations.Remove(buildingId, out var station))
+        {
+            return Result.Success();
+        }
+
+        trackService.DeleteTrack(station.TrackId);
+        StationDeleted.Invoke(buildingId);
+
+        logger.LogInformation("Deleted station for building {BuildingId}", buildingId);
+
+        return Result.Success();
+    }
+
+    public bool TryGetStation(Id<Building> buildingId, out Station station) =>
+        _stations.TryGetValue(buildingId, out station);
 }

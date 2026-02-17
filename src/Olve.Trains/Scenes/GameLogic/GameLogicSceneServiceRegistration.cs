@@ -40,6 +40,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<VehicleJunctionCrossingService>(sceneId);
         services.AddSceneService<VehicleMovementService>(sceneId);
         services.AddSceneService<DayTimeSteppingService>(sceneId);
+        services.AddSceneService<BuildingBlueprintLibraryService>(sceneId);
 
         // Non-scene singletons (dependencies only, not in scene lifecycle)
         services.TryAddScoped<JunctionService>();
@@ -48,6 +49,8 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<BuildingService>();
         services.TryAddScoped<BuildingBlueprintService>();
         services.TryAddScoped<StationNameGenerator>();
+        services.TryAddScoped<StationService>();
+        services.TryAddScoped<StationBlueprintService>();
         services.TryAddScoped<TrackConnectionService>();
         services.TryAddScoped<TrackService>();
         services.TryAddScoped<TrackPlacingService>();
@@ -89,6 +92,13 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (JunctionService js) => js.OnJunctionConnectionsUpdated,
             (JunctionSignalService jss, Id<Junction> id) => jss.EvaluateSignal(id));
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingAdded,
+            (StationService ss, Id<Building> id) => ss.CreateStationForBuilding(id),
+            prefill: bs => bs.BuildingIds);
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingRemoved,
+            (StationService ss, Id<Building> id) => ss.DeleteStationForBuilding(id));
         services.AddEventSceneService(sceneId,
             (BuildingBlueprintService blueprintService) => blueprintService.OnBlueprintRemoved,
             (BuildingService buildingService, Id<BuildingBlueprint> id) => buildingService.DeleteBuildingsWithBlueprint(id));

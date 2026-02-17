@@ -4,9 +4,9 @@ set -e
 PROJECT_DIR="/home/oliver/projects/Olve.Trains"
 BIN_DIR="$PROJECT_DIR/src/Olve.Trains/bin/Release/net10.0"
 INSTANCE_ID="screenshot-session"
-SCREENSHOT_PATH="$PROJECT_DIR/loop-track-screenshot.png"
+SCREENSHOT_PATH="$PROJECT_DIR/station-loop-screenshot.png"
 S3_BUCKET="olve.trains"
-S3_KEY="screenshots/loop-track-screenshot.png"
+S3_KEY="screenshots/station-loop-screenshot.png"
 S3_REGION="ap-southeast-2"
 SHLINK_API_KEY="${SHLINK_API_KEY:-78ed24399fc8fbc76e8a3872eb3a69a226c980e5530531f3772227126edee83b}"
 SHLINK_URL="http://localhost:8844"
@@ -22,10 +22,10 @@ send_cmd() {
     dotnet "$BIN_DIR/On Track To Grow.dll" --send "$1" --instance "$INSTANCE_ID"
 }
 
-echo "Starting game with Xvfb (1920x1080)..."
+echo "Starting game with Xvfb (3840x2160)..."
 
 # Start Xvfb with 24-bit color depth
-Xvfb :99 -screen 0 1920x1080x24 &
+Xvfb :99 -screen 0 3840x2160x24 &
 XVFB_PID=$!
 export DISPLAY=:99
 
@@ -46,55 +46,63 @@ echo "Starting game from main menu..."
 send_cmd "start-game"
 sleep 3
 
-# Create a circular/diamond track: midpoints at 3,1 -> 5,3 -> 3,5 -> 1,3 -> 3,1
-# This creates curves at each corner
-echo "Creating circular track..."
+# Create a rectangular loop with a station on one side
+# Station will be at position 2,2 facing east (creates track from 1,2 to 6,2)
+# Then we'll complete the loop with curved tracks
+
+echo "Creating station and loop track..."
 
 # Track height
 Y="0.125"
 
-# Bottom-right curve: (3,1) east -> (5,3) north
-echo "Placing bottom-right curve..."
-TRACK1_OUTPUT=$(send_cmd "place-track start=3,$Y,1 end=5,$Y,3 start-dir=east end-dir=north" 2>&1)
+# Place the station (4 units wide, creates track automatically)
+echo "Placing station..."
+STATION_OUTPUT=$(send_cmd "place-building pos=2,2 type=station dir=east" 2>&1)
+echo "$STATION_OUTPUT"
+sleep 1
+
+# The station creates a track from approximately (1, Y, 2) to (6, Y, 2)
+# Now create the rest of the loop
+
+# Right side: curve from station end (6,2) north to (6,6)
+echo "Placing right curve..."
+TRACK1_OUTPUT=$(send_cmd "place-track start=6,$Y,2 end=6,$Y,6 start-dir=north end-dir=west" 2>&1)
 echo "$TRACK1_OUTPUT"
 TRACK1_ID=$(echo "$TRACK1_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
 sleep 0.5
 
-# Top-right curve: (5,3) north -> (3,5) west
-echo "Placing top-right curve..."
-TRACK2_OUTPUT=$(send_cmd "place-track start=5,$Y,3 end=3,$Y,5 start-dir=north end-dir=west" 2>&1)
+# Top side: straight track from (6,6) to (1,6) going west
+echo "Placing top straight track..."
+send_cmd "place-track start=6,$Y,6 end=1,$Y,6 start-dir=west end-dir=west"
+sleep 0.5
+
+# Left side: curve from (1,6) south to (1,2)
+echo "Placing left curve..."
+TRACK2_OUTPUT=$(send_cmd "place-track start=1,$Y,6 end=1,$Y,2 start-dir=south end-dir=east" 2>&1)
 echo "$TRACK2_OUTPUT"
 TRACK2_ID=$(echo "$TRACK2_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
 sleep 0.5
 
-# Top-left curve: (3,5) west -> (1,3) south
-echo "Placing top-left curve..."
-send_cmd "place-track start=3,$Y,5 end=1,$Y,3 start-dir=west end-dir=south"
-sleep 0.5
-
-# Bottom-left curve: (1,3) south -> (3,1) east (completing the loop)
-echo "Placing bottom-left curve..."
-send_cmd "place-track start=1,$Y,3 end=3,$Y,1 start-dir=south end-dir=east"
-sleep 0.5
-
-# Set camera to center on the track (center is at 3,0,3) with zoom showing ~10 tiles
+# Set camera to center on the track loop (center is around 3.5,0,4) with zoom showing the whole loop
 echo "Setting camera position..."
-send_cmd "set-camera target=3,0,3 zoom=10"
+send_cmd "set-camera target=3.5,0,4 zoom=6"
 sleep 0.5
 
-# Place first vehicle on the first track segment
+# Place first vehicle on the first curved track segment
 echo "Placing first vehicle..."
 send_cmd "place-vehicle track=$TRACK1_ID"
 sleep 1
 
-# Place second vehicle on a different track segment (1 second apart for spacing)
+# Place second vehicle on the opposite side for spacing
 echo "Placing second vehicle..."
 send_cmd "place-vehicle track=$TRACK2_ID"
 sleep 1
 
-# Place a residential building
-echo "Placing residential building..."
-send_cmd "place-building pos=10,5"
+# Add a couple of residential buildings near the station
+echo "Placing residential buildings..."
+send_cmd "place-building pos=4,8 type=residential dir=north"
+sleep 0.5
+send_cmd "place-building pos=6,8 type=residential dir=south"
 sleep 0.5
 
 # Take screenshot

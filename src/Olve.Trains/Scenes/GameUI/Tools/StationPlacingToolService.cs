@@ -13,6 +13,9 @@ public sealed class StationPlacingToolService(
     TerrainRaycastService terrainRaycastService,
     ToolManagementService toolManagementService,
     BuildingRenderingService buildingRenderingService,
+    BuildingBlueprintService buildingBlueprintService,
+    BuildingValidationService buildingValidationService,
+    BuildingService buildingService,
     MouseManager mouseManager,
     KeyboardManager keyboardManager) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
 {
@@ -66,8 +69,7 @@ public sealed class StationPlacingToolService(
 
         BuildingPosition position = new(tilePosition, ToolState.CardinalDirection);
 
-        /*
-        if (!buildingBlueprintService.TryGetBlueprint(stationBlueprint, out var blueprint))
+        if (!buildingBlueprintService.TryGetBlueprint(BuildingBlueprintCatalog.Station, out var blueprint))
         {
             return new ResultProblem("Station blueprint not found");
         }
@@ -81,8 +83,7 @@ public sealed class StationPlacingToolService(
             return Result.Success();
         }
 
-        buildingService.AddBuilding(stationBlueprint, position);
-        */
+        buildingService.AddBuilding(BuildingBlueprintCatalog.Station, position);
 
         return Result.Success();
     }
@@ -97,10 +98,6 @@ public sealed class StationPlacingToolService(
         }
         else
         {
-            /*
-            var color = BuildingRenderingService.GetBuildingColor(BuildingType.Station);
-            ghostParams = ghostParams with { UColor = color.ToVector() };
-            */
             buildingRenderingService.RegisterDirect(_ghostBuildingId, position, footprint, ghostParams);
             _ghostRegistered = true;
         }
