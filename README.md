@@ -28,6 +28,8 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [x] Allow ghost preview during track creation
   - [x] Disallow tracks with collisions with geometry, other tracks, and extreme curvature
   - [x] Display ghost previews of disallowed tracks in red
+- Terrain epic:
+  - [ ] Add water rendering for y < 0
 - Configuration epic:
   - [ ] Create engine-side system for managing configuration
     - all kinds of configuration: graphics, interface, audio, game options, bindings
@@ -43,7 +45,12 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [x] Validate collisions
   - [ ] Add station with station track
   - [x] BUG: don't show building ghost when there's no terrain intersection with mouse
-  - [ ] Add residence buildings from ORA data
+- Collision system epic:
+  - Description: Centralized collision system (e.g. Id<Collider>) queryable when placing tracks, buildings, or future obstacles like trees. Replaces per-type validation with a unified approach.
+  - [ ] Design generalized collision system with typed collider IDs
+  - [ ] Migrate track collision checks to central system
+  - [ ] Migrate building collision checks to central system
+  - [ ] Add terrain as a collision source
 - [x] Deletion epic:
   - [x] Add deletion tool
   - [x] Allow deleting tracks
@@ -56,6 +63,16 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [ ] Create game-side logic for supporting cargo and train inventories
   - [ ] Create game-side logic for generating cargo in stations next to industries
   - [ ] Create game-side logic for consuming cargo delivered to stations
+- Residential buildings epic:
+  - [ ] Add residential building type, blueprint (1x1), and placement tool
+  - [ ] Add variable-sized residential blueprints (bias toward medium)
+  - [ ] Add 'buildings' layer to ORA map format (grey color)
+  - [ ] Add deterministic algorithm to split ORA building blobs into variable-sized houses
+- Random generation epic:
+  - [ ] Add random terrain generation
+  - [ ] Add random residential building generation
+- Cities epic:
+  - [ ] Design city system built on residential buildings
 - Building upgrading epic:
   - [ ] Add basic support for building upgrades
   - [ ] Require resources for building upgrades

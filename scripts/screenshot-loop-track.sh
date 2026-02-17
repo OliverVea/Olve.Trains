@@ -8,6 +8,8 @@ SCREENSHOT_PATH="$PROJECT_DIR/loop-track-screenshot.png"
 S3_BUCKET="olve.trains"
 S3_KEY="screenshots/loop-track-screenshot.png"
 S3_REGION="ap-southeast-2"
+SHLINK_API_KEY="${SHLINK_API_KEY:-}"
+SHLINK_URL="http://localhost:8844"
 
 # Cleanup any stale processes
 rm -f /tmp/.X99-lock 2>/dev/null || true
@@ -90,6 +92,11 @@ echo "Placing second vehicle..."
 send_cmd "place-vehicle track=$TRACK2_ID"
 sleep 1
 
+# Place a residential building
+echo "Placing residential building..."
+send_cmd "place-building pos=10,5"
+sleep 0.5
+
 # Take screenshot
 echo "Taking screenshot..."
 send_cmd "screenshot path=$SCREENSHOT_PATH"
@@ -115,11 +122,25 @@ if [ -f "$SCREENSHOT_PATH" ]; then
 
         # Generate presigned URL (expires in 1 hour)
         PRESIGNED_URL=$(aws s3 presign "s3://${S3_BUCKET}/${S3_KEY}" --region "$S3_REGION" --expires-in 3600)
+
+        # Shorten URL via Shlink if API key is available
+        SHORT_URL=""
+        if [ -n "$SHLINK_API_KEY" ]; then
+            SHORT_URL=$(curl -sf -X POST "${SHLINK_URL}/rest/v3/short-urls" \
+                -H "X-Api-Key: ${SHLINK_API_KEY}" \
+                -H "Content-Type: application/json" \
+                -d "{\"longUrl\": \"${PRESIGNED_URL}\"}" | python3 -c "import sys,json; print(json.load(sys.stdin)['shortUrl'])" 2>/dev/null || true)
+        fi
+
         echo ""
         echo "============================================"
         echo "Screenshot uploaded successfully!"
-        echo "Presigned URL (expires in 1 hour):"
-        echo "$PRESIGNED_URL"
+        if [ -n "$SHORT_URL" ]; then
+            echo "Short URL: $SHORT_URL"
+        else
+            echo "Presigned URL (expires in 1 hour):"
+            echo "$PRESIGNED_URL"
+        fi
         echo "============================================"
 
     else
