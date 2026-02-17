@@ -42,7 +42,7 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [ ] Add building validation and validation failure rendering
   - [ ] Validate collisions
   - [ ] Add station with station track
-  - [ ] BUG: don't show building ghost when there's no terrain intersection with mouse
+  - [x] BUG: don't show building ghost when there's no terrain intersection with mouse
   - [ ] Add residence buildings from ORA data
 - [x] Deletion epic:
   - [x] Add deletion tool
@@ -71,5 +71,5 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [x] Add commands for navigating the main menu
   - [x] Add support for taking screenshots of the current state of the game
 - Main menu improvements:
-  - [ ] Add FPS counter to the info bar (right subsection, left of main menu button)
+  - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
   - [ ] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now
