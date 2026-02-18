@@ -64,7 +64,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
             {
                 if (RemoveNode(childId).MapToResult(allowNotFound: false).TryPickProblems(out var problems))
                 {
-                    return DeletionResult.Error(problems);
+                    return problems;
                 }
             }
         }
@@ -74,7 +74,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
         // Delete the entity
         if (_guiNodes.Remove(nodeId).MapToResult(allowNotFound: false).TryPickProblems(out var baseProblems))
         {
-            return DeletionResult.Error(baseProblems);
+            return baseProblems;
         }
 
         _disabledNodes.Remove(nodeId);

@@ -103,8 +103,8 @@ public class AddJunctionRuleHandlerService(
     private static Result<SignalRuleVehicle> ParseVehicle(string vehicle)
     {
         if (string.Equals(vehicle, "any", StringComparison.InvariantCultureIgnoreCase)) return Result.Success<SignalRuleVehicle>(new Any());
-        if (vehicle.StartsWith("vehicle", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Vehicle>(vehicle).MapValue(x => (SignalRuleVehicle)x);
-        if (vehicle.StartsWith("group", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<VehicleGroup>(vehicle).MapValue(x => (SignalRuleVehicle)x);
+        if (vehicle.StartsWith("vehicle", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Vehicle>(vehicle).Map(x => (SignalRuleVehicle)x);
+        if (vehicle.StartsWith("group", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<VehicleGroup>(vehicle).Map(x => (SignalRuleVehicle)x);
         return new ResultProblem("Could not parse vehicle '{0}'", vehicle);
     }
 
@@ -121,8 +121,8 @@ public class AddJunctionRuleHandlerService(
     private static Result<SignalRuleSource> ParseSource(string source)
     {
         if (string.Equals(source, "any", StringComparison.InvariantCultureIgnoreCase)) return Result.Success<SignalRuleSource>(new Any());
-        if (source.StartsWith("track", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Track>(source).MapValue(x => (SignalRuleSource)x);
-        if (source.StartsWith("direction", StringComparison.InvariantCultureIgnoreCase)) return ParseEnumArgument<CardinalDirection>(source).MapValue(x => (SignalRuleSource)x);
+        if (source.StartsWith("track", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Track>(source).Map(x => (SignalRuleSource)x);
+        if (source.StartsWith("direction", StringComparison.InvariantCultureIgnoreCase)) return ParseEnumArgument<CardinalDirection>(source).Map(x => (SignalRuleSource)x);
         return new ResultProblem("Could not parse source '{0}'", source);
     }
 
@@ -139,8 +139,8 @@ public class AddJunctionRuleHandlerService(
     private static Result<SignalRuleDestination> ParseDestination(string destination)
     {
         if (string.Equals(destination, "any", StringComparison.InvariantCultureIgnoreCase)) return Result.Success<SignalRuleDestination>(new Any());
-        if (destination.StartsWith("track", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Track>(destination).MapValue(x => (SignalRuleDestination)x);
-        if (destination.StartsWith("direction", StringComparison.InvariantCultureIgnoreCase)) return ParseEnumArgument<CardinalDirection>(destination).MapValue(x => (SignalRuleDestination)x);
+        if (destination.StartsWith("track", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Track>(destination).Map(x => (SignalRuleDestination)x);
+        if (destination.StartsWith("direction", StringComparison.InvariantCultureIgnoreCase)) return ParseEnumArgument<CardinalDirection>(destination).Map(x => (SignalRuleDestination)x);
         return new ResultProblem("Could not parse destination '{0}'", destination);
     }
 
