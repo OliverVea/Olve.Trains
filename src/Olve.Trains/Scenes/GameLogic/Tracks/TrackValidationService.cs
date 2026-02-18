@@ -1,4 +1,4 @@
-﻿using Olve.Engine3D.Utilities;
+﻿using Olve.Results;
 
 namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
@@ -11,7 +11,7 @@ public class TrackValidationService(TrackSplineService trackSplineService)
         !trackSplineService
             .CreateSpline(from, to)
             .GetCurvatures(SamplingPoints)
-            .MapValue(x => !x.Any(IsInvalidCurvature))
+            .Map(x => !x.Any(IsInvalidCurvature))
             .TryPickProblems(out _, out var value) && value;
 
     private static bool IsInvalidCurvature(float curvature)

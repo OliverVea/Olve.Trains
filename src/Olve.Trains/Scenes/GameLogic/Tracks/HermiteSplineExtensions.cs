@@ -1,6 +1,6 @@
 ﻿using Olve.Engine3D.Math;
 using Olve.Engine3D.Math.Splines;
-using Olve.Engine3D.Utilities;
+using Olve.Results;
 
 namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
@@ -74,7 +74,7 @@ public static class HermiteSplineExtensions
         public Result<IEnumerable<Vector3D<float>>> GetPoints(int count)
         {
             return GetTimes(count)
-                .MapValue(x => x
+                .Map(x => x
                     .Select(spline.Sample));
         }
 
@@ -124,7 +124,7 @@ public static class HermiteSplineExtensions
         public Result<IEnumerable<float>> GetCurvatures(int count)
         {
             return GetTimes(count)
-                .MapValue(x => x
+                .Map(x => x
                     .Select(spline.GetCurvatureSafe));
         }
 

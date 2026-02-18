@@ -1,31 +1,31 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project>
   <ItemGroup>
-    <PackageVersion Include="AWSSDK.S3" Version="4.0.18.3" />
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.18.6" />
     <PackageVersion Include="BigGustave" Version="1.0.6" />
     <PackageVersion Include="Duende.IdentityModel" Version="8.0.0" />
     <PackageVersion Include="MemoryPack" Version="1.21.4" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.3" />
     <PackageVersion Include="NReco.Logging.File" Version="1.3.1" />
     <!-- Olve.* packages: https://olivervea.github.io/Olve.Utilities/ -->
     <PackageVersion Include="Olve.MsdfAtlasGen" Version="1.0.2" />
     <PackageVersion Include="Olve.OpenRaster" Version="0.1.5" />
-    <PackageVersion Include="Olve.Operations" Version="0.36.1" />
-    <PackageVersion Include="Olve.Paths" Version="0.36.1" />
-    <PackageVersion Include="Olve.Paths.Glob" Version="0.36.1" />
-    <PackageVersion Include="Olve.Results" Version="0.36.1" />
-    <PackageVersion Include="Olve.Results.TUnit" Version="0.36.1" />
-    <PackageVersion Include="Olve.Utilities" Version="0.36.1" />
+    <PackageVersion Include="Olve.Operations" Version="0.37.0" />
+    <PackageVersion Include="Olve.Paths" Version="0.37.0" />
+    <PackageVersion Include="Olve.Paths.Glob" Version="0.37.0" />
+    <PackageVersion Include="Olve.Results" Version="0.37.0" />
+    <PackageVersion Include="Olve.Results.TUnit" Version="0.37.0" />
+    <PackageVersion Include="Olve.Utilities" Version="0.37.0" />
     <PackageVersion Include="OneOf" Version="3.0.271" />
     <PackageVersion Include="OneOf.SourceGenerator" Version="3.0.271" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0" />
@@ -37,6 +37,6 @@
     <PackageVersion Include="Silk.NET.OpenGL" Version="2.23.0" />
     <PackageVersion Include="Silk.NET.Windowing" Version="2.23.0" />
     <PackageVersion Include="StbImageWriteSharp" Version="1.16.7" />
-    <PackageVersion Include="TUnit" Version="1.13.11" />
+    <PackageVersion Include="TUnit" Version="1.15.11" />
   </ItemGroup>
 </Project>

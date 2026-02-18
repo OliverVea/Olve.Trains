@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Operations;
+using Olve.Paths;
 using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
