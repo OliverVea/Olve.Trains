@@ -5,7 +5,6 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Engine3D.Utilities;
 
 namespace Olve.Trains.Scenes.GUI;
 

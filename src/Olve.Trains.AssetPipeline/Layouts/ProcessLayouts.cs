@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography;
-using System.Xml.Linq;
+﻿using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
 using Olve.Paths.Glob;
@@ -15,7 +14,6 @@ public class ProcessLayouts(
     PathProvider pathProvider) : IAsyncOperation<ProcessLayouts.Request, ProcessLayouts.Response>
 {
     private static readonly string TemplateFileName = "LayoutClass.scriban";
-    private static readonly MD5 Md5 = MD5.Create();
 
     public record Request;
     public record Response(IReadOnlyList<IPath> GeneratedFiles);

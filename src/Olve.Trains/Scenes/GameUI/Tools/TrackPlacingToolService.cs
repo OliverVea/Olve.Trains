@@ -2,7 +2,6 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameRendering;

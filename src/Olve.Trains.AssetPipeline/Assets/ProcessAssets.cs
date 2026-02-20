@@ -8,12 +8,20 @@ namespace Olve.Trains.AssetPipeline.Assets;
 /// <summary>
 ///     Processes game assets and spits them out in /app/output.
 /// </summary>
-public class ProcessAssets(ILogger<ProcessAssets> logger, PathProvider pathProvider, ProcessMeshAssets processMeshAssets, ProcessTextureAssets processTextureAssets, ProcessTerrainAssets processTerrainAssets, Fonts.ProcessFonts processFonts, TextureFileReader textureFileReader, AssetWriter assetWriter) : IAsyncOperation<ProcessAssets.Request, ProcessAssets.Response>
+public class ProcessAssets(
+    ILogger<ProcessAssets> logger,
+    ProcessMeshAssets processMeshAssets,
+    ProcessTextureAssets processTextureAssets,
+    ProcessTerrainAssets processTerrainAssets,
+    Fonts.ProcessFonts processFonts,
+    TextureFileReader textureFileReader,
+    AssetWriter assetWriter) : IAsyncOperation<ProcessAssets.Request, ProcessAssets.Response>
 {
-    private IPath TemplateFilePath => pathProvider.TemplatesSourceFolder / "MeshesClass.scriban";
-
     public record Request(IReadOnlyList<FileInfo> AssetFiles, BuildTargets Targets);
-    public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets, IReadOnlyList<Asset<TextureData<RGBA>>> TextureAssets, IReadOnlyList<Asset<TerrainData>> TerrainAssets, IReadOnlyList<IPath> FontFiles);
+    public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets,
+        IReadOnlyList<Asset<TextureData<RGBA>>> TextureAssets,
+        IReadOnlyList<Asset<TerrainData>> TerrainAssets,
+        IReadOnlyList<IPath> FontFiles);
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {

@@ -157,7 +157,7 @@ public class ProcessFonts(
     {
         var glyphObject = new ScriptObject
         {
-            { "Rune", (int)new Rune(glyph.Character).Value },
+            { "Rune", new Rune(glyph.Character).Value },
             { "Index", glyph.Unicode },
             { "Advance", glyph.Advance }
         };

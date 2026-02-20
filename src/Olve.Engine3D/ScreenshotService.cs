@@ -6,7 +6,7 @@ namespace Olve.Engine3D;
 
 public class ScreenshotService(KeyboardManager keyboardManager, ScreenshotManager screenshotManager) : ISceneService
 {
-    private static readonly IPath ScreenshotsFolder = Paths.Path.Create("screenshots");
+    private static readonly IPath ScreenshotsFolder = Path.Create("screenshots");
 
     public int Priority => int.MaxValue;
 
