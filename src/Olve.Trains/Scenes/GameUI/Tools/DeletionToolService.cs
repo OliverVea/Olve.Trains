@@ -98,12 +98,14 @@ public class DeletionToolService(
         }
 
         var result = vehicleService.DeleteVehicle(id);
-        if (result.Succeeded)
+        if (result.TryPickProblems(out var problems))
         {
-            logger.LogInformation("Deleted vehicle {VehicleId}", id);
+            logger.LogWarning("Failed to delete vehicle {VehicleId}: {Problems}", id, problems);
+            return false;
         }
 
-        return result.Succeeded;
+        logger.LogInformation("Deleted vehicle {VehicleId}", id);
+        return true;
     }
 
     private bool TryDeleteBuildingAtTile(TilePosition tilePosition)
@@ -121,12 +123,14 @@ public class DeletionToolService(
                 && tilePosition.Z >= minZ && tilePosition.Z <= maxZ)
             {
                 var result = buildingService.DeleteBuilding(building.Id);
-                if (result.Succeeded)
+                if (result.TryPickProblems(out var problems))
                 {
-                    logger.LogInformation("Deleted building {BuildingId}", building.Id);
+                    logger.LogWarning("Failed to delete building {BuildingId}: {Problems}", building.Id, problems);
+                    return false;
                 }
 
-                return result.Succeeded;
+                logger.LogInformation("Deleted building {BuildingId}", building.Id);
+                return true;
             }
         }
 
@@ -147,11 +151,13 @@ public class DeletionToolService(
         }
 
         var result = trackService.DeleteTrack(closestTrackPoint.TrackId);
-        if (result.Succeeded)
+        if (result.TryPickProblems(out var problems))
         {
-            logger.LogInformation("Deleted track {TrackId}", closestTrackPoint.TrackId);
+            logger.LogWarning("Failed to delete track {TrackId}: {Problems}", closestTrackPoint.TrackId, problems);
+            return false;
         }
 
-        return result.Succeeded;
+        logger.LogInformation("Deleted track {TrackId}", closestTrackPoint.TrackId);
+        return true;
     }
 }

@@ -1,3 +1,4 @@
+using Olve.Utilities.CollectionExtensions;
 using Olve.Utilities.Ids;
 using Olve.Utilities.Lookup;
 
@@ -25,13 +26,7 @@ public sealed class EntityStoreIndex<T, TKey> : IDisposable
         if (!_store.TryGet(id, out var entity)) return;
 
         var key = _keySelector(entity);
-        if (!_index.TryGetValue(key, out var ids))
-        {
-            ids = [];
-            _index[key] = ids;
-        }
-
-        ids.Add(id);
+        _index.GetOrAdd(key, () => []).Add(id);
     }
 
     private void OnRemoved(Id<T> id)

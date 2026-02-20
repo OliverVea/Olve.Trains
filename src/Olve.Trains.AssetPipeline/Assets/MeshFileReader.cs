@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Primitives;
-using Olve.Results;
 using Silk.NET.Assimp;
 using Silk.NET.Maths;
 
@@ -80,8 +79,8 @@ public class MeshFileReader(ILogger<MeshFileReader> logger)
                 TextureCoordinates = textureCoords
             };
 
-            var assetName = Path.GetFileNameWithoutExtension(modelFile).Split('.')[0];
-            var assetSource = Path.GetFullPath(modelFile);
+            var assetName = System.IO.Path.GetFileNameWithoutExtension(modelFile).Split('.')[0];
+            var assetSource = System.IO.Path.GetFullPath(modelFile);
             var assetDestination = "meshes/" + assetName + ".mesh";
 
             Asset<MeshData> asset = new()

@@ -5,9 +5,7 @@ using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Olve.Operations;
-using Olve.Paths;
 using Olve.Paths.Glob;
-using Olve.Results;
 using Olve.Trains.AssetPipeline.Options;
 using Path = System.IO.Path;
 
@@ -55,7 +53,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
 
         }
 
-        var itemCount = pathProvider.BuildS3CachePath.TryGlob("**", out var hits) ? hits.Count(x => x.ElementType == ElementType.File) : 0;
+        var itemCount = pathProvider.BuildS3CachePath.TryGlob("**/*", out var hits) ? hits?.Count(x => x.ElementType == ElementType.File) ?? 0 : 0;
 
         logger.LogInformation("Retrieved {ItemCount} items from S3 bucket", itemCount);
 
@@ -92,7 +90,7 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
                 return new ResultProblem("No objects found in the S3 bucket '{0}'", bucket);
             }
 
-            Directory.CreateDirectory(pathProvider.BuildS3CachePath.Path);
+            pathProvider.BuildS3CachePath.EnsurePathExists();
 
             List<FileInfo> files = [];
 

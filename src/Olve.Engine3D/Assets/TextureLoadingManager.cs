@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering.Textures;
-using Olve.Paths;
 
 namespace Olve.Engine3D.Assets;
 

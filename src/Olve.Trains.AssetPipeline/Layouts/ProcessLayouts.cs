@@ -2,9 +2,7 @@
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
-using Olve.Paths;
 using Olve.Paths.Glob;
-using Olve.Results;
 using Olve.Trains.AssetPipeline.Assets;
 using Scriban.Runtime;
 

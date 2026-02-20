@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Assets.Entities;
 using Olve.OpenRaster;
-using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -69,7 +68,7 @@ public class TerrainFileReader(ILogger<TerrainFileReader> logger, ReadOpenRaster
             Heightmap = heightmapData
         };
 
-        var assetName = Path.GetFileNameWithoutExtension(assetSource).Split('.')[0];
+        var assetName = System.IO.Path.GetFileNameWithoutExtension(assetSource).Split('.')[0];
         var assetDestination = "terrains/" + assetName + ".terrain";
 
         return new Asset<TerrainData>
@@ -83,13 +82,13 @@ public class TerrainFileReader(ILogger<TerrainFileReader> logger, ReadOpenRaster
 
     private static Result<Layer> GetLayer(string assetSource, OpenRasterFile openRasterFile, string layerName)
     {
-        var terrainLayerCount = openRasterFile.Layers.Count(l => l.Name == layerName);
-        if (terrainLayerCount != 1)
+        var matchingLayers = openRasterFile.Layers.Where(l => l.Name == layerName).ToList();
+        if (matchingLayers.Count != 1)
         {
-            return new ResultProblem("Expected 1 terrain layer in file '{0}', but found {1}", assetSource, terrainLayerCount);
+            return new ResultProblem("Expected 1 terrain layer in file '{0}', but found {1}", assetSource, matchingLayers.Count);
         }
 
-        return openRasterFile.Layers.First(l => l.Name == layerName);
+        return matchingLayers[0];
     }
 
 }

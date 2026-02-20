@@ -1,6 +1,5 @@
 using MemoryPack;
 using Microsoft.Extensions.Logging;
-using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -16,7 +15,7 @@ public class AssetWriter(ILogger<AssetWriter> logger, PathProvider pathProvider)
 
             var assetOutputPath = pathProvider.OutputPath / destination;
 
-            var parentDir = Path.GetDirectoryName(assetOutputPath.Path);
+            var parentDir = System.IO.Path.GetDirectoryName(assetOutputPath.Path);
             if (parentDir != null)
             {
                 Directory.CreateDirectory(parentDir);

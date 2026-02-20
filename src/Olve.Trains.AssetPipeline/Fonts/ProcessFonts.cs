@@ -4,8 +4,6 @@ using Microsoft.Extensions.Options;
 using Olve.MsdfAtlasGen;
 using Olve.MsdfAtlasGen.Models;
 using Olve.Operations;
-using Olve.Paths;
-using Olve.Results;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Options;
 using Scriban.Runtime;

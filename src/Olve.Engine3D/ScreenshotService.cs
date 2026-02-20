@@ -1,6 +1,5 @@
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
-using Olve.Paths;
 using Silk.NET.Input;
 
 namespace Olve.Engine3D;

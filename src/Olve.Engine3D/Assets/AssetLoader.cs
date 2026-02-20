@@ -1,6 +1,5 @@
 using MemoryPack;
 using Microsoft.Extensions.Logging;
-using Olve.Paths;
 
 namespace Olve.Engine3D.Assets;
 
@@ -43,7 +42,7 @@ public class AssetLoader(ILogger<AssetLoader> logger)
         catch (Exception e)
         {
             return new ResultProblem(e, "Got unexpected error while reading asset '{0}' of type '{1}': ",
-                location,
+                location.Path,
                 typeof(T).Name);
         }
     }

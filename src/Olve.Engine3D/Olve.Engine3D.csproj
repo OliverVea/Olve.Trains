@@ -3,7 +3,6 @@
         <PackageReference Include="MemoryPack" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-        <PackageReference Include="Olve.OpenRaster" />
         <PackageReference Include="Olve.Paths" />
         <PackageReference Include="Olve.Results" />
         <PackageReference Include="Olve.Utilities" />

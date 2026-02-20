@@ -1,5 +1,3 @@
-using Olve.Paths;
-
 namespace Olve.Trains.AssetPipeline.Shaders;
 
 public class ShaderProgram
