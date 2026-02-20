@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
+using Olve.Paths.Glob;
 using Olve.Trains.AssetPipeline.Assets;
 using Scriban.Runtime;
-using Path = System.IO.Path;
 
 namespace Olve.Trains.AssetPipeline.Shaders;
 
@@ -25,19 +25,18 @@ public class ProcessShaders(
     {
         logger.LogDebug("Processing shader files");
 
-        var shaderRoot = pathProvider.ShadersSourceFolder.Path;
-        var shaderFiles = Directory.GetFiles(shaderRoot, "*.glsl", SearchOption.AllDirectories);
-        var shaders = new List<Shader>(shaderFiles.Length);
+        var shaderFilesPaths = pathProvider.ShadersSourceFolder.TryGlob("**/*.glsl", out var hits) ? hits : [];
+        var shaders = new List<Shader>();
 
         pathProvider.ShadersOutputFolder.EnsurePathExists();
 
-        foreach (var absoluteShaderFile in shaderFiles)
+        foreach (var absoluteShaderPath in shaderFilesPaths)
         {
-            var shaderFile = Path.GetRelativePath(shaderRoot, absoluteShaderFile);
+            var shaderFile = System.IO.Path.GetRelativePath(pathProvider.ShadersSourceFolder.Path, absoluteShaderPath.Path);
             logger.LogDebug("Reading shader: {ShaderFile}", shaderFile);
 
             // Load shader as string
-            var shaderSource = await File.ReadAllTextAsync(absoluteShaderFile, ct);
+            var shaderSource = await File.ReadAllTextAsync(absoluteShaderPath.Path, ct);
 
             // Read uniforms
             if (ShaderHelper.GetUniforms(shaderSource, shaderFile).TryPickProblems(out var problems, out var uniforms))
@@ -48,7 +47,7 @@ public class ProcessShaders(
             var uniformNames = string.Join(", ", uniforms.Select(u => u.Name));
             logger.LogDebug("Got uniforms: {UniformNames}", uniformNames);
 
-            var fileName = Path.GetFileNameWithoutExtension(shaderFile);
+            var fileName = System.IO.Path.GetFileNameWithoutExtension(shaderFile);
             var fileNameSegments = fileName.Split('.');
 
             if (fileNameSegments.Length != 2)

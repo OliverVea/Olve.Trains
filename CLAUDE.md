@@ -128,36 +128,105 @@ pkg-trim --sln-dir . --fix
 
 Documentation base URL: https://olivervea.github.io/Olve.Utilities/
 
-API docs follow the pattern: `https://olivervea.github.io/Olve.Utilities/api/{Namespace}.html`
+Each package has two documentation resources:
+
+- **README (general guidance)**: `https://olivervea.github.io/Olve.Utilities/src/{Package}/README.html`
+  - Start here. Contains usage philosophy, deprecation notices, and best practices.
+- **API docs (technical reference)**: `https://olivervea.github.io/Olve.Utilities/api/{Namespace}.html`
+  - Detailed type/method signatures and parameters.
 
 Key packages used in this project:
 
 - **Olve.Results** - Result type for error handling (used throughout the codebase)
-- **Olve.Paths** - Path manipulation inspired by Python's pathlib (API: https://olivervea.github.io/Olve.Utilities/api/Olve.Paths.html)
-- **Olve.Utilities** - General utilities
+- **Olve.Paths** - Path manipulation inspired by Python's pathlib
+- **Olve.Utilities** - General utilities (Id<T>, DictionaryExtensions, etc.)
+- **Olve.Operations** - **Deprecated.** Avoid adding new usages.
 
-### Olve.Paths Example
+### Olve.Results Quick Reference
+
+The primary error handling pattern. **Always use `TryPickProblems`**, not `.Failed`/`.Succeeded`/`.Value`.
 
 ```csharp
-using Olve.Paths;
+// Valueless result — check for failure
+if (DoSomething().TryPickProblems(out var problems))
+{
+    return problems.Prepend("Context about what failed");
+}
 
-// Create paths
-var path = Paths.Path.Create("/home/user/documents");
-var file = Paths.Path.Create("screenshots/image.png");
+// Valued result — get value on success, problems on failure
+if (GetValue().TryPickProblems(out var problems, out var value))
+{
+    return problems;
+}
+// 'value' is safe to use here
+```
 
-// Path operations
-var parent = path.Parent;                    // /home/user
-var joined = path / "subfolder" / "file.txt"; // Path joining with /
-var absolute = file.Absolute;                // Resolves to absolute path
+**Creating problems** — use format strings with `{0}`, `{1}`, NOT interpolation:
+```csharp
+return new ResultProblem("Failed to parse '{0}' as {1}", input, typeName);  // correct
+return new ResultProblem($"Failed to parse '{input}'");                      // WRONG
+```
 
-// File system checks
-if (path.Exists()) { ... }
-path.TryGetElementType(out var elementType); // Directory, File, etc.
+**Composition:**
+- `Result.Chain(a, b, c)` — sequential dependent steps. Stops on first failure.
+- `Result.Concat(a, b, c)` — independent steps. Aggregates all problems.
+- `.Map(x => transform(x))` — transform value (non-Result function)
+- `.Bind(x => getResult(x))` — transform value (Result-returning function)
+- `.ToEmptyResult()` — discard value, keep success/failure status
+- `.Prepend("context")` — add hierarchical error context when propagating
 
-// Get special paths
-var cwd = Paths.Path.GetCurrentDirectory();
-var home = Paths.Path.GetHomeDirectory();
-Paths.Path.TryGetAssemblyExecutable(out var exe);
+**DeletionResult** — three states for delete operations:
+```csharp
+return DeletionResult.Success();    // deleted
+return DeletionResult.NotFound();   // entity didn't exist
+return DeletionResult.Error(...);   // something went wrong
+```
+
+**Implicit conversions** — `ResultProblem` converts to `Result`/`Result<T>`:
+```csharp
+return new ResultProblem("Something failed");  // works directly, no wrapper needed
+```
+
+### Olve.Utilities.Ids Quick Reference
+
+Type-safe identifiers backed by `Guid`. Prevents mixing IDs of different entity types.
+
+```csharp
+// Random new ID (runtime entities)
+var trackId = Id.New<Track>();
+
+// Deterministic ID from name (stable/reproducible — layouts, blueprints)
+var elementId = Id.FromName<GuiElement>("toolbar/button/delete");
+
+// Parse from string (user input, commands)
+if (Id.TryParse<Track>(inputString, out var parsedId)) { ... }
+```
+
+**Rules:**
+- Use `Id<T>` (typed) everywhere, not bare `Id` (untyped)
+- Use `Id.New<T>()` for runtime-created entities
+- Use `Id.FromName<T>(name)` for stable identifiers that must be the same across runs
+- Use `Id.TryParse<T>()` for parsing — never `Guid.Parse()`
+- For display/logging, pass the `Id<T>` directly (has `ToString()`)
+
+### Olve.Paths Quick Reference
+
+Path manipulation inspired by Python's pathlib. Prefer over `System.IO.Path`.
+
+```csharp
+// Path joining with / operator
+var joined = basePath / "subfolder" / "file.txt";
+
+// Filesystem operations (use these, not System.IO equivalents)
+path.Parent                      // instead of Path.GetDirectoryName()
+path.Name                        // instead of Path.GetFileName()
+path.Exists()                    // instead of File.Exists() / Directory.Exists()
+path.EnsurePathExists()          // instead of Directory.CreateDirectory()
+path.TryGlob("**/*.cs", out _)  // instead of Directory.GetFiles()
+
+// Special paths
+var home = Path.GetHomeDirectory();
+Path.TryGetAssemblyExecutable(out var exe);
 ```
 
 ## Notes

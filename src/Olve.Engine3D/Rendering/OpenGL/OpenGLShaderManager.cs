@@ -13,8 +13,11 @@ public class OpenGLShaderManager(Provider<GL> glProvider, TextureSlotManager tex
         glProvider.Value.UseProgram(shaderProgram.Handle);
         foreach (var p in parameters.Parameters)
         {
-            var r = p.SetUniforms(glProvider.Value, shaderProgram, textureSlotManager);
-            if (r.Failed) return r;
+            if (p.SetUniforms(glProvider.Value, shaderProgram, textureSlotManager)
+                .TryPickProblems(out var problems))
+            {
+                return problems;
+            }
         }
         return Result.Success();
     }
@@ -27,8 +30,11 @@ public class OpenGLShaderManager(Provider<GL> glProvider, TextureSlotManager tex
     {
         foreach (var p in parameters.Parameters)
         {
-            var r = p.SetUniforms(glProvider.Value, shaderProgram, textureSlotManager);
-            if (r.Failed) return r;
+            if (p.SetUniforms(glProvider.Value, shaderProgram, textureSlotManager)
+                .TryPickProblems(out var problems))
+            {
+                return problems;
+            }
         }
         return Result.Success();
     }

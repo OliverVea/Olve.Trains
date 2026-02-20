@@ -37,16 +37,16 @@ internal static class CommandLineParser
             while (i < len && rest[i] != '=' && !char.IsWhiteSpace(rest[i])) i++;
             var key = rest[keyStart..i];
             if (string.IsNullOrEmpty(key))
-                return new ResultProblem($"Invalid argument at position {keyStart}");
+                return new ResultProblem("Invalid argument at position {0}", keyStart);
 
             while (i < len && char.IsWhiteSpace(rest[i])) i++;
             if (i >= len || rest[i] != '=')
-                return new ResultProblem($"Missing '=' after argument '{key}'");
+                return new ResultProblem("Missing '=' after argument '{0}'", key);
             i++;
 
             while (i < len && char.IsWhiteSpace(rest[i])) i++;
             if (i >= len)
-                return new ResultProblem($"Missing value for argument '{key}'");
+                return new ResultProblem("Missing value for argument '{0}'", key);
 
             string value;
             var c0 = rest[i];
@@ -69,7 +69,7 @@ internal static class CommandLineParser
                     }
                 }
                 if (i >= len)
-                    return new ResultProblem($"Unterminated quoted value for '{key}'");
+                    return new ResultProblem("Unterminated quoted value for '{0}'", key);
                 i++;
                 value = sb.ToString();
             }
