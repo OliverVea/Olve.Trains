@@ -65,7 +65,7 @@ public class TemplateWriter(ILogger<TemplateWriter> logger, PathProvider pathPro
 
     public async Task<Result<Template>> LoadTemplateAsync(IPath templatePath, CancellationToken ct = default)
     {
-        if (!File.Exists(templatePath.Path))
+        if (!templatePath.Exists())
         {
             return new ResultProblem("Template file '{0}' does not exist", templatePath.Path);
         }

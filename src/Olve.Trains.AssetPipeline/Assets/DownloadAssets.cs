@@ -7,8 +7,6 @@ using Microsoft.Extensions.Options;
 using Olve.Operations;
 using Olve.Paths.Glob;
 using Olve.Trains.AssetPipeline.Options;
-using Path = System.IO.Path;
-
 namespace Olve.Trains.AssetPipeline.Assets;
 
 /// <summary>
@@ -105,13 +103,9 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
 
                 logger.LogDebug("Retrieving object '{0}' from S3 bucket '{1}'", s3Object.Key, bucket);
 
-                var destFilePath = Path.Combine(pathProvider.BuildS3CachePath.Path, relativePath);
-                var destDirectory = Path.GetDirectoryName(destFilePath);
+                var destPath = pathProvider.BuildS3CachePath / relativePath;
 
-                if (!Directory.Exists(destDirectory))
-                {
-                    Directory.CreateDirectory(destDirectory!);
-                }
+                destPath.Parent.EnsurePathExists();
 
                 var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                 var timeoutCt = timeoutCts.Token;
@@ -126,11 +120,11 @@ public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> 
                 }
 
                 await using var responseStream = getResponse.ResponseStream;
-                await using var fileStream = File.Create(destFilePath);
+                await using var fileStream = File.Create(destPath.Path);
 
                 await responseStream.CopyToAsync(fileStream, CancellationToken.None);
 
-                files.Add(new FileInfo(destFilePath));
+                files.Add(new FileInfo(destPath.Path));
 
                 logger.LogDebug("Retrieved object '{0}' from S3 bucket '{1}'", s3Object.Key, bucket);
             }

@@ -224,7 +224,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
     {
         if (!_guiNodes.Exists(nodeId))
         {
-            yield return new ResultProblem($"No node with id '{nodeId}' exists");
+            yield return new ResultProblem("No node with id '{0}' exists", nodeId);
             yield break;
         }
 

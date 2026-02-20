@@ -164,7 +164,7 @@ public class AddJunctionRuleHandlerService(
 
     private static Result<Id<T>> ParseIdArgument<T>(string stringWithArgument)
     {
-        return Result.Chain(() => GetArgument(stringWithArgument), s => Id.TryParse<T>(s, out var id) ? Result.Success(id) : new ResultProblem($"Could not parse '{0}' to Id<{typeof(T).Name}>", s, nameof(stringWithArgument)));
+        return Result.Chain(() => GetArgument(stringWithArgument), s => Id.TryParse<T>(s, out var id) ? Result.Success(id) : new ResultProblem("Could not parse '{0}' to Id<{1}>", s, typeof(T).Name));
     }
 
     private static Result<T> ParseEnumArgument<T>(string stringWithArgument)

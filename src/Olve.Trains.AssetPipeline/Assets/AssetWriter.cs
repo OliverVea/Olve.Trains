@@ -15,11 +15,7 @@ public class AssetWriter(ILogger<AssetWriter> logger, PathProvider pathProvider)
 
             var assetOutputPath = pathProvider.OutputPath / destination;
 
-            var parentDir = System.IO.Path.GetDirectoryName(assetOutputPath.Path);
-            if (parentDir != null)
-            {
-                Directory.CreateDirectory(parentDir);
-            }
+            assetOutputPath.Parent.EnsurePathExists();
 
             ReadOnlyMemory<byte> assetBytes = assetStream.GetBuffer();
 
