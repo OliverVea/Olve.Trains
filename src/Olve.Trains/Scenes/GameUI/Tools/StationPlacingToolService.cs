@@ -5,7 +5,6 @@ using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameRendering;
 using Silk.NET.Input;
-using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.GameUI.Tools;
 

@@ -1,6 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
-using System.Runtime.InteropServices.ComTypes;
 using Olve.Engine3D.Assets.Entities;
 
 namespace Olve.Engine3D.Physics3D.Collisions;

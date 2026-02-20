@@ -223,7 +223,7 @@ public class BuildingRenderingService(
         vertices[i++] = new(V(-0.5f, 0, -0.5f), n);
         vertices[i++] = new(V(0.5f, 0, -0.5f), n);
         vertices[i++] = new(V(0.5f, 0, 0.5f), n);
-        vertices[i++] = new(V(-0.5f, 0, 0.5f), n);
+        vertices[i] = new(V(-0.5f, 0, 0.5f), n);
 
         return vertices;
 

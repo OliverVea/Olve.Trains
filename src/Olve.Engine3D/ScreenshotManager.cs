@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
@@ -35,13 +34,13 @@ public class ScreenshotManager
     }
 
     public void RequestScreenshot(string outputPath) =>
-        RequestScreenshot(Paths.Path.Create(ExpandTilde(outputPath)));
+        RequestScreenshot(Path.Create(ExpandTilde(outputPath)));
 
     private static string ExpandTilde(string path) =>
         path.StartsWith("~/")
-            ? (Paths.Path.GetHomeDirectory() / path[2..]).Path
+            ? (Path.GetHomeDirectory() / path[2..]).Path
             : path == "~"
-                ? Paths.Path.GetHomeDirectory().Path
+                ? Path.GetHomeDirectory().Path
                 : path;
 
     private void CaptureIfRequested()

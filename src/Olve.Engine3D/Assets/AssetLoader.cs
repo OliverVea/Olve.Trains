@@ -5,9 +5,9 @@ namespace Olve.Engine3D.Assets;
 
 public class AssetLoader(ILogger<AssetLoader> logger)
 {
-    public IPath AssetFolder { get; } = Paths.Path.Create("assets");
+    public IPath AssetFolder { get; } = Path.Create("assets");
 
-    private IPath GetAssetLocation<T>(AssetPath<T> assetPath) => Paths.Path.TryGetAssemblyExecutable(out var assemblyFile)
+    private IPath GetAssetLocation<T>(AssetPath<T> assetPath) => Path.TryGetAssemblyExecutable(out var assemblyFile)
         ? assemblyFile.Parent / AssetFolder / assetPath.Path
         : throw new InvalidOperationException("Could not get assembly executable path");
 
