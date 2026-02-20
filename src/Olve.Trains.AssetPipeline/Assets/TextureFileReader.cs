@@ -2,7 +2,6 @@ using BigGustave;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets.Entities;
-using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -67,7 +66,7 @@ public class TextureFileReader(ILogger<TextureFileReader> logger)
             Pixels = pixelData,
         };
 
-        var assetName = Path.GetFileNameWithoutExtension(assetSource).Split('.')[0];
+        var assetName = System.IO.Path.GetFileNameWithoutExtension(assetSource).Split('.')[0];
         var assetDestination = $"textures/{assetName}.texture";
 
         return new Asset<TextureData<RGBA>>

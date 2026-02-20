@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Options;
-using Olve.Paths;
 using Olve.Trains.AssetPipeline.Options;
 
 namespace Olve.Trains.AssetPipeline;

@@ -181,7 +181,7 @@ public class AddJunctionRuleHandlerService(
             return parsedValue;
         }
 
-        return new ResultProblem("Could not convert value '{0}' into '{1}'", enumString, nameof(T));
+        return new ResultProblem("Could not convert value '{0}' into '{1}'", enumString, typeof(T).Name);
     }
 
     private static Result<string> GetArgument(string stringWithArgument)
@@ -190,7 +190,7 @@ public class AddJunctionRuleHandlerService(
         var end = stringWithArgument.LastIndexOf(')');
 
         if (start == -1) return new ResultProblem("Found no starting parenthesis '('");
-        if (end == -1) return new ResultProblem("Found no ending parenthesis '('");
+        if (end == -1) return new ResultProblem("Found no ending parenthesis ')'");
 
         return stringWithArgument[(start+1)..end];
     }

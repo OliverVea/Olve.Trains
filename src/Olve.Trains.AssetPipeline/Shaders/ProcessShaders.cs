@@ -1,7 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
-using Olve.Paths;
-using Olve.Results;
 using Olve.Trains.AssetPipeline.Assets;
 using Scriban.Runtime;
 using Path = System.IO.Path;
@@ -31,7 +29,7 @@ public class ProcessShaders(
         var shaderFiles = Directory.GetFiles(shaderRoot, "*.glsl", SearchOption.AllDirectories);
         var shaders = new List<Shader>(shaderFiles.Length);
 
-        Directory.CreateDirectory(pathProvider.ShadersOutputFolder.Path);
+        pathProvider.ShadersOutputFolder.EnsurePathExists();
 
         foreach (var absoluteShaderFile in shaderFiles)
         {

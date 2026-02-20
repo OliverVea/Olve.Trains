@@ -58,44 +58,36 @@ echo "Placing bottom-right curve..."
 TRACK1_OUTPUT=$(send_cmd "place-track start=3,$Y,1 end=5,$Y,3 start-dir=east end-dir=north" 2>&1)
 echo "$TRACK1_OUTPUT"
 TRACK1_ID=$(echo "$TRACK1_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
-sleep 0.5
 
 # Top-right curve: (5,3) north -> (3,5) west
 echo "Placing top-right curve..."
 TRACK2_OUTPUT=$(send_cmd "place-track start=5,$Y,3 end=3,$Y,5 start-dir=north end-dir=west" 2>&1)
 echo "$TRACK2_OUTPUT"
 TRACK2_ID=$(echo "$TRACK2_OUTPUT" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
-sleep 0.5
 
 # Top-left curve: (3,5) west -> (1,3) south
 echo "Placing top-left curve..."
 send_cmd "place-track start=3,$Y,5 end=1,$Y,3 start-dir=west end-dir=south"
-sleep 0.5
 
 # Bottom-left curve: (1,3) south -> (3,1) east (completing the loop)
 echo "Placing bottom-left curve..."
 send_cmd "place-track start=1,$Y,3 end=3,$Y,1 start-dir=south end-dir=east"
-sleep 0.5
 
 # Set camera to center on the track (center is at 3,0,3) with zoom showing ~10 tiles
 echo "Setting camera position..."
 send_cmd "set-camera target=3,0,3 zoom=10"
-sleep 0.5
 
 # Place first vehicle on the first track segment
 echo "Placing first vehicle..."
 send_cmd "place-vehicle track=$TRACK1_ID"
-sleep 1
 
-# Place second vehicle on a different track segment (1 second apart for spacing)
+# Place second vehicle on a different track segment
 echo "Placing second vehicle..."
 send_cmd "place-vehicle track=$TRACK2_ID"
-sleep 1
 
 # Place a residential building
 echo "Placing residential building..."
 send_cmd "place-building pos=10,5"
-sleep 0.5
 
 # Take screenshot
 echo "Taking screenshot..."

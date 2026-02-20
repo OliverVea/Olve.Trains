@@ -1,6 +1,4 @@
-﻿using Olve.Results;
-
-namespace Olve.Trains.Scenes.GameLogic.Tracks;
+﻿namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
 public class TrackValidationService(TrackSplineService trackSplineService)
 {

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Diagnostics;
+using Olve.Utilities.CollectionExtensions;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Scenes;
@@ -99,13 +100,7 @@ public class SceneManager(
         // Track parent-child relationship
         if (definition.ParentId is { } parentSceneId)
         {
-            if (!_children.TryGetValue(parentSceneId, out var childList))
-            {
-                childList = [];
-                _children[parentSceneId] = childList;
-            }
-
-            childList.Add(sceneId);
+            _children.GetOrAdd(parentSceneId, () => []).Add(sceneId);
         }
 
         _orderedCache = null;

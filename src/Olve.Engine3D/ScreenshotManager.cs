@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
-using Olve.Paths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using StbImageWriteSharp;
@@ -39,9 +38,11 @@ public class ScreenshotManager
         RequestScreenshot(Paths.Path.Create(ExpandTilde(outputPath)));
 
     private static string ExpandTilde(string path) =>
-        path.StartsWith('~')
-            ? Paths.Path.GetHomeDirectory().Path + path[1..]
-            : path;
+        path.StartsWith("~/")
+            ? (Paths.Path.GetHomeDirectory() / path[2..]).Path
+            : path == "~"
+                ? Paths.Path.GetHomeDirectory().Path
+                : path;
 
     private void CaptureIfRequested()
     {
@@ -69,10 +70,7 @@ public class ScreenshotManager
 
             // Ensure parent directory exists
             var absolutePath = outputPath.Absolute;
-            if (absolutePath.Parent.TryGetElementType(out var elementType) && elementType != ElementType.Directory)
-            {
-                Directory.CreateDirectory(absolutePath.Parent.Path);
-            }
+            absolutePath.Parent.EnsurePathExists();
 
             // Write PNG
             using var stream = File.Create(absolutePath.Path);

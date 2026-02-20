@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Olve.Operations;
-using Olve.Paths;
 using Olve.Paths.Glob;
-using Olve.Results;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -20,10 +18,10 @@ public class LoadLocalAssets(ILogger<LoadLocalAssets> logger, PathProvider pathP
 
         var buildPath = pathProvider.BuildS3CachePath;
 
-        if (!Directory.Exists(buildPath.Path))
+        if (!buildPath.Exists())
         {
             logger.LogWarning("Build directory does not exist: {BuildPath}. Creating empty directory.", buildPath);
-            Directory.CreateDirectory(buildPath.Path);
+            buildPath.EnsurePathExists();
             return new Response([]);
         }
 
@@ -48,6 +46,6 @@ public class LoadLocalAssets(ILogger<LoadLocalAssets> logger, PathProvider pathP
             logger.LogDebug("Found local asset: {FileName}", file.Name);
         }
 
-        return await Task.FromResult(new Response(files));
+        return new Response(files);
     }
 }

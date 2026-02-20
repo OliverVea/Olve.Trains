@@ -18,7 +18,7 @@ public class CommandProcessingService(
             {
                 var result = commandRunner.Run(new RunCommandRequest(pendingCommand.Command));
 
-                if (result.TryPickProblems(out var problems))
+                if (result.TryPickProblems(out var problems, out var output))
                 {
                     var errors = problems.Select(p => p.ToDebugString()).ToArray();
                     logger.LogWarning("Command '{Command}' failed: {Errors}", pendingCommand.Command, string.Join("; ", errors));
@@ -26,7 +26,6 @@ public class CommandProcessingService(
                 }
                 else
                 {
-                    var output = result.Value;
                     pendingCommand.CompletionSource.SetResult(new CommandResponse(true, output.Text, []));
                 }
             }
