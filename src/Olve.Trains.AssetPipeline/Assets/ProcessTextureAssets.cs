@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets.Entities;
-using Olve.Operations;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -11,7 +10,7 @@ public class ProcessTextureAssets(
     PathProvider pathProvider,
     TextureFileReader textureFileReader,
     AssetWriter assetWriter,
-    TemplateWriter templateWriter) : IAsyncOperation<ProcessTextureAssets.Request, IReadOnlyList<Asset<TextureData<RGBA>>>>
+    TemplateWriter templateWriter)
 {
     public record Request(IReadOnlyList<FileInfo> AssetFiles);
 

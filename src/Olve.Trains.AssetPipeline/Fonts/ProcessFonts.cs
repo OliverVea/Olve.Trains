@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Olve.MsdfAtlasGen;
 using Olve.MsdfAtlasGen.Models;
-using Olve.Operations;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Options;
 using Scriban.Runtime;
@@ -15,7 +14,7 @@ public class ProcessFonts(
     TemplateWriter templateWriter,
     NamespaceProvider namespaceProvider,
     PathProvider pathProvider,
-    IOptions<FontOptions> fontOptions) : IAsyncOperation<ProcessFonts.Request, ProcessFonts.Response>
+    IOptions<FontOptions> fontOptions)
 {
     private static readonly string TemplateFileName = "FontClass.scriban";
 

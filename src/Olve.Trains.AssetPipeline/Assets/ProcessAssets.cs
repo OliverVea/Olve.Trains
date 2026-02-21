@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets.Entities;
-using Olve.Operations;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
@@ -15,7 +14,7 @@ public class ProcessAssets(
     ProcessTerrainAssets processTerrainAssets,
     Fonts.ProcessFonts processFonts,
     TextureFileReader textureFileReader,
-    AssetWriter assetWriter) : IAsyncOperation<ProcessAssets.Request, ProcessAssets.Response>
+    AssetWriter assetWriter)
 {
     public record Request(IReadOnlyList<FileInfo> AssetFiles, BuildTargets Targets);
     public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets,

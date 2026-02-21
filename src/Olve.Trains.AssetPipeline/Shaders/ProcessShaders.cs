@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Olve.Operations;
 using Olve.Paths.Glob;
 using Olve.Trains.AssetPipeline.Assets;
 using Scriban.Runtime;
@@ -14,7 +13,7 @@ public class ProcessShaders(
     ILogger<ProcessShaders> logger,
     NamespaceProvider namespaceProvider,
     TemplateWriter templateWriter,
-    PathProvider pathProvider) : IAsyncOperation<ProcessShaders.Request, ProcessShaders.Response>
+    PathProvider pathProvider)
 {
     private static readonly string TemplateFileName = "ShaderClass.scriban";
 
