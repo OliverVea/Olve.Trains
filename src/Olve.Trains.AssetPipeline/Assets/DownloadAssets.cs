@@ -4,9 +4,9 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Olve.Operations;
 using Olve.Paths.Glob;
 using Olve.Trains.AssetPipeline.Options;
+
 namespace Olve.Trains.AssetPipeline.Assets;
 
 /// <summary>
@@ -14,7 +14,7 @@ namespace Olve.Trains.AssetPipeline.Assets;
 /// </summary>
 /// <param name="logger"></param>
 /// <param name="s3Options"></param>
-public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> s3Options, PathProvider pathProvider) : IAsyncOperation<DownloadAssets.Request, DownloadAssets.Response>
+public class DownloadAssets(ILogger<DownloadAssets> logger, IOptions<S3Options> s3Options, PathProvider pathProvider)
 {
     public record Request(TimeSpan InitialTimeout, bool AllowFailure);
     public record Response(IReadOnlyList<FileInfo> Files);

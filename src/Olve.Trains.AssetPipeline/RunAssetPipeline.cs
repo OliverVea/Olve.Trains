@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Olve.Operations;
 using Olve.Trains.AssetPipeline.Assets;
 using Olve.Trains.AssetPipeline.Shaders;
 using Olve.Trains.AssetPipeline.Layouts;
@@ -16,7 +15,7 @@ public class RunAssetPipeline(
     ProcessShaders processShaders,
     ProcessLayouts processLayouts,
     ProcessAssets processAssets,
-    IOptions<S3Options> s3Options) : IAsyncOperation<RunAssetPipeline.Request>
+    IOptions<S3Options> s3Options)
     {
     public record Request(BuildTargets Targets, TimeSpan InitialS3Timeout, bool AllowS3Failure);
 

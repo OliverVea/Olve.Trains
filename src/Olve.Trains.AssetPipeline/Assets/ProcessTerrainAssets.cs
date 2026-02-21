@@ -1,10 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Assets.Entities;
-using Olve.Operations;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
-public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, NamespaceProvider namespaceProvider, PathProvider pathProvider, TerrainFileReader terrainFileReader, AssetWriter assetWriter, TemplateWriter templateWriter) :  IAsyncOperation<ProcessTerrainAssets.Request, IReadOnlyList<Asset<TerrainData>>>
+public class ProcessTerrainAssets(ILogger<ProcessTerrainAssets> logger, NamespaceProvider namespaceProvider, PathProvider pathProvider, TerrainFileReader terrainFileReader, AssetWriter assetWriter, TemplateWriter templateWriter)
 {
     public record Request(IReadOnlyList<FileInfo> AssetFiles);
 

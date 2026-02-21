@@ -1,10 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Assets.Entities;
-using Olve.Operations;
 
 namespace Olve.Trains.AssetPipeline.Assets;
 
-public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, NamespaceProvider namespaceProvider, PathProvider pathProvider, MeshFileReader meshFileReader, AssetWriter assetWriter, TemplateWriter templateWriter) :  IAsyncOperation<ProcessMeshAssets.Request, IReadOnlyList<Asset<MeshData>>>
+public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, NamespaceProvider namespaceProvider, PathProvider pathProvider, MeshFileReader meshFileReader, AssetWriter assetWriter, TemplateWriter templateWriter)
 {
     public record Request(IReadOnlyList<FileInfo> AssetFiles);
 

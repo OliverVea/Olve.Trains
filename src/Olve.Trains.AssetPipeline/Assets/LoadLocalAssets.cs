@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Olve.Operations;
 using Olve.Paths.Glob;
 
 namespace Olve.Trains.AssetPipeline.Assets;
@@ -7,7 +6,7 @@ namespace Olve.Trains.AssetPipeline.Assets;
 /// <summary>
 ///    Loads assets from the local build directory instead of downloading from S3
 /// </summary>
-public class LoadLocalAssets(ILogger<LoadLocalAssets> logger, PathProvider pathProvider) : IAsyncOperation<LoadLocalAssets.Request, LoadLocalAssets.Response>
+public class LoadLocalAssets(ILogger<LoadLocalAssets> logger, PathProvider pathProvider)
 {
     public record Request;
     public record Response(IReadOnlyList<FileInfo> Files);

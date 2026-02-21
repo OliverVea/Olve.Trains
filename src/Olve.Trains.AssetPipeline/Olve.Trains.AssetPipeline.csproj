@@ -22,7 +22,6 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
         <PackageReference Include="Olve.MsdfAtlasGen" />
         <PackageReference Include="Olve.OpenRaster" />
-        <PackageReference Include="Olve.Operations"/>
         <PackageReference Include="Olve.Paths"/>
         <PackageReference Include="Olve.Paths.Glob"/>
         <PackageReference Include="Scriban"/>

@@ -20,7 +20,6 @@
     <!-- Olve.* packages: https://olivervea.github.io/Olve.Utilities/ -->
     <PackageVersion Include="Olve.MsdfAtlasGen" Version="1.0.2" />
     <PackageVersion Include="Olve.OpenRaster" Version="0.38.0" />
-    <PackageVersion Include="Olve.Operations" Version="0.38.0" />
     <PackageVersion Include="Olve.Paths" Version="0.38.0" />
     <PackageVersion Include="Olve.Paths.Glob" Version="0.38.0" />
     <PackageVersion Include="Olve.Results" Version="0.38.0" />

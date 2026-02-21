@@ -140,7 +140,6 @@ Key packages used in this project:
 - **Olve.Results** - Result type for error handling (used throughout the codebase)
 - **Olve.Paths** - Path manipulation inspired by Python's pathlib
 - **Olve.Utilities** - General utilities (Id<T>, DictionaryExtensions, etc.)
-- **Olve.Operations** - **Deprecated.** Avoid adding new usages.
 
 ### Olve.Results Quick Reference
 

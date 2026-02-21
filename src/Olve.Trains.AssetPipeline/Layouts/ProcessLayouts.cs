@@ -1,6 +1,5 @@
 ﻿using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
-using Olve.Operations;
 using Olve.Paths.Glob;
 using Olve.Trains.AssetPipeline.Assets;
 using Scriban.Runtime;
@@ -11,7 +10,7 @@ public class ProcessLayouts(
     ILogger<ProcessLayouts> logger,
     TemplateWriter templateWriter,
     NamespaceProvider namespaceProvider,
-    PathProvider pathProvider) : IAsyncOperation<ProcessLayouts.Request, ProcessLayouts.Response>
+    PathProvider pathProvider)
 {
     private static readonly string TemplateFileName = "LayoutClass.scriban";
 
