@@ -5,7 +5,7 @@ using Olve.Trains.Scenes.GameLogic.Tracks;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 
-public class StationService(ILogger<StationService> logger, StationBlueprintService stationBlueprintService, BuildingService buildingService, BuildingBlueprintService buildingBlueprintService, TrackService trackService)
+public class StationService(ILogger<StationService> logger, StationBlueprintService stationBlueprintService, BuildingService buildingService, BuildingBlueprintService buildingBlueprintService, TrackService trackService, GridService gridService)
 {
     private readonly Dictionary<Id<Building>, Station> _stations = [];
 
@@ -30,8 +30,9 @@ public class StationService(ILogger<StationService> logger, StationBlueprintServ
         }
 
         var direction = building.Position.CardinalDirection.RotateClockwise().ToVector3D();
-        var start = building.Position.BottomLeft.AsVector3D() - direction;
-        var end = building.Position.BottomLeft.AsVector3D() + direction * (blueprint.Footprint.Width + 1);
+        var origin = gridService.ToTileCenter(building.Position.BottomLeft);
+        var start = origin - direction;
+        var end = origin + direction * blueprint.Footprint.Width;
 
         TrackEndpoint trackStart = new(start, -direction);
         TrackEndpoint trackEnd = new(end, direction);

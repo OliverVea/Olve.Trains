@@ -6,7 +6,7 @@ using Olve.Utilities.CollectionExtensions;
 
 namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
-public class JunctionService(ILogger<JunctionService> logger, EntityStoreFactory entityStoreFactory)
+public class JunctionService(ILogger<JunctionService> logger, EntityStoreFactory entityStoreFactory, GridService gridService)
 {
     private readonly EntityStore<Junction> _junctions = entityStoreFactory.Create<Junction>();
     private readonly Dictionary<Id<Junction>, HashSet<JunctionConnection>> _junctionConnections = new();
@@ -92,7 +92,7 @@ public class JunctionService(ILogger<JunctionService> logger, EntityStoreFactory
         return [];
     }
 
-    private static TilePosition ToTilePosition(Vector3D<float> point) => new((int)point.X, (int)(point.Y * 8), (int)point.Z);
+    private TilePosition ToTilePosition(Vector3D<float> point) => gridService.ToTilePosition(point);
     private static HashSet<JunctionConnection> NewJunctionConnections() => new(1);
 
     public bool IsConnected(Id<Track> trackId, TrackEndpoint trackEndpoint)
