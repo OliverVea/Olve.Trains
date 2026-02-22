@@ -18,9 +18,9 @@ public class TerrainRaycastService(
     public Ray3D<float>? MouseRay { get; private set; }
     public Vector3D<float>? TerrainIntersection { get; private set; }
     public Vector3D<float>? TerrainIntersectionTileCenter => FromTerrainIntersection((x, y, z) =>
-        new Vector3D<float>(float.Floor(x) + 0.5f, float.Floor(y), float.Floor(z) + 0.5f));
+        new Vector3D<float>(float.Floor(x) + 0.5f, float.Round(y * terrainService.TilesPerMeterHeight) * terrainService.TileStepHeight, float.Floor(z) + 0.5f));
     public TilePosition? TerrainIntersectionTile => FromTerrainIntersection((x, y, z) =>
-        new TilePosition((int)x, (int)y, (int)z));
+        new TilePosition((int)x, (int)(y * terrainService.TilesPerMeterHeight), (int)z));
 
     public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService]);
 
