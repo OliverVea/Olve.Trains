@@ -9,6 +9,7 @@ using Olve.Engine3D.Utilities;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
+using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 
 namespace Olve.Trains.Scenes.GameRendering;
@@ -23,7 +24,8 @@ public class JunctionSignalRenderingService(
     TextureEntityManager textureEntityManager,
     RenderingServiceHelper renderingServiceHelper,
     JunctionService junctionService,
-    JunctionSignalService junctionSignalService)
+    JunctionSignalService junctionSignalService,
+    GridService gridService)
     : ISceneService
 {
     private GeometryId _geometryId;
@@ -134,7 +136,7 @@ public class JunctionSignalRenderingService(
         var junctionWorld = Matrix4X4.CreateScale(0.2f)
                             * Matrix4X4.CreateRotationY(float.Pi)
                             * Matrix4X4.CreateTranslation(-0.2f, -0.9f, -0.2f)
-                            * junction.Position.ToWorldMatrix();
+                            * Matrix4X4.CreateTranslation(gridService.ToTileCenter(junction.Position));
 
         var renderingResult = renderingManager3D.RegisterInstance(_geometryId, _shader.RenderingId, junctionWorld);
         if (renderingResult.TryPickProblems(out var problems, out var junctionInstanceId))

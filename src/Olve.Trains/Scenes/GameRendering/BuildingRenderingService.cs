@@ -5,8 +5,8 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
+using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Buildings;
-using Olve.Trains.Scenes.GameLogic.Terrain;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -17,7 +17,7 @@ public class BuildingRenderingService(
     RenderingServiceHelper renderingServiceHelper,
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
-    TerrainService terrainService,
+    GridService gridService,
     TerrainRenderingService terrainRenderingService)
     : ISceneService
 {
@@ -150,7 +150,7 @@ public class BuildingRenderingService(
         var sd = d - inset * 2;
         var sh = h - inset;
 
-        var y = position.BottomLeft.Y * terrainService.TileStepHeight;
+        var y = gridService.ToTileOrigin(position.BottomLeft).Y;
 
         var rotation = position.CardinalDirection.ToYRotation();
 

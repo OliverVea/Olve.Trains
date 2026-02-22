@@ -3,6 +3,7 @@ using Olve.Engine3D.Camera;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
+using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 
@@ -11,16 +12,19 @@ namespace Olve.Trains.Scenes.GameRendering;
 public class TerrainRaycastService(
     MouseManager mouseManager,
     CameraSceneService cameraSceneService,
-    TerrainService terrainService) : ISceneService
+    TerrainService terrainService,
+    GridService gridService) : ISceneService
 {
     private HeightmapRaycaster? _heightmapRaycaster;
 
     public Ray3D<float>? MouseRay { get; private set; }
     public Vector3D<float>? TerrainIntersection { get; private set; }
-    public Vector3D<float>? TerrainIntersectionTileCenter => FromTerrainIntersection((x, y, z) =>
-        new Vector3D<float>(float.Floor(x) + 0.5f, float.Round(y * terrainService.TilesPerMeterHeight) * terrainService.TileStepHeight, float.Floor(z) + 0.5f));
-    public TilePosition? TerrainIntersectionTile => FromTerrainIntersection((x, y, z) =>
-        new TilePosition((int)x, (int)(y * terrainService.TilesPerMeterHeight), (int)z));
+    public Vector3D<float>? TerrainIntersectionTileCenter => TerrainIntersection is { } world
+        ? gridService.ToTileCenter(gridService.ToTilePosition(world))
+        : null;
+    public TilePosition? TerrainIntersectionTile => TerrainIntersection is { } world
+        ? gridService.ToTilePosition(world)
+        : null;
 
     public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService]);
 
@@ -88,5 +92,4 @@ public class TerrainRaycastService(
         }
     }
 
-    private T? FromTerrainIntersection<T>(Func<float, float, float, T> xyzTransform) => TerrainIntersection is {X: var x, Y: var y, Z: var z} ? xyzTransform(x, y, z) : default;
 }
