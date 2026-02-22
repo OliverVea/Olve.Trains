@@ -6,6 +6,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Terrain;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -16,6 +17,7 @@ public class BuildingRenderingService(
     RenderingServiceHelper renderingServiceHelper,
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
+    TerrainService terrainService,
     TerrainRenderingService terrainRenderingService)
     : ISceneService
 {
@@ -138,24 +140,27 @@ public class BuildingRenderingService(
         return Result.Success();
     }
 
-    private static Matrix4X4<float> ComputeWorldMatrix(TileFootprint footprint, BuildingPosition position)
+    private Matrix4X4<float> ComputeWorldMatrix(TileFootprint footprint, BuildingPosition position)
     {
-        const float inset = 0.1f;
+        const float inset = 0f;
         var w = (float)footprint.Width;
         var h = (float)footprint.Height;
         var d = (float)footprint.Depth;
         var sw = w - inset * 2;
         var sd = d - inset * 2;
+        var sh = h - inset;
+
+        var y = position.BottomLeft.Y * terrainService.TileStepHeight;
 
         var rotation = position.CardinalDirection.ToYRotation();
 
-        return Matrix4X4.CreateScale(sw, h, sd)
-               * Matrix4X4.CreateTranslation(sw / 2f + inset, 0, sd / 2f + inset)
+        return Matrix4X4.CreateScale(sw, sh, sd)
                * Matrix4X4.CreateRotationY(rotation)
-               * Matrix4X4.CreateTranslation<float>(
-                   position.BottomLeft.X,
-                   position.BottomLeft.Y,
-                   position.BottomLeft.Z);
+               * Matrix4X4.CreateTranslation(
+                   position.BottomLeft.X + inset,
+                   y,
+                   position.BottomLeft.Z + inset)
+            ;
     }
 
     public Result Unregister(Id<Building> buildingId)
@@ -185,45 +190,45 @@ public class BuildingRenderingService(
         var i = 0;
 
         var n = V(0, 0, 1);
-        vertices[i++] = new(V(-0.5f, 0, 0.5f), n);
-        vertices[i++] = new(V(0.5f, 0, 0.5f), n);
-        vertices[i++] = new(V(0.5f, 1, 0.5f), n);
-        vertices[i++] = new(V(-0.5f, 1, 0.5f), n);
+        vertices[i++] = new(V(0, 0, 1), n);
+        vertices[i++] = new(V(1, 0, 1), n);
+        vertices[i++] = new(V(1, 1, 1), n);
+        vertices[i++] = new(V(0, 1, 1), n);
 
         // Back face (z = -0.5), normal (0, 0, -1)
         n = V(0, 0, -1);
-        vertices[i++] = new(V(0.5f, 0, -0.5f), n);
-        vertices[i++] = new(V(-0.5f, 0, -0.5f), n);
-        vertices[i++] = new(V(-0.5f, 1, -0.5f), n);
-        vertices[i++] = new(V(0.5f, 1, -0.5f), n);
+        vertices[i++] = new(V(1, 0, 0), n);
+        vertices[i++] = new(V(0, 0, 0), n);
+        vertices[i++] = new(V(0, 1, 0), n);
+        vertices[i++] = new(V(1, 1, 0), n);
 
         // Right face (x = +0.5), normal (1, 0, 0)
         n = V(1, 0, 0);
-        vertices[i++] = new(V(0.5f, 0, 0.5f), n);
-        vertices[i++] = new(V(0.5f, 0, -0.5f), n);
-        vertices[i++] = new(V(0.5f, 1, -0.5f), n);
-        vertices[i++] = new(V(0.5f, 1, 0.5f), n);
+        vertices[i++] = new(V(1, 0, 1), n);
+        vertices[i++] = new(V(1, 0, 0), n);
+        vertices[i++] = new(V(1, 1, 0), n);
+        vertices[i++] = new(V(1, 1, 1), n);
 
         // Left face (x = -0.5), normal (-1, 0, 0)
         n = V(-1, 0, 0);
-        vertices[i++] = new(V(-0.5f, 0, -0.5f), n);
-        vertices[i++] = new(V(-0.5f, 0, 0.5f), n);
-        vertices[i++] = new(V(-0.5f, 1, 0.5f), n);
-        vertices[i++] = new(V(-0.5f, 1, -0.5f), n);
+        vertices[i++] = new(V(0, 0, 0), n);
+        vertices[i++] = new(V(0, 0, 1), n);
+        vertices[i++] = new(V(0, 1, 1), n);
+        vertices[i++] = new(V(0, 1, 0), n);
 
         // Top face (y = 1), normal (0, 1, 0)
         n = V(0, 1, 0);
-        vertices[i++] = new(V(-0.5f, 1, 0.5f), n);
-        vertices[i++] = new(V(0.5f, 1, 0.5f), n);
-        vertices[i++] = new(V(0.5f, 1, -0.5f), n);
-        vertices[i++] = new(V(-0.5f, 1, -0.5f), n);
+        vertices[i++] = new(V(0, 1, 1), n);
+        vertices[i++] = new(V(1, 1, 1), n);
+        vertices[i++] = new(V(1, 1, 0), n);
+        vertices[i++] = new(V(0, 1, 0), n);
 
         // Bottom face (y = 0), normal (0, -1, 0)
         n = V(0, -1, 0);
-        vertices[i++] = new(V(-0.5f, 0, -0.5f), n);
-        vertices[i++] = new(V(0.5f, 0, -0.5f), n);
-        vertices[i++] = new(V(0.5f, 0, 0.5f), n);
-        vertices[i] = new(V(-0.5f, 0, 0.5f), n);
+        vertices[i++] = new(V(0, 0, 0), n);
+        vertices[i++] = new(V(1, 0, 0), n);
+        vertices[i++] = new(V(1, 0, 1), n);
+        vertices[i++] = new(V(0, 0, 1), n);
 
         return vertices;
 

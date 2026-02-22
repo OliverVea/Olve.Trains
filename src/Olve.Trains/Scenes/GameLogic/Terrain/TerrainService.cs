@@ -1,11 +1,15 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Utilities;
 
 namespace Olve.Trains.Scenes.GameLogic.Terrain;
 
 public class TerrainService : ISceneService
 {
-    public TerrainData? Terrain { get; private set; }
+    private TerrainData? _terrain;
+    public TerrainData Terrain => _terrain ?? throw new NotInitializedException<TerrainData>();
+    public float TileStepHeight => _terrain?.Heightmap.Step ?? 1f;
+    public int TilesPerMeterHeight => (int)float.Round(1 /  TileStepHeight);
 
     public Result Load()
     {
@@ -23,7 +27,7 @@ public class TerrainService : ISceneService
             Step = 0.125f
         };
 
-        Terrain = new TerrainData
+        _terrain = new TerrainData
         {
             Heightmap = heightmap
         };

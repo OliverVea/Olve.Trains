@@ -29,9 +29,9 @@ public class StationService(ILogger<StationService> logger, StationBlueprintServ
             return false;
         }
 
-        var direction = building.Position.CardinalDirection.ToVector3D();
+        var direction = building.Position.CardinalDirection.RotateClockwise().ToVector3D();
         var start = building.Position.BottomLeft.AsVector3D() - direction;
-        var end = building.Position.BottomLeft.AsVector3D() + direction * blueprint.Footprint.Width;
+        var end = building.Position.BottomLeft.AsVector3D() + direction * (blueprint.Footprint.Width + 1);
 
         TrackEndpoint trackStart = new(start, -direction);
         TrackEndpoint trackEnd = new(end, direction);
