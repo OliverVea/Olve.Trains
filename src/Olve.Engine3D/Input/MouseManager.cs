@@ -12,6 +12,12 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
 
     public MouseState State { get; } = new();
 
+    /// <summary>
+    /// When set, overrides the normalized mouse position directly (range -1 to 1).
+    /// Persists until cleared.
+    /// </summary>
+    public Vector2D<float>? NormalizedPositionOverride { get; set; }
+
     public Result Initialize()
     {
         foreach (var mouse in inputContextProvider.Value.Mice)
@@ -46,10 +52,18 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
 
         State.Delta = position - State.Position;
         State.Position = position;
-        State.NormalizedPosition = new Vector2D<float>(
-            position.X / windowProvider.Value.Size.X - 0.5f,
-            position.Y / windowProvider.Value.Size.Y - 0.5f
-        ) * 2f;
+
+        if (NormalizedPositionOverride is { } normalizedOverride)
+        {
+            State.NormalizedPosition = normalizedOverride;
+        }
+        else
+        {
+            State.NormalizedPosition = new Vector2D<float>(
+                position.X / windowProvider.Value.Size.X - 0.5f,
+                position.Y / windowProvider.Value.Size.Y - 0.5f
+            ) * 2f;
+        }
         State.Scroll = _scroll;
 
         return Result.Success();

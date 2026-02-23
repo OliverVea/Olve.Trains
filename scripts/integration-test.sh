@@ -14,6 +14,7 @@ set -e
 #   --skip-build        Skip asset pipeline and build steps
 #   --instance <id>     Game instance ID (default: integration-test-$$)
 #   --windowing <mode>  Windowing mode: "native" or "xvfb" (default: native)
+#   --resolution <WxH>  Screen resolution for xvfb (default: 3840x2160)
 #
 # If neither --s3 nor --file is given, no screenshot is taken.
 
@@ -27,6 +28,7 @@ SHLINK_API_KEY="${SHLINK_API_KEY:-}"
 SHLINK_URL="https://s.ovhome.online"
 SKIP_BUILD=false
 WINDOWING="native"
+RESOLUTION="1920x1080"
 OUTPUT_MODE=""  # "", "s3", or "file"
 OUTPUT_FILE=""
 
@@ -52,6 +54,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --windowing)
             WINDOWING="$2"
+            shift 2
+            ;;
+        --resolution)
+            RESOLUTION="$2"
             shift 2
             ;;
         *)
@@ -105,7 +111,7 @@ if [ "$WINDOWING" = "xvfb" ]; then
     echo "Starting Xvfb..."
     rm -f /tmp/.X99-lock 2>/dev/null || true
     pkill -f "Xvfb :99" 2>/dev/null || true
-    Xvfb :99 -screen 0 3840x2160x24 &
+    Xvfb :99 -screen 0 "${RESOLUTION}x24" &
     XVFB_PID=$!
     export DISPLAY=:99
     export LIBGL_ALWAYS_SOFTWARE=1
@@ -127,11 +133,15 @@ echo "Starting game from main menu..."
 send_cmd "start-game"
 sleep 2
 
+# Set time to late morning for good sun lighting
+echo "Setting time to 11:30..."
+send_cmd "set-time time=11:30"
+
 Y="0.125"
 
 # Set camera first to center on the layout
 echo "Setting camera..."
-send_cmd "set-camera target=12.5,0,10 zoom=12"
+send_cmd "set-camera target=12.5,0,10 zoom=5"
 
 echo ""
 echo "=== Placing Station ==="
@@ -186,6 +196,10 @@ send_cmd "place-vehicle track=$TRACK3_ID speed=3"
 # Wait for trains to move around the loop
 echo "Waiting for simulation..."
 sleep 5
+
+# Move mouse to center of screen so the grid overlay is visible (normalized coords: 0,0 = center)
+send_cmd "set-mouse pos=0,0"
+sleep 0.5
 
 # Screenshot handling
 if [ -n "$OUTPUT_MODE" ]; then

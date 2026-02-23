@@ -102,7 +102,7 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [ ] Require resources for building upgrades
 - Shadow epic:
   - Description: Add shadow mapping to the game. Requires shader pipeline changes (removing geometry shaders, adding SDF grid), FBO infrastructure for the shadow depth pass, and receiver shader modifications to sample the shadow map.
-  - [ ] Remove terrain geometry shader — compute flat normals via `dFdx`/`dFdy` in fragment shader, render grid overlay as SDF in terrain fragment shader, delete wireframe shader files
+  - [x] Remove terrain geometry shader — compute flat normals via `dFdx`/`dFdy` in fragment shader, render grid overlay as SDF in terrain fragment shader, delete wireframe shader files
   - [ ] Add shadow map generation — FBO wrapper, depth-only pixel format, depth-only shader, `ShadowMapService` that renders casters from light-space each frame
   - [ ] Add shadow map sampling to receiver shaders — terrain, default, and building fragment shaders sample the shadow map to attenuate diffuse lighting
 - Track rendering epic:
