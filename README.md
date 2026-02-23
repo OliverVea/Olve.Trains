@@ -109,6 +109,8 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [ ] Improve rendering of tracks by procedurally generating the track mesh from the underlying spline
   - [ ] Create and render procedurally generated station meshes
   - [ ] Improve positioning of track signals based on track positioning
+- Unit geometry:
+  - [ ] Extract unit cube and unit quad generation to a shared `BaseGeometryService` in `Olve.Trains/Rendering/`
 - Detached mode:
   - Description: For e.g. Agentic AI access to the game for debugging, we want to be able to run with --detached or -d. Then, we should be able to use the cli to interact with the game, enumerating options (for main menu it could be clicking buttons, for the game it could be listing and placing tracks, buildings, trains). We should also be able to take screenshots of the screen as .pngs.
   - [x] Launch game in detached mode
