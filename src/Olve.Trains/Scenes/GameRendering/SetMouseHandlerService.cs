@@ -1,7 +1,7 @@
-using System.Globalization;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Logging;
+using Olve.Trains.Scenes.GameLogic.Commands;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -17,18 +17,14 @@ public class SetMouseHandlerService(
 
     public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
-        var posArg = commandContext.GetArgument(PosArgument)!;
-        var parts = posArg.Split(',');
-
-        if (parts.Length != 2
-            || !float.TryParse(parts[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var x)
-            || !float.TryParse(parts[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
+        if (commandContext.GetRequiredArgument(PosArgument).Bind(s => s.ParseVector2())
+            .TryPickProblems(out var problems, out var pos))
         {
-            return new ResultProblem("Expected 2 comma-separated values (x,y), got '{0}'", posArg);
+            return problems;
         }
 
-        mouseManager.NormalizedPositionOverride = new Vector2D<float>(x, y);
+        mouseManager.NormalizedPositionOverride = pos;
 
-        return new CommandOutput($"Mouse set to normalized ({x}, {y})");
+        return new CommandOutput($"Mouse set to normalized ({pos.X}, {pos.Y})");
     }
 }

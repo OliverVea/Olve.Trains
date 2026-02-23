@@ -1,4 +1,3 @@
-using System.Globalization;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Time;
@@ -15,29 +14,14 @@ public class SetTimeHandlerService(DayTimeManager dayTimeManager, CommandHandler
 
     public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
-        var dayTimeString = commandContext.GetArgument(TimeArgument)!;
-        if (!TryParseDayTime(dayTimeString, out var dayTime))
+        if (commandContext.GetRequiredArgument(TimeArgument).Bind(s => s.ParseDayTime())
+            .TryPickProblems(out var problems, out var dayTime))
         {
-            return new ResultProblem("Could not parse day time '{0}'", dayTimeString);
+            return problems;
         }
 
         dayTimeManager.CurrentTime = dayTime;
 
         return CommandOutput.Empty;
-    }
-
-    private static bool TryParseDayTime(string dayTimeString, out DayTime dayTime)
-    {
-        var parts = dayTimeString.Split(':');
-        if (parts.Length != 2
-            || !int.TryParse(parts[0], NumberFormatInfo.InvariantInfo, out var hour)
-            || !int.TryParse(parts[1], NumberFormatInfo.InvariantInfo, out var minute))
-        {
-            dayTime = default;
-            return false;
-        }
-
-        dayTime = new DayTime(hour, minute);
-        return true;
     }
 }

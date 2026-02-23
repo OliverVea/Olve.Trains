@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Commands;
@@ -27,13 +26,13 @@ public class PlaceBuildingHandlerService(
 
     public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
-        if (TryParseTilePosition(commandContext.GetArgument(PositionArgument)!, out var tilePosition)
-            .TryPickProblems(out var problems))
+        if (commandContext.GetRequiredArgument(PositionArgument).Bind(s => s.ParseTilePosition())
+            .TryPickProblems(out var problems, out var tilePosition))
         {
             return problems;
         }
 
-        var typeArg = commandContext.GetArgument(TypeArgument) ?? "residential";
+        var typeArg = commandContext.GetOptionalArgument(TypeArgument) ?? "residential";
         var blueprintId = typeArg.ToLowerInvariant() switch
         {
             "residential" or "res" => BuildingBlueprintCatalog.Residential,
@@ -46,19 +45,11 @@ public class PlaceBuildingHandlerService(
             return new ResultProblem("Unknown building type '{0}'. Use: residential, station", typeArg);
         }
 
-        var dirArg = commandContext.GetArgument(DirectionArgument) ?? "north";
-        var direction = dirArg.ToLowerInvariant() switch
+        var direction = CardinalDirection.North;
+        if (commandContext.GetOptionalArgument(DirectionArgument) is {} dirArg)
         {
-            "north" or "n" => CardinalDirection.North,
-            "south" or "s" => CardinalDirection.South,
-            "east" or "e" => CardinalDirection.East,
-            "west" or "w" => CardinalDirection.West,
-            _ => CardinalDirection.None,
-        };
-
-        if (direction == CardinalDirection.None)
-        {
-            return new ResultProblem("Invalid direction '{0}'. Use: north, south, east, west (or n, s, e, w)", dirArg);
+            if (dirArg.ParseDirection().TryPickProblems(out problems, out direction))
+                return problems;
         }
 
         if (!blueprintService.TryGetBlueprint(blueprintId, out var blueprint))
@@ -71,38 +62,5 @@ public class PlaceBuildingHandlerService(
 
         logger.LogInformation("Placed {Type} building '{BuildingId}' at {Position}", blueprint.Description, buildingId, tilePosition);
         return new CommandOutput($"Placed {blueprint.Description} building: {buildingId}");
-    }
-
-    private static Result TryParseTilePosition(string input, out TilePosition result)
-    {
-        result = default;
-        var parts = input.Split(',');
-
-        if (parts.Length == 2)
-        {
-            if (!int.TryParse(parts[0].Trim(), NumberFormatInfo.InvariantInfo, out var x)
-                || !int.TryParse(parts[1].Trim(), NumberFormatInfo.InvariantInfo, out var z))
-            {
-                return new ResultProblem("Could not parse tile position from '{0}'", input);
-            }
-
-            result = new TilePosition(x, 0, z);
-            return Result.Success();
-        }
-
-        if (parts.Length == 3)
-        {
-            if (!int.TryParse(parts[0].Trim(), NumberFormatInfo.InvariantInfo, out var x)
-                || !int.TryParse(parts[1].Trim(), NumberFormatInfo.InvariantInfo, out var y)
-                || !int.TryParse(parts[2].Trim(), NumberFormatInfo.InvariantInfo, out var z))
-            {
-                return new ResultProblem("Could not parse tile position from '{0}'", input);
-            }
-
-            result = new TilePosition(x, y, z);
-            return Result.Success();
-        }
-
-        return new ResultProblem("Expected 2 or 3 comma-separated values (x,z or x,y,z), got '{0}'", input);
     }
 }

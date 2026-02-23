@@ -1,6 +1,7 @@
 using System.Globalization;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
+using Olve.Trains.Scenes.GameLogic.Commands;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -21,13 +22,17 @@ public class SetCameraHandlerService(
 
     public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
-        if (TryParseVector3(commandContext.GetArgument(TargetArgument)!, out var target)
-            .TryPickProblems(out var problems))
+        if (commandContext.GetRequiredArgument(TargetArgument).Bind(s => s.ParseVector3())
+            .TryPickProblems(out var problems, out var target))
         {
             return problems;
         }
 
-        var zoomArg = commandContext.GetArgument(ZoomArgument)!;
+        if (commandContext.GetRequiredArgument(ZoomArgument).TryPickProblems(out problems, out var zoomArg))
+        {
+            return problems;
+        }
+
         if (!float.TryParse(zoomArg, NumberStyles.Float, CultureInfo.InvariantCulture, out var zoom))
         {
             return new ResultProblem("Could not parse zoom value from '{0}'", zoomArg);
@@ -41,25 +46,5 @@ public class SetCameraHandlerService(
         cameraSceneService.SetCameraPosition(target, zoom);
 
         return new CommandOutput($"Camera set to target {target} with zoom {zoom}");
-    }
-
-    private static Result TryParseVector3(string input, out Vector3D<float> result)
-    {
-        result = default;
-        var parts = input.Split(',');
-        if (parts.Length != 3)
-        {
-            return new ResultProblem("Expected 3 comma-separated values (x,y,z), got '{0}'", input);
-        }
-
-        if (!float.TryParse(parts[0].Trim(), NumberFormatInfo.InvariantInfo, out var x)
-            || !float.TryParse(parts[1].Trim(), NumberFormatInfo.InvariantInfo, out var y)
-            || !float.TryParse(parts[2].Trim(), NumberFormatInfo.InvariantInfo, out var z))
-        {
-            return new ResultProblem("Could not parse coordinates from '{0}'", input);
-        }
-
-        result = new Vector3D<float>(x, y, z);
-        return Result.Success();
     }
 }
