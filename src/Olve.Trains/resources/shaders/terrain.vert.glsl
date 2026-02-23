@@ -8,7 +8,7 @@ uniform mat4 world;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec3 vWorldPos;  // pass world-space position to geometry shader
+out vec3 FragPos;
 
 void main()
 {
@@ -62,7 +62,7 @@ void main()
     vec3 pos = vec3(position.x, h, position.y);
 
     vec4 worldPos = world * vec4(pos, 1.0);
-    vWorldPos = worldPos.xyz;
+    FragPos = worldPos.xyz;
 
     gl_Position = projection * view * worldPos;
 }

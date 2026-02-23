@@ -22,13 +22,10 @@ public class TerrainRenderingService(
     SceneLightService sceneLightService) : ISceneService
 {
     public RenderingInstanceId TerrainInstanceId { get; set; }
-    public RenderingInstanceId WireframeTerrainInstanceId { get; set; }
 
-    private readonly Shaders.Terrain _terrainShader = new();
-    private readonly Shaders.TerrainWireframe _terrainWireframe = new()
+    private readonly Shaders.Terrain _terrainShader = new()
     {
-        MouseRadius = 5f,
-        BlendState = RenderState.AdditiveNoDepthWrite
+        MouseRadius = 5f
     };
 
     public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, terrainRaycastService, sceneLightService]);
@@ -71,32 +68,22 @@ public class TerrainRenderingService(
         var heightmapTextureId = textureManager.RegisterTexture(floatTextureData);
 
         if (textureEntityManager.Register<float, R32FPixelFormat>(heightmapTextureId, new TextureUploadOptions(Wrap: GLEnum.ClampToEdge))
-            .TryPickProblems(out problems))
+            .TryPickProblems(out var textureProblems))
         {
-            return problems.Prepend("Failed to register heightmap texture with OpenGL");
+            return textureProblems.Prepend("Failed to register heightmap texture with OpenGL");
         }
 
         Vector2D<float> textureSize = new(1f / heightmap.Width, 1f / heightmap.Length);
         _terrainShader.TexelSize = textureSize;
-        _terrainWireframe.TexelSize = textureSize;
-
         _terrainShader.HeightMap = heightmapTextureId;
-        _terrainWireframe.HeightMap = heightmapTextureId;
 
-        if (RegisterShader(geometryId, _terrainShader.ShaderData).TryPickProblems(out problems, out var terrainShaderIds))
+        if (RegisterShader(geometryId, _terrainShader.ShaderData).TryPickProblems(out var shaderProblems, out var terrainShaderIds))
         {
-            return problems.Prepend("Failed to register terrain shader");
-        }
-
-        if (RegisterShader(geometryId, _terrainWireframe.ShaderData).TryPickProblems(out problems, out var wireframeShaderIds))
-        {
-            return problems.Prepend("Failed to register wireframe shader");
+            return shaderProblems.Prepend("Failed to register terrain shader");
         }
 
         _terrainShader.RenderingId = terrainShaderIds.ShaderId;
-        _terrainWireframe.RenderingId = wireframeShaderIds.ShaderId;
         TerrainInstanceId = terrainShaderIds.InstanceId;
-        WireframeTerrainInstanceId = wireframeShaderIds.InstanceId;
 
         return Result.Success();
     }
@@ -124,15 +111,9 @@ public class TerrainRenderingService(
         sceneLightService.ApplyShaderParameters(_terrainShader);
         cameraSceneService.ApplyCameraPositionParameters(_terrainShader);
         cameraSceneService.ApplyCameraDirectionParameters(_terrainShader);
-        cameraSceneService.ApplyCameraPositionParameters(_terrainWireframe);
-        terrainRaycastService.ApplyTerrainIntersectionParameters(_terrainWireframe);
+        terrainRaycastService.ApplyTerrainIntersectionParameters(_terrainShader);
 
-
-        var terrainShaderResult = renderingManager3D.Render(_terrainShader).IfProblem(p => p.Prepend("Failed rendering terrain"));
-        var wireframeShaderResult = renderingManager3D.Render(_terrainWireframe).IfProblem(p => p.Prepend("Failed rendering terrain wireframe"));
-
-        if (terrainShaderResult.TryPickProblems(out var problems)
-            || wireframeShaderResult.TryPickProblems(out problems))
+        if (renderingManager3D.Render(_terrainShader).TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed rendering terrain");
         }

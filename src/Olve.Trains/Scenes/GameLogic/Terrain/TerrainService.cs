@@ -19,6 +19,15 @@ public class TerrainService : ISceneService
         var heights = new int[length * width];
         Array.Fill(heights, 1);
 
+        // Small hill visible in integration test (camera targets 12.5, 0, 10)
+        for (var z = 3; z <= 6; z++)
+        {
+            for (var x = 12; x <= 15; x++)
+            {
+                heights[z * width + x] = 2;
+            }
+        }
+
         HeightmapData heightmap = new()
         {
             Heights = heights,
