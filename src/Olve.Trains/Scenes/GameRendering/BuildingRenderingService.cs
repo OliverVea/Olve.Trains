@@ -7,6 +7,7 @@ using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Light;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -18,6 +19,7 @@ public class BuildingRenderingService(
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
     GridService gridService,
+    SceneLightService sceneLightService,
     TerrainRenderingService terrainRenderingService)
     : ISceneService
 {
@@ -176,6 +178,7 @@ public class BuildingRenderingService(
     public Result Update(TimeSpan deltaTime)
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
+        sceneLightService.ApplyShaderParameters(_shader);
         return Result.Success();
     }
 

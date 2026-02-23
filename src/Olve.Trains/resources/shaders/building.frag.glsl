@@ -8,16 +8,35 @@ uniform vec3 uColorOverride;
 uniform float uColorMix;
 uniform float uOpacity;
 
+uniform vec3 ambientLightColor;
+uniform float ambientLightIntensity;
+
+uniform vec3 directionalLight0Color;
+uniform vec3 directionalLight0Dir;
+uniform float directionalLight0Intensity;
+
+uniform vec3 directionalLight1Color;
+uniform vec3 directionalLight1Dir;
+uniform float directionalLight1Intensity;
+
 void main()
 {
     vec3 norm = normalize(FragNormal);
-    vec3 lightDir = normalize(vec3(0.3, 1.0, 0.5));
 
-    float diff = max(dot(norm, lightDir), 0.0);
-    float ambient = 0.3;
-    float lighting = ambient + diff * 0.7;
+    // Directional light 0
+    vec3 lightDir0 = normalize(-directionalLight0Dir);
+    float diff0 = max(dot(norm, lightDir0), 0.0);
+    vec3 diffuse0 = diff0 * directionalLight0Color * directionalLight0Intensity;
+
+    // Directional light 1
+    vec3 lightDir1 = normalize(-directionalLight1Dir);
+    float diff1 = max(dot(norm, lightDir1), 0.0);
+    vec3 diffuse1 = diff1 * directionalLight1Color * directionalLight1Intensity;
+
+    // Ambient component
+    vec3 ambient = ambientLightColor * ambientLightIntensity;
 
     vec3 baseColor = mix(uColor, uColorOverride, uColorMix);
-    vec3 color = baseColor * lighting;
+    vec3 color = (ambient + diffuse0 + diffuse1) * baseColor;
     fragColor = vec4(color, uOpacity);
 }

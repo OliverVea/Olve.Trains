@@ -3,7 +3,8 @@ set -e
 
 # Integration Test Script
 # Places a station, builds a track loop around it, places 3 trains,
-# waits 1 second, takes a screenshot, and optionally uploads/saves it.
+# waits for simulation, then takes screenshots at 3 times of day
+# (7:30, 11:30, 22:30) and optionally uploads/saves them.
 #
 # Usage:
 #   ./scripts/integration-test.sh [options]
@@ -22,7 +23,7 @@ PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BIN_DIR="$PROJECT_DIR/src/Olve.Trains/bin/Release/net10.0"
 INSTANCE_ID="integration-test-$$"
 S3_BUCKET="olve.trains"
-S3_KEY="screenshots/integration-test.png"
+S3_KEY_PREFIX="screenshots/integration-test"
 S3_REGION="ap-southeast-2"
 SHLINK_API_KEY="${SHLINK_API_KEY:-}"
 SHLINK_URL="https://s.ovhome.online"
@@ -67,11 +68,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Determine screenshot path
-if [ "$OUTPUT_MODE" = "file" ]; then
-    SCREENSHOT_PATH="$OUTPUT_FILE"
-elif [ "$OUTPUT_MODE" = "s3" ]; then
-    SCREENSHOT_PATH="$(mktemp /tmp/integration-test-XXXXXX.png)"
+# Screenshot times and labels
+TIMES=("7:30" "11:30" "22:30")
+LABELS=("0730" "1130" "2230")
+
+# Determine screenshot paths
+TEMP_DIR=""
+if [ "$OUTPUT_MODE" = "s3" ]; then
+    TEMP_DIR=$(mktemp -d /tmp/integration-test-XXXXXX)
 fi
 
 cleanup() {
@@ -81,9 +85,8 @@ cleanup() {
         kill $XVFB_PID 2>/dev/null || true
         rm -f /tmp/.X99-lock 2>/dev/null || true
     fi
-    # Clean up temp screenshot only if it was a temp file for S3
-    if [ "$OUTPUT_MODE" = "s3" ] && [ -n "$SCREENSHOT_PATH" ]; then
-        rm -f "$SCREENSHOT_PATH" 2>/dev/null || true
+    if [ -n "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR" 2>/dev/null || true
     fi
 }
 trap cleanup EXIT
@@ -132,10 +135,6 @@ sleep 5
 echo "Starting game from main menu..."
 send_cmd "start-game"
 sleep 2
-
-# Set time to late morning for good sun lighting
-echo "Setting time to 11:30..."
-send_cmd "set-time time=11:30"
 
 Y="0.125"
 
@@ -201,27 +200,10 @@ sleep 5
 send_cmd "set-mouse pos=0,0"
 sleep 0.5
 
-# Screenshot handling
+# Screenshot handling — take screenshots at multiple times of day
 if [ -n "$OUTPUT_MODE" ]; then
     echo ""
-    echo "=== Screenshot ==="
-    send_cmd "screenshot path=$SCREENSHOT_PATH"
-    sleep 2
-
-    if [ ! -f "$SCREENSHOT_PATH" ]; then
-        echo "ERROR: Screenshot file not found at $SCREENSHOT_PATH"
-        send_cmd "exit" || true
-        exit 1
-    fi
-
-    FILE_SIZE=$(stat -c%s "$SCREENSHOT_PATH" 2>/dev/null || stat -f%z "$SCREENSHOT_PATH" 2>/dev/null)
-    echo "Screenshot saved: $SCREENSHOT_PATH ($FILE_SIZE bytes)"
-
-    if [ "$FILE_SIZE" -lt 1000 ]; then
-        echo "ERROR: Screenshot file is too small ($FILE_SIZE bytes), likely corrupt"
-        send_cmd "exit" || true
-        exit 1
-    fi
+    echo "=== Screenshots ==="
 
     if [ "$OUTPUT_MODE" = "s3" ]; then
         if ! command -v aws &> /dev/null; then
@@ -229,35 +211,84 @@ if [ -n "$OUTPUT_MODE" ]; then
             send_cmd "exit" || true
             exit 1
         fi
+    fi
 
-        echo "Uploading to S3..."
-        aws s3 cp "$SCREENSHOT_PATH" "s3://${S3_BUCKET}/${S3_KEY}" --region "$S3_REGION"
+    for i in "${!TIMES[@]}"; do
+        TIME="${TIMES[$i]}"
+        LABEL="${LABELS[$i]}"
 
-        PRESIGNED_URL=$(aws s3 presign "s3://${S3_BUCKET}/${S3_KEY}" --region "$S3_REGION" --expires-in 3600)
-
-        # Shorten URL via Shlink if API key is available
-        SHORT_URL=""
-        if [ -n "$SHLINK_API_KEY" ]; then
-            SHORT_URL=$(curl -sf -X POST "${SHLINK_URL}/rest/v3/short-urls" \
-                -H "X-Api-Key: ${SHLINK_API_KEY}" \
-                -H "Content-Type: application/json" \
-                -d "{\"longUrl\": \"${PRESIGNED_URL}\"}" | python3 -c "import sys,json; print(json.load(sys.stdin)['shortUrl'])" 2>/dev/null || true)
+        # Determine path for this screenshot
+        if [ "$OUTPUT_MODE" = "file" ]; then
+            # Insert label before extension: /path/to/file.png -> /path/to/file-0730.png
+            SCREENSHOT_PATH="${OUTPUT_FILE%.png}-${LABEL}.png"
+        else
+            SCREENSHOT_PATH="$TEMP_DIR/integration-test-${LABEL}.png"
         fi
 
+        echo "Setting time to ${TIME}..."
+        send_cmd "set-time time=${TIME}"
+        sleep 1
+
+        echo "Taking screenshot at ${TIME}..."
+        send_cmd "screenshot path=$SCREENSHOT_PATH"
+        sleep 2
+
+        if [ ! -f "$SCREENSHOT_PATH" ]; then
+            echo "ERROR: Screenshot file not found at $SCREENSHOT_PATH"
+            send_cmd "exit" || true
+            exit 1
+        fi
+
+        FILE_SIZE=$(stat -c%s "$SCREENSHOT_PATH" 2>/dev/null || stat -f%z "$SCREENSHOT_PATH" 2>/dev/null)
+        echo "  Saved: $SCREENSHOT_PATH ($FILE_SIZE bytes)"
+
+        if [ "$FILE_SIZE" -lt 1000 ]; then
+            echo "ERROR: Screenshot file is too small ($FILE_SIZE bytes), likely corrupt"
+            send_cmd "exit" || true
+            exit 1
+        fi
+    done
+
+    if [ "$OUTPUT_MODE" = "s3" ]; then
+        echo ""
+        echo "Uploading to S3..."
         echo ""
         echo "============================================"
-        echo "Screenshot uploaded successfully!"
-        if [ -n "$SHORT_URL" ]; then
-            echo "Short URL: $SHORT_URL"
-        else
-            echo "Presigned URL (expires in 1 hour):"
-            echo "$PRESIGNED_URL"
-        fi
+        echo "Screenshots uploaded successfully!"
+
+        for i in "${!LABELS[@]}"; do
+            LABEL="${LABELS[$i]}"
+            SCREENSHOT_PATH="$TEMP_DIR/integration-test-${LABEL}.png"
+            S3_KEY="${S3_KEY_PREFIX}-${LABEL}.png"
+
+            aws s3 cp "$SCREENSHOT_PATH" "s3://${S3_BUCKET}/${S3_KEY}" --region "$S3_REGION"
+
+            PRESIGNED_URL=$(aws s3 presign "s3://${S3_BUCKET}/${S3_KEY}" --region "$S3_REGION" --expires-in 3600)
+
+            # Shorten URL via Shlink if API key is available
+            SHORT_URL=""
+            if [ -n "$SHLINK_API_KEY" ]; then
+                SHORT_URL=$(curl -sf -X POST "${SHLINK_URL}/rest/v3/short-urls" \
+                    -H "X-Api-Key: ${SHLINK_API_KEY}" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"longUrl\": \"${PRESIGNED_URL}\"}" | python3 -c "import sys,json; print(json.load(sys.stdin)['shortUrl'])" 2>/dev/null || true)
+            fi
+
+            if [ -n "$SHORT_URL" ]; then
+                echo "  ${TIMES[$i]}: $SHORT_URL"
+            else
+                echo "  ${TIMES[$i]}: $PRESIGNED_URL"
+            fi
+        done
+
         echo "============================================"
     elif [ "$OUTPUT_MODE" = "file" ]; then
         echo ""
         echo "============================================"
-        echo "Screenshot saved to: $SCREENSHOT_PATH"
+        for i in "${!LABELS[@]}"; do
+            LABEL="${LABELS[$i]}"
+            echo "  ${TIMES[$i]}: ${OUTPUT_FILE%.png}-${LABEL}.png"
+        done
         echo "============================================"
     fi
 fi

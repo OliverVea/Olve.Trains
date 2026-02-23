@@ -64,7 +64,7 @@ public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager da
         shader.DirectionalLight0Color = SunValue.Color;
         shader.DirectionalLight0Intensity = SunValue.Intensity;
 
-        shader.DirectionalLight1Dir = SunDirection;
+        shader.DirectionalLight1Dir = MoonDirection;
         shader.DirectionalLight1Color = MoonValue.Color;
         shader.DirectionalLight1Intensity = MoonValue.Intensity;
 
