@@ -66,7 +66,7 @@ public static partial class Shaders
 {{ if PerVertexAttributes.size > 0 }}
         public readonly record struct Vertex(
 {{ for attr in PerVertexAttributes }}            {{ attr.DataType }} {{ attr.Name }}{{ if !for.last }},{{ end }}
-{{ end }}        ) : IVertexData
+{{ end }}        ) : IVertexData{{ for iface in VertexInterfaces }}, {{ iface.InterfaceName }}<Vertex>{{ end }}
         {
             public static int FloatCount => {{ VertexStride }};
 
@@ -83,11 +83,15 @@ public static partial class Shaders
 {{ end }}{{ else }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, {{ VertexStrideBytes }}, (nint){{ attr.ByteOffset }});
                 gl.EnableVertexAttribArray({{ attr.Location }});
 {{ end }}{{ end }}            }
-        }
+{{ for iface in VertexInterfaces }}
+            {{ iface.PropertyType }} {{ iface.InterfaceName }}<Vertex>.{{ iface.PropertyName }} => {{ iface.AttributeName }};
+            static Vertex {{ iface.InterfaceName }}<Vertex>.{{ iface.WithMethodName }}(Vertex self, {{ iface.PropertyType }} {{ iface.ParamName }})
+                => self with { {{ iface.AttributeName }} = {{ iface.ParamName }} };
+{{ end }}        }
 {{ end }}{{ if HasInstancedAttributes }}
         public readonly record struct Instance(
 {{ for attr in InstancedAttributes }}            {{ attr.DataType }} {{ attr.Name }}{{ if !for.last }},{{ end }}
-{{ end }}        ) : IInstanceData
+{{ end }}        ) : IInstanceData{{ for iface in InstanceInterfaces }}, {{ iface.InterfaceName }}<Instance>{{ end }}
         {
             public static int FloatCount => {{ InstanceStride }};
 
@@ -106,7 +110,11 @@ public static partial class Shaders
                 gl.EnableVertexAttribArray({{ attr.Location }});
                 gl.VertexAttribDivisor({{ attr.Location }}, 1);
 {{ end }}{{ end }}            }
-        }
+{{ for iface in InstanceInterfaces }}
+            {{ iface.PropertyType }} {{ iface.InterfaceName }}<Instance>.{{ iface.PropertyName }} => {{ iface.AttributeName }};
+            static Instance {{ iface.InterfaceName }}<Instance>.{{ iface.WithMethodName }}(Instance self, {{ iface.PropertyType }} {{ iface.ParamName }})
+                => self with { {{ iface.AttributeName }} = {{ iface.ParamName }} };
+{{ end }}        }
 {{ end }}
         #region ShaderSource
 

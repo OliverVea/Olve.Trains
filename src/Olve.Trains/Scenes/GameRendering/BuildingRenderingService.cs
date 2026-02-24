@@ -70,17 +70,15 @@ public class BuildingRenderingService(
         }
 
         // Build unit cube vertex data
-        Span<Vector3D<float>> positions = stackalloc Vector3D<float>[UnitCube.VertexCount];
-        Span<Vector3D<float>> normals = stackalloc Vector3D<float>[UnitCube.VertexCount];
-        UnitCube.GetVertices(positions, normals);
+        var vertices = new Shaders.Building.Vertex[UnitCube.VertexCount];
+        UnitCube.Populate(vertices);
 
         var vertexFloats = new float[UnitCube.VertexCount * Shaders.Building.Vertex.FloatCount];
         var span = vertexFloats.AsSpan();
         var offset = 0;
         for (var i = 0; i < UnitCube.VertexCount; i++)
         {
-            var vertex = new Shaders.Building.Vertex(positions[i], normals[i]);
-            vertex.WriteTo(span.Slice(offset, Shaders.Building.Vertex.FloatCount));
+            vertices[i].WriteTo(span.Slice(offset, Shaders.Building.Vertex.FloatCount));
             offset += Shaders.Building.Vertex.FloatCount;
         }
 
@@ -91,7 +89,7 @@ public class BuildingRenderingService(
         // Create main building instance buffer
         if (instancedBufferManager.CreateMeshInstanceBuffer(
                 vertexFloats,
-                (uint)UnitCube.VertexCount,
+                UnitCube.VertexCount,
                 indexArray,
                 Shaders.Building.Vertex.ConfigureAttributes,
                 ReadOnlySpan<float>.Empty,
@@ -108,7 +106,7 @@ public class BuildingRenderingService(
         // Create ghost building instance buffer
         if (instancedBufferManager.CreateMeshInstanceBuffer(
                 vertexFloats,
-                (uint)UnitCube.VertexCount,
+                UnitCube.VertexCount,
                 indexArray,
                 Shaders.Building.Vertex.ConfigureAttributes,
                 ReadOnlySpan<float>.Empty,

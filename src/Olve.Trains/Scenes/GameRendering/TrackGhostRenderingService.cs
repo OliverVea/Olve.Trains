@@ -150,13 +150,15 @@ public class TrackGhostRenderingService(
 
     private static float[] MarshalVertexFloats(LineStripData data)
     {
+        var vertices = new Shaders.LineStrip.Vertex[data.VertexCount];
+        data.Populate(vertices);
+
         var floats = new float[data.VertexCount * Shaders.LineStrip.Vertex.FloatCount];
         var span = floats.AsSpan();
         var offset = 0;
         for (var i = 0; i < data.VertexCount; i++)
         {
-            var vertex = new Shaders.LineStrip.Vertex(data.Positions[i], data.Colors[i]);
-            vertex.WriteTo(span.Slice(offset, Shaders.LineStrip.Vertex.FloatCount));
+            vertices[i].WriteTo(span.Slice(offset, Shaders.LineStrip.Vertex.FloatCount));
             offset += Shaders.LineStrip.Vertex.FloatCount;
         }
         return floats;

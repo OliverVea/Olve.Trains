@@ -63,7 +63,7 @@ public class TrackArrowIndicatorService(
             return problems.Prepend("Failed to load mesh");
         }
 
-        var (vertexFloats, indices) = MeshDataMarshalHelper.MarshalDefaultShader(meshData);
+        var (vertexFloats, indices) = MeshDataMarshalHelper.Marshal<Shaders.Default.Vertex>(meshData);
 
         if (instancedBufferManager.CreateMeshInstanceBuffer(
                 vertexFloats,

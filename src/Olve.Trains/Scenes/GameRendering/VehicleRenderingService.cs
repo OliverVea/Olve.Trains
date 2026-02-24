@@ -4,7 +4,6 @@ using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.OpenGL;
-using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
@@ -74,7 +73,7 @@ public class VehicleRenderingService(
             return problems.Prepend("Failed to load mesh");
         }
 
-        var (vertexFloats, indices) = MeshDataMarshalHelper.MarshalDefaultShader(meshData);
+        var (vertexFloats, indices) = MeshDataMarshalHelper.Marshal<Shaders.Default.Vertex>(meshData);
 
         if (instancedBufferManager.CreateMeshInstanceBuffer(
                 vertexFloats,

@@ -58,6 +58,20 @@ public static class UnitCube
         positions[i] = new(0, 0, 1); normals[i] = n;
     }
 
+    public static void Populate<T>(Span<T> vertices)
+        where T : struct, IWithPosition3D<T>, IWithNormal3D<T>
+    {
+        Span<Vector3D<float>> positions = stackalloc Vector3D<float>[VertexCount];
+        Span<Vector3D<float>> normals = stackalloc Vector3D<float>[VertexCount];
+        GetVertices(positions, normals);
+
+        for (var i = 0; i < VertexCount; i++)
+        {
+            vertices[i] = T.WithPosition(vertices[i], positions[i]);
+            vertices[i] = T.WithNormal(vertices[i], normals[i]);
+        }
+    }
+
     public static void GetIndices(Span<uint> indices)
     {
         for (uint face = 0; face < 6; face++)

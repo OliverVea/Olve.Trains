@@ -1,23 +1,23 @@
 using Olve.Engine3D.Assets.Entities;
-using Olve.Generated.Shaders;
+using Olve.Engine3D.Rendering;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
 public static class MeshDataMarshalHelper
 {
-    public static (float[] VertexFloats, uint[] Indices) MarshalDefaultShader(MeshData meshData)
+    public static (float[] VertexFloats, uint[] Indices) Marshal<TVertex>(MeshData meshData)
+        where TVertex : struct, IVertexData, IWithPosition3D<TVertex>, IWithNormal3D<TVertex>, IWithTexCoords2D<TVertex>
     {
-        var vertexFloats = new float[meshData.VertexCount * Shaders.Default.Vertex.FloatCount];
+        var vertices = new TVertex[meshData.VertexCount];
+        meshData.Populate(vertices);
+
+        var vertexFloats = new float[meshData.VertexCount * TVertex.FloatCount];
         var span = vertexFloats.AsSpan();
         var offset = 0;
         for (var i = 0; i < meshData.VertexCount; i++)
         {
-            var vertex = new Shaders.Default.Vertex(
-                meshData.Positions[i],
-                meshData.Normals[i],
-                meshData.TextureCoordinates[i]);
-            vertex.WriteTo(span.Slice(offset, Shaders.Default.Vertex.FloatCount));
-            offset += Shaders.Default.Vertex.FloatCount;
+            vertices[i].WriteTo(span.Slice(offset, TVertex.FloatCount));
+            offset += TVertex.FloatCount;
         }
 
         var indices = new uint[meshData.Indices.Length * 3];

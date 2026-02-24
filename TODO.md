@@ -35,10 +35,17 @@
     - [x] `default` shader + consumers
     - [x] `lineStrip` shader + consumers
     - [x] `terrain` shader + consumers
-  - [ ] Add composable vertex/instance interfaces (`IWithPosition3D`, `IWithNormal3D`, etc.) for generic mesh mapping
+  - [x] Add composable vertex/instance interfaces (`IWithPosition3D`, `IWithNormal3D`, etc.) for generic mesh mapping
   - [ ] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
   - [ ] Merge `building` shader into `default` shader (use white pixel texture for untextured meshes, add ghost rendering support)
   - [ ] Update `docs/architecture.md` rendering sections to reflect unified renderer
+- [ ] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
+  - [ ] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
+  - [ ] Update `ProcessShaders` to generate explicit interface implementations from annotations (replace convention-based matching)
+  - [ ] Annotate vertex/instance attributes in all shaders (`IWithPosition3D`, `IWithNormal3D`, etc.)
+  - [ ] Annotate uniforms in all shaders (`ICameraPositionShader`, `IDaylightShader`, etc.)
+  - [ ] Remove manual `ShaderExtensions/Shaders.cs` partial declarations
+  - [ ] Remove convention-based `SemanticMap`/`NormalizeAttributeName` from pipeline
 - [ ] Building epic (Feature):
   - [x] Add basic support for buildings
   - [x] Add building validation and validation failure rendering

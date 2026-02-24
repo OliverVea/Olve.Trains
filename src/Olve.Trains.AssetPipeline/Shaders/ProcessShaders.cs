@@ -274,6 +274,9 @@ public class ProcessShaders(
         programObject.Add("InstancedAttributes", instancedAttrObjects);
         programObject.Add("PerVertexAttributes", perVertexAttrObjects);
 
+        programObject.Add("VertexInterfaces", GetSemanticInterfaces(perVertexAttributes, false, "Vertex"));
+        programObject.Add("InstanceInterfaces", GetSemanticInterfaces(instancedAttributes, true, "Instance"));
+
         ScriptObject fragmentShaderObject = new()
         {
             { "Name", shaderProgram.FragmentShader },
@@ -305,6 +308,54 @@ public class ProcessShaders(
         }
 
         return programObject;
+    }
+
+    private static readonly (string NormalizedName, UniformType Type, bool IsInstanced, string InterfaceName, string PropertyName, string PropertyType, string WithMethodName)[] SemanticMap =
+    [
+        ("position", UniformType.Vector3, false, "IWithPosition3D", "Position", "Vector3D<float>", "WithPosition"),
+        ("normal", UniformType.Vector3, false, "IWithNormal3D", "Normal", "Vector3D<float>", "WithNormal"),
+        ("texcoords", UniformType.Vector2, false, "IWithTexCoords2D", "TexCoords", "Vector2D<float>", "WithTexCoords"),
+        ("color", UniformType.Vector3, false, "IWithColor3D", "Color", "Vector3D<float>", "WithColor"),
+        ("world", UniformType.Matrix4, true, "IWithWorldMatrix", "WorldMatrix", "Matrix4X4<float>", "WithWorldMatrix"),
+    ];
+
+    private static string NormalizeAttributeName(string glslName)
+    {
+        if (glslName.Length > 1 && glslName[0] is 'a' or 'i' && char.IsUpper(glslName[1]))
+            return glslName[1..].ToLowerInvariant();
+        return glslName.ToLowerInvariant();
+    }
+
+    private static List<ScriptObject> GetSemanticInterfaces(
+        IEnumerable<VertexAttribute> attributes,
+        bool isInstanced,
+        string structName)
+    {
+        var interfaces = new List<ScriptObject>();
+        foreach (var attr in attributes)
+        {
+            var normalized = NormalizeAttributeName(attr.Name);
+            var match = SemanticMap
+                .Where(m => m.NormalizedName == normalized && m.Type == attr.Type && m.IsInstanced == isInstanced)
+                .Select(m => (m.InterfaceName, m.PropertyName, m.PropertyType, m.WithMethodName))
+                .FirstOrDefault();
+
+            if (match.InterfaceName is null) continue;
+
+            var paramName = char.ToLower(match.PropertyName[0]) + match.PropertyName[1..];
+            interfaces.Add(new ScriptObject
+            {
+                { "InterfaceName", match.InterfaceName },
+                { "PropertyName", match.PropertyName },
+                { "PropertyType", match.PropertyType },
+                { "WithMethodName", match.WithMethodName },
+                { "ParamName", paramName },
+                { "AttributeName", attr.Name },
+                { "StructName", structName },
+            });
+        }
+
+        return interfaces;
     }
 
     private static string GetWriteCode(string name, int componentCount)

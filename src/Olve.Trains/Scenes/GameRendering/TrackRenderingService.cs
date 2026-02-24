@@ -38,7 +38,7 @@ public class TrackRenderingService(
         }
 
         // Generate template mesh
-        var (vertices, indices) = TrackTemplateMeshService.Generate();
+        var (vertices, indices) = TrackTemplateMeshService.Generate<Shaders.Track.Vertex>();
 
         // Marshal vertex data
         var vertexFloats = new float[vertices.Length * Shaders.Track.Vertex.FloatCount];

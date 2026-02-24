@@ -1,4 +1,4 @@
-using Olve.Generated.Shaders;
+using Olve.Engine3D.Rendering;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -9,12 +9,13 @@ public static class TrackTemplateMeshService
     private const float RailHalfWidth = 0.005f;
     private const float RailHeight = 0.01f;
 
-    public static (Shaders.Track.Vertex[] Vertices, uint[] Indices) Generate()
+    public static (TVertex[] Vertices, uint[] Indices) Generate<TVertex>()
+        where TVertex : struct, IWithPosition3D<TVertex>, IWithNormal3D<TVertex>
     {
         var ringCount = Subdivisions + 1;
         var vertsPerRing = 16; // 8 per rail × 2 rails
         var vertexCount = ringCount * vertsPerRing;
-        var vertices = new Shaders.Track.Vertex[vertexCount];
+        var vertices = new TVertex[vertexCount];
 
         // 4 quads per rail × 2 tris per quad × 2 rails × Subdivisions segments
         var indexCount = 4 * 2 * 2 * Subdivisions * 3;
@@ -31,36 +32,36 @@ public static class TrackTemplateMeshService
             {
                 // 8 vertices per rail per ring (2 per face for 4 faces)
                 // Face 0: left  (-x normal)
-                vertices[vi++] = new Shaders.Track.Vertex(
-                    new Vector3D<float>(cx - RailHalfWidth, 0, t),
-                    new Vector3D<float>(-1, 0, 0));
-                vertices[vi++] = new Shaders.Track.Vertex(
-                    new Vector3D<float>(cx - RailHalfWidth, RailHeight, t),
-                    new Vector3D<float>(-1, 0, 0));
+                vertices[vi] = TVertex.WithPosition(vertices[vi], new(cx - RailHalfWidth, 0, t));
+                vertices[vi] = TVertex.WithNormal(vertices[vi], new(-1, 0, 0));
+                vi++;
+                vertices[vi] = TVertex.WithPosition(vertices[vi], new(cx - RailHalfWidth, RailHeight, t));
+                vertices[vi] = TVertex.WithNormal(vertices[vi], new(-1, 0, 0));
+                vi++;
 
                 // Face 1: right (+x normal)
-                vertices[vi++] = new Shaders.Track.Vertex(
-                    new Vector3D<float>(cx + RailHalfWidth, 0, t),
-                    new Vector3D<float>(1, 0, 0));
-                vertices[vi++] = new Shaders.Track.Vertex(
-                    new Vector3D<float>(cx + RailHalfWidth, RailHeight, t),
-                    new Vector3D<float>(1, 0, 0));
+                vertices[vi] = TVertex.WithPosition(vertices[vi], new(cx + RailHalfWidth, 0, t));
+                vertices[vi] = TVertex.WithNormal(vertices[vi], new(1, 0, 0));
+                vi++;
+                vertices[vi] = TVertex.WithPosition(vertices[vi], new(cx + RailHalfWidth, RailHeight, t));
+                vertices[vi] = TVertex.WithNormal(vertices[vi], new(1, 0, 0));
+                vi++;
 
                 // Face 2: top (+y normal)
-                vertices[vi++] = new Shaders.Track.Vertex(
-                    new Vector3D<float>(cx - RailHalfWidth, RailHeight, t),
-                    new Vector3D<float>(0, 1, 0));
-                vertices[vi++] = new Shaders.Track.Vertex(
-                    new Vector3D<float>(cx + RailHalfWidth, RailHeight, t),
-                    new Vector3D<float>(0, 1, 0));
+                vertices[vi] = TVertex.WithPosition(vertices[vi], new(cx - RailHalfWidth, RailHeight, t));
+                vertices[vi] = TVertex.WithNormal(vertices[vi], new(0, 1, 0));
+                vi++;
+                vertices[vi] = TVertex.WithPosition(vertices[vi], new(cx + RailHalfWidth, RailHeight, t));
+                vertices[vi] = TVertex.WithNormal(vertices[vi], new(0, 1, 0));
+                vi++;
 
                 // Face 3: bottom (-y normal)
-                vertices[vi++] = new Shaders.Track.Vertex(
-                    new Vector3D<float>(cx - RailHalfWidth, 0, t),
-                    new Vector3D<float>(0, -1, 0));
-                vertices[vi++] = new Shaders.Track.Vertex(
-                    new Vector3D<float>(cx + RailHalfWidth, 0, t),
-                    new Vector3D<float>(0, -1, 0));
+                vertices[vi] = TVertex.WithPosition(vertices[vi], new(cx - RailHalfWidth, 0, t));
+                vertices[vi] = TVertex.WithNormal(vertices[vi], new(0, -1, 0));
+                vi++;
+                vertices[vi] = TVertex.WithPosition(vertices[vi], new(cx + RailHalfWidth, 0, t));
+                vertices[vi] = TVertex.WithNormal(vertices[vi], new(0, -1, 0));
+                vi++;
             }
         }
 

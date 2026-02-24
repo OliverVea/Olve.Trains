@@ -286,6 +286,15 @@ var home = Path.GetHomeDirectory();
 Path.TryGetAssemblyExecutable(out var exe);
 ```
 
+## Code Organization Rules
+
+### Data Classes Must Be Behavior-Free
+Data classes and structs (e.g. `MeshData`, `LineStripData`, `BuildingPosition`) hold data only — no logic, no dependencies on other namespaces. **Never** add methods that reference types from outside the data class's own domain (e.g. rendering interfaces on an asset data class).
+
+- **Services/managers** for logic and orchestration
+- **Data classes/structs** for holding data (properties, validation at most)
+- **Static helpers and extension methods** for mapping, conversion, and cross-cutting utilities (e.g. `MeshData` → vertex buffer population belongs in a rendering extension method, not on `MeshData` itself)
+
 ## Notes
 
 ### OpenGL State Management
