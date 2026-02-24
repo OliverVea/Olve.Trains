@@ -17,7 +17,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
     MouseManager mouseManager,
     KeyboardManager keyboardManager,
     TrackPlacingService trackPlacingService,
-    TrackRenderingService trackRenderingService,
+    TrackGhostRenderingService trackGhostRenderingService,
     TrackLineStripDataService trackLineStripDataService,
     TrackValidationService trackValidationService) : BaseToolService<TrackPlacingToolService.State>(toolManagementService, new State())
 {
@@ -145,11 +145,11 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
 
         if (_ghostRegistered)
         {
-            trackRenderingService.Update(_ghostTrackId, data, ghostParams);
+            trackGhostRenderingService.Update(_ghostTrackId, data, ghostParams);
         }
         else
         {
-            trackRenderingService.Register(_ghostTrackId, data, ghostParams);
+            trackGhostRenderingService.Register(_ghostTrackId, data, ghostParams);
             _ghostRegistered = true;
         }
 
@@ -163,7 +163,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
             return;
         }
 
-        trackRenderingService.Unregister(_ghostTrackId);
+        trackGhostRenderingService.Unregister(_ghostTrackId);
         _ghostRegistered = false;
     }
 }

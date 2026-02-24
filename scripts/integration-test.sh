@@ -127,7 +127,7 @@ send_cmd() {
 
 # Launch game
 echo "Launching game..."
-dotnet "$BIN_DIR/On Track To Grow.dll" --listen --instance "$INSTANCE_ID" &
+dotnet "$BIN_DIR/On Track To Grow.dll" --listen --instance "$INSTANCE_ID" --resolution "$RESOLUTION" &
 GAME_PID=$!
 sleep 5
 
@@ -140,7 +140,7 @@ Y="0.125"
 
 # Set camera first to center on the layout
 echo "Setting camera..."
-send_cmd "set-camera target=12.5,0,10 zoom=5"
+send_cmd "set-camera target=12.5,0,10 zoom=2.5"
 
 echo ""
 echo "=== Placing Station ==="

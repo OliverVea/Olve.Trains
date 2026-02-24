@@ -1,133 +1,167 @@
-using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.EntityManagers;
+using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
+using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Tracks;
+using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
 public class TrackRenderingService(
     RenderingManager3D renderingManager3D,
+    OpenGLInstancedBufferManager instancedBufferManager,
     CameraSceneService cameraSceneService,
-    ShaderEntityManager shaderEntityManager,
+    RenderingServiceHelper renderingServiceHelper,
+    SceneLightService sceneLightService,
+    TrackService trackService,
     TerrainRenderingService terrainRenderingService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
 
-    private readonly record struct TrackEntry(
-        GeometryId GeometryId,
-        RenderingInstanceId InstanceId);
-
-    private readonly Dictionary<Id<Track>, TrackEntry> _trackEntries = new();
-    private readonly Shaders.LineStrip _shader = new()
+    private readonly Shaders.Track _shader = new()
     {
-        UOpacity = 1.0f,
-        UColorMix = 0.0f,
-        BlendState = RenderState.AlphaBlendNoDepth,
+        BlendState = RenderState.Opaque,
+        UColor = new Vector3D<float>(0.85f, 0.85f, 0.85f),
     };
+
+    private readonly Dictionary<Id<Track>, Shaders.Track.Instance> _trackInstances = new();
+    private OpenGLInstancedBufferManager.MeshInstancedRegistration _registration;
+    private bool _dirty;
 
     public Result Load()
     {
-        if (shaderEntityManager.Register(_shader.ShaderData).TryPickProblems(out var problems, out var shaderId))
+        if (renderingServiceHelper.LoadShader(_shader).TryPickProblems(out var problems))
         {
-            return problems.Prepend("Failed to register shader");
+            return problems.Prepend("Failed to load track shader");
         }
 
-        _shader.RenderingId = shaderId;
+        // Generate template mesh
+        var (vertices, indices) = TrackTemplateMeshService.Generate();
+
+        // Marshal vertex data
+        var vertexFloats = new float[vertices.Length * TrackTemplateMeshService.TrackVertex.FloatCount];
+        var span = vertexFloats.AsSpan();
+        var offset = 0;
+        foreach (var vertex in vertices)
+        {
+            vertex.WriteTo(span.Slice(offset, TrackTemplateMeshService.TrackVertex.FloatCount));
+            offset += TrackTemplateMeshService.TrackVertex.FloatCount;
+        }
+
+        // Create instanced registration with empty instance data initially
+        if (instancedBufferManager.CreateMeshInstanceBuffer(
+                vertexFloats,
+                (uint)vertices.Length,
+                indices,
+                TrackTemplateMeshService.TrackVertex.ConfigureAttributes,
+                ReadOnlySpan<float>.Empty,
+                0,
+                Shaders.Track.Instance.ConfigureAttributes,
+                BufferUsageARB.DynamicDraw)
+            .TryPickProblems(out problems, out var registration))
+        {
+            return problems.Prepend("Failed to create track instanced buffers");
+        }
+
+        _registration = registration;
 
         return Result.Success();
     }
 
-    public Result Register(
-        Id<Track> trackId,
-        LineStripData data,
-        Shaders.LineStrip.EntityParameters? shaderParameters = null)
+    public Result Register(Id<Track> trackId)
     {
-        if (data.Validate().TryPickProblems(out var problems))
+        if (!trackService.TryGetTrack(trackId, out var track))
         {
-            return problems.Prepend("Invalid line strip data");
+            return new ResultProblem("Track not found: '{0}'", trackId);
         }
 
-        var vertices = MarshalVertices(data);
+        var instance = CreateInstance(track.Start, track.End);
+        _trackInstances[trackId] = instance;
+        _dirty = true;
 
-        if (renderingManager3D.RegisterGeometry(
-                vertices, PrimitiveType.LineStrip, BufferUsageARB.DynamicDraw)
-            .TryPickProblems(out problems, out var geometryId))
-        {
-            return problems.Prepend("Failed to register line strip geometry");
-        }
-
-        if (renderingManager3D.RegisterInstance(geometryId, _shader.RenderingId, Matrix4X4<float>.Identity)
-            .TryPickProblems(out problems, out var instanceId))
-        {
-            return problems.Prepend("Failed to register line strip instance");
-        }
-
-        if (shaderParameters is { } entityParams)
-        {
-            renderingManager3D.SetInstanceParameters(instanceId, entityParams);
-        }
-
-        _trackEntries[trackId] = new TrackEntry(geometryId, instanceId);
-        return Result.Success();
-    }
-
-    public Result Update(
-        Id<Track> trackId,
-        LineStripData? data = null,
-        Shaders.LineStrip.EntityParameters? shaderParameters = null)
-    {
-        if (!_trackEntries.TryGetValue(trackId, out var entry))
-        {
-            return new ResultProblem("Track '{0}' is not registered", trackId);
-        }
-
-        if (data != null)
-        {
-            if (data.Validate().TryPickProblems(out var problems))
-            {
-                return problems.Prepend("Invalid line strip data");
-            }
-
-            var vertices = MarshalVertices(data);
-            renderingManager3D.UpdateGeometry(entry.GeometryId, vertices);
-        }
-
-        renderingManager3D.SetInstanceParameters(entry.InstanceId, shaderParameters);
         return Result.Success();
     }
 
     public Result Unregister(Id<Track> trackId)
     {
-        if (!_trackEntries.Remove(trackId, out var entry))
+        if (_trackInstances.Remove(trackId))
         {
-            return Result.Success();
+            _dirty = true;
         }
 
-        renderingManager3D.DeregisterInstance(entry.InstanceId);
-        renderingManager3D.DeregisterGeometry(entry.GeometryId);
+        return Result.Success();
+    }
+
+    public Result Update(TimeSpan deltaTime)
+    {
+        cameraSceneService.ApplyCameraPositionParameters(_shader);
+        sceneLightService.ApplyShaderParameters(_shader);
+
+        if (_dirty)
+        {
+            RebuildInstanceBuffer();
+            _dirty = false;
+        }
 
         return Result.Success();
     }
 
     public Result Render(TimeSpan deltaTime)
     {
-        cameraSceneService.ApplyCameraPositionParameters(_shader);
-        _shader.World = Matrix4X4<float>.Identity;
-
-        return renderingManager3D.Render(_shader);
+        return renderingManager3D.RenderInstanced(
+            _shader,
+            _registration,
+            (uint)_trackInstances.Count);
     }
 
-    private static Shaders.LineStrip.Vertex[] MarshalVertices(LineStripData data)
+    public Result Unload()
     {
-        var vertices = new Shaders.LineStrip.Vertex[data.VertexCount];
-        for (var i = 0; i < data.VertexCount; i++)
+        instancedBufferManager.DeleteMeshInstanceBuffers(_registration);
+        return renderingServiceHelper.UnloadShader(_shader);
+    }
+
+    private static Shaders.Track.Instance CreateInstance(TrackEndpoint start, TrackEndpoint end)
+    {
+        var tangentScale = (start.Point - end.Point).Length;
+        var startTangent = -start.Tangent * tangentScale;
+        var endTangent = end.Tangent * tangentScale;
+
+        return new Shaders.Track.Instance(
+            iP0: start.Point,
+            iP1: end.Point,
+            iT0: startTangent,
+            iT1: endTangent);
+    }
+
+    private void RebuildInstanceBuffer()
+    {
+        var instanceCount = _trackInstances.Count;
+        if (instanceCount == 0)
         {
-            vertices[i] = new Shaders.LineStrip.Vertex(data.Positions[i], data.Colors[i]);
+            instancedBufferManager.UpdateMeshInstanceBuffer(
+                _registration,
+                ReadOnlySpan<float>.Empty,
+                0,
+                BufferUsageARB.DynamicDraw);
+            return;
         }
-        return vertices;
+
+        var floats = new float[instanceCount * Shaders.Track.Instance.FloatCount];
+        var span = floats.AsSpan();
+        var offset = 0;
+        foreach (var instance in _trackInstances.Values)
+        {
+            instance.WriteTo(span.Slice(offset, Shaders.Track.Instance.FloatCount));
+            offset += Shaders.Track.Instance.FloatCount;
+        }
+
+        instancedBufferManager.UpdateMeshInstanceBuffer(
+            _registration,
+            floats,
+            (uint)instanceCount,
+            BufferUsageARB.DynamicDraw);
     }
 }
