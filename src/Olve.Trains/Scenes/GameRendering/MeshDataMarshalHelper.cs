@@ -1,4 +1,4 @@
-eusing Olve.Engine3D.Assets.Entities;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Generated.Shaders;
 
 namespace Olve.Trains.Scenes.GameRendering;

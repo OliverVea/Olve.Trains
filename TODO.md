@@ -33,7 +33,7 @@
   - [ ] Migrate shaders to always-instanced (per-instance uniforms become `@instanced` attributes)
     - [x] `building` shader + `BuildingRenderingService`
     - [x] `default` shader + consumers
-    - [ ] `lineStrip` shader + consumers
+    - [x] `lineStrip` shader + consumers
     - [ ] `terrain` shader + consumers
   - [ ] Add composable vertex/instance interfaces (`IWithPosition3D`, `IWithNormal3D`, etc.) for generic mesh mapping
   - [ ] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers

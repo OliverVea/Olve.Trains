@@ -93,6 +93,18 @@ public class OpenGLInstancedBufferManager(
             ebo);
     }
 
+    public void UpdateMeshVertexBuffer(
+        MeshInstancedRegistration registration,
+        ReadOnlySpan<float> vertexData,
+        uint vertexCount,
+        BufferUsageARB usage)
+    {
+        var gl = glProvider.Value;
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, registration.MeshVBO.Handle);
+        gl.BufferData(BufferTargetARB.ArrayBuffer, vertexData, usage);
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+    }
+
     public void UpdateMeshInstanceBuffer(
         MeshInstancedRegistration registration,
         ReadOnlySpan<float> instanceData,

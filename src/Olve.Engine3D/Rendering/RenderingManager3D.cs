@@ -364,7 +364,31 @@ public class RenderingManager3D(
     public Result RenderInstanced(
         IShader shader,
         OpenGLInstancedBufferManager.MeshInstancedRegistration registration,
+        uint instanceCount,
+        PrimitiveType primitiveType,
+        uint? vertexCount = null,
+        IShaderParameters? groupParameters = null)
+    {
+        return RenderInstancedCore(shader, registration, instanceCount, primitiveType,
+            vertexCount ?? registration.MeshVBO.VertexCount, groupParameters);
+    }
+
+    public Result RenderInstanced(
+        IShader shader,
+        OpenGLInstancedBufferManager.MeshInstancedRegistration registration,
         uint instanceCount)
+    {
+        return RenderInstancedCore(shader, registration, instanceCount, PrimitiveType.Triangles,
+            registration.MeshVBO.VertexCount, null);
+    }
+
+    private Result RenderInstancedCore(
+        IShader shader,
+        OpenGLInstancedBufferManager.MeshInstancedRegistration registration,
+        uint instanceCount,
+        PrimitiveType primitiveType,
+        uint vertexCount,
+        IShaderParameters? groupParameters)
     {
         if (instanceCount == 0)
         {
@@ -409,12 +433,22 @@ public class RenderingManager3D(
             glProvider.Value.Disable(GLEnum.DepthTest);
         }
 
-        var parameters = shader.MakeParameters();
+        var shaderParameters = shader.MakeParameters();
 
-        if (openGLShaderManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
+        if (openGLShaderManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, shaderParameters)
             .TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to load shader '{0}' into OpenGL", shader.ShaderData.Name);
+        }
+
+        // Apply per-group uniform overrides
+        if (groupParameters is not null)
+        {
+            if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, groupParameters.ToRenderingParameters())
+                .TryPickProblems(out problems))
+            {
+                return problems.Prepend("Failed to apply group parameters");
+            }
         }
 
         try
@@ -424,7 +458,7 @@ public class RenderingManager3D(
             if (registration.MeshEBO is { } ebo)
             {
                 glProvider.Value.DrawElementsInstanced(
-                    PrimitiveType.Triangles,
+                    primitiveType,
                     ebo.IndexCount,
                     DrawElementsType.UnsignedInt,
                     in Unsafe.NullRef<int>(),
@@ -433,9 +467,9 @@ public class RenderingManager3D(
             else
             {
                 glProvider.Value.DrawArraysInstanced(
-                    PrimitiveType.Triangles,
+                    primitiveType,
                     0,
-                    registration.MeshVBO.VertexCount,
+                    vertexCount,
                     instanceCount);
             }
 
@@ -444,6 +478,16 @@ public class RenderingManager3D(
         catch (Exception e)
         {
             return new ResultProblem(e, "Failed to render instanced mesh");
+        }
+
+        // Restore shader-level uniforms if group overrides were applied
+        if (groupParameters is not null)
+        {
+            if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, shaderParameters)
+                .TryPickProblems(out problems))
+            {
+                return problems.Prepend("Failed to restore shader-level parameters");
+            }
         }
 
         glProvider.Value.DepthMask(true);
