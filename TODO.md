@@ -30,11 +30,11 @@
   - [ ] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
 - [ ] Unified renderer epic (Technical) (see [PLAN_UNIFIED_RENDERER.md](PLAN_UNIFIED_RENDERER.md)):
   - [x] Asset pipeline: generate `Vertex` type for all shaders (non-`@instanced` inputs)
-  - [ ] Migrate shaders to always-instanced (per-instance uniforms become `@instanced` attributes)
+  - [x] Migrate shaders to always-instanced (per-instance uniforms become `@instanced` attributes)
     - [x] `building` shader + `BuildingRenderingService`
     - [x] `default` shader + consumers
     - [x] `lineStrip` shader + consumers
-    - [ ] `terrain` shader + consumers
+    - [x] `terrain` shader + consumers
   - [ ] Add composable vertex/instance interfaces (`IWithPosition3D`, `IWithNormal3D`, etc.) for generic mesh mapping
   - [ ] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
   - [ ] Merge `building` shader into `default` shader (use white pixel texture for untextured meshes, add ghost rendering support)

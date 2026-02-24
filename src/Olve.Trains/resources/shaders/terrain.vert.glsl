@@ -4,7 +4,9 @@
 uniform sampler2D heightMap;
 uniform vec2 texelSize;                 // (1/textureWidth, 1/textureHeight)
 
-uniform mat4 world;
+// @instanced
+layout(location = 0) in mat4 iWorld;
+
 uniform mat4 view;
 uniform mat4 projection;
 
@@ -61,7 +63,7 @@ void main()
 
     vec3 pos = vec3(position.x, h, position.y);
 
-    vec4 worldPos = world * vec4(pos, 1.0);
+    vec4 worldPos = iWorld * vec4(pos, 1.0);
     FragPos = worldPos.xyz;
 
     gl_Position = projection * view * worldPos;

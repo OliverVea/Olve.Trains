@@ -1,32 +1,33 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.EntityManagers;
-using Olve.Engine3D.Rendering.Shaders;
+using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Terrain;
+using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
 public class TerrainRenderingService(
     TerrainService terrainService,
-    ShaderEntityManager shaderEntityManager,
     TextureManager textureManager,
     TextureEntityManager textureEntityManager,
+    OpenGLInstancedBufferManager instancedBufferManager,
+    RenderingServiceHelper renderingServiceHelper,
     RenderingManager3D renderingManager3D,
     CameraSceneService cameraSceneService,
     TerrainRaycastService terrainRaycastService,
     SceneLightService sceneLightService) : ISceneService
 {
-    public RenderingInstanceId TerrainInstanceId { get; set; }
-
     private readonly Shaders.Terrain _terrainShader = new()
     {
-        MouseRadius = 5f
+        MouseRadius = 5f,
     };
+
+    private OpenGLInstancedBufferManager.MeshInstancedRegistration _registration;
 
     public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, terrainRaycastService, sceneLightService]);
 
@@ -37,19 +38,17 @@ public class TerrainRenderingService(
             return new ResultProblem("TerrainService.Terrain is null");
         }
 
-        // TODO: investigate this
+        if (renderingServiceHelper.LoadShader(_terrainShader).TryPickProblems(out var shaderProblems))
+        {
+            return shaderProblems.Prepend("Failed to load terrain shader");
+        }
+
         var heightmap = terrain.Heightmap;
 
         // Compute vertex count: 6 vertices per quad (2 triangles), all derived from gl_VertexID in shader
         var quadsX = heightmap.Width - 1;
         var quadsZ = heightmap.Length - 1;
         var vertexCount = (uint)(quadsX * quadsZ * 6);
-
-        if (renderingManager3D.RegisterDrawArraysGeometry(vertexCount)
-            .TryPickProblems(out var problems, out var geometryId))
-        {
-            return problems.Prepend("Failed to register terrain geometry");
-        }
 
         // Create R32F heightmap texture through the texture system
         var heightmapPixels = new float[heightmap.Heights.Length];
@@ -77,33 +76,28 @@ public class TerrainRenderingService(
         _terrainShader.TexelSize = textureSize;
         _terrainShader.HeightMap = heightmapTextureId;
 
-        if (RegisterShader(geometryId, _terrainShader.ShaderData).TryPickProblems(out var shaderProblems, out var terrainShaderIds))
+        // Single identity world matrix instance
+        var instance = new Shaders.Terrain.Instance(Matrix4X4<float>.Identity);
+        var instanceData = new float[Shaders.Terrain.Instance.FloatCount];
+        instance.WriteTo(instanceData);
+
+        if (instancedBufferManager.CreateMeshInstanceBuffer(
+                meshVertexData: ReadOnlySpan<float>.Empty,
+                meshVertexCount: vertexCount,
+                meshIndices: ReadOnlySpan<uint>.Empty,
+                configureMeshAttributes: _ => { },
+                instanceData: instanceData,
+                instanceCount: 1,
+                configureInstanceAttributes: Shaders.Terrain.Instance.ConfigureAttributes,
+                instanceUsage: BufferUsageARB.StaticDraw)
+            .TryPickProblems(out var bufferProblems, out var registration))
         {
-            return shaderProblems.Prepend("Failed to register terrain shader");
+            return bufferProblems.Prepend("Failed to create terrain instanced buffer");
         }
 
-        _terrainShader.RenderingId = terrainShaderIds.ShaderId;
-        TerrainInstanceId = terrainShaderIds.InstanceId;
+        _registration = registration;
 
         return Result.Success();
-    }
-
-    private Result<(RenderingId<ShaderData> ShaderId, RenderingInstanceId InstanceId)> RegisterShader(
-        GeometryId geometryId, ShaderData shaderData)
-    {
-        if (shaderEntityManager.Register(shaderData).TryPickProblems(out var problems, out var shaderId))
-        {
-            return problems.Prepend("Failed to register shader");
-        }
-
-        var worldMatrix = Matrix4X4<float>.Identity;
-
-        if (renderingManager3D.RegisterInstance(geometryId, shaderId, worldMatrix).TryPickProblems(out problems, out var instanceId))
-        {
-            return problems.Prepend("Failed to register instance");
-        }
-
-        return (shaderId, instanceId);
     }
 
     public Result Render(TimeSpan deltaTime)
@@ -113,7 +107,8 @@ public class TerrainRenderingService(
         cameraSceneService.ApplyCameraDirectionParameters(_terrainShader);
         terrainRaycastService.ApplyTerrainIntersectionParameters(_terrainShader);
 
-        if (renderingManager3D.Render(_terrainShader).TryPickProblems(out var problems))
+        if (renderingManager3D.RenderInstanced(_terrainShader, _registration, 1)
+            .TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed rendering terrain");
         }
