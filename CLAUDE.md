@@ -106,6 +106,31 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "screenshot pa
 
 ## Workflow
 
+### Epic-Driven Development
+
+All work must be tied to an epic in `TODO.md`. Before starting any task, identify which epic and step it belongs to. If the work doesn't map to an existing epic, either find the right one or discuss with the user first.
+
+**Two modes of work:**
+
+1. **Exploration** — triggered by open-ended questions, "let's explore...", investigating options, or generating new epics. Free of epic constraints but the agent must explicitly state it is in exploration mode. No commits expected.
+2. **Epic work** — any task that produces code changes. Must be tied to a specific epic and step in `TODO.md`. If the work doesn't map to an existing epic, either find the right one or discuss with the user first.
+
+**Epic types:** Feature, Technical, Visual, Tooling, Testing. Annotated in parentheses after the epic name in `TODO.md`.
+
+**Commits:**
+- Each commit should map to a step (checkbox) in an epic.
+- In the same commit as the code changes, check off the completed step in `TODO.md`.
+- When all steps under a parent item are checked, check the parent too.
+- When all items in an epic are checked, the epic is done — move it to the "Done" section.
+
+**Questioning untracked work:**
+- If about to do work that doesn't map to any epic step, stop and clarify with the user.
+- Ad-hoc fixes and refactors are fine if they support an epic step — just note which one.
+
+### Asset Pipeline
+
+When modifying shaders or layouts:
+
 1. **Modify shaders/layouts** in `src/Olve.Trains/resources/`
 2. **Compile assets**: `cd src/Olve.Trains.AssetPipeline && dotnet run`
 3. **Run app**: `dotnet run --project src/Olve.Trains/Olve.Trains.csproj`
