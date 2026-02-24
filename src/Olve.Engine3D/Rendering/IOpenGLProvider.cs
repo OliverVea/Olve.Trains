@@ -2,6 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering.EntityManagers;
+using Olve.Engine3D.Rendering.Geometry;
+using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Utilities;
@@ -14,12 +16,15 @@ public static class OpenGLServiceRegistration
     public static IServiceCollection AddOpenGLServices(this IServiceCollection services)
     {
         services.TryAddSingleton<Provider<GL>>();
+        services.TryAddScoped<GeometryManager>();
         services.TryAddScoped<OpenGLBufferManager>();
         services.TryAddScoped<OpenGLInstancedBufferManager>();
         services.TryAddScoped<OpenGLModelRenderingManager>();
         services.TryAddScoped<OpenGLQuadRenderingManager>();
         services.TryAddScoped<OpenGLShaderManager>();
         services.TryAddScoped<OpenGLTextureManager>();
+        services.TryAddScoped<RenderingGroupManager>();
+        services.TryAddScoped<RenderingInstanceManager>();
         services.TryAddScoped<RenderingManager>();
         services.TryAddScoped<RenderingManager2D>();
         services.TryAddScoped<RenderingManager3D>();

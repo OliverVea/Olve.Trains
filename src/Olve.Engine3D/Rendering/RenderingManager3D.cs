@@ -110,7 +110,7 @@ public class RenderingManager3D(
         // Update vertex count
         var updatedBufReg = geoReg.BufferRegistration with
         {
-            VBO = new VBO(geoReg.BufferRegistration.VBO.Handle, (uint)vertices.Length)
+            VBO = geoReg.BufferRegistration.VBO with { VertexCount = (uint)vertices.Length }
         };
         _geometries[geometryId] = geoReg with { BufferRegistration = updatedBufReg };
 

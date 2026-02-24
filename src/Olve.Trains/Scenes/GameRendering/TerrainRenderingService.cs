@@ -1,5 +1,7 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering;
+using Olve.Engine3D.Rendering.Geometry;
+using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
@@ -13,7 +15,9 @@ public class TerrainRenderingService(
     TerrainService terrainService,
     TextureManager textureManager,
     TextureEntityManager textureEntityManager,
-    RenderingManager renderingManager,
+    GeometryManager geometryManager,
+    RenderingGroupManager renderingGroupManager,
+    RenderingInstanceManager renderingInstanceManager,
     RenderingServiceHelper renderingServiceHelper,
     CameraSceneService cameraSceneService,
     TerrainRaycastService terrainRaycastService,
@@ -72,14 +76,14 @@ public class TerrainRenderingService(
         _terrainShader.HeightMap = heightmapTextureId;
 
         // Register draw-arrays geometry (no vertex data — terrain uses gl_VertexID)
-        if (renderingManager.RegisterDrawArraysGeometry(vertexCount)
+        if (geometryManager.RegisterDrawArrays(vertexCount)
             .TryPickProblems(out var geoProblems, out var geometryId))
         {
             return geoProblems.Prepend("Failed to register terrain geometry");
         }
 
         // Register group
-        if (renderingManager.RegisterDrawArraysGroup<Shaders.Terrain.Instance>(
+        if (renderingGroupManager.RegisterDrawArrays<Shaders.Terrain.Instance>(
                 geometryId, _terrainShader, _terrainShader.BlendState)
             .TryPickProblems(out var groupProblems, out var groupId))
         {
@@ -87,7 +91,7 @@ public class TerrainRenderingService(
         }
 
         // Add single identity instance
-        if (renderingManager.AddInstance(groupId, new Shaders.Terrain.Instance(Matrix4X4<float>.Identity))
+        if (renderingInstanceManager.Add(groupId, new Shaders.Terrain.Instance(Matrix4X4<float>.Identity))
             .TryPickProblems(out var instanceProblems, out _))
         {
             return instanceProblems.Prepend("Failed to add terrain instance");
