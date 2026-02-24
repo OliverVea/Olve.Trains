@@ -32,7 +32,7 @@ public static class TrackTemplateMeshService
     private const int Subdivisions = 64;
     private const float HalfGauge = 0.07f;
     private const float RailHalfWidth = 0.005f;
-    private const float RailHeight = 0.1f;
+    private const float RailHeight = 0.01f;
 
     public static (TrackVertex[] Vertices, uint[] Indices) Generate()
     {

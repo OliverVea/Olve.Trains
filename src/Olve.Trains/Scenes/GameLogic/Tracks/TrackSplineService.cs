@@ -10,16 +10,25 @@ public class TrackSplineService(TrackService trackService) : ISceneService
 
     public Result Load()
     {
+        trackService.OnTrackAdded.Subscribe(OnAdded);
         trackService.OnTrackRemoved.Subscribe(OnRemoved);
+
+        foreach (var trackId in trackService.TrackIds)
+        {
+            GetOrAddSpline(trackId);
+        }
+
         return Result.Success();
     }
 
     public Result Unload()
     {
+        trackService.OnTrackAdded.Unsubscribe(OnAdded);
         trackService.OnTrackRemoved.Unsubscribe(OnRemoved);
         return Result.Success();
     }
 
+    private void OnAdded(Id<Track> id) => GetOrAddSpline(id);
     private void OnRemoved(Id<Track> id) => _trackSplines.Remove(id);
 
     public Result<Vector3D<float>> GetPoint(Id<Track> trackId, float time)
