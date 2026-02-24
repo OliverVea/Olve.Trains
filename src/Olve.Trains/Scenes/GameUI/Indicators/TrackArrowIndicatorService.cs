@@ -2,12 +2,14 @@ using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
+using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameRendering;
+using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.GameUI.Indicators;
 
@@ -15,6 +17,7 @@ public class TrackArrowIndicatorService(
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
+    OpenGLInstancedBufferManager instancedBufferManager,
     RenderingServiceHelper renderingServiceHelper,
     TextureLoadingManager textureLoadingManager,
     TextureEntityManager textureEntityManager) : ISceneService
@@ -30,8 +33,9 @@ public class TrackArrowIndicatorService(
     };
 
     private TextureId<RGBA>? _textureId;
-    private GeometryId _geometryId;
-    private RenderingInstanceId InstanceId { get; set; }
+    private OpenGLInstancedBufferManager.MeshInstancedRegistration _registration;
+    private Shaders.Default.Instance? _currentInstance;
+    private bool _dirty;
 
     public Result Load()
     {
@@ -59,25 +63,23 @@ public class TrackArrowIndicatorService(
             return problems.Prepend("Failed to load mesh");
         }
 
-        // Convert MeshData to Shaders.Default.Vertex[] and register geometry
-        // TODO: investigate this
-        var vertices = new Shaders.Default.Vertex[meshData.VertexCount];
-        for (var i = 0; i < meshData.VertexCount; i++)
-            vertices[i] = new(meshData.Positions[i], meshData.Normals[i], meshData.TextureCoordinates[i]);
+        var (vertexFloats, indices) = MeshDataMarshalHelper.MarshalDefaultShader(meshData);
 
-        var indices = new uint[meshData.Indices.Length * 3];
-        for (var i = 0; i < meshData.Indices.Length; i++)
+        if (instancedBufferManager.CreateMeshInstanceBuffer(
+                vertexFloats,
+                (uint)meshData.VertexCount,
+                indices,
+                Shaders.Default.Vertex.ConfigureAttributes,
+                ReadOnlySpan<float>.Empty,
+                0,
+                Shaders.Default.Instance.ConfigureAttributes,
+                BufferUsageARB.DynamicDraw)
+            .TryPickProblems(out problems, out var registration))
         {
-            indices[i * 3] = meshData.Indices[i].A;
-            indices[i * 3 + 1] = meshData.Indices[i].B;
-            indices[i * 3 + 2] = meshData.Indices[i].C;
+            return problems.Prepend("Failed to create arrow instanced buffers");
         }
 
-        if (renderingManager3D.RegisterGeometry(vertices, indices)
-            .TryPickProblems(out problems, out _geometryId))
-        {
-            return problems.Prepend("Failed to register geometry");
-        }
+        _registration = registration;
 
         AABB aabbTarget = new(Vector3D<float>.Zero, Vector3D<float>.One);
         var scaleResult = AABBHelper.GetUniformScaleToFitInside(meshData, aabbTarget);
@@ -86,34 +88,24 @@ public class TrackArrowIndicatorService(
             return problems.Prepend("Failed to compute scale");
         }
 
-        if (renderingManager3D.RegisterInstance(_geometryId, _shader.RenderingId, new Matrix4X4<float>())
-            .TryPickProblems(out problems, out var instanceId))
-        {
-            return problems.Prepend("Failed to register mesh");
-        }
-
-        InstanceId = instanceId;
-
         return Result.Success();
     }
 
     public Result Unload()
     {
-        renderingManager3D.DeregisterInstance(InstanceId);
-        renderingManager3D.DeregisterGeometry(_geometryId);
+        instancedBufferManager.DeleteMeshInstanceBuffers(_registration);
         renderingServiceHelper.UnloadShader(_shader);
         if (_textureId is { } textureId)
         {
             textureEntityManager.Unregister(textureId);
         }
-        // TODO: Unregister with dependency count?
-        // textureLoadingManager.LoadTexture()
+
         return Result.Success();
     }
 
     public Result Render(TimeSpan deltaTime)
     {
-        if (_trackArrows.Count == 0)
+        if (_trackArrows.Count == 0 || _currentInstance is null)
         {
             return Result.Success();
         }
@@ -121,7 +113,7 @@ public class TrackArrowIndicatorService(
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
 
-        return renderingManager3D.Render(_shader);
+        return renderingManager3D.RenderInstanced(_shader, _registration, 1);
     }
 
     public Result<Id<ArrowIndicator>> AddArrowIndicator()
@@ -161,6 +153,28 @@ public class TrackArrowIndicatorService(
                Matrix4X4.CreateRotationY(yRotation) *
                Matrix4X4.CreateTranslation(position + yOffset);
 
-        return renderingManager3D.SetInstanceWorld(InstanceId, world);
+        _currentInstance = new Shaders.Default.Instance(world);
+        _dirty = true;
+
+        return Result.Success();
+    }
+
+    public Result Update(TimeSpan deltaTime)
+    {
+        if (_dirty && _currentInstance is { } instance)
+        {
+            var floats = new float[Shaders.Default.Instance.FloatCount];
+            instance.WriteTo(floats);
+
+            instancedBufferManager.UpdateMeshInstanceBuffer(
+                _registration,
+                floats,
+                1,
+                BufferUsageARB.DynamicDraw);
+
+            _dirty = false;
+        }
+
+        return Result.Success();
     }
 }

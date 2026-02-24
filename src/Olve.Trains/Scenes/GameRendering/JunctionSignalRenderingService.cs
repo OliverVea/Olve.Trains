@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Rendering;
+using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
@@ -11,6 +12,7 @@ using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Junctions;
+using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -20,6 +22,7 @@ public class JunctionSignalRenderingService(
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
+    OpenGLInstancedBufferManager instancedBufferManager,
     TextureLoadingManager textureLoadingManager,
     TextureEntityManager textureEntityManager,
     RenderingServiceHelper renderingServiceHelper,
@@ -28,8 +31,10 @@ public class JunctionSignalRenderingService(
     GridService gridService)
     : ISceneService
 {
-    private GeometryId _geometryId;
-    private readonly Dictionary<Id<Junction>, RenderingInstanceId> _instanceIds = new();
+    private readonly Dictionary<Id<Junction>, Shaders.Default.Instance> _instances = new();
+    private OpenGLInstancedBufferManager.MeshInstancedRegistration _registration;
+    private bool _dirty;
+
     private readonly Shaders.Default _shader = new();
 
     private readonly EventQueue<Id<Junction>> _junctionSignalAddedQueue = eventQueueFactory.Create(junctionSignalService.OnJunctionAdded);
@@ -68,26 +73,23 @@ public class JunctionSignalRenderingService(
             return problems.Prepend("Failed to load mesh");
         }
 
-        // TODO: Improve this mapping - perhaps generalize
-        var vertices = new Shaders.Default.Vertex[meshData.VertexCount];
-        for (var i = 0; i < meshData.VertexCount; i++)
-            vertices[i] = new(meshData.Positions[i], meshData.Normals[i], meshData.TextureCoordinates[i]);
+        var (vertexFloats, indices) = MeshDataMarshalHelper.MarshalDefaultShader(meshData);
 
-        var indices = new uint[meshData.Indices.Length * 3];
-        for (var i = 0; i < meshData.Indices.Length; i++)
+        if (instancedBufferManager.CreateMeshInstanceBuffer(
+                vertexFloats,
+                (uint)meshData.VertexCount,
+                indices,
+                Shaders.Default.Vertex.ConfigureAttributes,
+                ReadOnlySpan<float>.Empty,
+                0,
+                Shaders.Default.Instance.ConfigureAttributes,
+                BufferUsageARB.DynamicDraw)
+            .TryPickProblems(out problems, out var registration))
         {
-            indices[i * 3] = meshData.Indices[i].A;
-            indices[i * 3 + 1] = meshData.Indices[i].B;
-            indices[i * 3 + 2] = meshData.Indices[i].C;
+            return problems.Prepend("Failed to create junction signal instanced buffers");
         }
 
-        if (renderingManager3D.RegisterGeometry(vertices, indices)
-            .TryPickProblems(out problems, out var geometryId))
-        {
-            return problems.Prepend("Failed to register geometry");
-        }
-
-        _geometryId = geometryId;
+        _registration = registration;
 
         foreach (var junctionId in junctionSignalService.SignalJunctions)
         {
@@ -105,14 +107,9 @@ public class JunctionSignalRenderingService(
         _junctionSignalAddedQueue.Cleanup();
         _junctionSignalRemovedQueue.Cleanup();
 
-        var deregisterInstanceResults = _instanceIds.Select(ids => renderingManager3D.DeregisterInstance(ids.Value));
+        instancedBufferManager.DeleteMeshInstanceBuffers(_registration);
 
-        var result = Result.Concat([
-            ..deregisterInstanceResults,
-            renderingManager3D.DeregisterGeometry(_geometryId),
-            renderingServiceHelper.UnloadShader(_shader),
-        ]);
-
+        var result = renderingServiceHelper.UnloadShader(_shader);
         if (result.TryPickProblems(out var problems))
         {
             logger.Log(problems.Prepend("Failed to deregister rendering resources owned by {0}", nameof(JunctionSignalRenderingService)));
@@ -123,7 +120,7 @@ public class JunctionSignalRenderingService(
 
     private Result OnAdded(Id<Junction> junctionId)
     {
-        if (_instanceIds.ContainsKey(junctionId))
+        if (_instances.ContainsKey(junctionId))
         {
             return new ResultProblem("Tried to add rendering instance of junction that already has rendering instance");
         }
@@ -138,24 +135,23 @@ public class JunctionSignalRenderingService(
                             * Matrix4X4.CreateTranslation(-0.2f, -0.9f, -0.2f)
                             * Matrix4X4.CreateTranslation(gridService.ToTileCenter(junction.Position));
 
-        var renderingResult = renderingManager3D.RegisterInstance(_geometryId, _shader.RenderingId, junctionWorld);
-        if (renderingResult.TryPickProblems(out var problems, out var junctionInstanceId))
-        {
-            return problems;
-        }
+        _instances[junctionId] = new Shaders.Default.Instance(junctionWorld);
+        _dirty = true;
 
-        _instanceIds[junctionId] = junctionInstanceId;
         return Result.Success();
     }
 
     private Result OnRemoved(Id<Junction> junctionId)
     {
-        if (!_instanceIds.TryGetValue(junctionId, out var instanceId))
+        if (!_instances.ContainsKey(junctionId))
         {
             return new ResultProblem("Could not find rendering instance for signal with junction id '{0}'", junctionId);
         }
 
-        return renderingManager3D.DeregisterInstance(instanceId);
+        _instances.Remove(junctionId);
+        _dirty = true;
+
+        return Result.Success();
     }
 
     public Result Update(TimeSpan deltaTime)
@@ -166,11 +162,55 @@ public class JunctionSignalRenderingService(
         _junctionSignalRemovedQueue.Update();
         _junctionSignalAddedQueue.Update();
 
+        if (_dirty)
+        {
+            RebuildInstanceBuffer();
+            _dirty = false;
+        }
+
         return Result.Success();
     }
 
     public Result Render(TimeSpan deltaTime)
     {
-        return renderingManager3D.Render(_shader);
+        if (_instances.Count > 0)
+        {
+            if (renderingManager3D.RenderInstanced(_shader, _registration, (uint)_instances.Count)
+                .TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+        }
+
+        return Result.Success();
+    }
+
+    private void RebuildInstanceBuffer()
+    {
+        var instanceCount = _instances.Count;
+        if (instanceCount == 0)
+        {
+            instancedBufferManager.UpdateMeshInstanceBuffer(
+                _registration,
+                ReadOnlySpan<float>.Empty,
+                0,
+                BufferUsageARB.DynamicDraw);
+            return;
+        }
+
+        var floats = new float[instanceCount * Shaders.Default.Instance.FloatCount];
+        var span = floats.AsSpan();
+        var offset = 0;
+        foreach (var instance in _instances.Values)
+        {
+            instance.WriteTo(span.Slice(offset, Shaders.Default.Instance.FloatCount));
+            offset += Shaders.Default.Instance.FloatCount;
+        }
+
+        instancedBufferManager.UpdateMeshInstanceBuffer(
+            _registration,
+            floats,
+            (uint)instanceCount,
+            BufferUsageARB.DynamicDraw);
     }
 }

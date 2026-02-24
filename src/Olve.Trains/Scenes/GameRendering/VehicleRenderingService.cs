@@ -3,6 +3,7 @@ using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
+using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
@@ -13,6 +14,7 @@ using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Silk.NET.OpenGL;
 using RenderingServiceHelper = Olve.Engine3D.Rendering.RenderingServiceHelper;
 
 namespace Olve.Trains.Scenes.GameRendering;
@@ -24,6 +26,7 @@ public class VehicleRenderingService(
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
     RenderingManager3D renderingManager3D,
+    OpenGLInstancedBufferManager instancedBufferManager,
     TextureLoadingManager textureLoadingManager,
     TextureEntityManager textureEntityManager,
     SceneLightService sceneLightService,
@@ -35,14 +38,14 @@ public class VehicleRenderingService(
 {
     public int Priority => SceneServicePriority.FromDependencies([trackRenderingService]);
 
-    private GeometryId _geometryId;
-    private readonly Dictionary<Id<Vehicle>, RenderingInstanceId> _instanceIds  = new();
+    private readonly Dictionary<Id<Vehicle>, Shaders.Default.Instance> _instances = new();
+    private OpenGLInstancedBufferManager.MeshInstancedRegistration _registration;
+    private bool _dirty;
+
     private readonly EventQueue<Id<Vehicle>> _toAddQueue = eventQueueFactory.Create(vehicleService.OnVehicleAdded);
     private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = eventQueueFactory.Create(vehicleService.OnVehicleRemoved);
     private readonly Shaders.Default _shader = new();
     private float _scale = 1;
-
-    private Result LoadShader(IShader shader) => renderingServiceHelper.LoadShader(shader);
 
     public Result Load()
     {
@@ -61,7 +64,7 @@ public class VehicleRenderingService(
 
         _shader.TextureSampler = textureId;
 
-        if (LoadShader(_shader).TryPickProblems(out problems))
+        if (renderingServiceHelper.LoadShader(_shader).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to load shader");
         }
@@ -71,27 +74,23 @@ public class VehicleRenderingService(
             return problems.Prepend("Failed to load mesh");
         }
 
-        // TODO: investigate this
-        // Convert MeshData to Shaders.Default.Vertex[] and register geometry
-        var vertices = new Shaders.Default.Vertex[meshData.VertexCount];
-        for (var i = 0; i < meshData.VertexCount; i++)
-            vertices[i] = new(meshData.Positions[i], meshData.Normals[i], meshData.TextureCoordinates[i]);
+        var (vertexFloats, indices) = MeshDataMarshalHelper.MarshalDefaultShader(meshData);
 
-        var indices = new uint[meshData.Indices.Length * 3];
-        for (var i = 0; i < meshData.Indices.Length; i++)
+        if (instancedBufferManager.CreateMeshInstanceBuffer(
+                vertexFloats,
+                (uint)meshData.VertexCount,
+                indices,
+                Shaders.Default.Vertex.ConfigureAttributes,
+                ReadOnlySpan<float>.Empty,
+                0,
+                Shaders.Default.Instance.ConfigureAttributes,
+                BufferUsageARB.DynamicDraw)
+            .TryPickProblems(out problems, out var registration))
         {
-            indices[i * 3] = meshData.Indices[i].A;
-            indices[i * 3 + 1] = meshData.Indices[i].B;
-            indices[i * 3 + 2] = meshData.Indices[i].C;
+            return problems.Prepend("Failed to create vehicle instanced buffers");
         }
 
-        if (renderingManager3D.RegisterGeometry(vertices, indices)
-            .TryPickProblems(out problems, out var geometryId))
-        {
-            return problems.Prepend("Failed to register geometry");
-        }
-
-        _geometryId = geometryId;
+        _registration = registration;
 
         AABB aabbTarget = new(Vector3D<float>.Zero, Vector3D<float>.One);
         var scaleResult = AABBHelper.GetUniformScaleToFitInside(meshData, aabbTarget);
@@ -111,32 +110,28 @@ public class VehicleRenderingService(
         _toAddQueue.Cleanup();
         _toRemoveQueue.Cleanup();
 
+        instancedBufferManager.DeleteMeshInstanceBuffers(_registration);
+
         return Result.Success();
     }
 
     private Result AddVehicle(Id<Vehicle> vehicleId)
     {
-        if (_instanceIds.ContainsKey(vehicleId))
+        if (_instances.ContainsKey(vehicleId))
         {
             return new ResultProblem("Tried to add vehicle with id '{0}' twice.", vehicleId);
         }
 
-        var registerInstanceResult = renderingManager3D.RegisterInstance(_geometryId, _shader.RenderingId, new Matrix4X4<float>());
-        if (registerInstanceResult.TryPickProblems(out var problems, out var instanceId))
-        {
-            return problems.Prepend("Failed to add vehicle");
-        }
-
-        _instanceIds[vehicleId] = instanceId;
+        _instances[vehicleId] = new Shaders.Default.Instance(new Matrix4X4<float>());
+        _dirty = true;
         return Result.Success();
     }
 
     private Result RemoveVehicle(Id<Vehicle> vehicleId)
     {
-        if (_instanceIds.TryGetValue(vehicleId, out var instanceId))
+        if (_instances.Remove(vehicleId))
         {
-            renderingManager3D.DeregisterInstance(instanceId);
-            _instanceIds.Remove(vehicleId);
+            _dirty = true;
         }
 
         return Result.Success();
@@ -149,9 +144,9 @@ public class VehicleRenderingService(
 
         foreach (var (vehicleId, trackPosition) in vehiclePositionService.TrackPositions)
         {
-            if (!_instanceIds.TryGetValue(vehicleId, out var instanceId))
+            if (!_instances.ContainsKey(vehicleId))
             {
-                logger.LogWarning("Did not find rendering instance id for vehicle with id '{VehicleId}'. Enqueueing it for registration", vehicleId);
+                logger.LogWarning("Did not find rendering instance for vehicle with id '{VehicleId}'. Enqueueing it for registration", vehicleId);
                 AddVehicle(vehicleId);
                 continue;
             }
@@ -169,7 +164,14 @@ public class VehicleRenderingService(
 
             worldMatrix *= position.ToMatrix4X4();
 
-            renderingManager3D.SetInstanceWorld(instanceId, worldMatrix);
+            _instances[vehicleId] = new Shaders.Default.Instance(worldMatrix);
+            _dirty = true;
+        }
+
+        if (_dirty)
+        {
+            RebuildInstanceBuffer();
+            _dirty = false;
         }
 
         return Result.Success();
@@ -181,6 +183,44 @@ public class VehicleRenderingService(
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
         sceneLightService.ApplyShaderParameters(_shader);
 
-        return renderingManager3D.Render(_shader);
+        if (_instances.Count > 0)
+        {
+            if (renderingManager3D.RenderInstanced(_shader, _registration, (uint)_instances.Count)
+                .TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+        }
+
+        return Result.Success();
+    }
+
+    private void RebuildInstanceBuffer()
+    {
+        var instanceCount = _instances.Count;
+        if (instanceCount == 0)
+        {
+            instancedBufferManager.UpdateMeshInstanceBuffer(
+                _registration,
+                ReadOnlySpan<float>.Empty,
+                0,
+                BufferUsageARB.DynamicDraw);
+            return;
+        }
+
+        var floats = new float[instanceCount * Shaders.Default.Instance.FloatCount];
+        var span = floats.AsSpan();
+        var offset = 0;
+        foreach (var instance in _instances.Values)
+        {
+            instance.WriteTo(span.Slice(offset, Shaders.Default.Instance.FloatCount));
+            offset += Shaders.Default.Instance.FloatCount;
+        }
+
+        instancedBufferManager.UpdateMeshInstanceBuffer(
+            _registration,
+            floats,
+            (uint)instanceCount,
+            BufferUsageARB.DynamicDraw);
     }
 }

@@ -31,18 +31,25 @@
 - [ ] Unified renderer epic (Technical) (see [PLAN_UNIFIED_RENDERER.md](PLAN_UNIFIED_RENDERER.md)):
   - [x] Asset pipeline: generate `Vertex` type for all shaders (non-`@instanced` inputs)
   - [ ] Migrate shaders to always-instanced (per-instance uniforms become `@instanced` attributes)
+    - [x] `building` shader + `BuildingRenderingService`
+    - [x] `default` shader + consumers
+    - [ ] `lineStrip` shader + consumers
+    - [ ] `terrain` shader + consumers
+  - [ ] Add composable vertex/instance interfaces (`IWithPosition3D`, `IWithNormal3D`, etc.) for generic mesh mapping
   - [ ] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
+  - [ ] Merge `building` shader into `default` shader (use white pixel texture for untextured meshes, add ghost rendering support)
+  - [ ] Update `docs/architecture.md` rendering sections to reflect unified renderer
 - [ ] Building epic (Feature):
   - [x] Add basic support for buildings
   - [x] Add building validation and validation failure rendering
   - [x] Validate collisions
-  - [ ] Add station with station track
+  - [x] Add station with station track
+  - [ ] Add building models
   - [x] BUG: don't show building ghost when there's no terrain intersection with mouse
-  - [ ] Design building aspect system — buildings can have multiple aspects (residential, station, industry) as supplementary systems that are notified on building add/remove
 - [ ] Collision system epic (Technical):
   - Description: Centralized collision system (e.g. Id<Collider>) queryable when placing tracks, buildings, or future obstacles like trees. Replaces per-type validation with a unified approach.
   - [ ] Design generalized collision system with typed collider IDs
-  - [ ] Migrate track collision checks to central system
+  - [ ] Migrate track collision checks to Yep central system
   - [ ] Migrate building collision checks to central system
   - [ ] Add terrain as a collision source
 - [ ] Signal logic epic (Feature):
