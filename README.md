@@ -110,7 +110,9 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [ ] Create and render procedurally generated station meshes
   - [ ] Improve positioning of track signals based on track positioning
 - Unit geometry:
-  - [ ] Extract unit cube and unit quad generation to a shared `BaseGeometryService` in `Olve.Trains/Rendering/`
+  - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
+  - [ ] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitQuad` extension
+  - [ ] Add `UnitLineSamples` for GPU-side spline tessellation (unit t-value vertex buffer for instanced spline rendering)
 - Detached mode:
   - Description: For e.g. Agentic AI access to the game for debugging, we want to be able to run with --detached or -d. Then, we should be able to use the cli to interact with the game, enumerating options (for main menu it could be clicking buttons, for the game it could be listing and placing tracks, buildings, trains). We should also be able to take screenshots of the screen as .pngs.
   - [x] Launch game in detached mode
@@ -118,7 +120,7 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [x] Add a simple echo command
   - [x] Add commands for navigating the main menu
   - [x] Add support for taking screenshots of the current state of the game
-  - [ ] Add predefined command handler argument parsers (e.g. TilePosition, Vector3, CardinalDirection)
+  - [x] Add predefined command handler argument parsers (e.g. TilePosition, Vector3, CardinalDirection)
 - OpenTelemetry metrics epic:
   - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
   - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)

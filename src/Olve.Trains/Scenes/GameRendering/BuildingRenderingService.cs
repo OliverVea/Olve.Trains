@@ -40,12 +40,7 @@ public class BuildingRenderingService(
         _shader.UColorOverride = new Vector3D<float>(0, 0, 0);
         _shader.UColorMix = 0.0f;
 
-        // Generate a unit cube: 24 vertices (4 per face with normals), 36 indices
-        // TODO: Extract unit cube (and unit quad) to a BaseGeometryService in Olve.Trains/Rendering/
-        var vertices = GenerateUnitCubeVertices();
-        var indices = GenerateUnitCubeIndices();
-
-        if (renderingManager3D.RegisterGeometry(vertices, indices)
+        if (renderingManager3D.RegisterUnitCube((pos, norm) => new Shaders.Building.Vertex(pos, norm))
             .TryPickProblems(out problems, out var geometryId))
         {
             return problems.Prepend("Failed to register building geometry");
@@ -185,74 +180,5 @@ public class BuildingRenderingService(
     public Result Render(TimeSpan deltaTime)
     {
         return renderingManager3D.Render(_shader);
-    }
-
-    private static Shaders.Building.Vertex[] GenerateUnitCubeVertices()
-    {
-        var vertices = new Shaders.Building.Vertex[24];
-        var i = 0;
-
-        var n = V(0, 0, 1);
-        vertices[i++] = new(V(0, 0, 1), n);
-        vertices[i++] = new(V(1, 0, 1), n);
-        vertices[i++] = new(V(1, 1, 1), n);
-        vertices[i++] = new(V(0, 1, 1), n);
-
-        // Back face (z = -0.5), normal (0, 0, -1)
-        n = V(0, 0, -1);
-        vertices[i++] = new(V(1, 0, 0), n);
-        vertices[i++] = new(V(0, 0, 0), n);
-        vertices[i++] = new(V(0, 1, 0), n);
-        vertices[i++] = new(V(1, 1, 0), n);
-
-        // Right face (x = +0.5), normal (1, 0, 0)
-        n = V(1, 0, 0);
-        vertices[i++] = new(V(1, 0, 1), n);
-        vertices[i++] = new(V(1, 0, 0), n);
-        vertices[i++] = new(V(1, 1, 0), n);
-        vertices[i++] = new(V(1, 1, 1), n);
-
-        // Left face (x = -0.5), normal (-1, 0, 0)
-        n = V(-1, 0, 0);
-        vertices[i++] = new(V(0, 0, 0), n);
-        vertices[i++] = new(V(0, 0, 1), n);
-        vertices[i++] = new(V(0, 1, 1), n);
-        vertices[i++] = new(V(0, 1, 0), n);
-
-        // Top face (y = 1), normal (0, 1, 0)
-        n = V(0, 1, 0);
-        vertices[i++] = new(V(0, 1, 1), n);
-        vertices[i++] = new(V(1, 1, 1), n);
-        vertices[i++] = new(V(1, 1, 0), n);
-        vertices[i++] = new(V(0, 1, 0), n);
-
-        // Bottom face (y = 0), normal (0, -1, 0)
-        n = V(0, -1, 0);
-        vertices[i++] = new(V(0, 0, 0), n);
-        vertices[i++] = new(V(1, 0, 0), n);
-        vertices[i++] = new(V(1, 0, 1), n);
-        vertices[i++] = new(V(0, 0, 1), n);
-
-        return vertices;
-
-        Vector3D<float> V(float x, float y, float z) => new(x, y, z);
-    }
-
-    private static uint[] GenerateUnitCubeIndices()
-    {
-        var indices = new uint[36];
-        for (uint face = 0; face < 6; face++)
-        {
-            var offset = face * 4;
-            var i = (int)(face * 6);
-            indices[i] = offset;
-            indices[i + 1] = offset + 1;
-            indices[i + 2] = offset + 2;
-            indices[i + 3] = offset;
-            indices[i + 4] = offset + 2;
-            indices[i + 5] = offset + 3;
-        }
-
-        return indices;
     }
 }
