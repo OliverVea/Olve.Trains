@@ -109,9 +109,6 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "screenshot pa
 **Always run integration tests before committing.**
 
 ```bash
-# Quick validation (headless, CI-style — requires Xvfb on Linux)
-bash scripts/validate-build.sh
-
 # Full integration test (native window)
 bash scripts/integration-test.sh --file ~/test-screenshots/test.png
 

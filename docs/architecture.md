@@ -12,7 +12,6 @@ src/
 tests/
   Olve.Engine3D.Tests/     # Unit tests (TUnit framework)
 scripts/
-  validate-build.sh        # CI screenshot validation (headless)
   integration-test.sh      # Integration test with station, tracks, trains, time-of-day screenshots
 ```
 
@@ -190,7 +189,7 @@ GitHub Actions workflow: `.github/workflows/push_master.yml` (triggers on push/P
 3 jobs:
 1. **build-assets** (Ubuntu) — runs asset pipeline, uploads built assets artifact
 2. **build-dotnet** (matrix: linux-x64 + win-x64) — downloads assets, builds Release
-3. **validate-screenshot** (Ubuntu headless) — Xvfb + Mesa software OpenGL, runs `scripts/validate-build.sh --skip-build`, uploads screenshot artifact
+3. **validate-screenshot** (Ubuntu headless) — Xvfb + Mesa software OpenGL, runs `scripts/integration-test.sh --skip-build --windowing xvfb`, uploads screenshot artifact
 
 Headless rendering uses `LIBGL_ALWAYS_SOFTWARE=1` + Xvfb virtual framebuffer.
 
@@ -202,8 +201,6 @@ Headless rendering uses `LIBGL_ALWAYS_SOFTWARE=1` + Xvfb virtual framebuffer.
 
 ### Integration Test Scripts
 
-**`scripts/validate-build.sh`** — CI validation: starts game headless, places track loop + vehicle, takes screenshot, validates file size > 1000 bytes. Used in the GitHub Actions workflow.
-
-**`scripts/integration-test.sh`** — full integration test: places station, builds track loop around it, spawns 3 trains, waits for simulation, takes screenshots at 3 times of day (7:30, 11:30, 22:30). Supports `--s3` upload, `--file` local save, `--windowing xvfb` for headless, `--skip-build`.
+**`scripts/integration-test.sh`** — integration test: places station, builds track loop around it, spawns 3 trains, waits for simulation, takes screenshots at 3 times of day (7:30, 11:30, 22:30). Supports `--s3` upload, `--file` local save, `--windowing xvfb` for headless, `--skip-build`. Used in the GitHub Actions workflow.
 
 Both scripts use the named pipe command system to control the game.
