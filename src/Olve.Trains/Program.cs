@@ -60,7 +60,10 @@ public static class Program
         collection.Add(serviceProvider.GetRequiredService<ExitCommandHandler>());
         collection.Add(serviceProvider.GetRequiredService<ScreenshotCommandHandler>());
 
-        var window = Window.Create(WindowOptions);
+        var windowOptions = parsedArgs.Resolution is { } res
+            ? WindowOptions with { Size = res, WindowBorder = WindowBorder.Hidden, WindowState = WindowState.Normal }
+            : WindowOptions;
+        var window = Window.Create(windowOptions);
         var gameManager = serviceProvider.GetRequiredService<GameManager>();
         var logger = serviceProvider.GetRequiredService<ILogger<GameManager>>();
 
@@ -137,13 +140,14 @@ public static class Program
         return 0;
     }
 
-    private record ParsedArgs(string? SendCommand, string? InstanceId, bool Listen);
+    private record ParsedArgs(string? SendCommand, string? InstanceId, bool Listen, Vector2D<int>? Resolution);
 
     private static ParsedArgs ParseArguments(string[] args)
     {
         string? sendCommand = null;
         string? instanceId = null;
         var listen = false;
+        Vector2D<int>? resolution = null;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -158,9 +162,18 @@ public static class Program
                 case "--listen":
                     listen = true;
                     break;
+                case "--resolution" when i + 1 < args.Length:
+                    var parts = args[++i].Split('x');
+                    if (parts.Length == 2
+                        && int.TryParse(parts[0], out var w)
+                        && int.TryParse(parts[1], out var h))
+                    {
+                        resolution = new Vector2D<int>(w, h);
+                    }
+                    break;
             }
         }
 
-        return new ParsedArgs(sendCommand, instanceId, listen);
+        return new ParsedArgs(sendCommand, instanceId, listen, resolution);
     }
 }

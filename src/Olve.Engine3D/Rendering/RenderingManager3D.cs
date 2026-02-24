@@ -360,4 +360,100 @@ public class RenderingManager3D(
 
         return Result.Success();
     }
+
+    public Result RenderInstanced(
+        IShader shader,
+        OpenGLInstancedBufferManager.MeshInstancedRegistration registration,
+        uint instanceCount)
+    {
+        if (instanceCount == 0)
+        {
+            return Result.Success();
+        }
+
+        if (shader.RenderingId == default)
+        {
+            return new ResultProblem("Shader ID is not set");
+        }
+
+        if (shaderEntityManager.GetRegistration(shader.RenderingId)
+            .TryPickProblems(out var problems, out var shaderRegistration))
+        {
+            return problems.Prepend("Failed to get shader registration for shader '{0}' ('{1}').",
+                shader.ShaderData.Name, shader.RenderingId);
+        }
+
+        switch (shader.BlendState.Blend)
+        {
+            case BlendMode.None:
+                glProvider.Value.Disable(GLEnum.Blend);
+                break;
+            case BlendMode.Alpha:
+                glProvider.Value.Enable(GLEnum.Blend);
+                glProvider.Value.BlendFunc(GLEnum.SrcAlpha, GLEnum.OneMinusSrcAlpha);
+                break;
+            case BlendMode.Premultiplied:
+                glProvider.Value.Enable(GLEnum.Blend);
+                glProvider.Value.BlendFunc(GLEnum.One, GLEnum.OneMinusSrcAlpha);
+                break;
+            case BlendMode.Additive:
+                glProvider.Value.Enable(GLEnum.Blend);
+                glProvider.Value.BlendFunc(GLEnum.SrcAlpha, GLEnum.One);
+                break;
+        }
+
+        glProvider.Value.DepthMask(shader.BlendState.DepthWrite);
+
+        if (!shader.BlendState.DepthTest)
+        {
+            glProvider.Value.Disable(GLEnum.DepthTest);
+        }
+
+        var parameters = shader.MakeParameters();
+
+        if (openGLShaderManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, parameters)
+            .TryPickProblems(out problems))
+        {
+            return problems.Prepend("Failed to load shader '{0}' into OpenGL", shader.ShaderData.Name);
+        }
+
+        try
+        {
+            glProvider.Value.BindVertexArray(registration.VAO.Handle);
+
+            if (registration.MeshEBO is { } ebo)
+            {
+                glProvider.Value.DrawElementsInstanced(
+                    PrimitiveType.Triangles,
+                    ebo.IndexCount,
+                    DrawElementsType.UnsignedInt,
+                    in Unsafe.NullRef<int>(),
+                    instanceCount);
+            }
+            else
+            {
+                glProvider.Value.DrawArraysInstanced(
+                    PrimitiveType.Triangles,
+                    0,
+                    registration.MeshVBO.VertexCount,
+                    instanceCount);
+            }
+
+            glProvider.Value.BindVertexArray(0);
+        }
+        catch (Exception e)
+        {
+            return new ResultProblem(e, "Failed to render instanced mesh");
+        }
+
+        glProvider.Value.DepthMask(true);
+        glProvider.Value.Disable(GLEnum.Blend);
+
+        if (!shader.BlendState.DepthTest)
+        {
+            glProvider.Value.Enable(GLEnum.DepthTest);
+        }
+
+        return Result.Success();
+    }
 }

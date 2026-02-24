@@ -9,5 +9,6 @@ public partial class Shaders
     public partial class Terrain : IDaylightShader, ICameraPositionShader, ICameraDirectionShader, IWorldMousePositionShader;
     public partial class LineStrip : ICameraPositionShader;
     public partial class Building : IDaylightShader, ICameraPositionShader;
+    public partial class Track : IDaylightShader, ICameraPositionShader;
 }
 

@@ -21,12 +21,10 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<TerrainRenderingService>(sceneId);
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
-            (TrackLineStripDataService tls, TrackRenderingService trs, Id<Track> trackId) =>
+            (TrackRenderingService trs, Id<Track> trackId) =>
             {
                 trs.Unregister(trackId);
-                if (tls.GetLineStripData(trackId).TryPickProblems(out var problems, out var data))
-                    return problems.Prepend("Failed to get line strip data for track");
-                return trs.Register(trackId, data);
+                return trs.Register(trackId);
             },
             prefill: ts => ts.TrackIds,
             before: BeforeTrackRendering);
@@ -35,6 +33,7 @@ public static class GameRenderingSceneServiceRegistration
             (TrackRenderingService trs, Id<Track> trackId) => trs.Unregister(trackId),
             before: BeforeTrackRendering);
         services.AddSceneService<TrackRenderingService>(sceneId);
+        services.AddSceneService<TrackGhostRenderingService>(sceneId);
         services.AddSceneService<VehicleRenderingService>(sceneId);
         services.AddSceneService<JunctionSignalRenderingService>(sceneId);
         services.AddSceneService<TerrainRaycastService>(sceneId);
