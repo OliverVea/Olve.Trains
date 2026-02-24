@@ -2,7 +2,13 @@ using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Rendering;
 
-public readonly record struct GeometryId(Id Id)
+public record UntypedGeometryId(Id Value)
 {
-    public static GeometryId New() => new(Id.New());
+    public static UntypedGeometryId New() => new(Id.New());
+}
+
+public sealed record GeometryId<TVertex>(Id Value) : UntypedGeometryId(Value)
+    where TVertex : IVertexData
+{
+    public new static GeometryId<TVertex> New() => new(Id.New());
 }

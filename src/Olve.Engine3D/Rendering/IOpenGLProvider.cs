@@ -20,6 +20,7 @@ public static class OpenGLServiceRegistration
         services.TryAddScoped<OpenGLQuadRenderingManager>();
         services.TryAddScoped<OpenGLShaderManager>();
         services.TryAddScoped<OpenGLTextureManager>();
+        services.TryAddScoped<RenderingManager>();
         services.TryAddScoped<RenderingManager2D>();
         services.TryAddScoped<RenderingManager3D>();
         services.TryAddScoped<RenderingServiceHelper>();

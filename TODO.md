@@ -37,6 +37,14 @@
     - [x] `terrain` shader + consumers
   - [x] Add composable vertex/instance interfaces (`IWithPosition3D`, `IWithNormal3D`, etc.) for generic mesh mapping
   - [ ] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
+    - [x] Add `RenderingManager` + `RenderingManagerSceneService` + migrate `TerrainRenderingService`
+    - [ ] Migrate `TrackRenderingService`
+    - [ ] Migrate `VehicleRenderingService`
+    - [ ] Migrate `JunctionSignalRenderingService` + `TrackArrowIndicatorService`
+    - [ ] Migrate `BuildingRenderingService`
+    - [ ] Migrate `TrackGhostRenderingService`
+    - [ ] Migrate `GuiRectangleRenderingService` + `GuiTextRenderingService`
+    - [ ] Delete `RenderingManager2D`, `RenderingManager3D`, `OpenGLQuadRenderingManager`, `OpenGLBufferManager`
   - [ ] Merge `building` shader into `default` shader (use white pixel texture for untextured meshes, add ghost rendering support)
   - [ ] Update `docs/architecture.md` rendering sections to reflect unified renderer
 - [ ] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
@@ -174,6 +182,25 @@
   - [ ] Add fallback behavior (missing translation falls back to default locale)
   - [ ] Add initial English locale as the default/baseline
   - [ ] Add tooling or workflow for adding new locales
+
+- [ ] ? WebGPU migration epic (Technical) (see [docs/platform-strategy.md](docs/platform-strategy.md)):
+  - Description: Migrate rendering from OpenGL to WebGPU (native, via Silk.NET.WebGPU) for cross-platform support (Windows/Linux/macOS/consoles). OpenGL is deprecated on macOS and unavailable on consoles.
+  - [ ] Introduce backend abstraction interfaces (`IBufferManager`, `IShaderPipeline`, `IRenderContext`) over current OpenGL code
+  - [ ] Redesign `IVertexData`/`IInstanceData` to be backend-agnostic (replace `ConfigureAttributes(GL gl)` with declarative vertex layout)
+  - [ ] Rewrite shaders from GLSL to WGSL
+  - [ ] Update asset pipeline codegen for WGSL and WebGPU bind group layout
+  - [ ] Implement WebGPU rendering backend behind abstraction interfaces
+  - [ ] Remove OpenGL backend
+
+- [ ] ? Web demo epic (Tooling) (see [docs/platform-strategy.md](docs/platform-strategy.md)):
+  - Description: Distribute a playable demo in the browser. Depends on WebGPU migration. Multiple approaches possible — pick one when the time comes.
+  - Options:
+    - **.NET WASM + WebGPU** — compile the game to WASM via Blazor/Emscripten. Maturing (.NET 8+ Emscripten toolchain, Evergine has proven it works) but bundle size and GC pauses are concerns.
+    - **Standalone JS/TS web demo** — small purpose-built demo using WebGPU directly. No engine porting, but separate codebase.
+    - **Cloud streaming** — run native game on a server, stream to browser. Zero porting but requires server infrastructure.
+  - [ ] Evaluate .NET WASM + WebGPU toolchain maturity (bundle size, GC pauses, Silk.NET browser support)
+  - [ ] Choose distribution approach
+  - [ ] Implement and deploy web demo
 
 ## Version 1.1
 

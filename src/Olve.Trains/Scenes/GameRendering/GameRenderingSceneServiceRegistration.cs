@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Tracks;
@@ -16,6 +17,7 @@ public static class GameRenderingSceneServiceRegistration
 
         services.AddSceneService<GLService>(sceneId);
         services.AddSceneService<CameraSceneService>(sceneId);
+        services.AddSceneService<RenderingManagerSceneService>(sceneId);
         services.AddSceneService<SetCameraHandlerService>(sceneId);
         services.AddSceneService<SetMouseHandlerService>(sceneId);
         services.AddSceneService<TerrainRenderingService>(sceneId);

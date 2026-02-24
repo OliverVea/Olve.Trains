@@ -22,7 +22,7 @@ public class RenderingManager3D(
     // Dictionary on shader?
     protected readonly SortedList<RenderingInstanceId, Instance> Instances = new();
 
-    private readonly Dictionary<GeometryId, GeometryRegistration> _geometries = new();
+    private readonly Dictionary<UntypedGeometryId, GeometryRegistration> _geometries = new();
 
     private const int ErrorCounterThreshold = 20;
     private int _errorCounter;
@@ -34,17 +34,17 @@ public class RenderingManager3D(
     protected readonly record struct Instance(
         RenderingInstanceId InstanceId,
         RenderingId<ShaderData> ShaderId,
-        GeometryId GeometryId,
+        UntypedGeometryId UntypedGeometryId,
         Matrix4X4<float> Transform,
         IShaderParameters? Parameters);
 
-    public Result<GeometryId> RegisterGeometry<T>(
+    public Result<UntypedGeometryId> RegisterGeometry<T>(
         ReadOnlySpan<T> vertices, ReadOnlySpan<uint> indices) where T : IVertexData
     {
         return RegisterGeometry(vertices, indices, PrimitiveType.Triangles);
     }
 
-    public Result<GeometryId> RegisterGeometry<T>(
+    public Result<UntypedGeometryId> RegisterGeometry<T>(
         ReadOnlySpan<T> vertices, ReadOnlySpan<uint> indices, PrimitiveType primitiveType,
         BufferUsageARB usage = BufferUsageARB.StaticDraw) where T : IVertexData
     {
@@ -67,28 +67,28 @@ public class RenderingManager3D(
             T.ConfigureAttributes,
             usage);
 
-        var id = GeometryId.New();
+        var id = UntypedGeometryId.New();
         _geometries[id] = new GeometryRegistration(reg, primitiveType);
         return id;
     }
 
-    public Result<GeometryId> RegisterGeometry<T>(
+    public Result<UntypedGeometryId> RegisterGeometry<T>(
         ReadOnlySpan<T> vertices, PrimitiveType primitiveType,
         BufferUsageARB usage = BufferUsageARB.StaticDraw) where T : IVertexData
     {
         return RegisterGeometry(vertices, ReadOnlySpan<uint>.Empty, primitiveType, usage);
     }
 
-    public Result<GeometryId> RegisterDrawArraysGeometry(
+    public Result<UntypedGeometryId> RegisterDrawArraysGeometry(
         uint vertexCount, PrimitiveType primitiveType = PrimitiveType.Triangles)
     {
         var reg = bufferManager.CreateDrawArraysBuffers(vertexCount);
-        var id = GeometryId.New();
+        var id = UntypedGeometryId.New();
         _geometries[id] = new GeometryRegistration(reg, primitiveType);
         return id;
     }
 
-    public Result UpdateGeometry<T>(GeometryId geometryId, ReadOnlySpan<T> vertices) where T : IVertexData
+    public Result UpdateGeometry<T>(UntypedGeometryId geometryId, ReadOnlySpan<T> vertices) where T : IVertexData
     {
         if (!_geometries.TryGetValue(geometryId, out var geoReg))
         {
@@ -118,7 +118,7 @@ public class RenderingManager3D(
     }
 
     public Result<RenderingInstanceId> RegisterInstance(
-        GeometryId geometryId,
+        UntypedGeometryId geometryId,
         RenderingId<ShaderData> shaderId,
         Matrix4X4<float> worldMatrix)
     {
@@ -150,7 +150,7 @@ public class RenderingManager3D(
         return Result.Success();
     }
 
-    public Result DeregisterGeometry(GeometryId geometryId)
+    public Result DeregisterGeometry(UntypedGeometryId geometryId)
     {
         if (!_geometries.Remove(geometryId, out var geoReg))
         {
@@ -283,9 +283,9 @@ public class RenderingManager3D(
                     continue;
                 }
 
-                if (!_geometries.TryGetValue(instance.GeometryId, out var geoReg))
+                if (!_geometries.TryGetValue(instance.UntypedGeometryId, out var geoReg))
                 {
-                    return new ResultProblem("Geometry with id '{0}' is not registered", instance.GeometryId);
+                    return new ResultProblem("Geometry with id '{0}' is not registered", instance.UntypedGeometryId);
                 }
 
                 var bufReg = geoReg.BufferRegistration;

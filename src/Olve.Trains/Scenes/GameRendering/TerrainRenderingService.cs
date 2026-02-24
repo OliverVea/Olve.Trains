@@ -1,6 +1,5 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.OpenGL;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
@@ -14,9 +13,8 @@ public class TerrainRenderingService(
     TerrainService terrainService,
     TextureManager textureManager,
     TextureEntityManager textureEntityManager,
-    OpenGLInstancedBufferManager instancedBufferManager,
+    RenderingManager renderingManager,
     RenderingServiceHelper renderingServiceHelper,
-    RenderingManager3D renderingManager3D,
     CameraSceneService cameraSceneService,
     TerrainRaycastService terrainRaycastService,
     SceneLightService sceneLightService) : ISceneService
@@ -25,8 +23,6 @@ public class TerrainRenderingService(
     {
         MouseRadius = 5f,
     };
-
-    private OpenGLInstancedBufferManager.MeshInstancedRegistration _registration;
 
     public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, terrainRaycastService, sceneLightService]);
 
@@ -75,42 +71,38 @@ public class TerrainRenderingService(
         _terrainShader.TexelSize = textureSize;
         _terrainShader.HeightMap = heightmapTextureId;
 
-        // Single identity world matrix instance
-        var instance = new Shaders.Terrain.Instance(Matrix4X4<float>.Identity);
-        var instanceData = new float[Shaders.Terrain.Instance.FloatCount];
-        instance.WriteTo(instanceData);
-
-        if (instancedBufferManager.CreateMeshInstanceBuffer(
-                meshVertexData: ReadOnlySpan<float>.Empty,
-                meshVertexCount: vertexCount,
-                meshIndices: ReadOnlySpan<uint>.Empty,
-                configureMeshAttributes: _ => { },
-                instanceData: instanceData,
-                instanceCount: 1,
-                configureInstanceAttributes: Shaders.Terrain.Instance.ConfigureAttributes,
-                instanceUsage: BufferUsageARB.StaticDraw)
-            .TryPickProblems(out var bufferProblems, out var registration))
+        // Register draw-arrays geometry (no vertex data — terrain uses gl_VertexID)
+        if (renderingManager.RegisterDrawArraysGeometry(vertexCount)
+            .TryPickProblems(out var geoProblems, out var geometryId))
         {
-            return bufferProblems.Prepend("Failed to create terrain instanced buffer");
+            return geoProblems.Prepend("Failed to register terrain geometry");
         }
 
-        _registration = registration;
+        // Register group
+        if (renderingManager.RegisterDrawArraysGroup<Shaders.Terrain.Instance>(
+                geometryId, _terrainShader, _terrainShader.BlendState)
+            .TryPickProblems(out var groupProblems, out var groupId))
+        {
+            return groupProblems.Prepend("Failed to register terrain group");
+        }
+
+        // Add single identity instance
+        if (renderingManager.AddInstance(groupId, new Shaders.Terrain.Instance(Matrix4X4<float>.Identity))
+            .TryPickProblems(out var instanceProblems, out _))
+        {
+            return instanceProblems.Prepend("Failed to add terrain instance");
+        }
 
         return Result.Success();
     }
 
-    public Result Render(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
+        // Update shader uniforms so RenderAll() picks them up via MakeParameters()
         sceneLightService.ApplyShaderParameters(_terrainShader);
         cameraSceneService.ApplyCameraPositionParameters(_terrainShader);
         cameraSceneService.ApplyCameraDirectionParameters(_terrainShader);
         terrainRaycastService.ApplyTerrainIntersectionParameters(_terrainShader);
-
-        if (renderingManager3D.RenderInstanced(_terrainShader, _registration, 1)
-            .TryPickProblems(out var problems))
-        {
-            return problems.Prepend("Failed rendering terrain");
-        }
 
         return Result.Success();
     }

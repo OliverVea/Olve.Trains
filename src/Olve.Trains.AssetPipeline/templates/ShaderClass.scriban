@@ -91,7 +91,7 @@ public static partial class Shaders
 {{ end }}{{ if HasInstancedAttributes }}
         public readonly record struct Instance(
 {{ for attr in InstancedAttributes }}            {{ attr.DataType }} {{ attr.Name }}{{ if !for.last }},{{ end }}
-{{ end }}        ) : IInstanceData{{ for iface in InstanceInterfaces }}, {{ iface.InterfaceName }}<Instance>{{ end }}
+{{ end }}        ) : {{ if PerVertexAttributes.size > 0 }}IInstanceData<Vertex>{{ else }}IInstanceData{{ end }}{{ for iface in InstanceInterfaces }}, {{ iface.InterfaceName }}<Instance>{{ end }}
         {
             public static int FloatCount => {{ InstanceStride }};
 
