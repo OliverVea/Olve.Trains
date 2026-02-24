@@ -54,17 +54,6 @@ public static partial class Shaders
             }
         }
 
-        public override ShaderData ShaderData { get; } = new()
-        {
-            Name = "{{ Name }}",
-            VertexPath = "{{ VertexShader.SourcePath }}",
-            VertexSource = @"{{ VertexShader.SourceCode }}",
-            FragmentPath = "{{ FragmentShader.SourcePath }}",
-            FragmentSource = @"{{ FragmentShader.SourceCode }}",
-            {{ if GeometryShader != null }}GeometryPath = "{{ GeometryShader.SourcePath }}",
-            GeometrySource = @"{{ GeometryShader.SourceCode }}",{{ end }}
-        };
-
         public override RenderingParameters MakeParameters()
         {
             var parameters = new List<AnyRenderingParameter>();
@@ -74,32 +63,26 @@ public static partial class Shaders
 {{ end }}
             return new(parameters);
         }
-{{ if VertexAttributes.size > 0 }}
-        public static class VertexLayout
+{{ if PerVertexAttributes.size > 0 }}
+        public readonly record struct Vertex(
+{{ for attr in PerVertexAttributes }}            {{ attr.DataType }} {{ attr.Name }}{{ if !for.last }},{{ end }}
+{{ end }}        ) : IVertexData
         {
-{{ if !HasInstancedAttributes }}
-            public const int VertexFloats = {{ VertexStride }};
-            public const uint VertexBytes = {{ VertexStrideBytes }};
-            public const bool IsInstanced = false;
+            public static int FloatCount => {{ VertexStride }};
+
+            public void WriteTo(Span<float> buffer)
+            {
+                var i = 0;
+{{ for attr in PerVertexAttributes }}                {{ attr.WriteCode }}
+{{ end }}            }
 
             public static void ConfigureAttributes(GL gl)
             {
-{{ for attr in VertexAttributes }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, VertexBytes, (nint){{ attr.ByteOffset }});
+{{ for attr in PerVertexAttributes }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, {{ VertexStrideBytes }}, (nint){{ attr.ByteOffset }});
                 gl.EnableVertexAttribArray({{ attr.Location }});
 {{ end }}            }
-{{ else }}
-            public const int InstanceFloats = {{ InstanceStride }};
-            public const uint InstanceBytes = {{ InstanceStrideBytes }};
-            public const bool IsInstanced = true;
-
-            public static void ConfigureInstanceAttributes(GL gl)
-            {
-{{ for attr in VertexAttributes }}{{ if attr.IsInstanced }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, InstanceBytes, (nint){{ attr.ByteOffset }});
-                gl.EnableVertexAttribArray({{ attr.Location }});
-                gl.VertexAttribDivisor({{ attr.Location }}, 1);
-{{ end }}{{ end }}            }
-{{ end }}        }
-{{ if HasInstancedAttributes }}
+        }
+{{ end }}{{ if HasInstancedAttributes }}
         public readonly record struct Instance(
 {{ for attr in InstancedAttributes }}            {{ attr.DataType }} {{ attr.Name }}{{ if !for.last }},{{ end }}
 {{ end }}        ) : IInstanceData
@@ -119,24 +102,20 @@ public static partial class Shaders
                 gl.VertexAttribDivisor({{ attr.Location }}, 1);
 {{ end }}            }
         }
-{{ else }}
-        public readonly record struct Vertex(
-{{ for attr in PerVertexAttributes }}            {{ attr.DataType }} {{ attr.Name }}{{ if !for.last }},{{ end }}
-{{ end }}        ) : IVertexData
+{{ end }}
+        #region ShaderSource
+
+        public override ShaderData ShaderData { get; } = new()
         {
-            public static int FloatCount => {{ VertexStride }};
+            Name = "{{ Name }}",
+            VertexPath = "{{ VertexShader.SourcePath }}",
+            VertexSource = @"{{ VertexShader.SourceCode }}",
+            FragmentPath = "{{ FragmentShader.SourcePath }}",
+            FragmentSource = @"{{ FragmentShader.SourceCode }}",
+            {{ if GeometryShader != null }}GeometryPath = "{{ GeometryShader.SourcePath }}",
+            GeometrySource = @"{{ GeometryShader.SourceCode }}",{{ end }}
+        };
 
-            public void WriteTo(Span<float> buffer)
-            {
-                var i = 0;
-{{ for attr in PerVertexAttributes }}                {{ attr.WriteCode }}
-{{ end }}            }
-
-            public static void ConfigureAttributes(GL gl)
-            {
-{{ for attr in PerVertexAttributes }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, {{ VertexStrideBytes }}, (nint){{ attr.ByteOffset }});
-                gl.EnableVertexAttribArray({{ attr.Location }});
-{{ end }}            }
-        }
-{{ end }}{{ end }}    }
+        #endregion
+    }
 }

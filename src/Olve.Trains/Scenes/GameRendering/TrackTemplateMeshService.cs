@@ -1,52 +1,20 @@
-using Olve.Engine3D.Rendering;
-using Silk.NET.Maths;
-using Silk.NET.OpenGL;
+using Olve.Generated.Shaders;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
 public static class TrackTemplateMeshService
 {
-    public readonly record struct TrackVertex(
-        Vector3D<float> Position,
-        Vector3D<float> Normal) : IVertexData
-    {
-        public static int FloatCount => 6;
-
-        public void WriteTo(Span<float> buffer)
-        {
-            var i = 0;
-            buffer[i++] = Position.X; buffer[i++] = Position.Y; buffer[i++] = Position.Z;
-            buffer[i++] = Normal.X;   buffer[i++] = Normal.Y;   buffer[i++] = Normal.Z;
-        }
-
-        public static void ConfigureAttributes(GL gl)
-        {
-            const uint stride = 6 * sizeof(float);
-            gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, (nint)0);
-            gl.EnableVertexAttribArray(0);
-            gl.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, stride, (nint)(3 * sizeof(float)));
-            gl.EnableVertexAttribArray(1);
-        }
-    }
-
     private const int Subdivisions = 64;
     private const float HalfGauge = 0.07f;
     private const float RailHalfWidth = 0.005f;
     private const float RailHeight = 0.01f;
 
-    public static (TrackVertex[] Vertices, uint[] Indices) Generate()
+    public static (Shaders.Track.Vertex[] Vertices, uint[] Indices) Generate()
     {
-        // Each rail is a box with 4 side faces extruded along Z.
-        // Two rails: left at x = -HalfGauge, right at x = +HalfGauge.
-        // Each box cross-section has 4 corners, but for proper normals we need
-        // separate vertices per face. 4 faces × 2 verts per ring = 8 verts per ring per rail.
-        // Two rails = 16 verts per ring.
-        // (Subdivisions + 1) rings.
-
         var ringCount = Subdivisions + 1;
         var vertsPerRing = 16; // 8 per rail × 2 rails
         var vertexCount = ringCount * vertsPerRing;
-        var vertices = new TrackVertex[vertexCount];
+        var vertices = new Shaders.Track.Vertex[vertexCount];
 
         // 4 quads per rail × 2 tris per quad × 2 rails × Subdivisions segments
         var indexCount = 4 * 2 * 2 * Subdivisions * 3;
@@ -63,34 +31,34 @@ public static class TrackTemplateMeshService
             {
                 // 8 vertices per rail per ring (2 per face for 4 faces)
                 // Face 0: left  (-x normal)
-                vertices[vi++] = new TrackVertex(
+                vertices[vi++] = new Shaders.Track.Vertex(
                     new Vector3D<float>(cx - RailHalfWidth, 0, t),
                     new Vector3D<float>(-1, 0, 0));
-                vertices[vi++] = new TrackVertex(
+                vertices[vi++] = new Shaders.Track.Vertex(
                     new Vector3D<float>(cx - RailHalfWidth, RailHeight, t),
                     new Vector3D<float>(-1, 0, 0));
 
                 // Face 1: right (+x normal)
-                vertices[vi++] = new TrackVertex(
+                vertices[vi++] = new Shaders.Track.Vertex(
                     new Vector3D<float>(cx + RailHalfWidth, 0, t),
                     new Vector3D<float>(1, 0, 0));
-                vertices[vi++] = new TrackVertex(
+                vertices[vi++] = new Shaders.Track.Vertex(
                     new Vector3D<float>(cx + RailHalfWidth, RailHeight, t),
                     new Vector3D<float>(1, 0, 0));
 
                 // Face 2: top (+y normal)
-                vertices[vi++] = new TrackVertex(
+                vertices[vi++] = new Shaders.Track.Vertex(
                     new Vector3D<float>(cx - RailHalfWidth, RailHeight, t),
                     new Vector3D<float>(0, 1, 0));
-                vertices[vi++] = new TrackVertex(
+                vertices[vi++] = new Shaders.Track.Vertex(
                     new Vector3D<float>(cx + RailHalfWidth, RailHeight, t),
                     new Vector3D<float>(0, 1, 0));
 
                 // Face 3: bottom (-y normal)
-                vertices[vi++] = new TrackVertex(
+                vertices[vi++] = new Shaders.Track.Vertex(
                     new Vector3D<float>(cx - RailHalfWidth, 0, t),
                     new Vector3D<float>(0, -1, 0));
-                vertices[vi++] = new TrackVertex(
+                vertices[vi++] = new Shaders.Track.Vertex(
                     new Vector3D<float>(cx + RailHalfWidth, 0, t),
                     new Vector3D<float>(0, -1, 0));
             }

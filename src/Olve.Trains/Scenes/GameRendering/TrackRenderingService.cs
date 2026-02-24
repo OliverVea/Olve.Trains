@@ -41,13 +41,13 @@ public class TrackRenderingService(
         var (vertices, indices) = TrackTemplateMeshService.Generate();
 
         // Marshal vertex data
-        var vertexFloats = new float[vertices.Length * TrackTemplateMeshService.TrackVertex.FloatCount];
+        var vertexFloats = new float[vertices.Length * Shaders.Track.Vertex.FloatCount];
         var span = vertexFloats.AsSpan();
         var offset = 0;
         foreach (var vertex in vertices)
         {
-            vertex.WriteTo(span.Slice(offset, TrackTemplateMeshService.TrackVertex.FloatCount));
-            offset += TrackTemplateMeshService.TrackVertex.FloatCount;
+            vertex.WriteTo(span.Slice(offset, Shaders.Track.Vertex.FloatCount));
+            offset += Shaders.Track.Vertex.FloatCount;
         }
 
         // Create instanced registration with empty instance data initially
@@ -55,7 +55,7 @@ public class TrackRenderingService(
                 vertexFloats,
                 (uint)vertices.Length,
                 indices,
-                TrackTemplateMeshService.TrackVertex.ConfigureAttributes,
+                Shaders.Track.Vertex.ConfigureAttributes,
                 ReadOnlySpan<float>.Empty,
                 0,
                 Shaders.Track.Instance.ConfigureAttributes,
