@@ -78,9 +78,11 @@ public static partial class Shaders
 
             public static void ConfigureAttributes(GL gl)
             {
-{{ for attr in PerVertexAttributes }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, {{ VertexStrideBytes }}, (nint){{ attr.ByteOffset }});
+{{ for attr in PerVertexAttributes }}{{ if attr.LocationSlotCount > 1 }}{{ for slot in 0..(attr.LocationSlotCount - 1) }}                gl.VertexAttribPointer({{ attr.Location + slot }}, {{ attr.ComponentCount / attr.LocationSlotCount }}, VertexAttribPointerType.Float, false, {{ VertexStrideBytes }}, (nint){{ attr.ByteOffset + slot * 4 * (attr.ComponentCount / attr.LocationSlotCount) }});
+                gl.EnableVertexAttribArray({{ attr.Location + slot }});
+{{ end }}{{ else }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, {{ VertexStrideBytes }}, (nint){{ attr.ByteOffset }});
                 gl.EnableVertexAttribArray({{ attr.Location }});
-{{ end }}            }
+{{ end }}{{ end }}            }
         }
 {{ end }}{{ if HasInstancedAttributes }}
         public readonly record struct Instance(
@@ -97,10 +99,13 @@ public static partial class Shaders
 
             public static void ConfigureAttributes(GL gl)
             {
-{{ for attr in InstancedAttributes }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, {{ InstanceStrideBytes }}, (nint){{ attr.ByteOffset }});
+{{ for attr in InstancedAttributes }}{{ if attr.LocationSlotCount > 1 }}{{ for slot in 0..(attr.LocationSlotCount - 1) }}                gl.VertexAttribPointer({{ attr.Location + slot }}, {{ attr.ComponentCount / attr.LocationSlotCount }}, VertexAttribPointerType.Float, false, {{ InstanceStrideBytes }}, (nint){{ attr.ByteOffset + slot * 4 * (attr.ComponentCount / attr.LocationSlotCount) }});
+                gl.EnableVertexAttribArray({{ attr.Location + slot }});
+                gl.VertexAttribDivisor({{ attr.Location + slot }}, 1);
+{{ end }}{{ else }}                gl.VertexAttribPointer({{ attr.Location }}, {{ attr.ComponentCount }}, VertexAttribPointerType.Float, false, {{ InstanceStrideBytes }}, (nint){{ attr.ByteOffset }});
                 gl.EnableVertexAttribArray({{ attr.Location }});
                 gl.VertexAttribDivisor({{ attr.Location }}, 1);
-{{ end }}            }
+{{ end }}{{ end }}            }
         }
 {{ end }}
         #region ShaderSource

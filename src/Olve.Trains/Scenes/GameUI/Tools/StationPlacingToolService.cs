@@ -1,7 +1,6 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
-using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameRendering;
 using Silk.NET.Input;
@@ -22,13 +21,6 @@ public sealed class StationPlacingToolService(
 
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Place Stations");
-
-    private static readonly Shaders.Building.EntityParameters ValidGhostParameters = new(UOpacity: 0.5f, UColorMix: 0.0f);
-
-    private static readonly Shaders.Building.EntityParameters InvalidGhostParameters = new(
-        UOpacity: 0.7f,
-        UColorOverride: new Vector3D<float>(1, 0, 0),
-        UColorMix: 1.0f);
 
     private readonly Id<Building> _ghostBuildingId = Id.New<Building>();
     private bool _ghostRegistered;
@@ -89,15 +81,22 @@ public sealed class StationPlacingToolService(
 
     private void UpdateGhost(BuildingPosition position, TileFootprint footprint, bool isValid)
     {
-        var ghostParams = isValid ? ValidGhostParameters : InvalidGhostParameters;
-
-        if (_ghostRegistered)
+        if (isValid)
         {
-            buildingRenderingService.UpdateDirect(_ghostBuildingId, position, footprint, ghostParams);
+            buildingRenderingService.SetGhostAppearance(0.5f);
         }
         else
         {
-            buildingRenderingService.RegisterDirect(_ghostBuildingId, position, footprint, ghostParams);
+            buildingRenderingService.SetGhostAppearance(0.7f, new Vector3D<float>(1, 0, 0), 1.0f);
+        }
+
+        if (_ghostRegistered)
+        {
+            buildingRenderingService.UpdateGhost(_ghostBuildingId, position, footprint);
+        }
+        else
+        {
+            buildingRenderingService.RegisterGhost(_ghostBuildingId, position, footprint);
             _ghostRegistered = true;
         }
     }

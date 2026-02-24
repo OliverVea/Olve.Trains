@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Rendering;
+using Olve.Engine3D.Rendering.OpenGL;
+using Olve.Engine3D.Rendering.Primitives;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
@@ -8,6 +10,7 @@ using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Light;
+using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -15,6 +18,7 @@ public class BuildingRenderingService(
     ILogger<BuildingRenderingService> logger,
     CameraSceneService cameraSceneService,
     RenderingManager3D renderingManager3D,
+    OpenGLInstancedBufferManager instancedBufferManager,
     RenderingServiceHelper renderingServiceHelper,
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
@@ -25,9 +29,33 @@ public class BuildingRenderingService(
 {
     public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
 
-    private GeometryId _geometryId;
-    private readonly Dictionary<Id<Building>, RenderingInstanceId> _instanceIds = new();
-    private readonly Shaders.Building _shader = new() { BlendState = RenderState.AlphaBlend };
+    // Main buildings
+    private readonly Shaders.Building _shader = new()
+    {
+        BlendState = RenderState.Opaque,
+        UColor = new Vector3D<float>(0.7f, 0.7f, 0.7f),
+        UOpacity = 1.0f,
+        UColorOverride = new Vector3D<float>(0, 0, 0),
+        UColorMix = 0.0f,
+    };
+
+    private readonly Dictionary<Id<Building>, Shaders.Building.Instance> _instances = new();
+    private OpenGLInstancedBufferManager.MeshInstancedRegistration _registration;
+    private bool _dirty;
+
+    // Ghost buildings (placement previews)
+    private readonly Shaders.Building _ghostShader = new()
+    {
+        BlendState = RenderState.AlphaBlend,
+        UColor = new Vector3D<float>(0.7f, 0.7f, 0.7f),
+        UOpacity = 0.5f,
+        UColorOverride = new Vector3D<float>(0, 0, 0),
+        UColorMix = 0.0f,
+    };
+
+    private readonly Dictionary<Id<Building>, Shaders.Building.Instance> _ghostInstances = new();
+    private OpenGLInstancedBufferManager.MeshInstancedRegistration _ghostRegistration;
+    private bool _ghostDirty;
 
     public Result Load()
     {
@@ -36,34 +64,79 @@ public class BuildingRenderingService(
             return problems.Prepend("Failed to load building shader");
         }
 
-        _shader.UOpacity = 1.0f;
-        _shader.UColorOverride = new Vector3D<float>(0, 0, 0);
-        _shader.UColorMix = 0.0f;
-
-        if (renderingManager3D.RegisterUnitCube((pos, norm) => new Shaders.Building.Vertex(pos, norm))
-            .TryPickProblems(out problems, out var geometryId))
+        if (renderingServiceHelper.LoadShader(_ghostShader).TryPickProblems(out problems))
         {
-            return problems.Prepend("Failed to register building geometry");
+            return problems.Prepend("Failed to load ghost building shader");
         }
 
-        _geometryId = geometryId;
+        // Build unit cube vertex data
+        Span<Vector3D<float>> positions = stackalloc Vector3D<float>[UnitCube.VertexCount];
+        Span<Vector3D<float>> normals = stackalloc Vector3D<float>[UnitCube.VertexCount];
+        UnitCube.GetVertices(positions, normals);
+
+        var vertexFloats = new float[UnitCube.VertexCount * Shaders.Building.Vertex.FloatCount];
+        var span = vertexFloats.AsSpan();
+        var offset = 0;
+        for (var i = 0; i < UnitCube.VertexCount; i++)
+        {
+            var vertex = new Shaders.Building.Vertex(positions[i], normals[i]);
+            vertex.WriteTo(span.Slice(offset, Shaders.Building.Vertex.FloatCount));
+            offset += Shaders.Building.Vertex.FloatCount;
+        }
+
+        Span<uint> indices = stackalloc uint[UnitCube.IndexCount];
+        UnitCube.GetIndices(indices);
+        var indexArray = indices.ToArray();
+
+        // Create main building instance buffer
+        if (instancedBufferManager.CreateMeshInstanceBuffer(
+                vertexFloats,
+                (uint)UnitCube.VertexCount,
+                indexArray,
+                Shaders.Building.Vertex.ConfigureAttributes,
+                ReadOnlySpan<float>.Empty,
+                0,
+                Shaders.Building.Instance.ConfigureAttributes,
+                BufferUsageARB.DynamicDraw)
+            .TryPickProblems(out problems, out var registration))
+        {
+            return problems.Prepend("Failed to create building instanced buffers");
+        }
+
+        _registration = registration;
+
+        // Create ghost building instance buffer
+        if (instancedBufferManager.CreateMeshInstanceBuffer(
+                vertexFloats,
+                (uint)UnitCube.VertexCount,
+                indexArray,
+                Shaders.Building.Vertex.ConfigureAttributes,
+                ReadOnlySpan<float>.Empty,
+                0,
+                Shaders.Building.Instance.ConfigureAttributes,
+                BufferUsageARB.DynamicDraw)
+            .TryPickProblems(out problems, out var ghostRegistration))
+        {
+            return problems.Prepend("Failed to create ghost building instanced buffers");
+        }
+
+        _ghostRegistration = ghostRegistration;
 
         return Result.Success();
     }
 
     public Result Unload()
     {
-        var deregisterInstanceResults = _instanceIds.Select(ids => renderingManager3D.DeregisterInstance(ids.Value));
+        instancedBufferManager.DeleteMeshInstanceBuffers(_registration);
+        instancedBufferManager.DeleteMeshInstanceBuffers(_ghostRegistration);
 
-        var result = Result.Concat([
-            ..deregisterInstanceResults,
-            renderingManager3D.DeregisterGeometry(_geometryId),
+        var result = Result.Concat(
             renderingServiceHelper.UnloadShader(_shader),
-        ]);
+            renderingServiceHelper.UnloadShader(_ghostShader));
 
         if (result.TryPickProblems(out var problems))
         {
-            logger.Log(problems.Prepend("Failed to deregister rendering resources owned by {0}", nameof(BuildingRenderingService)));
+            logger.Log(problems.Prepend("Failed to unload building rendering resources"));
         }
 
         return Result.Success();
@@ -81,57 +154,107 @@ public class BuildingRenderingService(
             return new ResultProblem("Blueprint not found: '{0}'", building.BlueprintId);
         }
 
-        var color = new RGB(0.7f, 0.7f, 0.7f);
-        var entityParams = new Shaders.Building.EntityParameters(UColor: color.ToVector());
+        var worldMatrix = ComputeWorldMatrix(blueprint.Footprint, building.Position);
+        _instances[buildingId] = new Shaders.Building.Instance(worldMatrix);
+        _dirty = true;
 
-        return RegisterDirect(buildingId, building.Position, blueprint.Footprint, entityParams);
-    }
-
-    public Result RegisterDirect(
-        Id<Building> buildingId,
-        BuildingPosition position,
-        TileFootprint footprint,
-        Shaders.Building.EntityParameters? entityParameters = null)
-    {
-        if (_instanceIds.ContainsKey(buildingId))
-        {
-            return new ResultProblem("Tried to add rendering instance of building that already has a rendering instance");
-        }
-
-        var worldMatrix = ComputeWorldMatrix(footprint, position);
-
-        if (renderingManager3D.RegisterInstance(_geometryId, _shader.RenderingId, worldMatrix)
-            .TryPickProblems(out var problems, out var instanceId))
-        {
-            return problems.Prepend("Failed to register building instance");
-        }
-
-        if (entityParameters is { } ep)
-        {
-            renderingManager3D.SetInstanceParameters(instanceId, ep);
-        }
-
-        _instanceIds[buildingId] = instanceId;
         return Result.Success();
     }
 
-    public Result UpdateDirect(
-        Id<Building> buildingId,
+    public Result RegisterGhost(
+        Id<Building> ghostId,
         BuildingPosition position,
-        TileFootprint footprint,
-        Shaders.Building.EntityParameters? entityParameters = null)
+        TileFootprint footprint)
     {
-        if (!_instanceIds.TryGetValue(buildingId, out var instanceId))
+        var worldMatrix = ComputeWorldMatrix(footprint, position);
+        _ghostInstances[ghostId] = new Shaders.Building.Instance(worldMatrix);
+        _ghostDirty = true;
+
+        return Result.Success();
+    }
+
+    public Result UpdateGhost(
+        Id<Building> ghostId,
+        BuildingPosition position,
+        TileFootprint footprint)
+    {
+        if (!_ghostInstances.ContainsKey(ghostId))
         {
-            return new ResultProblem("Could not find rendering instance for building '{0}'", buildingId);
+            return new ResultProblem("Could not find ghost instance for building '{0}'", ghostId);
         }
 
         var worldMatrix = ComputeWorldMatrix(footprint, position);
-        renderingManager3D.SetInstanceWorld(instanceId, worldMatrix);
+        _ghostInstances[ghostId] = new Shaders.Building.Instance(worldMatrix);
+        _ghostDirty = true;
 
-        if (entityParameters is { } ep)
+        return Result.Success();
+    }
+
+    public void SetGhostAppearance(float opacity, Vector3D<float>? colorOverride = null, float colorMix = 0f)
+    {
+        _ghostShader.UOpacity = opacity;
+        _ghostShader.UColorOverride = colorOverride ?? new Vector3D<float>(0, 0, 0);
+        _ghostShader.UColorMix = colorMix;
+    }
+
+    public Result Unregister(Id<Building> buildingId)
+    {
+        if (_instances.Remove(buildingId))
         {
-            renderingManager3D.SetInstanceParameters(instanceId, ep);
+            _dirty = true;
+            return Result.Success();
+        }
+
+        if (_ghostInstances.Remove(buildingId))
+        {
+            _ghostDirty = true;
+            return Result.Success();
+        }
+
+        return new ResultProblem("Could not find rendering instance for building '{0}'", buildingId);
+    }
+
+    public Result Update(TimeSpan deltaTime)
+    {
+        cameraSceneService.ApplyCameraPositionParameters(_shader);
+        sceneLightService.ApplyShaderParameters(_shader);
+
+        cameraSceneService.ApplyCameraPositionParameters(_ghostShader);
+        sceneLightService.ApplyShaderParameters(_ghostShader);
+
+        if (_dirty)
+        {
+            RebuildInstanceBuffer(_instances, _registration);
+            _dirty = false;
+        }
+
+        if (_ghostDirty)
+        {
+            RebuildInstanceBuffer(_ghostInstances, _ghostRegistration);
+            _ghostDirty = false;
+        }
+
+        return Result.Success();
+    }
+
+    public Result Render(TimeSpan deltaTime)
+    {
+        if (_instances.Count > 0)
+        {
+            if (renderingManager3D.RenderInstanced(_shader, _registration, (uint)_instances.Count)
+                .TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+        }
+
+        if (_ghostInstances.Count > 0)
+        {
+            if (renderingManager3D.RenderInstanced(_ghostShader, _ghostRegistration, (uint)_ghostInstances.Count)
+                .TryPickProblems(out var problems))
+            {
+                return problems;
+            }
         }
 
         return Result.Success();
@@ -160,25 +283,34 @@ public class BuildingRenderingService(
             ;
     }
 
-    public Result Unregister(Id<Building> buildingId)
+    private void RebuildInstanceBuffer(
+        Dictionary<Id<Building>, Shaders.Building.Instance> instances,
+        OpenGLInstancedBufferManager.MeshInstancedRegistration registration)
     {
-        if (!_instanceIds.Remove(buildingId, out var instanceId))
+        var instanceCount = instances.Count;
+        if (instanceCount == 0)
         {
-            return new ResultProblem("Could not find rendering instance for building '{0}'", buildingId);
+            instancedBufferManager.UpdateMeshInstanceBuffer(
+                registration,
+                ReadOnlySpan<float>.Empty,
+                0,
+                BufferUsageARB.DynamicDraw);
+            return;
         }
 
-        return renderingManager3D.DeregisterInstance(instanceId);
-    }
+        var floats = new float[instanceCount * Shaders.Building.Instance.FloatCount];
+        var span = floats.AsSpan();
+        var offset = 0;
+        foreach (var instance in instances.Values)
+        {
+            instance.WriteTo(span.Slice(offset, Shaders.Building.Instance.FloatCount));
+            offset += Shaders.Building.Instance.FloatCount;
+        }
 
-    public Result Update(TimeSpan deltaTime)
-    {
-        cameraSceneService.ApplyCameraPositionParameters(_shader);
-        sceneLightService.ApplyShaderParameters(_shader);
-        return Result.Success();
-    }
-
-    public Result Render(TimeSpan deltaTime)
-    {
-        return renderingManager3D.Render(_shader);
+        instancedBufferManager.UpdateMeshInstanceBuffer(
+            registration,
+            floats,
+            (uint)instanceCount,
+            BufferUsageARB.DynamicDraw);
     }
 }

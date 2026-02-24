@@ -238,12 +238,15 @@ public class ProcessShaders(
             var componentCount = attr.Type.GetComponentCount();
             var byteOffset = attr.IsInstanced ? instanceByteOffset : perVertexByteOffset;
 
+            var locationSlotCount = attr.Type.GetLocationSlotCount();
+
             ScriptObject attrObject = new()
             {
                 { "Location", attr.Location },
                 { "Name", attr.Name },
                 { "PropertyName", char.ToUpper(attr.Name[0]) + attr.Name[1..] },
                 { "ComponentCount", componentCount },
+                { "LocationSlotCount", locationSlotCount },
                 { "IsInstanced", attr.IsInstanced },
                 { "ByteOffset", byteOffset },
                 { "DataType", attr.Type.GetVertexDataType() },
@@ -312,6 +315,11 @@ public class ProcessShaders(
             2 => $"buffer[i++] = {name}.X; buffer[i++] = {name}.Y;",
             3 => $"buffer[i++] = {name}.X; buffer[i++] = {name}.Y; buffer[i++] = {name}.Z;",
             4 => $"buffer[i++] = {name}.X; buffer[i++] = {name}.Y; buffer[i++] = {name}.Z; buffer[i++] = {name}.W;",
+            16 => // mat4: row-major order matching Matrix4X4<T>.CopyTo / UniformMatrix4(transpose:false)
+                $"buffer[i++] = {name}.M11; buffer[i++] = {name}.M12; buffer[i++] = {name}.M13; buffer[i++] = {name}.M14; " +
+                $"buffer[i++] = {name}.M21; buffer[i++] = {name}.M22; buffer[i++] = {name}.M23; buffer[i++] = {name}.M24; " +
+                $"buffer[i++] = {name}.M31; buffer[i++] = {name}.M32; buffer[i++] = {name}.M33; buffer[i++] = {name}.M34; " +
+                $"buffer[i++] = {name}.M41; buffer[i++] = {name}.M42; buffer[i++] = {name}.M43; buffer[i++] = {name}.M44;",
             _ => throw new ArgumentException($"Unsupported component count: {componentCount}")
         };
     }
