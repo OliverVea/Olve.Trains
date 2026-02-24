@@ -106,9 +106,14 @@ This runs automatically in CI as the `validate-screenshot` job after the build c
   - [ ] Add shadow map generation — FBO wrapper, depth-only pixel format, depth-only shader, `ShadowMapService` that renders casters from light-space each frame
   - [ ] Add shadow map sampling to receiver shaders — terrain, default, and building fragment shaders sample the shadow map to attenuate diffuse lighting
 - Track rendering epic:
-  - [ ] Improve rendering of tracks by procedurally generating the track mesh from the underlying spline
+  - [x] Improve rendering of tracks by procedurally generating the track mesh from the underlying spline
+  - [ ] Add sleepers/ties to track mesh generation
   - [ ] Create and render procedurally generated station meshes
   - [ ] Improve positioning of track signals based on track positioning
+- Unified renderer epic (see [PLAN_UNIFIED_RENDERER.md](PLAN_UNIFIED_RENDERER.md)):
+  - [ ] Asset pipeline: generate `Vertex` type for all shaders (non-`@instanced` inputs)
+  - [ ] Migrate shaders to always-instanced (per-instance uniforms become `@instanced` attributes)
+  - [ ] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
 - Unit geometry:
   - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
   - [ ] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitQuad` extension
