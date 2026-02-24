@@ -104,6 +104,35 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-vehicle
 dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "screenshot path=~/circle-track.png"
 ```
 
+## Testing (IMPORTANT!)
+
+**Always run integration tests before committing.**
+
+```bash
+# Quick validation (headless, CI-style — requires Xvfb on Linux)
+bash scripts/validate-build.sh
+
+# Full integration test (native window)
+bash scripts/integration-test.sh --file ~/test-screenshots/test.png
+
+# Full integration test (headless)
+bash scripts/integration-test.sh --windowing xvfb --file ~/test-screenshots/test.png
+
+# Skip rebuild if you've already built
+bash scripts/integration-test.sh --skip-build --file ~/test-screenshots/test.png
+```
+
+Both scripts use the named pipe command system to launch the game, place tracks/buildings/trains, and validate via screenshots.
+
+Unit tests (TUnit framework):
+```bash
+dotnet run --project tests/Olve.Engine3D.Tests/Olve.Engine3D.Tests.csproj
+```
+
+## Architecture Reference
+
+See [docs/architecture.md](docs/architecture.md) for detailed codebase architecture: project structure, rendering pipeline, scene system, GUI system, command system, entity management, CI/CD.
+
 ## Workflow
 
 ### Epic-Driven Development
@@ -122,6 +151,10 @@ All work must be tied to an epic in `TODO.md`. Before starting any task, identif
 - In the same commit as the code changes, check off the completed step in `TODO.md`.
 - When all steps under a parent item are checked, check the parent too.
 - When all items in an epic are checked, the epic is done — move it to the "Done" section.
+
+**Priority:** Work top-to-bottom in `TODO.md`. The topmost incomplete epic/task is always the next priority.
+
+**Milestone semantics:** Demo and v1.0 items are all *required* for that release. v1.1 items are loose future ideas, not concrete.
 
 **Questioning untracked work:**
 - If about to do work that doesn't map to any epic step, stop and clarify with the user.
@@ -257,3 +290,6 @@ Path.TryGetAssemblyExecutable(out var exe);
 
 ### OpenGL State Management
 The `RenderingManager2D` properly restores depth testing state after rendering to prevent state contamination between 3D and 2D rendering passes.
+
+### Matrix Memory Layout
+`Silk.NET.Maths.Matrix4X4<T>` is stored **row-major** (matching `System.Numerics`). `M41`/`M42`/`M43` hold translation (row 4, cols 1-3). When writing matrix data to GPU buffers (vertex attributes, instance data), use **row-major order** (`M11, M12, M13, M14, M21, ...`) — the same order as `Matrix4X4.CopyTo()` and `UniformMatrix4(transpose: false)`. Do NOT write column-major (`M11, M21, M31, M41, ...`) — this transposes the matrix and produces incorrect transforms.
