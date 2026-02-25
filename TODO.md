@@ -40,7 +40,7 @@
     - [x] Add `RenderingManager` + `RenderingManagerSceneService` + migrate `TerrainRenderingService`
     - [x] Migrate `TrackRenderingService`
     - [x] Migrate `VehicleRenderingService`
-    - [ ] Migrate `JunctionSignalRenderingService` + `TrackArrowIndicatorService`
+    - [x] Migrate `JunctionSignalRenderingService` + `TrackArrowIndicatorService`
     - [ ] Migrate `BuildingRenderingService`
     - [ ] Migrate `TrackGhostRenderingService`
     - [ ] Migrate `GuiRectangleRenderingService` + `GuiTextRenderingService`

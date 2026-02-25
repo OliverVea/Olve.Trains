@@ -25,6 +25,7 @@ public static class UISceneServiceRegistration
         services.AddSceneService<StationPlacingToolService>(sceneId);
         services.AddSceneService<ResidencePlacingToolService>(sceneId);
         services.AddSceneService<DeletionToolService>(sceneId);
+        services.AddSceneService<SelectToolHandlerService>(sceneId);
         services.AddSceneService<ToolBarService>(sceneId);
         services.AddSceneService<InfoBarService>(sceneId);
 

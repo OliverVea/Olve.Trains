@@ -2,9 +2,10 @@
 set -e
 
 # Integration Test Script
-# Places a station, builds a track loop around it, places 3 trains,
-# waits for simulation, then takes screenshots at 3 times of day
-# (7:30, 11:30, 22:30) and optionally uploads/saves them.
+# Places a station, builds a track loop around it, adds a Y-junction branch
+# (triggering junction signals), places 3 trains, selects the track placement
+# tool (triggering the arrow indicator), waits for simulation, then takes
+# screenshots at 3 times of day (7:30, 11:30, 22:30) and optionally uploads/saves them.
 #
 # Usage:
 #   ./scripts/integration-test.sh [options]
@@ -180,6 +181,13 @@ echo "Placing top-left curve..."
 send_cmd "place-track start=8.5,$Y,10.5 end=10.5,$Y,12.5 start-dir=north end-dir=east"
 
 echo ""
+echo "=== Placing Y-Junction Branch ==="
+
+# Branch off the bottom-right corner (17.5,10.5) heading east — creates a 3-way junction with a signal
+echo "Placing branch track..."
+send_cmd "place-track start=17.5,$Y,10.5 end=19.5,$Y,10.5 start-dir=east end-dir=east"
+
+echo ""
 echo "=== Placing 3 Trains ==="
 
 # Place trains on different curve segments for spacing
@@ -196,7 +204,12 @@ send_cmd "place-vehicle track=$TRACK3_ID speed=3"
 echo "Waiting for simulation..."
 sleep 5
 
-# Move mouse to center of screen so the grid overlay is visible (normalized coords: 0,0 = center)
+# Select track placement tool so the arrow indicator is visible
+echo "Selecting track placement tool..."
+send_cmd "select-tool name='Place Tracks'"
+sleep 0.5
+
+# Move mouse to center of screen so the grid overlay and arrow indicator are visible
 send_cmd "set-mouse pos=0,0"
 sleep 0.5
 

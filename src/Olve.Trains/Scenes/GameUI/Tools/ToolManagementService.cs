@@ -59,4 +59,21 @@ public sealed class ToolManagementService(ILogger<ToolManagementService> logger)
 
         return Result.Success();
     }
+
+    public bool TryGetToolByName(string name, out Tool tool)
+    {
+        foreach (var t in _tools.Values)
+        {
+            if (t.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
+                tool = t;
+                return true;
+            }
+        }
+
+        tool = default;
+        return false;
+    }
+
+    public IEnumerable<string> ToolNames => _tools.Values.Select(t => t.Name);
 }
