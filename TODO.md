@@ -39,7 +39,7 @@
   - [ ] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
     - [x] Add `RenderingManager` + `RenderingManagerSceneService` + migrate `TerrainRenderingService`
     - [x] Migrate `TrackRenderingService`
-    - [ ] Migrate `VehicleRenderingService`
+    - [x] Migrate `VehicleRenderingService`
     - [ ] Migrate `JunctionSignalRenderingService` + `TrackArrowIndicatorService`
     - [ ] Migrate `BuildingRenderingService`
     - [ ] Migrate `TrackGhostRenderingService`

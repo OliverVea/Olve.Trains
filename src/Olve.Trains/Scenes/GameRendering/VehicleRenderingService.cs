@@ -3,7 +3,9 @@ using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.OpenGL;
+using Olve.Engine3D.Rendering.Geometry;
+using Olve.Engine3D.Rendering.Instancing;
+using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
@@ -13,8 +15,6 @@ using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
-using Silk.NET.OpenGL;
-using RenderingServiceHelper = Olve.Engine3D.Rendering.RenderingServiceHelper;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -24,8 +24,9 @@ public class VehicleRenderingService(
     AssetLoader assetLoader,
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
-    RenderingManager3D renderingManager3D,
-    OpenGLInstancedBufferManager instancedBufferManager,
+    GeometryManager geometryManager,
+    RenderingGroupManager renderingGroupManager,
+    RenderingInstanceManager renderingInstanceManager,
     TextureLoadingManager textureLoadingManager,
     TextureEntityManager textureEntityManager,
     SceneLightService sceneLightService,
@@ -37,13 +38,12 @@ public class VehicleRenderingService(
 {
     public int Priority => SceneServicePriority.FromDependencies([trackRenderingService]);
 
-    private readonly Dictionary<Id<Vehicle>, Shaders.Default.Instance> _instances = new();
-    private OpenGLInstancedBufferManager.MeshInstancedRegistration _registration;
-    private bool _dirty;
+    private readonly Dictionary<Id<Vehicle>, Id<Shaders.Default.Instance>> _instanceIds = new();
 
     private readonly EventQueue<Id<Vehicle>> _toAddQueue = eventQueueFactory.Create(vehicleService.OnVehicleAdded);
     private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = eventQueueFactory.Create(vehicleService.OnVehicleRemoved);
     private readonly Shaders.Default _shader = new();
+    private GroupId<Shaders.Default.Instance> _groupId = null!;
     private float _scale = 1;
 
     public Result Load()
@@ -73,23 +73,35 @@ public class VehicleRenderingService(
             return problems.Prepend("Failed to load mesh");
         }
 
-        var (vertexFloats, indices) = MeshDataMarshalHelper.Marshal<Shaders.Default.Vertex>(meshData);
+        // Populate typed vertices from mesh data
+        var vertices = new Shaders.Default.Vertex[meshData.VertexCount];
+        meshData.Populate(vertices);
 
-        if (instancedBufferManager.CreateMeshInstanceBuffer(
-                vertexFloats,
-                (uint)meshData.VertexCount,
-                indices,
-                Shaders.Default.Vertex.ConfigureAttributes,
-                ReadOnlySpan<float>.Empty,
-                0,
-                Shaders.Default.Instance.ConfigureAttributes,
-                BufferUsageARB.DynamicDraw)
-            .TryPickProblems(out problems, out var registration))
+        // Extract uint[] indices from mesh triangles
+        var indices = new uint[meshData.Indices.Length * 3];
+        for (var i = 0; i < meshData.Indices.Length; i++)
         {
-            return problems.Prepend("Failed to create vehicle instanced buffers");
+            indices[i * 3] = meshData.Indices[i].A;
+            indices[i * 3 + 1] = meshData.Indices[i].B;
+            indices[i * 3 + 2] = meshData.Indices[i].C;
         }
 
-        _registration = registration;
+        // Register geometry with the unified manager
+        if (geometryManager.Register<Shaders.Default.Vertex>(vertices, indices)
+            .TryPickProblems(out problems, out var geometryId))
+        {
+            return problems.Prepend("Failed to register vehicle geometry");
+        }
+
+        // Register rendering group
+        if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
+                geometryId, _shader, RenderState.Opaque)
+            .TryPickProblems(out problems, out var groupId))
+        {
+            return problems.Prepend("Failed to register vehicle group");
+        }
+
+        _groupId = groupId;
 
         AABB aabbTarget = new(Vector3D<float>.Zero, Vector3D<float>.One);
         var scaleResult = AABBHelper.GetUniformScaleToFitInside(meshData, aabbTarget);
@@ -109,31 +121,34 @@ public class VehicleRenderingService(
         _toAddQueue.Cleanup();
         _toRemoveQueue.Cleanup();
 
-        instancedBufferManager.DeleteMeshInstanceBuffers(_registration);
-
         return Result.Success();
     }
 
     private Result AddVehicle(Id<Vehicle> vehicleId)
     {
-        if (_instances.ContainsKey(vehicleId))
+        if (_instanceIds.ContainsKey(vehicleId))
         {
             return new ResultProblem("Tried to add vehicle with id '{0}' twice.", vehicleId);
         }
 
-        _instances[vehicleId] = new Shaders.Default.Instance(new Matrix4X4<float>());
-        _dirty = true;
+        if (renderingInstanceManager.Add(_groupId, new Shaders.Default.Instance(new Matrix4X4<float>()))
+            .TryPickProblems(out var problems, out var instanceId))
+        {
+            return problems.Prepend("Failed to add vehicle instance for '{0}'", vehicleId);
+        }
+
+        _instanceIds[vehicleId] = instanceId;
         return Result.Success();
     }
 
     private Result RemoveVehicle(Id<Vehicle> vehicleId)
     {
-        if (_instances.Remove(vehicleId))
+        if (!_instanceIds.Remove(vehicleId, out var instanceId))
         {
-            _dirty = true;
+            return Result.Success();
         }
 
-        return Result.Success();
+        return renderingInstanceManager.Remove(_groupId, instanceId);
     }
 
     public Result Update(TimeSpan deltaTime)
@@ -141,9 +156,13 @@ public class VehicleRenderingService(
         _toAddQueue.Update();
         _toRemoveQueue.Update();
 
+        cameraSceneService.ApplyCameraPositionParameters(_shader);
+        cameraSceneService.ApplyCameraDirectionParameters(_shader);
+        sceneLightService.ApplyShaderParameters(_shader);
+
         foreach (var (vehicleId, trackPosition) in vehiclePositionService.TrackPositions)
         {
-            if (!_instances.ContainsKey(vehicleId))
+            if (!_instanceIds.TryGetValue(vehicleId, out var instanceId))
             {
                 logger.LogWarning("Did not find rendering instance for vehicle with id '{VehicleId}'. Enqueueing it for registration", vehicleId);
                 AddVehicle(vehicleId);
@@ -163,63 +182,13 @@ public class VehicleRenderingService(
 
             worldMatrix *= position.ToMatrix4X4();
 
-            _instances[vehicleId] = new Shaders.Default.Instance(worldMatrix);
-            _dirty = true;
-        }
-
-        if (_dirty)
-        {
-            RebuildInstanceBuffer();
-            _dirty = false;
-        }
-
-        return Result.Success();
-    }
-
-    public Result Render(TimeSpan deltaTime)
-    {
-        cameraSceneService.ApplyCameraPositionParameters(_shader);
-        cameraSceneService.ApplyCameraDirectionParameters(_shader);
-        sceneLightService.ApplyShaderParameters(_shader);
-
-        if (_instances.Count > 0)
-        {
-            if (renderingManager3D.RenderInstanced(_shader, _registration, (uint)_instances.Count)
-                .TryPickProblems(out var problems))
+            if (renderingInstanceManager.Update(_groupId, instanceId, new Shaders.Default.Instance(worldMatrix))
+                .TryPickProblems(out problems))
             {
-                return problems;
+                return problems.Prepend("Failed to update vehicle instance for '{0}'", vehicleId);
             }
         }
 
         return Result.Success();
-    }
-
-    private void RebuildInstanceBuffer()
-    {
-        var instanceCount = _instances.Count;
-        if (instanceCount == 0)
-        {
-            instancedBufferManager.UpdateMeshInstanceBuffer(
-                _registration,
-                ReadOnlySpan<float>.Empty,
-                0,
-                BufferUsageARB.DynamicDraw);
-            return;
-        }
-
-        var floats = new float[instanceCount * Shaders.Default.Instance.FloatCount];
-        var span = floats.AsSpan();
-        var offset = 0;
-        foreach (var instance in _instances.Values)
-        {
-            instance.WriteTo(span.Slice(offset, Shaders.Default.Instance.FloatCount));
-            offset += Shaders.Default.Instance.FloatCount;
-        }
-
-        instancedBufferManager.UpdateMeshInstanceBuffer(
-            _registration,
-            floats,
-            (uint)instanceCount,
-            BufferUsageARB.DynamicDraw);
     }
 }
