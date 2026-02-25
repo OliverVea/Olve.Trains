@@ -1,8 +1,8 @@
 ## Done
 
 - [x] OpenTelemetry metrics epic (Technical):
-  - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
-  - [x] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
+  - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts, scene update/render duration, commands processed)
+  - [x] Add game-level OTel metrics (track count, vehicle count, building count)
 - [x] Track creation epic (Feature):
   - [x] Allow ghost preview during track creation
   - [x] Disallow tracks with collisions with geometry, other tracks, and extreme curvature
@@ -41,10 +41,6 @@
   - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
   - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
   - [ ] Add `UnitLineSamples` for GPU-side spline tessellation (unit t-value vertex buffer for instanced spline rendering)
-- [ ] OpenTelemetry metrics epic (Technical):
-  - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
-  - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)
-  - [ ] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
 - [x] Unified renderer epic (Technical) (see [PLAN_UNIFIED_RENDERER.md](PLAN_UNIFIED_RENDERER.md)):
   - [x] Asset pipeline: generate `Vertex` type for all shaders (non-`@instanced` inputs)
   - [x] Migrate shaders to always-instanced (per-instance uniforms become `@instanced` attributes)
