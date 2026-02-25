@@ -41,7 +41,7 @@
     - [x] Migrate `TrackRenderingService`
     - [x] Migrate `VehicleRenderingService`
     - [x] Migrate `JunctionSignalRenderingService` + `TrackArrowIndicatorService`
-    - [ ] Migrate `BuildingRenderingService`
+    - [x] Migrate `BuildingRenderingService`
     - [ ] Migrate `TrackGhostRenderingService`
     - [ ] Migrate `GuiRectangleRenderingService` + `GuiTextRenderingService`
     - [ ] Delete `RenderingManager2D`, `RenderingManager3D`, `OpenGLQuadRenderingManager`, `OpenGLBufferManager`
