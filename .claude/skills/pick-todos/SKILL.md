@@ -7,7 +7,7 @@ agent: Explore
 
 # Pick TODOs Task
 
-Read the project README.md and find all uncompleted TODO items (lines starting with `- [ ]`).
+Read `TODO.md` and find all **uncompleted** TODO items (lines with `- [ ]`). Ignore any items that are already checked off (`- [x]`).
 
 ## Select 3 Simple Tasks
 
