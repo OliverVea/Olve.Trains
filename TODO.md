@@ -20,6 +20,19 @@
 
 ## Demo
 
+- [ ] Prefab system epic (Technical):
+  - Description: A prefab is a named collection of meshes with per-child transforms, textures, and scale. Definitions live in `resources/prefabs/` (XML or JSON). The asset pipeline source-generates typed C# references (like shaders/layouts). The viewer scene loads source files directly for fast iteration (edit → restart viewer, no pipeline rebuild). Unblocks the "Add building models" step in the building epic.
+  - [ ] Define prefab source format in `resources/prefabs/` (mesh asset refs, per-child position/rotation/scale, texture ref)
+  - [ ] Add runtime loader that reads prefab source files directly (for viewer scene, no pipeline needed)
+  - [ ] Prefab rendering — load meshes, register geometry/groups, instantiate children with composed transforms (group world * child local)
+  - [ ] Prefab viewer scene (load all prefabs from source files, render on a grid, free camera)
+  - [ ] Add prefab source generation to asset pipeline (generate typed `Prefabs.*` references like shaders/layouts)
+  - [ ] Define building prefabs (station, houses, etc.) using the viewer to iterate on placement/scale/textures
+  - [ ] Integrate prefabs into BuildingBlueprintService — buildings reference a generated prefab instead of a unit cube
+- [ ] Rendering boilerplate reduction epic (Technical):
+  - Description: Extract repeated patterns from rendering services (BuildingRenderingService, VehicleRenderingService, JunctionSignalRenderingService) into shared helpers. Keep per-entity services as-is for domain-specific logic.
+  - [ ] Extract mesh loading + index extraction into a shared helper (repeated across Vehicle, JunctionSignal, and future mesh-based services)
+  - [ ] Extract repeated per-frame shader parameter application (camera + light) into a helper or base pattern
 - [ ] Unit geometry (Technical):
   - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
   - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
