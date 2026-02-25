@@ -22,7 +22,7 @@
 
 - [ ] Unit geometry (Technical):
   - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
-  - [ ] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitQuad` extension
+  - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
   - [ ] Add `UnitLineSamples` for GPU-side spline tessellation (unit t-value vertex buffer for instanced spline rendering)
 - [ ] OpenTelemetry metrics epic (Technical):
   - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)

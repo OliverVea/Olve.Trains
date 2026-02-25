@@ -312,6 +312,7 @@ public class ProcessShaders(
 
     private static readonly (string NormalizedName, UniformType Type, bool IsInstanced, string InterfaceName, string PropertyName, string PropertyType, string WithMethodName)[] SemanticMap =
     [
+        ("position", UniformType.Vector2, false, "IWithPosition2D", "Position", "Vector2D<float>", "WithPosition"),
         ("position", UniformType.Vector3, false, "IWithPosition3D", "Position", "Vector3D<float>", "WithPosition"),
         ("normal", UniformType.Vector3, false, "IWithNormal3D", "Normal", "Vector3D<float>", "WithNormal"),
         ("texcoords", UniformType.Vector2, false, "IWithTexCoords2D", "TexCoords", "Vector2D<float>", "WithTexCoords"),

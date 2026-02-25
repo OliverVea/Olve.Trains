@@ -23,3 +23,9 @@ public interface IWithColor3D<TSelf> where TSelf : IWithColor3D<TSelf>
     Vector3D<float> Color { get; }
     static abstract TSelf WithColor(TSelf self, Vector3D<float> color);
 }
+
+public interface IWithPosition2D<TSelf> where TSelf : IWithPosition2D<TSelf>
+{
+    Vector2D<float> Position { get; }
+    static abstract TSelf WithPosition(TSelf self, Vector2D<float> position);
+}

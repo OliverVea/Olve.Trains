@@ -1,7 +1,7 @@
 #version 330 core
 
 // Per-vertex from unit quad [0..1] (two triangles)
-layout(location = 0) in vec2 aUnit;
+layout(location = 0) in vec2 aPosition;
 
 // @instanced
 layout(location = 1) in vec2 iPosPx;
@@ -31,7 +31,7 @@ uniform vec2 uResolution;
 void main()
 {
     // Position in screen space (pixels)
-    vec2 posPx = iPosPx + aUnit * iSizePx;
+    vec2 posPx = iPosPx + aPosition * iSizePx;
 
     // Convert to NDC [-1,1]
     vec2 ndc = vec2(
@@ -43,9 +43,9 @@ void main()
 
     // Pass data to fragment shader
     // Flip Y for texture coordinates (OpenGL has Y=0 at bottom, screen has Y=0 at top)
-    vs_out.texCoord = vec2(aUnit.x, 1.0 - aUnit.y);
+    vs_out.texCoord = vec2(aPosition.x, 1.0 - aPosition.y);
     vs_out.tint = iTint;
-    vs_out.fragPosPx = aUnit * iSizePx; // Position within the box
+    vs_out.fragPosPx = aPosition * iSizePx; // Position within the box
     vs_out.boxSizePx = iSizePx;
     vs_out.borderWidthPx = iBorderWidthPx;
     vs_out.borderColor = iBorderColor;

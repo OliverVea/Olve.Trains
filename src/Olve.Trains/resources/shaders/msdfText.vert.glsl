@@ -1,7 +1,7 @@
 #version 330 core
 
 // Per-vertex from unit quad [0..1]
-layout(location = 0) in vec2 aUnit;
+layout(location = 0) in vec2 aPosition;
 
 // @instanced
 layout(location = 1) in vec2 iPosPx;    // top-left position in pixels
@@ -24,7 +24,7 @@ uniform vec2 uResolution; // framebuffer size in pixels
 void main()
 {
     // Glyph position in pixel space
-    vec2 posPx = iPosPx + aUnit * iSizePx;
+    vec2 posPx = iPosPx + aPosition * iSizePx;
 
     // Convert to NDC [-1, 1]
     vec2 ndc = vec2(
@@ -35,6 +35,6 @@ void main()
     gl_Position = vec4(ndc, 0.0, 1.0);
 
     // Interpolate UVs
-    vs_out.texCoord = mix(iUvMin, iUvMax, aUnit);
+    vs_out.texCoord = mix(iUvMin, iUvMax, aPosition);
     vs_out.tint = iTint;
 }

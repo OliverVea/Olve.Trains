@@ -8,6 +8,7 @@ using Olve.Engine3D.GUI.Text;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Geometry;
 using Olve.Engine3D.Rendering.Instancing;
+using Olve.Engine3D.Rendering.Primitives;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
@@ -68,16 +69,8 @@ public class GuiTextRenderingService(
             return problems.Prepend("Failed to load MSDF text shader");
         }
 
-        // Register unit quad geometry (6 vertices, 2 triangles)
-        ReadOnlySpan<Shaders.MsdfText.Vertex> quadVertices =
-        [
-            new(new Vector2D<float>(0f, 0f)),
-            new(new Vector2D<float>(1f, 0f)),
-            new(new Vector2D<float>(1f, 1f)),
-            new(new Vector2D<float>(0f, 0f)),
-            new(new Vector2D<float>(1f, 1f)),
-            new(new Vector2D<float>(0f, 1f)),
-        ];
+        var quadVertices = new Shaders.MsdfText.Vertex[UnitQuad.VertexCount];
+        UnitQuad.Populate(quadVertices);
 
         if (geometryManager.Register<Shaders.MsdfText.Vertex>(quadVertices, ReadOnlySpan<uint>.Empty)
             .TryPickProblems(out problems, out var geometryId))
