@@ -1,5 +1,8 @@
 ## Done
 
+- [x] OpenTelemetry metrics epic (Technical):
+  - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
+  - [x] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
 - [x] Track creation epic (Feature):
   - [x] Allow ghost preview during track creation
   - [x] Disallow tracks with collisions with geometry, other tracks, and extreme curvature
@@ -68,10 +71,6 @@
   - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
   - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
   - [ ] Add `UnitLineSamples` for GPU-side spline tessellation (unit t-value vertex buffer for instanced spline rendering)
-- [ ] OpenTelemetry metrics epic (Technical):
-  - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
-  - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)
-  - [ ] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
 - [ ] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
   - [ ] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
   - [ ] Update `ProcessShaders` to generate explicit interface implementations from annotations (replace convention-based matching)
@@ -98,7 +97,7 @@
   - [x] RoundRobin distribution and rule evaluation with train queuing
   - [x] CLI commands for signal rule management (add-signal-rule, clear-signal-rules)
   - [x] 3D signal rendering at junctions
-  - [ ] Implement CardinalDirection matching in signal rules
+  - [x] Implement CardinalDirection matching in signal rules
   - [ ] Implement VehicleGroup matching in signal rules
   - [ ] Add in-game GUI for viewing and editing signal rules on a selected junction
 - [ ] Industry epic (Feature):
@@ -138,6 +137,8 @@
 
 ## Version 1.0
 
+- [ ] Per-scene OTel metrics (Technical):
+  - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)
 - [ ] Train routing decision (Feature):
   - Description: Decide between intelligent pathfinding (trains auto-route to destinations) vs train plans ("go to A then B then C") with signal logic as core gameplay. Depends on how fun signal management feels in the demo. Leaning toward train plans + manual signal control.
   - [ ] Evaluate signal management gameplay feel from demo feedback

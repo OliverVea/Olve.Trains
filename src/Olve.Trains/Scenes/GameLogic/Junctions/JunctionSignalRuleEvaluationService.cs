@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Olve.Engine3D;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
 
@@ -15,7 +16,7 @@ public class JunctionSignalRuleEvaluationService(ILogger<JunctionSignalRuleEvalu
         var junctionSignalRules = junctionSignalRuleService.GetRulesForJunction(junctionId);
         foreach (var junctionSignalRule in junctionSignalRules)
         {
-            if (IsEligibleForRule(vehicleId, sourceTrackId, junctionSignalRule)
+            if (IsEligibleForRule(junctionId, vehicleId, sourceTrackId, junctionSignalRule)
                 .TryPickProblems(out var problems, out var isEligibleForRule))
             {
                 return problems;
@@ -41,11 +42,11 @@ public class JunctionSignalRuleEvaluationService(ILogger<JunctionSignalRuleEvalu
         return RuleEvaluationResult.None;
     }
 
-    private Result<bool> IsEligibleForRule(Id<Vehicle> vehicleId, Id<Track> sourceTrackId, JunctionSignalRule junctionSignalRule)
+    private Result<bool> IsEligibleForRule(Id<Junction> junctionId, Id<Vehicle> vehicleId, Id<Track> sourceTrackId, JunctionSignalRule junctionSignalRule)
     {
         if (Result.Concat(
                 IsVehicleEligible(vehicleId, junctionSignalRule.Vehicles),
-                IsSourceEligible(sourceTrackId, junctionSignalRule.Sources)).TryPickProblems(out var problems, out var eligibilities))
+                IsSourceEligible(junctionId, sourceTrackId, junctionSignalRule.Sources)).TryPickProblems(out var problems, out var eligibilities))
         {
             return problems;
         }
@@ -77,9 +78,9 @@ public class JunctionSignalRuleEvaluationService(ILogger<JunctionSignalRuleEvalu
             vehicleId => sourceVehicleId == vehicleId);
     }
 
-    private Result<bool> IsSourceEligible(Id<Track> sourceTrackId, IReadOnlyCollection<SignalRuleSource> sourceRules)
+    private Result<bool> IsSourceEligible(Id<Junction> junctionId, Id<Track> sourceTrackId, IReadOnlyCollection<SignalRuleSource> sourceRules)
     {
-        var results = sourceRules.Select(vehicleRule => IsSourceEligible(sourceTrackId, vehicleRule));
+        var results = sourceRules.Select(sourceRule => IsSourceEligible(junctionId, sourceTrackId, sourceRule));
         if (results.TryPickProblems(out var problems, out var eligibilities))
         {
             return problems;
@@ -88,14 +89,21 @@ public class JunctionSignalRuleEvaluationService(ILogger<JunctionSignalRuleEvalu
         return eligibilities.Any(x => x);
     }
 
-    private Result<bool> IsSourceEligible(Id<Track> sourceTrackId, SignalRuleSource sourceRule)
+    private Result<bool> IsSourceEligible(Id<Junction> junctionId, Id<Track> sourceTrackId, SignalRuleSource sourceRule)
     {
         return sourceRule.Match<Result<bool>>(
             any => true,
             cardinalDirection =>
             {
-                logger.LogWarning("JunctionSignalRuleEvaluationService CardinalDirection is not implemented. Returning false.");
-                return false;  
+                var connections = junctionService.GetConnections(junctionId);
+                var connection = connections.FirstOrDefault(c => c.TrackId == sourceTrackId);
+                if (connection == default)
+                {
+                    return false;
+                }
+
+                var incomingDirection = (-connection.TrackEndpoint.Tangent).ToCardinalDirection();
+                return incomingDirection == cardinalDirection;
             },
             trackId => sourceTrackId == trackId);
     }
