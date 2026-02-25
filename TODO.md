@@ -36,7 +36,7 @@
     - [x] `lineStrip` shader + consumers
     - [x] `terrain` shader + consumers
   - [x] Add composable vertex/instance interfaces (`IWithPosition3D`, `IWithNormal3D`, etc.) for generic mesh mapping
-  - [ ] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
+  - [x] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
     - [x] Add `RenderingManager` + `RenderingManagerSceneService` + migrate `TerrainRenderingService`
     - [x] Migrate `TrackRenderingService`
     - [x] Migrate `VehicleRenderingService`
@@ -44,7 +44,7 @@
     - [x] Migrate `BuildingRenderingService`
     - [x] Migrate `TrackGhostRenderingService`
     - [x] Migrate `GuiRectangleRenderingService` + `GuiTextRenderingService`
-    - [ ] Delete `RenderingManager2D`, `RenderingManager3D`, `OpenGLQuadRenderingManager`, `OpenGLBufferManager`
+    - [x] Delete `RenderingManager2D`, `RenderingManager3D`, `OpenGLQuadRenderingManager`, `OpenGLBufferManager`
   - [ ] Merge `building` shader into `default` shader (use white pixel texture for untextured meshes, add ghost rendering support)
   - [ ] Update `docs/architecture.md` rendering sections to reflect unified renderer
 - [ ] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):

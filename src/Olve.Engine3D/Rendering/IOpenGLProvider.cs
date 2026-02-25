@@ -17,17 +17,11 @@ public static class OpenGLServiceRegistration
     {
         services.TryAddSingleton<Provider<GL>>();
         services.TryAddScoped<GeometryManager>();
-        services.TryAddScoped<OpenGLBufferManager>();
-        services.TryAddScoped<OpenGLInstancedBufferManager>();
-        services.TryAddScoped<OpenGLModelRenderingManager>();
-        services.TryAddScoped<OpenGLQuadRenderingManager>();
         services.TryAddScoped<OpenGLShaderManager>();
         services.TryAddScoped<OpenGLTextureManager>();
         services.TryAddScoped<RenderingGroupManager>();
         services.TryAddScoped<RenderingInstanceManager>();
         services.TryAddScoped<RenderingManager>();
-        services.TryAddScoped<RenderingManager2D>();
-        services.TryAddScoped<RenderingManager3D>();
         services.TryAddScoped<RenderingServiceHelper>();
         services.TryAddScoped<ShaderEntityManager>();
         services.TryAddScoped<TextureEntityManager>();
