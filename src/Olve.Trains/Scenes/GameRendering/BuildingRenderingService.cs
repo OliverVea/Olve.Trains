@@ -1,9 +1,11 @@
 using Olve.Engine3D;
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Geometry;
 using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.Primitives;
 using Olve.Engine3D.Rendering.Shaders;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic;
@@ -22,13 +24,17 @@ public class BuildingRenderingService(
     BuildingBlueprintService buildingBlueprintService,
     GridService gridService,
     SceneLightService sceneLightService,
+    TextureManager textureManager,
+    TextureEntityManager textureEntityManager,
     TerrainRenderingService terrainRenderingService)
     : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
 
+    private readonly TextureId<RGBA> _whitePixel = textureManager.RegisterTexture(TextureData<RGBA>.Single(RGBA.White));
+
     // Main buildings
-    private readonly Shaders.Building _shader = new()
+    private readonly Shaders.Default _shader = new()
     {
         BlendState = RenderState.Opaque,
         UColor = new Vector3D<float>(0.7f, 0.7f, 0.7f),
@@ -37,10 +43,10 @@ public class BuildingRenderingService(
         UColorMix = 0.0f,
     };
 
-    private readonly Dictionary<Id<Building>, Id<Shaders.Building.Instance>> _instanceIds = new();
+    private readonly Dictionary<Id<Building>, Id<Shaders.Default.Instance>> _instanceIds = new();
 
     // Ghost buildings (placement previews)
-    private readonly Shaders.Building _ghostShader = new()
+    private readonly Shaders.Default _ghostShader = new()
     {
         BlendState = RenderState.AlphaBlend,
         UColor = new Vector3D<float>(0.7f, 0.7f, 0.7f),
@@ -49,14 +55,24 @@ public class BuildingRenderingService(
         UColorMix = 0.0f,
     };
 
-    private readonly Dictionary<Id<Building>, Id<Shaders.Building.Instance>> _ghostInstanceIds = new();
+    private readonly Dictionary<Id<Building>, Id<Shaders.Default.Instance>> _ghostInstanceIds = new();
 
-    private GroupId<Shaders.Building.Instance> _groupId = null!;
-    private GroupId<Shaders.Building.Instance> _ghostGroupId = null!;
+    private GroupId<Shaders.Default.Instance> _groupId = null!;
+    private GroupId<Shaders.Default.Instance> _ghostGroupId = null!;
 
     public Result Load()
     {
-        if (renderingServiceHelper.LoadShader(_shader).TryPickProblems(out var problems))
+        // Register white pixel texture for untextured building meshes
+        if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(_whitePixel, new TextureUploadOptions())
+            .TryPickProblems(out var problems))
+        {
+            return problems.Prepend("Failed to register white pixel texture with OpenGL");
+        }
+
+        _shader.TextureSampler = _whitePixel;
+        _ghostShader.TextureSampler = _whitePixel;
+
+        if (renderingServiceHelper.LoadShader(_shader).TryPickProblems(out problems))
         {
             return problems.Prepend("Failed to load building shader");
         }
@@ -67,21 +83,21 @@ public class BuildingRenderingService(
         }
 
         // Build unit cube vertex data
-        var vertices = new Shaders.Building.Vertex[UnitCube.VertexCount];
+        var vertices = new Shaders.Default.Vertex[UnitCube.VertexCount];
         UnitCube.Populate(vertices);
 
         var indices = new uint[UnitCube.IndexCount];
         UnitCube.GetIndices(indices);
 
         // Register geometry
-        if (geometryManager.Register<Shaders.Building.Vertex>(vertices, indices)
+        if (geometryManager.Register<Shaders.Default.Vertex>(vertices, indices)
             .TryPickProblems(out problems, out var geometryId))
         {
             return problems.Prepend("Failed to register building geometry");
         }
 
         // Register opaque building group
-        if (renderingGroupManager.Register<Shaders.Building.Vertex, Shaders.Building.Instance>(
+        if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
                 geometryId, _shader, RenderState.Opaque)
             .TryPickProblems(out problems, out var groupId))
         {
@@ -91,7 +107,7 @@ public class BuildingRenderingService(
         _groupId = groupId;
 
         // Register ghost building group
-        if (renderingGroupManager.Register<Shaders.Building.Vertex, Shaders.Building.Instance>(
+        if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
                 geometryId, _ghostShader, RenderState.AlphaBlend)
             .TryPickProblems(out problems, out var ghostGroupId))
         {
@@ -105,6 +121,7 @@ public class BuildingRenderingService(
 
     public Result Unload()
     {
+        textureEntityManager.Unregister(_whitePixel);
         return Result.Success();
     }
 
@@ -122,7 +139,7 @@ public class BuildingRenderingService(
 
         var worldMatrix = ComputeWorldMatrix(blueprint.Footprint, building.Position);
 
-        if (renderingInstanceManager.Add(_groupId, new Shaders.Building.Instance(worldMatrix))
+        if (renderingInstanceManager.Add(_groupId, new Shaders.Default.Instance(worldMatrix))
             .TryPickProblems(out var problems, out var instanceId))
         {
             return problems.Prepend("Failed to add building instance for '{0}'", buildingId);
@@ -140,7 +157,7 @@ public class BuildingRenderingService(
     {
         var worldMatrix = ComputeWorldMatrix(footprint, position);
 
-        if (renderingInstanceManager.Add(_ghostGroupId, new Shaders.Building.Instance(worldMatrix))
+        if (renderingInstanceManager.Add(_ghostGroupId, new Shaders.Default.Instance(worldMatrix))
             .TryPickProblems(out var problems, out var instanceId))
         {
             return problems.Prepend("Failed to add ghost building instance for '{0}'", ghostId);
@@ -163,7 +180,7 @@ public class BuildingRenderingService(
 
         var worldMatrix = ComputeWorldMatrix(footprint, position);
 
-        if (renderingInstanceManager.Update(_ghostGroupId, instanceId, new Shaders.Building.Instance(worldMatrix))
+        if (renderingInstanceManager.Update(_ghostGroupId, instanceId, new Shaders.Default.Instance(worldMatrix))
             .TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed to update ghost building instance for '{0}'", ghostId);
@@ -197,9 +214,11 @@ public class BuildingRenderingService(
     public Result Update(TimeSpan deltaTime)
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
+        cameraSceneService.ApplyCameraDirectionParameters(_shader);
         sceneLightService.ApplyShaderParameters(_shader);
 
         cameraSceneService.ApplyCameraPositionParameters(_ghostShader);
+        cameraSceneService.ApplyCameraDirectionParameters(_ghostShader);
         sceneLightService.ApplyShaderParameters(_ghostShader);
 
         return Result.Success();

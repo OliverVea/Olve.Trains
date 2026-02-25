@@ -32,6 +32,9 @@ public class TrackArrowIndicatorService(
     {
         AmbientLightColor = new Vector3D<float>(1f, 1f, 1f),
         AmbientLightIntensity = 1f,
+        UColor = new Vector3D<float>(1f, 1f, 1f),
+        UOpacity = 1.0f,
+        UColorMix = 0f,
     };
 
     private GroupId<Shaders.Default.Instance> _groupId = null!;

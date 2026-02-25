@@ -32,7 +32,12 @@ public class JunctionSignalRenderingService(
 {
     private readonly Dictionary<Id<Junction>, Id<Shaders.Default.Instance>> _instanceIds = new();
 
-    private readonly Shaders.Default _shader = new();
+    private readonly Shaders.Default _shader = new()
+    {
+        UColor = new Vector3D<float>(1f, 1f, 1f),
+        UOpacity = 1.0f,
+        UColorMix = 0f,
+    };
 
     private readonly EventQueue<Id<Junction>> _junctionSignalAddedQueue = eventQueueFactory.Create(junctionSignalService.OnJunctionAdded);
     private readonly EventQueue<Id<Junction>> _junctionSignalRemovedQueue = eventQueueFactory.Create(junctionSignalService.OnJunctionRemoved);

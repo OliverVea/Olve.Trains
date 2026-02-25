@@ -22,6 +22,11 @@ uniform vec3 cameraDirection;
 // @pixelType(RGBA)
 uniform sampler2D textureSampler;
 
+uniform vec3 uColor;
+uniform vec3 uColorOverride;
+uniform float uColorMix;
+uniform float uOpacity;
+
 void main()
 {
     vec3 norm = normalize(FragNormal);
@@ -48,11 +53,14 @@ void main()
     // Sample the texture color using texture coordinates
     vec4 textureColor = texture(textureSampler, TexCoords);
 
+    // Color tinting: mix base color with override, then multiply by texture
+    vec3 baseColor = mix(uColor, uColorOverride, uColorMix) * textureColor.rgb;
+
     float rimFactor = 1.0 - max(dot(cameraDirection, norm), 0.0);
     rimFactor = smoothstep(0.3, 0.8, rimFactor);
     vec3 rimLight = rimFactor * vec3(1.0) * 0.5;
 
     // Combine lighting components
-    vec3 finalColor = (ambient + diffuse0 + diffuse1 + rimLight) * textureColor.rgb;
-    FragColor = vec4(finalColor, 1.0);
+    vec3 finalColor = (ambient + diffuse0 + diffuse1 + rimLight) * baseColor;
+    FragColor = vec4(finalColor, uOpacity);
 }

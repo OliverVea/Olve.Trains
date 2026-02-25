@@ -42,7 +42,12 @@ public class VehicleRenderingService(
 
     private readonly EventQueue<Id<Vehicle>> _toAddQueue = eventQueueFactory.Create(vehicleService.OnVehicleAdded);
     private readonly EventQueue<Id<Vehicle>> _toRemoveQueue = eventQueueFactory.Create(vehicleService.OnVehicleRemoved);
-    private readonly Shaders.Default _shader = new();
+    private readonly Shaders.Default _shader = new()
+    {
+        UColor = new Vector3D<float>(1f, 1f, 1f),
+        UOpacity = 1.0f,
+        UColorMix = 0f,
+    };
     private GroupId<Shaders.Default.Instance> _groupId = null!;
     private float _scale = 1;
 
