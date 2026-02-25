@@ -43,7 +43,7 @@
     - [x] Migrate `JunctionSignalRenderingService` + `TrackArrowIndicatorService`
     - [x] Migrate `BuildingRenderingService`
     - [x] Migrate `TrackGhostRenderingService`
-    - [ ] Migrate `GuiRectangleRenderingService` + `GuiTextRenderingService`
+    - [x] Migrate `GuiRectangleRenderingService` + `GuiTextRenderingService`
     - [ ] Delete `RenderingManager2D`, `RenderingManager3D`, `OpenGLQuadRenderingManager`, `OpenGLBufferManager`
   - [ ] Merge `building` shader into `default` shader (use white pixel texture for untextured meshes, add ghost rendering support)
   - [ ] Update `docs/architecture.md` rendering sections to reflect unified renderer

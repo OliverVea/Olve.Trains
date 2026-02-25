@@ -6,7 +6,8 @@ using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Text;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.EntityManagers;
+using Olve.Engine3D.Rendering.Geometry;
+using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
@@ -21,21 +22,27 @@ namespace Olve.Trains.Scenes.GUI;
 /// </summary>
 public class GuiTextRenderingService(
     ILogger<GuiTextRenderingService> logger,
-    RenderingManager2D renderingManager2D,
-    ShaderEntityManager shaderEntityManager,
+    GeometryManager geometryManager,
+    RenderingGroupManager renderingGroupManager,
+    RenderingInstanceManager renderingInstanceManager,
+    RenderingServiceHelper renderingServiceHelper,
     Provider<LayoutContext> layoutContext,
-    GuiDepthService guiDepthService,
     GuiElementService guiElementService,
     GuiLayoutService guiLayoutService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([guiLayoutService]);
 
+    private static readonly RenderState GuiRenderState = new(BlendMode.Alpha, DepthWrite: false, DepthTest: false);
+    private const int GuiSortKey = 1001;
+
+    private readonly record struct TextGroupKey(UntypedTextureId FontAtlasId, float FontWeight);
+
     /// <summary>
     /// Tracks one text element's glyph instances and cached layout data.
     /// </summary>
     private readonly record struct TextInstanceData(
-        IReadOnlyList<RenderingInstanceId> GlyphInstanceIds,
-        TextureId<RGB> FontAtlasId,
+        IReadOnlyList<Id<Shaders.MsdfText.Instance>> GlyphInstanceIds,
+        TextGroupKey GroupKey,
         IReadOnlyList<TextLayoutEngine.GlyphLayout> CachedLayout,
         FontData Font,
         string CachedContent,
@@ -44,6 +51,7 @@ public class GuiTextRenderingService(
     );
 
     private readonly Dictionary<Id<GuiNode>, TextInstanceData> _instances = new();
+    private readonly Dictionary<TextGroupKey, GroupId<Shaders.MsdfText.Instance>> _textGroups = new();
     private readonly List<Id<GuiNode>> _nodesToDelete = [];
     private readonly List<ResultProblem> _updateProblems = [];
     private readonly Shaders.MsdfText _shader = new()
@@ -51,15 +59,33 @@ public class GuiTextRenderingService(
         BlendState = RenderState.AlphaBlendNoDepthWrite,
     };
 
+    private GeometryId<Shaders.MsdfText.Vertex> _quadGeometryId = null!;
+
     public Result Load()
     {
-        if (shaderEntityManager.Register(_shader.ShaderData)
-            .TryPickProblems(out var problems, out var shaderRenderingId))
+        if (renderingServiceHelper.LoadShader(_shader).TryPickProblems(out var problems))
         {
-            return problems;
+            return problems.Prepend("Failed to load MSDF text shader");
         }
 
-        _shader.RenderingId = shaderRenderingId;
+        // Register unit quad geometry (6 vertices, 2 triangles)
+        ReadOnlySpan<Shaders.MsdfText.Vertex> quadVertices =
+        [
+            new(new Vector2D<float>(0f, 0f)),
+            new(new Vector2D<float>(1f, 0f)),
+            new(new Vector2D<float>(1f, 1f)),
+            new(new Vector2D<float>(0f, 0f)),
+            new(new Vector2D<float>(1f, 1f)),
+            new(new Vector2D<float>(0f, 1f)),
+        ];
+
+        if (geometryManager.Register<Shaders.MsdfText.Vertex>(quadVertices, ReadOnlySpan<uint>.Empty)
+            .TryPickProblems(out problems, out var geometryId))
+        {
+            return problems.Prepend("Failed to register text quad geometry");
+        }
+
+        _quadGeometryId = geometryId;
 
         return Result.Success();
     }
@@ -110,16 +136,6 @@ public class GuiTextRenderingService(
         return Result.Success();
     }
 
-    public Result Render(TimeSpan deltaTime)
-    {
-        if (_instances.Count == 0)
-        {
-            return Result.Success();
-        }
-
-        return renderingManager2D.Render(_shader);
-    }
-
     public Result RegisterText(
         Id<GuiNode> nodeId,
         FontData font,
@@ -131,7 +147,9 @@ public class GuiTextRenderingService(
         DeregisterText(nodeId);
 
         var layout = TextLayoutEngine.ComputeLayout(content, font, fontSize);
-        var glyphIds = new List<RenderingInstanceId>();
+        var groupKey = new TextGroupKey(fontAtlasId, fontWeight);
+        var groupId = GetOrCreateGroup(groupKey, fontAtlasId, fontWeight);
+        var glyphIds = new List<Id<Shaders.MsdfText.Instance>>();
 
         foreach (var glyph in layout)
         {
@@ -142,16 +160,11 @@ public class GuiTextRenderingService(
                 iUvMin: glyph.UvMin,
                 iUvMax: glyph.UvMax);
 
-            var entityParams = new Shaders.MsdfText.EntityParameters(
-                UFontAtlas: fontAtlasId,
-                UFontWeight: fontWeight
-            );
-
-            if (renderingManager2D.Register(_shader.RenderingId, glyphInstance, 0f, entityParams)
+            if (renderingInstanceManager.Add(groupId, glyphInstance)
                 .TryPickProblems(out var problems, out var instanceId))
             {
                 foreach (var id in glyphIds)
-                    renderingManager2D.Deregister(id);
+                    renderingInstanceManager.Remove(groupId, id);
                 return problems.Prepend("Failed to register glyph for text: nodeId={0}", nodeId);
             }
 
@@ -159,7 +172,7 @@ public class GuiTextRenderingService(
         }
 
         _instances[nodeId] = new TextInstanceData(
-            glyphIds, fontAtlasId, layout, font, content, fontSize, fontWeight);
+            glyphIds, groupKey, layout, font, content, fontSize, fontWeight);
 
         logger.LogDebug("Registered text rendering for node {NodeId} with {GlyphCount} glyphs", nodeId, glyphIds.Count);
 
@@ -173,9 +186,10 @@ public class GuiTextRenderingService(
             return DeletionResult.NotFound();
         }
 
+        var groupId = _textGroups[data.GroupKey];
         foreach (var glyphId in data.GlyphInstanceIds)
         {
-            renderingManager2D.Deregister(glyphId);
+            renderingInstanceManager.Remove(groupId, glyphId);
         }
 
         logger.LogDebug("Deregistered text rendering for node {NodeId}", nodeId);
@@ -202,12 +216,61 @@ public class GuiTextRenderingService(
 
         var newLayout = TextLayoutEngine.ComputeLayout(newContent, data.Font, effectiveFontSize);
         var oldGlyphIds = data.GlyphInstanceIds;
-        var newGlyphIds = new List<RenderingInstanceId>(oldGlyphIds);
 
-        var entityParams = new Shaders.MsdfText.EntityParameters(
-            UFontAtlas: data.FontAtlasId,
-            UFontWeight: effectiveFontWeight
-        );
+        // If font weight changed, we may need a different group
+        var newGroupKey = data.GroupKey with { FontWeight = effectiveFontWeight };
+        var groupChanged = !newGroupKey.Equals(data.GroupKey);
+
+        if (groupChanged)
+        {
+            // Font weight changed — deregister all old glyphs and re-register in new group
+            var oldGroupId = _textGroups[data.GroupKey];
+            foreach (var glyphId in oldGlyphIds)
+                renderingInstanceManager.Remove(oldGroupId, glyphId);
+
+            // Re-register all glyphs in the new group
+            // Extract font atlas from the group key
+            if (!newGroupKey.FontAtlasId.TryGetAsTypedId<RGB>(out var fontAtlasId))
+            {
+                return new ResultProblem("Failed to get typed font atlas ID");
+            }
+
+            var newGroupId = GetOrCreateGroup(newGroupKey, fontAtlasId, effectiveFontWeight);
+            var newGlyphIds = new List<Id<Shaders.MsdfText.Instance>>();
+
+            foreach (var glyph in newLayout)
+            {
+                var glyphInstance = new Shaders.MsdfText.Instance(
+                    iPosPx: glyph.PositionPx,
+                    iSizePx: glyph.SizePx,
+                    iTint: Vector4D<float>.One,
+                    iUvMin: glyph.UvMin,
+                    iUvMax: glyph.UvMax);
+
+                if (renderingInstanceManager.Add(newGroupId, glyphInstance)
+                    .TryPickProblems(out var problems, out var instanceId))
+                {
+                    return problems.Prepend("Failed to register glyph for text: nodeId={0}", nodeId);
+                }
+
+                newGlyphIds.Add(instanceId);
+            }
+
+            _instances[nodeId] = data with
+            {
+                GlyphInstanceIds = newGlyphIds,
+                GroupKey = newGroupKey,
+                CachedLayout = newLayout,
+                CachedContent = newContent,
+                CachedFontSize = effectiveFontSize,
+                CachedFontWeight = effectiveFontWeight,
+            };
+
+            return Result.Success();
+        }
+
+        var currentGroupId = _textGroups[data.GroupKey];
+        var updatedGlyphIds = new List<Id<Shaders.MsdfText.Instance>>(oldGlyphIds);
 
         // Update existing glyphs
         var minCount = int.Min(oldGlyphIds.Count, newLayout.Count);
@@ -223,7 +286,7 @@ public class GuiTextRenderingService(
                 iUvMin: glyph.UvMin,
                 iUvMax: glyph.UvMax);
 
-            if (renderingManager2D.Update(glyphId, glyphInstance, 0f, entityParams)
+            if (renderingInstanceManager.Update(currentGroupId, glyphId, glyphInstance)
                 .TryPickProblems(out var problems))
             {
                 return problems.Prepend("Failed to update glyph for text: nodeId={0}", nodeId);
@@ -242,29 +305,29 @@ public class GuiTextRenderingService(
                 iUvMin: glyph.UvMin,
                 iUvMax: glyph.UvMax);
 
-            if (renderingManager2D.Register(_shader.RenderingId, glyphInstance, 0f, entityParams)
+            if (renderingInstanceManager.Add(currentGroupId, glyphInstance)
                 .TryPickProblems(out var problems, out var instanceId))
             {
                 return problems.Prepend("Failed to register new glyph for text: nodeId={0}", nodeId);
             }
 
-            newGlyphIds.Add(instanceId);
+            updatedGlyphIds.Add(instanceId);
         }
 
         // Deregister excess glyphs if text got shorter
         for (var i = newLayout.Count; i < oldGlyphIds.Count; i++)
         {
-            renderingManager2D.Deregister(oldGlyphIds[i]);
+            renderingInstanceManager.Remove(currentGroupId, oldGlyphIds[i]);
         }
 
         if (newLayout.Count < oldGlyphIds.Count)
         {
-            newGlyphIds.RemoveRange(newLayout.Count, oldGlyphIds.Count - newLayout.Count);
+            updatedGlyphIds.RemoveRange(newLayout.Count, oldGlyphIds.Count - newLayout.Count);
         }
 
         _instances[nodeId] = data with
         {
-            GlyphInstanceIds = newGlyphIds,
+            GlyphInstanceIds = updatedGlyphIds,
             CachedLayout = newLayout,
             CachedContent = newContent,
             CachedFontSize = effectiveFontSize,
@@ -272,6 +335,33 @@ public class GuiTextRenderingService(
         };
 
         return Result.Success();
+    }
+
+    private GroupId<Shaders.MsdfText.Instance> GetOrCreateGroup(
+        TextGroupKey key,
+        TextureId<RGB> fontAtlasId,
+        float fontWeight)
+    {
+        if (_textGroups.TryGetValue(key, out var existingGroupId))
+        {
+            return existingGroupId;
+        }
+
+        var groupParameters = new Shaders.MsdfText.EntityParameters(
+            UFontAtlas: fontAtlasId,
+            UFontWeight: fontWeight);
+
+        if (renderingGroupManager.Register<Shaders.MsdfText.Vertex, Shaders.MsdfText.Instance>(
+                _quadGeometryId, _shader, GuiRenderState,
+                sortKey: GuiSortKey, groupParameters: groupParameters)
+            .TryPickProblems(out _, out var groupId))
+        {
+            throw new InvalidOperationException(
+                $"Failed to register GUI text group for font atlas {key.FontAtlasId}");
+        }
+
+        _textGroups[key] = groupId;
+        return groupId;
     }
 
     private bool TryUpdateTextGlyphs(Id<GuiNode> nodeId, TextInstanceData instanceData)
@@ -288,10 +378,11 @@ public class GuiTextRenderingService(
             boxPosition.Position.X.Value,
             boxPosition.Position.Y.Value
         );
-        var depth = guiDepthService.GetDepth(nodeId);
 
         var scale = instanceData.CachedFontSize / instanceData.Font.Metrics.EmSize;
         var baselineOffset = instanceData.Font.Metrics.Ascender * scale;
+
+        var groupId = _textGroups[instanceData.GroupKey];
 
         for (var i = 0; i < instanceData.GlyphInstanceIds.Count; i++)
         {
@@ -310,12 +401,7 @@ public class GuiTextRenderingService(
                 iUvMin: glyphLayout.UvMin,
                 iUvMax: glyphLayout.UvMax);
 
-            var entityParams = new Shaders.MsdfText.EntityParameters(
-                UFontAtlas: instanceData.FontAtlasId,
-                UFontWeight: instanceData.CachedFontWeight
-            );
-
-            if (renderingManager2D.Update(glyphId, glyphInstance, -depth, entityParams)
+            if (renderingInstanceManager.Update(groupId, glyphId, glyphInstance)
                 .TryPickProblems(out var problems))
             {
                 _updateProblems.AddRange(problems);
