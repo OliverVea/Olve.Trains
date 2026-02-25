@@ -1,6 +1,7 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.OpenGL;
+using Olve.Engine3D.Rendering.Geometry;
+using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
@@ -10,8 +11,9 @@ using Silk.NET.OpenGL;
 namespace Olve.Trains.Scenes.GameRendering;
 
 public class TrackGhostRenderingService(
-    RenderingManager3D renderingManager3D,
-    OpenGLInstancedBufferManager instancedBufferManager,
+    GeometryManager geometryManager,
+    RenderingGroupManager renderingGroupManager,
+    RenderingInstanceManager renderingInstanceManager,
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
     TerrainRenderingService terrainRenderingService) : ISceneService
@@ -19,9 +21,8 @@ public class TrackGhostRenderingService(
     public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
 
     private readonly record struct GhostEntry(
-        OpenGLInstancedBufferManager.MeshInstancedRegistration Registration,
-        uint VertexCount,
-        Shaders.LineStrip.EntityParameters? GroupParameters);
+        GeometryId<Shaders.LineStrip.Vertex> GeometryId,
+        GroupId<Shaders.LineStrip.Instance> GroupId);
 
     private readonly Dictionary<Id<Track>, GhostEntry> _entries = new();
     private readonly Shaders.LineStrip _shader = new()
@@ -48,24 +49,31 @@ public class TrackGhostRenderingService(
             return problems.Prepend("Invalid line strip data");
         }
 
-        var vertexFloats = MarshalVertexFloats(data);
-        var instanceFloats = MarshalInstanceFloats();
+        var vertices = new Shaders.LineStrip.Vertex[data.VertexCount];
+        data.Populate(vertices);
 
-        if (instancedBufferManager.CreateMeshInstanceBuffer(
-                vertexFloats,
-                (uint)data.VertexCount,
-                ReadOnlySpan<uint>.Empty,
-                Shaders.LineStrip.Vertex.ConfigureAttributes,
-                instanceFloats,
-                1,
-                Shaders.LineStrip.Instance.ConfigureAttributes,
-                BufferUsageARB.DynamicDraw)
-            .TryPickProblems(out problems, out var registration))
+        if (geometryManager.Register<Shaders.LineStrip.Vertex>(
+                vertices, ReadOnlySpan<uint>.Empty, PrimitiveType.LineStrip, BufferUsageARB.DynamicDraw)
+            .TryPickProblems(out problems, out var geometryId))
         {
-            return problems.Prepend("Failed to create ghost instanced buffers");
+            return problems.Prepend("Failed to register ghost geometry");
         }
 
-        _entries[trackId] = new GhostEntry(registration, (uint)data.VertexCount, groupParameters);
+        if (renderingGroupManager.Register<Shaders.LineStrip.Vertex, Shaders.LineStrip.Instance>(
+                geometryId, _shader, RenderState.AlphaBlendNoDepth,
+                PrimitiveType.LineStrip, groupParameters: groupParameters)
+            .TryPickProblems(out problems, out var groupId))
+        {
+            return problems.Prepend("Failed to register ghost group");
+        }
+
+        if (renderingInstanceManager.Add(groupId, IdentityInstance)
+            .TryPickProblems(out problems, out _))
+        {
+            return problems.Prepend("Failed to add ghost instance");
+        }
+
+        _entries[trackId] = new GhostEntry(geometryId, groupId);
 
         return Result.Success();
     }
@@ -87,22 +95,24 @@ public class TrackGhostRenderingService(
                 return problems.Prepend("Invalid line strip data");
             }
 
-            var vertexFloats = MarshalVertexFloats(data);
-            instancedBufferManager.UpdateMeshVertexBuffer(
-                entry.Registration,
-                vertexFloats,
-                (uint)data.VertexCount,
-                BufferUsageARB.DynamicDraw);
+            var vertices = new Shaders.LineStrip.Vertex[data.VertexCount];
+            data.Populate(vertices);
 
-            entry = entry with { VertexCount = (uint)data.VertexCount };
+            if (geometryManager.UpdateVertices(entry.GeometryId, vertices)
+                .TryPickProblems(out problems))
+            {
+                return problems.Prepend("Failed to update ghost vertices");
+            }
         }
 
         if (groupParameters is not null)
         {
-            entry = entry with { GroupParameters = groupParameters };
+            if (renderingGroupManager.SetGroupParameters(entry.GroupId, groupParameters)
+                .TryPickProblems(out var problems))
+            {
+                return problems.Prepend("Failed to update ghost group parameters");
+            }
         }
-
-        _entries[trackId] = entry;
 
         return Result.Success();
     }
@@ -114,25 +124,14 @@ public class TrackGhostRenderingService(
             return Result.Success();
         }
 
-        instancedBufferManager.DeleteMeshInstanceBuffers(entry.Registration);
-
-        return Result.Success();
+        return Result.Concat(
+            renderingGroupManager.Deregister(entry.GroupId),
+            geometryManager.Deregister(entry.GeometryId));
     }
 
-    public Result Render(TimeSpan deltaTime)
+    public Result Update(TimeSpan deltaTime)
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
-
-        foreach (var entry in _entries.Values)
-        {
-            if (renderingManager3D.RenderInstanced(
-                    _shader, entry.Registration, 1, PrimitiveType.LineStrip,
-                    entry.VertexCount, entry.GroupParameters)
-                .TryPickProblems(out var problems))
-            {
-                return problems;
-            }
-        }
 
         return Result.Success();
     }
@@ -141,33 +140,11 @@ public class TrackGhostRenderingService(
     {
         foreach (var entry in _entries.Values)
         {
-            instancedBufferManager.DeleteMeshInstanceBuffers(entry.Registration);
+            renderingGroupManager.Deregister(entry.GroupId);
+            geometryManager.Deregister(entry.GeometryId);
         }
         _entries.Clear();
 
-        return renderingServiceHelper.UnloadShader(_shader);
-    }
-
-    private static float[] MarshalVertexFloats(LineStripData data)
-    {
-        var vertices = new Shaders.LineStrip.Vertex[data.VertexCount];
-        data.Populate(vertices);
-
-        var floats = new float[data.VertexCount * Shaders.LineStrip.Vertex.FloatCount];
-        var span = floats.AsSpan();
-        var offset = 0;
-        for (var i = 0; i < data.VertexCount; i++)
-        {
-            vertices[i].WriteTo(span.Slice(offset, Shaders.LineStrip.Vertex.FloatCount));
-            offset += Shaders.LineStrip.Vertex.FloatCount;
-        }
-        return floats;
-    }
-
-    private static float[] MarshalInstanceFloats()
-    {
-        var floats = new float[Shaders.LineStrip.Instance.FloatCount];
-        IdentityInstance.WriteTo(floats);
-        return floats;
+        return Result.Success();
     }
 }

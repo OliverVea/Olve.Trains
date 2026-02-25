@@ -42,7 +42,7 @@
     - [x] Migrate `VehicleRenderingService`
     - [x] Migrate `JunctionSignalRenderingService` + `TrackArrowIndicatorService`
     - [x] Migrate `BuildingRenderingService`
-    - [ ] Migrate `TrackGhostRenderingService`
+    - [x] Migrate `TrackGhostRenderingService`
     - [ ] Migrate `GuiRectangleRenderingService` + `GuiTextRenderingService`
     - [ ] Delete `RenderingManager2D`, `RenderingManager3D`, `OpenGLQuadRenderingManager`, `OpenGLBufferManager`
   - [ ] Merge `building` shader into `default` shader (use white pixel texture for untextured meshes, add ghost rendering support)
