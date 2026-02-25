@@ -107,7 +107,6 @@ public class RenderingManager(
         }
 
         gl.DepthMask(true);
-        gl.Enable(GLEnum.DepthTest);
         gl.Disable(GLEnum.Blend);
 
         _errorCounter++;

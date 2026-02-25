@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.Commands;
+using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameRendering;
 using Olve.Trains.Scenes.GUI;
@@ -14,6 +15,7 @@ public static class MainMenuSceneServiceRegistration
 
         // GL setup and clear
         services.AddSceneService<GLService>(sceneId);
+        services.AddSceneService<RenderingManagerSceneService>(sceneId);
 
         // Shared GUI services (rendering, layout, text, input, etc.)
         services.AddGuiSceneServices(sceneId);

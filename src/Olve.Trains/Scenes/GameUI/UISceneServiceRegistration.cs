@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D;
+using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameUI.GUI;
 using Olve.Trains.Scenes.GameUI.Indicators;
@@ -14,6 +15,9 @@ public static class UISceneServiceRegistration
     public static IServiceCollection AddUISceneServices(this IServiceCollection services)
     {
         var sceneId = SceneIds.GameUIScene;
+
+        // Unified rendering manager (calls RenderAll for this scene's groups)
+        services.AddSceneService<RenderingManagerSceneService>(sceneId);
 
         // Shared GUI services (rendering, layout, text, input, etc.)
         services.AddGuiSceneServices(sceneId);

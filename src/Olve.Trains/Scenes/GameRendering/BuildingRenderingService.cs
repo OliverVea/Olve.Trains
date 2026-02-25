@@ -33,7 +33,6 @@ public class BuildingRenderingService(
 
     private readonly TextureId<RGBA> _whitePixel = textureManager.RegisterTexture(TextureData<RGBA>.Single(RGBA.White));
 
-    // Main buildings
     private readonly Shaders.Default _shader = new()
     {
         BlendState = RenderState.Opaque,
@@ -45,7 +44,6 @@ public class BuildingRenderingService(
 
     private readonly Dictionary<Id<Building>, Id<Shaders.Default.Instance>> _instanceIds = new();
 
-    // Ghost buildings (placement previews)
     private readonly Shaders.Default _ghostShader = new()
     {
         BlendState = RenderState.AlphaBlend,
@@ -62,7 +60,6 @@ public class BuildingRenderingService(
 
     public Result Load()
     {
-        // Register white pixel texture for untextured building meshes
         if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(_whitePixel, new TextureUploadOptions())
             .TryPickProblems(out var problems))
         {
@@ -82,21 +79,18 @@ public class BuildingRenderingService(
             return problems.Prepend("Failed to load ghost building shader");
         }
 
-        // Build unit cube vertex data
         var vertices = new Shaders.Default.Vertex[UnitCube.VertexCount];
         UnitCube.Populate(vertices);
 
         var indices = new uint[UnitCube.IndexCount];
         UnitCube.GetIndices(indices);
 
-        // Register geometry
-        if (geometryManager.Register<Shaders.Default.Vertex>(vertices, indices)
+        if (geometryManager.Register(vertices, indices)
             .TryPickProblems(out problems, out var geometryId))
         {
             return problems.Prepend("Failed to register building geometry");
         }
 
-        // Register opaque building group
         if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
                 geometryId, _shader, RenderState.Opaque)
             .TryPickProblems(out problems, out var groupId))
@@ -106,7 +100,6 @@ public class BuildingRenderingService(
 
         _groupId = groupId;
 
-        // Register ghost building group
         if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
                 geometryId, _ghostShader, RenderState.AlphaBlend)
             .TryPickProblems(out problems, out var ghostGroupId))
