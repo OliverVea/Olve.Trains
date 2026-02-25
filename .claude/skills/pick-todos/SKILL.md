@@ -7,7 +7,7 @@ agent: Explore
 
 # Pick TODOs Task
 
-Read `TODO.md` and find all **uncompleted** TODO items (lines with `- [ ]`). Ignore any items that are already checked off (`- [x]`).
+Read `TODO.md` and find all **uncompleted** TODO items. ONLY include lines containing `- [ ]` (unchecked checkbox). NEVER include lines containing `- [x]` (checked checkbox) — these are already completed and must be excluded.
 
 ## Select 3 Simple Tasks
 
