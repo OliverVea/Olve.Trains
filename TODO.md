@@ -18,6 +18,7 @@
   - [x] Add support for taking screenshots of the current state of the game
   - [x] Add predefined command handler argument parsers (e.g. TilePosition, Vector3, CardinalDirection)
 
+
 ## Demo
 
 - [ ] Prefab system epic (Technical):
@@ -41,7 +42,7 @@
   - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
   - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)
   - [ ] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
-- [ ] Unified renderer epic (Technical) (see [PLAN_UNIFIED_RENDERER.md](PLAN_UNIFIED_RENDERER.md)):
+- [x] Unified renderer epic (Technical) (see [PLAN_UNIFIED_RENDERER.md](PLAN_UNIFIED_RENDERER.md)):
   - [x] Asset pipeline: generate `Vertex` type for all shaders (non-`@instanced` inputs)
   - [x] Migrate shaders to always-instanced (per-instance uniforms become `@instanced` attributes)
     - [x] `building` shader + `BuildingRenderingService`
@@ -59,7 +60,18 @@
     - [x] Migrate `GuiRectangleRenderingService` + `GuiTextRenderingService`
     - [x] Delete `RenderingManager2D`, `RenderingManager3D`, `OpenGLQuadRenderingManager`, `OpenGLBufferManager`
   - [x] Merge `building` shader into `default` shader (use white pixel texture for untextured meshes, add ghost rendering support)
-  - [ ] Update `docs/architecture.md` rendering sections to reflect unified renderer
+  - [x] Update `docs/architecture.md` rendering sections to reflect unified renderer
+
+## Demo
+
+- [ ] Unit geometry (Technical):
+  - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
+  - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
+  - [ ] Add `UnitLineSamples` for GPU-side spline tessellation (unit t-value vertex buffer for instanced spline rendering)
+- [ ] OpenTelemetry metrics epic (Technical):
+  - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts)
+  - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)
+  - [ ] Add game-level OTel metrics (track count, vehicle count, building count, command throughput)
 - [ ] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
   - [ ] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
   - [ ] Update `ProcessShaders` to generate explicit interface implementations from annotations (replace convention-based matching)

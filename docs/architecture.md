@@ -24,80 +24,105 @@ scripts/
 
 ### Shader Inventory
 
-8 shader pairs in `src/Olve.Trains/resources/shaders/`:
+6 shader pairs in `src/Olve.Trains/resources/shaders/`:
 
 | Shader | Instanced Attributes | Purpose |
 |--------|---------------------|---------|
+| default | `iWorld` (mat4) | Standard mesh with texture + normals + diffuse lighting (buildings, 3D objects). Uses white pixel texture for untextured meshes. |
 | track | `iP0`, `iP1`, `iT0`, `iT1` (vec3s) | Hermite spline track rendering |
-| building | `iWorld` (mat4) | Cube-based buildings with diffuse lighting |
-| default | none | Standard mesh with texture + normals |
 | lineStrip | none | Lines with per-vertex color |
 | msdfText | `iPosPx`, `iSizePx`, `iTint`, `iUvMin`, `iUvMax` | MSDF text glyph rendering |
 | texturedRectangle | `iPosPx`, `iSizePx`, `iTint`, `iBorderWidthPx`, `iBorderColor`, `iBorderRadiusPx` | GUI rectangles with borders/rounded corners |
-| terrain | none (uses `gl_VertexID`) | Procedural heightmap terrain + grid overlay |
-| terrainWireframe | none | Wireframe terrain mode |
+| terrain | none (uses `gl_VertexID`) | Procedural heightmap terrain + grid overlay (flat normals via `dFdx`/`dFdy`) |
+
+Note: The `building` shader was merged into `default`. The `terrainWireframe` shader was removed (grid overlay is now SDF-based in the terrain fragment shader).
 
 ### Asset Pipeline Code Generation
 
 The pipeline reads GLSL shaders and generates C# classes via Scriban templates (`src/Olve.Trains.AssetPipeline/templates/ShaderClass.scriban`). Each shader gets:
 
 1. **Uniform properties** — nullable, settable (e.g., `public Vector3D<float>? UColor { get; set; }`)
-2. **`EntityParameters` record** — implements `IShaderParameters` for per-entity overrides
-3. **`Vertex` struct** — implements `IVertexData` (non-instanced inputs): `FloatCount`, `WriteTo(Span<float>)`, `ConfigureAttributes(GL)`
-4. **`Instance` struct** — implements `IInstanceData` (instanced inputs, marked with `// @instanced` in GLSL): same API as Vertex but with `gl.VertexAttribDivisor(location, 1)`
+2. **`EntityParameters` record** — implements `IShaderParameters` for per-group overrides
+3. **`Vertex` record** — implements `IVertexData` + composable interfaces (e.g., `IWithPosition3D<Vertex>`, `IWithNormal3D<Vertex>`): `FloatCount`, `WriteTo(Span<float>)`, `ConfigureAttributes(GL)`
+4. **`Instance` record** — implements `IInstanceData<Vertex>` + composable interfaces (e.g., `IWithWorldMatrix<Instance>`): same API as Vertex but with `gl.VertexAttribDivisor(location, 1)`. All shaders are always-instanced.
 
 Layout XML files generate C# builder classes via `LayoutClass.scriban`. Each layout produces a record with named element properties and a flat `IReadOnlyList<GuiElement>` of all descendants.
 
-### RenderingManager3D
+### Unified RenderingManager
 
-3D rendering with shared geometry and multiple instances. File: `src/Olve.Engine3D/Rendering/RenderingManager3D.cs`
+All rendering (2D and 3D) goes through a single `RenderingManager` backed by three sub-managers. File: `src/Olve.Engine3D/Rendering/RenderingManager.cs`
+
+**Sub-managers:**
+- **`GeometryManager`** — registers/updates/deregisters mesh geometry
+- **`RenderingGroupManager`** — groups = geometry + shader + render state + instances
+- **`RenderingInstanceManager`** — add/update/remove instances within groups
 
 **Geometry registration** (once per shape):
 ```csharp
-Result<GeometryId> RegisterGeometry<T>(ReadOnlySpan<T> vertices, ReadOnlySpan<uint> indices) where T : IVertexData
-Result<GeometryId> RegisterGeometry<T>(ReadOnlySpan<T> vertices, ReadOnlySpan<uint> indices, PrimitiveType, BufferUsageARB)
-Result<GeometryId> RegisterGeometry<T>(ReadOnlySpan<T> vertices, PrimitiveType, BufferUsageARB)
-Result<GeometryId> RegisterDrawArraysGeometry(uint vertexCount, PrimitiveType)  // no VBO (e.g., terrain)
-Result UpdateGeometry<T>(GeometryId, ReadOnlySpan<T> vertices)
-Result DeregisterGeometry(GeometryId)
+// Indexed geometry
+Result<GeometryId<TVertex>> Register<TVertex>(ReadOnlySpan<TVertex> vertices, ReadOnlySpan<uint> indices,
+    PrimitiveType primitiveType = Triangles, BufferUsageARB usage = StaticDraw) where TVertex : IVertexData
+
+// Non-indexed (e.g., terrain uses gl_VertexID)
+Result<UntypedGeometryId> RegisterDrawArrays(uint vertexCount, PrimitiveType primitiveType = Triangles)
+
+Result UpdateVertices<TVertex>(GeometryId<TVertex>, ReadOnlySpan<TVertex> vertices, BufferUsageARB usage = DynamicDraw)
+Result Deregister(UntypedGeometryId)
 ```
 
-**Instance management** (many per geometry):
+**Group registration** (geometry + shader + render state):
 ```csharp
-Result<RenderingInstanceId> RegisterInstance(GeometryId, RenderingId<ShaderData>, Matrix4X4<float> worldMatrix)
-Result DeregisterInstance(RenderingInstanceId)
-Result SetInstanceWorld(RenderingInstanceId, Matrix4X4<float>)
-Result<Matrix4X4<float>> GetInstanceWorld(RenderingInstanceId)
-Result SetInstanceParameters(RenderingInstanceId, IShaderParameters?)  // per-instance overrides with auto-restore
+Result<GroupId<TInstance>> Register<TVertex, TInstance>(
+    GeometryId<TVertex>, IShader, RenderState,
+    PrimitiveType primitiveType = Triangles, int sortKey = 0, IShaderParameters? groupParameters = null)
+    where TVertex : IVertexData where TInstance : IInstanceData<TVertex>
 ```
 
-### RenderingManager2D
-
-2D instanced rendering with depth-sorted painter's algorithm. File: `src/Olve.Engine3D/Rendering/RenderingManager2D.cs`
-
+**Instance management** (many per group):
 ```csharp
-Result<RenderingInstanceId> Register<T>(RenderingId<ShaderData>, T instanceData, float depth, IShaderParameters?) where T : IInstanceData
-Result Update<T>(RenderingInstanceId, T instanceData, float depth, IShaderParameters?)
-Result UpdateShaderParameters(RenderingInstanceId, IShaderParameters?)
-Result Deregister(RenderingInstanceId)
+Result<Id<TInstance>> Add<TInstance>(GroupId<TInstance>, TInstance data) where TInstance : IInstanceData
+Result Update<TInstance>(GroupId<TInstance>, Id<TInstance>, TInstance data)
+Result Remove<TInstance>(GroupId<TInstance>, Id<TInstance>)
 ```
 
-Each 2D element gets its own VAO + instance VBO. Rendered `OrderByDescending(depth)`.
+**Rendering flow:** `RenderAll()` iterates groups sorted by `sortKey`, rebuilds dirty instance buffers, applies render state (`RenderState`: blend mode, depth write, depth test), loads shaders, and executes instanced draw calls.
+
+**Type-safe IDs:** `GeometryId<TVertex>` and `GroupId<TInstance>` prevent mixing geometry/instance types at compile time.
 
 ### Primitives
 
 `src/Olve.Engine3D/Rendering/Primitives/`:
 
-- **`UnitCube`** — 24 vertices (4/face), 36 indices. Positions + normals for unit cube [0,0,0]→[1,1,1].
-- **`RegisterUnitCube<TVertex>`** extension on `RenderingManager3D` — takes a `Func<position, normal, TVertex>` factory.
-- `UnitQuad` and `UnitLineSamples` do not exist yet (TODO items).
+- **`UnitCube`** — 24 vertices (4/face), 36 indices. `Populate<T>()` fills any vertex type implementing `IWithPosition3D<T>` + `IWithNormal3D<T>`.
+- **`UnitQuad`** — 6 vertices (2 triangles), no indices. `Populate<T>()` fills any vertex type implementing `IWithPosition2D<T>`. Covers [0,0]→[1,1] for 2D GUI rendering.
+- `UnitLineSamples` does not exist yet (TODO item).
 
 ### Key Types
 
-- **`GeometryId`** — wraps `Id`, created via `GeometryId.New()`
-- **`RenderingInstanceId`** — identifies a specific instance
+- **`GeometryId<TVertex>`** — type-safe geometry ID, inherits `UntypedGeometryId`
+- **`GroupId<TInstance>`** — type-safe group ID, inherits `UntypedGroupId`
+- **`Id<TInstance>`** — instance ID within a group (from `Olve.Utilities`)
+- **`IVertexData`** — vertex data interface: `FloatCount`, `WriteTo(Span<float>)`, `ConfigureAttributes(GL)`
+- **`IInstanceData<TVertex>`** — instance data interface (same API), typed to its vertex type
+- **Composable attribute interfaces** — `IWithPosition3D<T>`, `IWithNormal3D<T>`, `IWithTexCoords2D<T>`, `IWithColor3D<T>`, `IWithPosition2D<T>`, `IWithWorldMatrix<T>`. Enable generic mesh construction (e.g., `UnitCube.Populate<T>()` works with any vertex type that has position + normal).
 - **`RenderState`** — `record struct(BlendMode, DepthWrite, DepthTest)` with presets: `Opaque`, `AlphaBlend`, `AlphaBlendNoDepthWrite`, etc.
 - **`PrimitiveType`** — from Silk.NET: `Triangles`, `LineStrip`, `LineLoop`, etc.
+
+### Typical Usage Pattern
+
+```csharp
+// 1. Register geometry (once)
+var geometryId = geometryManager.Register<Shaders.Default.Vertex>(vertices, indices);
+
+// 2. Register group (geometry + shader + render state)
+var groupId = renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
+    geometryId, shader, RenderState.Opaque);
+
+// 3. Add/update/remove instances
+var instanceId = renderingInstanceManager.Add(groupId, new Shaders.Default.Instance(worldMatrix));
+renderingInstanceManager.Update(groupId, instanceId, new Shaders.Default.Instance(newMatrix));
+renderingInstanceManager.Remove(groupId, instanceId);
+```
 
 ## Entity Management
 
@@ -179,7 +204,7 @@ Infrastructure in `src/Olve.Engine3D/Commands/`:
 - **`BuildingBlueprint`** (record struct): `Id<BuildingBlueprint>` + description + `TileFootprint` (W/H/D)
 - **`BuildingBlueprintLibraryService`**: predefined blueprints (Station: 4x2x2)
 - **`StationPlacingToolService`**: raycast to terrain, ghost preview at 50% opacity, rotate with 'R', click to place
-- **`BuildingRenderingService`**: unit cubes scaled/rotated via world matrices through `RenderingManager3D`
+- **`BuildingRenderingService`**: unit cubes scaled/rotated via world matrices through `RenderingManager` (default shader with white pixel texture)
 - Files: logic in `Scenes/GameLogic/Industries/`, rendering in `Scenes/GameRendering/`, UI in `Scenes/GameUI/Tools/`
 
 ## CI/CD
