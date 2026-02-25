@@ -183,9 +183,9 @@ send_cmd "place-track start=8.5,$Y,10.5 end=10.5,$Y,12.5 start-dir=north end-dir
 echo ""
 echo "=== Placing Y-Junction Branch ==="
 
-# Branch off the bottom-right corner (17.5,10.5) heading east — creates a 3-way junction with a signal
+# Branch off the bottom-left junction (10.5,8.5) heading west — creates a 3-way junction with a signal
 echo "Placing branch track..."
-send_cmd "place-track start=17.5,$Y,10.5 end=19.5,$Y,10.5 start-dir=east end-dir=east"
+send_cmd "place-track start=10.5,$Y,8.5 end=8.5,$Y,8.5 start-dir=west end-dir=west"
 
 echo ""
 echo "=== Placing 3 Trains ==="
