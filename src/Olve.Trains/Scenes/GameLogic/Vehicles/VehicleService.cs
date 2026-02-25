@@ -1,4 +1,6 @@
+using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
+using Olve.Trains.Telemetry;
 
 namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
@@ -22,13 +24,18 @@ public class VehicleService(EntityStoreFactory entityStoreFactory)
         }
 
         _count++;
+        if (EngineMetrics.IsEnabled) GameMetrics.VehicleCount.Add(1);
         return vehicleId;
     }
 
     public DeletionResult DeleteVehicle(Id<Vehicle> vehicleId)
     {
         var result = _vehicles.Remove(vehicleId);
-        if (!result.WasNotFound) _count--;
+        if (!result.WasNotFound)
+        {
+            _count--;
+            if (EngineMetrics.IsEnabled) GameMetrics.VehicleCount.Add(-1);
+        }
         return result;
     }
 }

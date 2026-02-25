@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Diagnostics;
@@ -323,10 +325,19 @@ public class SceneManager(
                 continue;
             }
 
+            Stopwatch? sw = EngineMetrics.IsEnabled ? Stopwatch.StartNew() : null;
+
             var updateResult = scene.Update(gameTime);
             if (updateResult.TryPickProblems(out var problems))
             {
                 return problems.Prepend("Got problem while updating scene for scene '{0}'", scene.Id);
+            }
+
+            if (sw is not null)
+            {
+                sw.Stop();
+                var tags = new TagList { { "scene.name", GetSceneName(scene.Id) } };
+                EngineMetrics.SceneUpdateDuration.Record(sw.Elapsed.TotalMilliseconds, tags);
             }
         }
 
@@ -342,15 +353,27 @@ public class SceneManager(
                 continue;
             }
 
+            Stopwatch? sw = EngineMetrics.IsEnabled ? Stopwatch.StartNew() : null;
+
             var renderResult = scene.Render(deltaTime);
             if (renderResult.TryPickProblems(out var problems))
             {
                 return problems.Prepend("Got problem while rendering scene for scene '{0}'", scene.Id);
             }
+
+            if (sw is not null)
+            {
+                sw.Stop();
+                var tags = new TagList { { "scene.name", GetSceneName(scene.Id) } };
+                EngineMetrics.SceneRenderDuration.Record(sw.Elapsed.TotalMilliseconds, tags);
+            }
         }
 
         return Result.Success();
     }
+
+    private string GetSceneName(Id<IScene> sceneId) =>
+        _definitions.TryGetValue(sceneId, out var def) ? def.Name : sceneId.ToString();
 
     public void Close()
     {

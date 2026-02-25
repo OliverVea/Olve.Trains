@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Scenes;
 
 namespace Olve.Engine3D.Commands;
@@ -17,6 +18,8 @@ public class CommandProcessingService(
             try
             {
                 var result = commandRunner.Run(new RunCommandRequest(pendingCommand.Command));
+
+                if (EngineMetrics.IsEnabled) EngineMetrics.CommandsProcessed.Add(1);
 
                 if (result.TryPickProblems(out var problems, out var output))
                 {

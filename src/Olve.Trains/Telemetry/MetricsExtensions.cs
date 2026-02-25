@@ -25,6 +25,7 @@ public static class MetricsExtensions
         _meterProvider = Sdk.CreateMeterProviderBuilder()
             .SetResourceBuilder(resource)
             .AddMeter("Olve.Engine3D")
+            .AddMeter("Olve.Trains")
             .AddOtlpExporter(options => registrationHelper.RegisterMetrics(options))
             .Build();
 

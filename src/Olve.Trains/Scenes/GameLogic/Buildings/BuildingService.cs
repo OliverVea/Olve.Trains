@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
+using Olve.Trains.Telemetry;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings;
 
@@ -31,6 +33,7 @@ public class BuildingService
         else
         {
             _logger.LogInformation("Added building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
+            if (EngineMetrics.IsEnabled) GameMetrics.BuildingCount.Add(1);
         }
 
         return building.Id;
@@ -48,6 +51,7 @@ public class BuildingService
         else
         {
             _logger.LogInformation("Deleted building {BuildingId}", buildingId);
+            if (EngineMetrics.IsEnabled) GameMetrics.BuildingCount.Add(-1);
         }
 
         return result;

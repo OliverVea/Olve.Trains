@@ -1,4 +1,6 @@
+using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
+using Olve.Trains.Telemetry;
 
 namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
@@ -18,10 +20,16 @@ public class TrackService(EntityStoreFactory entityStoreFactory)
             return new ResultProblem("Track already exists: '{0}'", trackId);
         }
 
+        if (EngineMetrics.IsEnabled) GameMetrics.TrackCount.Add(1);
         return trackId;
     }
 
-    public DeletionResult DeleteTrack(Id<Track> trackId) => _tracks.Remove(trackId);
+    public DeletionResult DeleteTrack(Id<Track> trackId)
+    {
+        var result = _tracks.Remove(trackId);
+        if (EngineMetrics.IsEnabled && !result.WasNotFound) GameMetrics.TrackCount.Add(-1);
+        return result;
+    }
 
     public bool TrackExists(Id<Track> trackId) => _tracks.Exists(trackId);
 
