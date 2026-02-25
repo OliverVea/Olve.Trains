@@ -1,17 +1,18 @@
 using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.OpenGL;
+using Olve.Engine3D.Rendering.Geometry;
+using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Tracks;
-using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
 public class TrackRenderingService(
-    RenderingManager3D renderingManager3D,
-    OpenGLInstancedBufferManager instancedBufferManager,
+    GeometryManager geometryManager,
+    RenderingGroupManager renderingGroupManager,
+    RenderingInstanceManager renderingInstanceManager,
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
     SceneLightService sceneLightService,
@@ -26,9 +27,8 @@ public class TrackRenderingService(
         UColor = new Vector3D<float>(0.85f, 0.85f, 0.85f),
     };
 
-    private readonly Dictionary<Id<Track>, Shaders.Track.Instance> _trackInstances = new();
-    private OpenGLInstancedBufferManager.MeshInstancedRegistration _registration;
-    private bool _dirty;
+    private readonly Dictionary<Id<Track>, Id<Shaders.Track.Instance>> _trackInstanceIds = new();
+    private GroupId<Shaders.Track.Instance> _groupId = null!;
 
     public Result Load()
     {
@@ -40,32 +40,22 @@ public class TrackRenderingService(
         // Generate template mesh
         var (vertices, indices) = TrackTemplateMeshService.Generate<Shaders.Track.Vertex>();
 
-        // Marshal vertex data
-        var vertexFloats = new float[vertices.Length * Shaders.Track.Vertex.FloatCount];
-        var span = vertexFloats.AsSpan();
-        var offset = 0;
-        foreach (var vertex in vertices)
+        // Register geometry
+        if (geometryManager.Register<Shaders.Track.Vertex>(vertices, indices)
+            .TryPickProblems(out problems, out var geometryId))
         {
-            vertex.WriteTo(span.Slice(offset, Shaders.Track.Vertex.FloatCount));
-            offset += Shaders.Track.Vertex.FloatCount;
+            return problems.Prepend("Failed to register track geometry");
         }
 
-        // Create instanced registration with empty instance data initially
-        if (instancedBufferManager.CreateMeshInstanceBuffer(
-                vertexFloats,
-                (uint)vertices.Length,
-                indices,
-                Shaders.Track.Vertex.ConfigureAttributes,
-                ReadOnlySpan<float>.Empty,
-                0,
-                Shaders.Track.Instance.ConfigureAttributes,
-                BufferUsageARB.DynamicDraw)
-            .TryPickProblems(out problems, out var registration))
+        // Register group
+        if (renderingGroupManager.Register<Shaders.Track.Vertex, Shaders.Track.Instance>(
+                geometryId, _shader, _shader.BlendState)
+            .TryPickProblems(out problems, out var groupId))
         {
-            return problems.Prepend("Failed to create track instanced buffers");
+            return problems.Prepend("Failed to register track group");
         }
 
-        _registration = registration;
+        _groupId = groupId;
 
         return Result.Success();
     }
@@ -78,20 +68,26 @@ public class TrackRenderingService(
         }
 
         var instance = CreateInstance(track.Start, track.End);
-        _trackInstances[trackId] = instance;
-        _dirty = true;
+
+        if (renderingInstanceManager.Add(_groupId, instance)
+            .TryPickProblems(out var problems, out var instanceId))
+        {
+            return problems.Prepend("Failed to add track instance for '{0}'", trackId);
+        }
+
+        _trackInstanceIds[trackId] = instanceId;
 
         return Result.Success();
     }
 
     public Result Unregister(Id<Track> trackId)
     {
-        if (_trackInstances.Remove(trackId))
+        if (!_trackInstanceIds.Remove(trackId, out var instanceId))
         {
-            _dirty = true;
+            return Result.Success();
         }
 
-        return Result.Success();
+        return renderingInstanceManager.Remove(_groupId, instanceId);
     }
 
     public Result Update(TimeSpan deltaTime)
@@ -99,27 +95,7 @@ public class TrackRenderingService(
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         sceneLightService.ApplyShaderParameters(_shader);
 
-        if (_dirty)
-        {
-            RebuildInstanceBuffer();
-            _dirty = false;
-        }
-
         return Result.Success();
-    }
-
-    public Result Render(TimeSpan deltaTime)
-    {
-        return renderingManager3D.RenderInstanced(
-            _shader,
-            _registration,
-            (uint)_trackInstances.Count);
-    }
-
-    public Result Unload()
-    {
-        instancedBufferManager.DeleteMeshInstanceBuffers(_registration);
-        return renderingServiceHelper.UnloadShader(_shader);
     }
 
     private static Shaders.Track.Instance CreateInstance(TrackEndpoint start, TrackEndpoint end)
@@ -133,34 +109,5 @@ public class TrackRenderingService(
             iP1: end.Point,
             iT0: startTangent,
             iT1: endTangent);
-    }
-
-    private void RebuildInstanceBuffer()
-    {
-        var instanceCount = _trackInstances.Count;
-        if (instanceCount == 0)
-        {
-            instancedBufferManager.UpdateMeshInstanceBuffer(
-                _registration,
-                ReadOnlySpan<float>.Empty,
-                0,
-                BufferUsageARB.DynamicDraw);
-            return;
-        }
-
-        var floats = new float[instanceCount * Shaders.Track.Instance.FloatCount];
-        var span = floats.AsSpan();
-        var offset = 0;
-        foreach (var instance in _trackInstances.Values)
-        {
-            instance.WriteTo(span.Slice(offset, Shaders.Track.Instance.FloatCount));
-            offset += Shaders.Track.Instance.FloatCount;
-        }
-
-        instancedBufferManager.UpdateMeshInstanceBuffer(
-            _registration,
-            floats,
-            (uint)instanceCount,
-            BufferUsageARB.DynamicDraw);
     }
 }

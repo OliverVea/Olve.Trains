@@ -38,7 +38,7 @@
   - [x] Add composable vertex/instance interfaces (`IWithPosition3D`, `IWithNormal3D`, etc.) for generic mesh mapping
   - [ ] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
     - [x] Add `RenderingManager` + `RenderingManagerSceneService` + migrate `TerrainRenderingService`
-    - [ ] Migrate `TrackRenderingService`
+    - [x] Migrate `TrackRenderingService`
     - [ ] Migrate `VehicleRenderingService`
     - [ ] Migrate `JunctionSignalRenderingService` + `TrackArrowIndicatorService`
     - [ ] Migrate `BuildingRenderingService`
