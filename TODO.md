@@ -1,5 +1,9 @@
 ## Done
 
+- [x] Unit geometry (Technical):
+  - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
+  - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
+- [x] Unified renderer epic (Technical)
 - [x] OpenTelemetry metrics epic (Technical):
   - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts, scene update/render duration, commands processed)
   - [x] Add game-level OTel metrics (track count, vehicle count, building count)
@@ -21,7 +25,6 @@
   - [x] Add support for taking screenshots of the current state of the game
   - [x] Add predefined command handler argument parsers (e.g. TilePosition, Vector3, CardinalDirection)
 
-
 ## Demo
 
 - [ ] Prefab system epic (Technical):
@@ -37,36 +40,6 @@
   - Description: Extract repeated patterns from rendering services (BuildingRenderingService, VehicleRenderingService, JunctionSignalRenderingService) into shared helpers. Keep per-entity services as-is for domain-specific logic.
   - [ ] Extract mesh loading + index extraction into a shared helper (repeated across Vehicle, JunctionSignal, and future mesh-based services)
   - [ ] Extract repeated per-frame shader parameter application (camera + light) into a helper or base pattern
-- [ ] Unit geometry (Technical):
-  - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
-  - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
-  - [ ] Add `UnitLineSamples` for GPU-side spline tessellation (unit t-value vertex buffer for instanced spline rendering)
-- [x] Unified renderer epic (Technical) (see [PLAN_UNIFIED_RENDERER.md](PLAN_UNIFIED_RENDERER.md)):
-  - [x] Asset pipeline: generate `Vertex` type for all shaders (non-`@instanced` inputs)
-  - [x] Migrate shaders to always-instanced (per-instance uniforms become `@instanced` attributes)
-    - [x] `building` shader + `BuildingRenderingService`
-    - [x] `default` shader + consumers
-    - [x] `lineStrip` shader + consumers
-    - [x] `terrain` shader + consumers
-  - [x] Add composable vertex/instance interfaces (`IWithPosition3D`, `IWithNormal3D`, etc.) for generic mesh mapping
-  - [x] Unified `RenderingManager` replacing `RenderingManager2D` + `RenderingManager3D`, migrate all consumers
-    - [x] Add `RenderingManager` + `RenderingManagerSceneService` + migrate `TerrainRenderingService`
-    - [x] Migrate `TrackRenderingService`
-    - [x] Migrate `VehicleRenderingService`
-    - [x] Migrate `JunctionSignalRenderingService` + `TrackArrowIndicatorService`
-    - [x] Migrate `BuildingRenderingService`
-    - [x] Migrate `TrackGhostRenderingService`
-    - [x] Migrate `GuiRectangleRenderingService` + `GuiTextRenderingService`
-    - [x] Delete `RenderingManager2D`, `RenderingManager3D`, `OpenGLQuadRenderingManager`, `OpenGLBufferManager`
-  - [x] Merge `building` shader into `default` shader (use white pixel texture for untextured meshes, add ghost rendering support)
-  - [x] Update `docs/architecture.md` rendering sections to reflect unified renderer
-
-## Demo
-
-- [ ] Unit geometry (Technical):
-  - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
-  - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
-  - [ ] Add `UnitLineSamples` for GPU-side spline tessellation (unit t-value vertex buffer for instanced spline rendering)
 - [ ] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
   - [ ] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
   - [ ] Update `ProcessShaders` to generate explicit interface implementations from annotations (replace convention-based matching)
