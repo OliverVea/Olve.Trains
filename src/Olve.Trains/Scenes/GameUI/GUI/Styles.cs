@@ -121,6 +121,68 @@ public static class Styles
         }
     };
 
+    public static readonly GuiElementStyling<Box> BurgerButtonStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(BurgerButtonStyle)),
+        StateTransitions = ButtonTransitions,
+        OnStateChanged = (box, weights) =>
+        {
+            var pressed = weights[GuiNodeState.Pressed];
+            var focused = weights[GuiNodeState.Focused];
+
+            box.Width = 25;
+            box.Height = 25;
+            box.Vertical = true;
+            box.Gap = 3;
+            box.BorderRadius = DefaultBorderRadius;
+            box.BorderWidth = DefaultBorderWidth + 0.5f * pressed;
+            box.BorderColor = Lerp(DefaultBorder, FocusBorder, focused);
+            box.Padding = Lerp(DefaultPadding, DefaultPadding * 2, pressed);
+            box.Justify = Justify.Center;
+            box.Align = Align.Center;
+        }
+    };
+
+    public static readonly GuiElementStyling<Box> BurgerLineStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(BurgerLineStyle)),
+        OnStateChanged = (box, _) =>
+        {
+            box.Width = 15;
+            box.Height = 2;
+            box.BackgroundColor = (0.85f, 0.85f, 0.85f, 1f);
+        }
+    };
+
+    public static readonly GuiElementStyling<Box> BurgerOverlayStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(BurgerOverlayStyle)),
+        OnStateChanged = (box, _) =>
+        {
+            box.BackgroundColor = (0f, 0f, 0f, 0.5f);
+            box.Weight = 1;
+            box.Justify = Justify.Center;
+            box.Align = Align.Center;
+        }
+    };
+
+    public static readonly GuiElementStyling<Box> BurgerMenuPanelStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(BurgerMenuPanelStyle)),
+        OnStateChanged = (box, _) =>
+        {
+            box.BackgroundColor = (0.2f, 0.22f, 0.21f, 0.9f);
+            box.Vertical = true;
+            box.Padding = 20;
+            box.Gap = 10;
+            box.BorderColor = DefaultBorder;
+            box.BorderWidth = DefaultBorderWidth;
+            box.BorderRadius = DefaultBorderRadius;
+            box.Justify = Justify.Center;
+            box.Align = Align.Center;
+        }
+    };
+
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
     private static RGBA Lerp(RGBA a, RGBA b, float t)

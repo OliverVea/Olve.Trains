@@ -134,7 +134,7 @@ sleep 5
 
 # Navigate from main menu
 echo "Starting game from main menu..."
-send_cmd "start-game"
+send_cmd "activate-gui id=MainMenu/Box/StartGameButton"
 sleep 2
 
 Y="0.125"
@@ -226,6 +226,35 @@ if [ -n "$OUTPUT_MODE" ]; then
         fi
     fi
 
+    # Open burger menu and take a screenshot of the modal overlay
+    echo "Opening burger menu..."
+    send_cmd "activate-gui id=InfoBar/Box/MenuButton"
+    sleep 1
+
+    if [ "$OUTPUT_MODE" = "file" ]; then
+        BURGER_SCREENSHOT="${OUTPUT_FILE%.png}-burger.png"
+    else
+        BURGER_SCREENSHOT="$TEMP_DIR/integration-test-burger.png"
+    fi
+
+    echo "Taking burger menu screenshot..."
+    send_cmd "screenshot path=$BURGER_SCREENSHOT"
+    sleep 2
+
+    if [ ! -f "$BURGER_SCREENSHOT" ]; then
+        echo "ERROR: Burger menu screenshot not found at $BURGER_SCREENSHOT"
+        send_cmd "exit" || true
+        exit 1
+    fi
+
+    FILE_SIZE=$(stat -c%s "$BURGER_SCREENSHOT" 2>/dev/null || stat -f%z "$BURGER_SCREENSHOT" 2>/dev/null)
+    echo "  Saved: $BURGER_SCREENSHOT ($FILE_SIZE bytes)"
+
+    # Dismiss burger menu by clicking the overlay
+    echo "Closing burger menu..."
+    send_cmd "activate-gui id=BurgerMenu/Box/Overlay"
+    sleep 1
+
     for i in "${!TIMES[@]}"; do
         TIME="${TIMES[$i]}"
         LABEL="${LABELS[$i]}"
@@ -269,6 +298,23 @@ if [ -n "$OUTPUT_MODE" ]; then
         echo "============================================"
         echo "Screenshots uploaded successfully!"
 
+        # Upload burger menu screenshot
+        S3_KEY="${S3_KEY_PREFIX}-burger.png"
+        aws s3 cp "$BURGER_SCREENSHOT" "s3://${S3_BUCKET}/${S3_KEY}" --region "$S3_REGION"
+        PRESIGNED_URL=$(aws s3 presign "s3://${S3_BUCKET}/${S3_KEY}" --region "$S3_REGION" --expires-in 3600)
+        SHORT_URL=""
+        if [ -n "$SHLINK_API_KEY" ]; then
+            SHORT_URL=$(curl -sf -X POST "${SHLINK_URL}/rest/v3/short-urls" \
+                -H "X-Api-Key: ${SHLINK_API_KEY}" \
+                -H "Content-Type: application/json" \
+                -d "{\"longUrl\": \"${PRESIGNED_URL}\"}" | python3 -c "import sys,json; print(json.load(sys.stdin)['shortUrl'])" 2>/dev/null || true)
+        fi
+        if [ -n "$SHORT_URL" ]; then
+            echo "  burger menu: $SHORT_URL"
+        else
+            echo "  burger menu: $PRESIGNED_URL"
+        fi
+
         for i in "${!LABELS[@]}"; do
             LABEL="${LABELS[$i]}"
             SCREENSHOT_PATH="$TEMP_DIR/integration-test-${LABEL}.png"
@@ -308,7 +354,14 @@ fi
 
 echo ""
 echo "=== Shutting Down ==="
-send_cmd "exit" || true
+echo "Opening burger menu..."
+send_cmd "activate-gui id=InfoBar/Box/MenuButton"
+sleep 1
+echo "Navigating to main menu..."
+send_cmd "activate-gui id=BurgerMenu/Box/MainMenuButton"
+sleep 1
+echo "Exiting game..."
+send_cmd "activate-gui id=MainMenu/Box/ExitGameButton" || true
 sleep 1
 
 echo ""

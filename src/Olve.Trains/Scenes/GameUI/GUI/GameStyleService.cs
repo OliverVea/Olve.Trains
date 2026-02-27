@@ -1,5 +1,6 @@
 using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.Scenes;
+using Olve.Trains.Scenes.MainMenu;
 
 namespace Olve.Trains.Scenes.GameUI.GUI;
 
@@ -12,7 +13,10 @@ public class GameStyleService(
         Styles.MenuButtonStyle, Styles.MenuBarBackground,
         Styles.ToolIconStyle, Styles.InfoBarBackground,
         Styles.InfoBarSection, Styles.InfoTextMedium,
-        Styles.InfoBarButtonStyle
+        Styles.InfoBarButtonStyle,
+        Styles.BurgerButtonStyle, Styles.BurgerLineStyle,
+        Styles.BurgerOverlayStyle, Styles.BurgerMenuPanelStyle,
+        MainMenuStyles.MainMenuButtonStyle, MainMenuStyles.MainMenuButtonTextStyle
     ];
 
     public Result Load()

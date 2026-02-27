@@ -92,7 +92,7 @@
   - [ ] Add shadow map sampling to receiver shaders — terrain, default, and building fragment shaders sample the shadow map to attenuate diffuse lighting
 - [ ] Main menu improvements (Visual):
   - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
-  - [ ] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now
+  - [x] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now
   - [ ] Make a visually appealing main menu
 - [ ] Terrain epic (Visual):
   - [ ] Add bumpy terrain using low-res noise texture for low-poly smooth height variation

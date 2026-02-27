@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Olve.Engine3D.GUI;
+﻿using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
@@ -10,11 +9,11 @@ using Olve.Generated.Layouts;
 namespace Olve.Trains.Scenes.GameUI.GUI;
 
 public class InfoBarService(
-    IServiceProvider serviceProvider,
     DayTimeManager dayTimeManager,
     GuiElementService guiElementService,
     GuiActivationService guiActivationService,
-    GuiAnchorService guiAnchorService) : ISceneService
+    GuiAnchorService guiAnchorService,
+    BurgerMenuService burgerMenuService) : ISceneService
 {
 
     public int Priority => 100;
@@ -78,7 +77,7 @@ public class InfoBarService(
     {
         if (NodeIdMatches(InfoBar.MenuButton, message.NodeId))
         {
-            TransitionToMainMenu();
+            burgerMenuService.ToggleMenu();
         }
     }
 
@@ -90,18 +89,5 @@ public class InfoBarService(
         }
 
         return nodeId == guiElementNodeId;
-    }
-
-    private Result TransitionToMainMenu()
-    {
-        var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
-
-        if (sceneManager.DeactivateAndUnloadScene(SceneIds.GameLogicScene)
-            .TryPickProblems(out var problems))
-        {
-            return problems;
-        }
-
-        return sceneManager.LoadAndActivateScene(SceneIds.MainMenuScene);
     }
 }

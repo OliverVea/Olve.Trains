@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Overlay" Style="BurgerOverlayStyle" Interactive="true">
+    <Box id="MenuPanel" Style="BurgerMenuPanelStyle" Interactive="true">
+        <Box id="MainMenuButton" Style="MainMenuButtonStyle" Interactive="true">
+            <Text Content='"Main Menu"' Style="MainMenuButtonTextStyle" InheritParentState="true" />
+        </Box>
+    </Box>
+</Box>

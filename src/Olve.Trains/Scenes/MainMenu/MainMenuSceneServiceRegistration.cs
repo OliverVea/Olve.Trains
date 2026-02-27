@@ -3,6 +3,7 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameRendering;
+using Olve.Trains.Scenes.GameUI.GUI;
 using Olve.Trains.Scenes.GUI;
 
 namespace Olve.Trains.Scenes.MainMenu;
@@ -25,6 +26,7 @@ public static class MainMenuSceneServiceRegistration
 
         // Main menu command handlers
         services.AddSceneService<StartGameCommandHandler>(sceneId);
+        services.AddSceneService<ActivateGuiHandlerService>(sceneId);
 
         // Main menu-specific services
         services.AddSceneService<MainMenuService>(sceneId);

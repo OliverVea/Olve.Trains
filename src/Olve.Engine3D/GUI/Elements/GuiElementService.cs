@@ -96,6 +96,21 @@ public class GuiElementService
         return _forwardLookup.TryGetValue(key, out guiNodeId);
     }
 
+    public bool TryGetAnyGuiNodeId(Id<GuiElement> guiElementId, out Id<GuiNode> guiNodeId)
+    {
+        foreach (var (key, nodeId) in _forwardLookup)
+        {
+            if (key.ElementId == guiElementId)
+            {
+                guiNodeId = nodeId;
+                return true;
+            }
+        }
+
+        guiNodeId = default;
+        return false;
+    }
+
     public bool IsElementNodeId(Id<GuiNode> guiNode, GuiElement element, Id<GuiElementRegistrations> registrationId)
     {
         return TryGetGuiNodeId(element.Id, registrationId, out Id<GuiNode> node) && node == guiNode;
