@@ -53,7 +53,6 @@
   - [x] Validate collisions
   - [x] Add station with station track
   - [ ] Add building models
-  - [x] BUG: don't show building ghost when there's no terrain intersection with mouse
 - [ ] Collision system epic (Technical):
   - Description: Centralized collision system (e.g. Id<Collider>) queryable when placing tracks, buildings, or future obstacles like trees. Replaces per-type validation with a unified approach.
   - [ ] Design generalized collision system with typed collider IDs
