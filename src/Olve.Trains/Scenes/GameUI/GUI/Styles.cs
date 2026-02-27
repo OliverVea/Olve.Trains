@@ -183,6 +183,41 @@ public static class Styles
         }
     };
 
+    public static readonly GuiElementStyling<Box> ModalButtonStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(ModalButtonStyle)),
+        StateTransitions = ButtonTransitions,
+        OnStateChanged = (box, weights) =>
+        {
+            var pressed = weights[GuiNodeState.Pressed];
+            var focused = weights[GuiNodeState.Focused];
+
+            box.BackgroundColor = (0.27f, 0.3f, 0.28f, 0.8f);
+            box.Width = 200;
+            box.Height = 50;
+            box.BorderRadius = 8;
+            box.BorderWidth = DefaultBorderWidth + 0.5f * pressed;
+            box.BorderColor = Lerp(DefaultBorder, FocusBorder, focused);
+            box.Padding = Lerp(8f, 12f, pressed);
+            box.Justify = Justify.Center;
+            box.Align = Align.Center;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> ModalButtonTextStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(ModalButtonTextStyle)),
+        StateTransitions = ButtonTransitions,
+        OnStateChanged = (text, weights) =>
+        {
+            var focused = weights[GuiNodeState.Focused];
+
+            text.Color = (0.9f, 0.9f, 0.9f, 1f);
+            text.FontWeight = focused * 1.5f;
+            text.FontSize = Lerp(16f, 18f, focused);
+        }
+    };
+
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
     private static RGBA Lerp(RGBA a, RGBA b, float t)

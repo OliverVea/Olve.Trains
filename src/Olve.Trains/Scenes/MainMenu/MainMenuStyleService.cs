@@ -1,5 +1,6 @@
 using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.Scenes;
+using Olve.Trains.Scenes.GameUI.GUI;
 
 namespace Olve.Trains.Scenes.MainMenu;
 
@@ -7,15 +8,15 @@ public class MainMenuStyleService(
     GuiStyleRegistry styleRegistry) : ISceneService
 {
 
-    private static readonly IGuiElementStyling[] Styles =
+    private static readonly IGuiElementStyling[] MainMenuStyles =
     [
-        MainMenuStyles.MainMenuButtonStyle,
-        MainMenuStyles.MainMenuButtonTextStyle,
+        Styles.ModalButtonStyle,
+        Styles.ModalButtonTextStyle,
     ];
 
     public Result Load()
     {
-        foreach (var style in Styles)
+        foreach (var style in MainMenuStyles)
         {
             styleRegistry.Register(style);
         }
@@ -25,7 +26,7 @@ public class MainMenuStyleService(
 
     public Result Unload()
     {
-        foreach (var style in Styles)
+        foreach (var style in MainMenuStyles)
         {
             styleRegistry.Unregister(style);
         }

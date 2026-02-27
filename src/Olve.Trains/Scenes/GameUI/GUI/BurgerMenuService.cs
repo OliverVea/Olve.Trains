@@ -74,7 +74,8 @@ public class BurgerMenuService(
     {
         if (!_isOpen) return;
 
-        if (NodeIdMatches(BurgerMenu.Overlay, message.NodeId))
+        if (NodeIdMatches(BurgerMenu.Overlay, message.NodeId)
+            || NodeIdMatches(BurgerMenu.ResumeButton, message.NodeId))
         {
             CloseMenu();
         }
@@ -83,6 +84,7 @@ public class BurgerMenuService(
             CloseMenu();
             TransitionToMainMenu();
         }
+        // SaveGameButton, LoadGameButton, OptionsButton — noop for now
     }
 
     private bool NodeIdMatches(GuiElement guiElement, Id<GuiNode> nodeId)

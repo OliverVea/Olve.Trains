@@ -250,9 +250,9 @@ if [ -n "$OUTPUT_MODE" ]; then
     FILE_SIZE=$(stat -c%s "$BURGER_SCREENSHOT" 2>/dev/null || stat -f%z "$BURGER_SCREENSHOT" 2>/dev/null)
     echo "  Saved: $BURGER_SCREENSHOT ($FILE_SIZE bytes)"
 
-    # Dismiss burger menu by clicking the overlay
+    # Dismiss burger menu by clicking Resume
     echo "Closing burger menu..."
-    send_cmd "activate-gui id=BurgerMenu/Box/Overlay"
+    send_cmd "activate-gui id=BurgerMenu/Box/ResumeButton"
     sleep 1
 
     for i in "${!TIMES[@]}"; do

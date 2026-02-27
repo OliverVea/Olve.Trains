@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Box id="Overlay" Style="BurgerOverlayStyle" Interactive="true">
     <Box id="MenuPanel" Style="BurgerMenuPanelStyle" Interactive="true">
-        <Box id="MainMenuButton" Style="MainMenuButtonStyle" Interactive="true">
-            <Text Content='"Main Menu"' Style="MainMenuButtonTextStyle" InheritParentState="true" />
+        <Box id="ResumeButton" Style="ModalButtonStyle" Interactive="true">
+            <Text Content='"Resume"' Style="ModalButtonTextStyle" InheritParentState="true" />
+        </Box>
+        <Box id="SaveGameButton" Style="ModalButtonStyle" Interactive="true">
+            <Text Content='"Save Game"' Style="ModalButtonTextStyle" InheritParentState="true" />
+        </Box>
+        <Box id="LoadGameButton" Style="ModalButtonStyle" Interactive="true">
+            <Text Content='"Load Game"' Style="ModalButtonTextStyle" InheritParentState="true" />
+        </Box>
+        <Box id="OptionsButton" Style="ModalButtonStyle" Interactive="true">
+            <Text Content='"Options"' Style="ModalButtonTextStyle" InheritParentState="true" />
+        </Box>
+        <Box id="MainMenuButton" Style="ModalButtonStyle" Interactive="true">
+            <Text Content='"Main Menu"' Style="ModalButtonTextStyle" InheritParentState="true" />
         </Box>
     </Box>
 </Box>
