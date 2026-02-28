@@ -43,6 +43,8 @@ class CommandError(Exception):
 
 
 class Game:
+    _next_display = 99
+
     def __init__(
         self,
         instance_id: str = "integration-test",
@@ -50,20 +52,26 @@ class Game:
         windowing: str = "native",
         skip_build: bool = False,
         scene: str | None = None,
+        kill_stale: bool = True,
     ):
         self.instance_id = instance_id
         self.resolution = resolution
         self.windowing = windowing
         self.skip_build = skip_build
         self.scene = scene
+        self.kill_stale = kill_stale
 
+        self._display: int = Game._next_display
+        Game._next_display += 1
+        self._game_env: dict[str, str] | None = None
         self._game_proc: subprocess.Popen | None = None
         self._xvfb_proc: subprocess.Popen | None = None
         self._temp_dir = tempfile.mkdtemp(prefix="integration-test-")
 
     def start(self) -> None:
         self._build()
-        self._kill_stale()
+        if self.kill_stale:
+            self._kill_stale()
         self._start_xvfb()
         self._launch_game()
         self._wait_for_pipe()
@@ -84,7 +92,7 @@ class Game:
         if self._xvfb_proc and self._xvfb_proc.poll() is None:
             self._xvfb_proc.terminate()
             try:
-                lock = Path("/tmp/.X99-lock")
+                lock = Path(f"/tmp/.X{self._display}-lock")
                 if lock.exists():
                     lock.unlink()
             except Exception:
@@ -214,19 +222,21 @@ class Game:
         if self.windowing != "xvfb":
             return
 
+        display = f":{self._display}"
+
         if os.name != "nt":
-            subprocess.run(["pkill", "-f", "Xvfb :99"], capture_output=True)
-        lock = Path("/tmp/.X99-lock")
+            subprocess.run(["pkill", "-f", f"Xvfb {display}"], capture_output=True)
+        lock = Path(f"/tmp/.X{self._display}-lock")
         if lock.exists():
             lock.unlink()
 
         self._xvfb_proc = subprocess.Popen(
-            ["Xvfb", ":99", "-screen", "0", f"{self.resolution}x24"],
+            ["Xvfb", display, "-screen", "0", f"{self.resolution}x24"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        os.environ["DISPLAY"] = ":99"
-        os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
+
+        self._game_env = {**os.environ, "DISPLAY": display, "LIBGL_ALWAYS_SOFTWARE": "1"}
         time.sleep(2)
 
     def _launch_game(self) -> None:
@@ -247,6 +257,7 @@ class Game:
             cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            env=self._game_env,
         )
 
     def _wait_for_pipe(self, timeout: int = 30) -> None:

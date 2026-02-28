@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import queue
 import subprocess
 import tempfile
 from datetime import date
@@ -60,19 +61,58 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
+POOL_SIZE = 4
+
+
+class GamePool:
+    def __init__(self, games: list[Game]):
+        self._all = games
+        self._available: queue.Queue[Game] = queue.Queue()
+        for g in games:
+            self._available.put(g)
+
+    def acquire(self) -> Game:
+        return self._available.get()
+
+    def release(self, game: Game) -> None:
+        self._available.put(game)
+
+    def stop_all(self) -> None:
+        for g in self._all:
+            g.stop()
+
+
 @pytest.fixture(scope="session")
-def game(request: pytest.FixtureRequest) -> Game:
-    instance_id = f"integration-test-{id(request.session)}"
-    g = Game(
-        instance_id=instance_id,
-        resolution=request.config.getoption("--resolution"),
-        windowing=request.config.getoption("--windowing"),
-        skip_build=request.config.getoption("--skip-build"),
-        scene="game",
-    )
-    g.start()
+def _game_pool(request: pytest.FixtureRequest) -> GamePool:
+    resolution = request.config.getoption("--resolution")
+    windowing = request.config.getoption("--windowing")
+    skip_build = request.config.getoption("--skip-build")
+
+    games: list[Game] = []
+    for i in range(POOL_SIZE):
+        g = Game(
+            instance_id=f"integration-test-{i}",
+            resolution=resolution,
+            windowing=windowing,
+            skip_build=skip_build or i > 0,  # only build once
+            scene="game",
+            kill_stale=i == 0,  # only kill stale processes on first instance
+        )
+        g.start()
+        games.append(g)
+
+    pool = GamePool(games)
+    yield pool
+    pool.stop_all()
+
+
+@pytest.fixture
+def game(_game_pool: GamePool) -> Game:
+    g = _game_pool.acquire()
+    g.load_scene("game")
+    g.step(2)
     yield g
-    g.stop()
+    _game_pool.release(g)
 
 
 @pytest.fixture(scope="session")
