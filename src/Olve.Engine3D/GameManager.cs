@@ -22,6 +22,7 @@ public class GameManager(
     MouseManager mouseManager,
     SceneManager sceneManager,
     AfterRenderEvent afterRenderEvent,
+    GameClosingEvent gameClosingEvent,
     CommandPipeServer? commandPipeServer = null)
 {
     private Result _result = Result.Success();
@@ -183,6 +184,6 @@ public class GameManager(
 
     public void Stop()
     {
-        windowProvider.Value.Close();
+        gameClosingEvent.GameClosing.Invoke();
     }
 }

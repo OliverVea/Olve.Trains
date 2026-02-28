@@ -1,4 +1,6 @@
-﻿using Olve.Engine3D.Events;
+﻿using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Commands;
+using Olve.Engine3D.Events;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 using Silk.NET.OpenGL;
@@ -48,7 +50,14 @@ public class WindowStepper(Provider<IWindow> windowProvider, Provider<GL> glProv
     }
 }
 
-public class ManualStepper(GameClosingEvent gameClosingEvent) : ITimeStepper
+public class ManualStepper(
+    Provider<IWindow> windowProvider,
+    Provider<GL> glProvider,
+    ScreenResizedEvent screenResizedEvent,
+    GameClosingEvent gameClosingEvent,
+    CommandQueue commandQueue,
+    CommandRunner commandRunner,
+    ILogger<ManualStepper> logger) : ITimeStepper
 {
     // TODO: Support other frame rates
     private const float FrameTimeSeconds = 1 / 60f;
@@ -67,17 +76,51 @@ public class ManualStepper(GameClosingEvent gameClosingEvent) : ITimeStepper
 
     public void Dispose()
     {
-
     }
 
     public void Run()
     {
+        var window = windowProvider.Value;
+
+        // Initialize the window to create the native handle and GL context,
+        // without starting the event loop (unlike WindowStepper which calls window.Run()).
+        window.Initialize();
+
+        window.FramebufferResize += size =>
+        {
+            glProvider.Value.Viewport(size);
+            screenResizedEvent.OnWindowResize.Invoke(size);
+        };
+
+        gameClosingEvent.GameClosing.Subscribe(() =>
+        {
+            _shouldRun = false;
+            window.Close();
+        });
+
         Load.Invoke();
-        gameClosingEvent.GameClosing.Subscribe(() => _shouldRun = false);
 
         _shouldRun = true;
         while (_shouldRun)
         {
+            window.DoEvents();
+            ProcessCommands();
+            Thread.Sleep(SamplePeriod);
+        }
+
+        Closing.Invoke();
+        windowProvider.Dispose();
+    }
+
+    public void Step(ulong frames) => _desiredFrames += frames;
+
+    private void ProcessCommands()
+    {
+        while (commandQueue.TryDequeue(out var pending))
+        {
+            var result = commandRunner.Run(new RunCommandRequest(pending.Command));
+
+            // Process any frames requested by step command BEFORE completing the TCS
             var stepped = false;
             for (; _currentFrames < _desiredFrames; _currentFrames++)
             {
@@ -90,10 +133,17 @@ public class ManualStepper(GameClosingEvent gameClosingEvent) : ITimeStepper
                 Render.Invoke(FrameTime);
             }
 
-            Thread.Sleep(SamplePeriod);
+            // Now complete the TCS — client unblocks after frames are done
+            if (result.TryPickProblems(out var problems, out var output))
+            {
+                var errors = problems.Select(p => p.ToDebugString()).ToArray();
+                logger.LogWarning("Command '{Command}' failed: {Errors}", pending.Command, string.Join("; ", (IEnumerable<string>)errors));
+                pending.CompletionSource.SetResult(new CommandResponse(false, string.Empty, errors));
+            }
+            else
+            {
+                pending.CompletionSource.SetResult(new CommandResponse(true, output.Text, []));
+            }
         }
     }
-
-    public void Step(ulong frames) => _desiredFrames += frames;
-
 }

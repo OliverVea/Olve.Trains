@@ -126,16 +126,38 @@ send_cmd() {
     dotnet "$BIN_DIR/On Track To Grow.dll" --send "$1" --instance "$INSTANCE_ID"
 }
 
-# Launch game
-echo "Launching game..."
-dotnet "$BIN_DIR/On Track To Grow.dll" --listen --instance "$INSTANCE_ID" --resolution "$RESOLUTION" &
+# Convert MSYS/Git Bash paths to Windows paths for the .NET game process
+to_win_path() {
+    if command -v cygpath &> /dev/null; then
+        cygpath -w "$1"
+    else
+        echo "$1"
+    fi
+}
+
+# Launch game in manual stepping mode
+echo "Launching game (manual mode)..."
+dotnet "$BIN_DIR/On Track To Grow.dll" --manual --listen --instance "$INSTANCE_ID" --resolution "$RESOLUTION" &
 GAME_PID=$!
-sleep 5
+
+# Wait for pipe to become available
+echo "Waiting for game to start..."
+for i in $(seq 1 30); do
+    if send_cmd "echo message=ping" >/dev/null 2>&1; then
+        echo "Game ready."
+        break
+    fi
+    if [ "$i" -eq 30 ]; then
+        echo "ERROR: Game did not start within 30 seconds"
+        exit 1
+    fi
+    sleep 1
+done
 
 # Navigate from main menu
 echo "Starting game from main menu..."
 send_cmd "activate-gui id=MainMenu/Box/StartGameButton"
-sleep 2
+send_cmd "step frames=2"
 
 Y="0.125"
 
@@ -200,18 +222,18 @@ send_cmd "place-vehicle track=$TRACK2_ID speed=3"
 echo "Placing train 3..."
 send_cmd "place-vehicle track=$TRACK3_ID speed=3"
 
-# Wait for trains to move around the loop
-echo "Waiting for simulation..."
-sleep 5
+# Simulate trains moving around the loop (5 seconds at 60fps = 300 frames)
+echo "Stepping simulation (300 frames)..."
+send_cmd "step frames=300"
 
 # Select track placement tool so the arrow indicator is visible
 echo "Selecting track placement tool..."
 send_cmd "select-tool name='Place Tracks'"
-sleep 0.5
+send_cmd "step frames=2"
 
 # Move mouse to center of screen so the grid overlay and arrow indicator are visible
 send_cmd "set-mouse pos=0,0"
-sleep 0.5
+send_cmd "step frames=2"
 
 # Screenshot handling — take screenshots at multiple times of day
 if [ -n "$OUTPUT_MODE" ]; then
@@ -229,7 +251,7 @@ if [ -n "$OUTPUT_MODE" ]; then
     # Open burger menu and take a screenshot of the modal overlay
     echo "Opening burger menu..."
     send_cmd "activate-gui id=InfoBar/Box/MenuButton"
-    sleep 1
+    send_cmd "step frames=2"
 
     if [ "$OUTPUT_MODE" = "file" ]; then
         BURGER_SCREENSHOT="${OUTPUT_FILE%.png}-burger.png"
@@ -238,8 +260,8 @@ if [ -n "$OUTPUT_MODE" ]; then
     fi
 
     echo "Taking burger menu screenshot..."
-    send_cmd "screenshot path=$BURGER_SCREENSHOT"
-    sleep 2
+    send_cmd "screenshot path=$(to_win_path "$BURGER_SCREENSHOT")"
+    send_cmd "step frames=2"
 
     if [ ! -f "$BURGER_SCREENSHOT" ]; then
         echo "ERROR: Burger menu screenshot not found at $BURGER_SCREENSHOT"
@@ -253,7 +275,7 @@ if [ -n "$OUTPUT_MODE" ]; then
     # Dismiss burger menu by clicking Resume
     echo "Closing burger menu..."
     send_cmd "activate-gui id=BurgerMenu/Box/ResumeButton"
-    sleep 1
+    send_cmd "step frames=2"
 
     for i in "${!TIMES[@]}"; do
         TIME="${TIMES[$i]}"
@@ -269,11 +291,11 @@ if [ -n "$OUTPUT_MODE" ]; then
 
         echo "Setting time to ${TIME}..."
         send_cmd "set-time time=${TIME}"
-        sleep 1
+        send_cmd "step frames=2"
 
         echo "Taking screenshot at ${TIME}..."
-        send_cmd "screenshot path=$SCREENSHOT_PATH"
-        sleep 2
+        send_cmd "screenshot path=$(to_win_path "$SCREENSHOT_PATH")"
+        send_cmd "step frames=2"
 
         if [ ! -f "$SCREENSHOT_PATH" ]; then
             echo "ERROR: Screenshot file not found at $SCREENSHOT_PATH"
@@ -354,15 +376,8 @@ fi
 
 echo ""
 echo "=== Shutting Down ==="
-echo "Opening burger menu..."
-send_cmd "activate-gui id=InfoBar/Box/MenuButton"
-sleep 1
-echo "Navigating to main menu..."
-send_cmd "activate-gui id=BurgerMenu/Box/MainMenuButton"
-sleep 1
 echo "Exiting game..."
-send_cmd "activate-gui id=MainMenu/Box/ExitGameButton" || true
-sleep 1
+send_cmd "exit" || true
 
 echo ""
 echo "==============================="

@@ -25,6 +25,10 @@
   - [x] Add support for taking screenshots of the current state of the game
   - [x] Add predefined command handler argument parsers (e.g. TilePosition, Vector3, CardinalDirection)
 
+## Bugs
+
+- [ ] Fast mouse movement sometimes doesn't remove focus/hover from the previous entity
+
 ## Demo
 
 - [ ] Prefab system epic (Technical):
@@ -129,7 +133,7 @@
   - Description: Enable deterministic replay of game sessions for bug investigation and integration testing. An LLM should be able to take a game log and generate a replay script. The game should support a script file syntax that can be passed as a replay, and manual simulation stepping (disabling auto-step) via a command.
   - [ ] Define script file syntax for replay sequences (commands + timing/step triggers)
   - [ ] Add `--replay <script>` CLI argument to load and execute a script file
-  - [ ] Add manual simulation stepping command (pause auto-step, advance frame-by-frame)
+  - [x] Add manual simulation stepping command (pause auto-step, advance frame-by-frame)
   - [ ] Add game state logging sufficient for LLM-based replay script generation
 - [ ] Random generation epic (Feature):
   - [ ] Add random terrain generation

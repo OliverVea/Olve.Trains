@@ -22,7 +22,7 @@ namespace Olve.Trains;
 
 public static class GameServiceRegistration
 {
-    public static IServiceCollection AddAllServices(this IServiceCollection services, IConfiguration configuration, GameInstanceId instanceId, bool listen)
+    public static IServiceCollection AddAllServices(this IServiceCollection services, IConfiguration configuration, GameInstanceId instanceId, bool listen, bool manual)
     {
         // Logging & Metrics
         services.AddLogging(builder => builder.AddConfiguredLogging(configuration));
@@ -44,7 +44,15 @@ public static class GameServiceRegistration
         services.AddSingleton<ScreenResizedEvent>();
         services.AddSingleton<AfterRenderEvent>();
         services.AddSingleton<GameClosingEvent>();
-        services.AddSingleton<ITimeStepper, WindowStepper>();
+        if (manual)
+        {
+            services.AddSingleton<ManualStepper>();
+            services.AddSingleton<ITimeStepper>(sp => sp.GetRequiredService<ManualStepper>());
+        }
+        else
+        {
+            services.AddSingleton<ITimeStepper, WindowStepper>();
+        }
         services.AddSingleton<ScreenshotManager>();
         services.AddSingleton<CommandHandlerServiceCollection>();
         services.AddSingleton<EventQueueFactory>();
@@ -57,6 +65,10 @@ public static class GameServiceRegistration
         services.AddSingleton<HelpCommandHandler>();
         services.AddSingleton<ExitCommandHandler>();
         services.AddSingleton<ScreenshotCommandHandler>();
+        if (manual)
+        {
+            services.AddSingleton<StepCommandHandler>();
+        }
         if (listen)
         {
             services.AddSingleton<CommandPipeServer>();
