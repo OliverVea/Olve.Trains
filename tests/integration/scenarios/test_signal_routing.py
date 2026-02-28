@@ -81,15 +81,22 @@ def test_signal_rule_routes_vehicle(game: Game) -> None:
     )
 
 
-def _build_crossroads(game: Game) -> tuple[list[str], list[str], list[str], list[str]]:
-    """Build a 4-way crossroads: input from west, outputs east/north/south.
+def _build_fan_junction(game: Game) -> tuple[list[str], list[str], list[str], list[str]]:
+    """Build a fan junction: one input from west, three outputs all starting west at center.
 
-    The junction at (4,0) has 4 connections. Traffic from the west can exit
-    east (opposite direction) and the signal rule directs to specific tracks.
+    All outgoing tracks start with start_dir=west at the center point, which is
+    the 180° opposite of the incoming east tangent. This makes all three valid
+    exits for GetConnections, allowing RoundRobin to distribute across them.
 
-    Returns (track_west, track_east, track_north, track_south).
+    Layout:
+        west ——→ center (east)
+                 center (west) ——→ north
+                 center (west) ——→ east
+                 center (west) ——→ south
+
+    Returns (track_west, track_north, track_east, track_south).
     """
-    # Track from west (input)
+    # Input track: west to center, arriving facing east
     track_west = game.place_track(
         start=f"0,{Y},0",
         end=f"4,{Y},0",
@@ -97,67 +104,91 @@ def _build_crossroads(game: Game) -> tuple[list[str], list[str], list[str], list
         end_dir="east",
     )
 
-    # Track to east (output, opposite of incoming)
-    track_east = game.place_track(
-        start=f"4,{Y},0",
-        end=f"8,{Y},0",
-        start_dir="east",
-        end_dir="east",
-    )
-
-    # Track to north (output)
+    # Output north: leaves center facing west, curves to north
     track_north = game.place_track(
         start=f"4,{Y},0",
         end=f"4,{Y},4",
-        start_dir="north",
+        start_dir="west",
         end_dir="north",
     )
 
-    # Track to south (output)
+    # Output east: leaves center facing west, curves to east
+    track_east = game.place_track(
+        start=f"4,{Y},0",
+        end=f"8,{Y},0",
+        start_dir="west",
+        end_dir="east",
+    )
+
+    # Output south: leaves center facing west, curves to south
     track_south = game.place_track(
         start=f"4,{Y},0",
         end=f"4,{Y},-4",
-        start_dir="south",
+        start_dir="west",
         end_dir="south",
     )
 
-    # Step to let event chain propagate
+    # Step to let event chain propagate (track → junction → signal creation)
     game.step(10)
 
-    return track_west, track_east, track_north, track_south
+    return track_west, track_north, track_east, track_south
 
 
 def test_round_robin_distributes_vehicles(game: Game) -> None:
-    """RoundRobin on a crossroads sends successive vehicles to different tracks.
+    """RoundRobin should distribute successive vehicles across different output tracks.
 
-    At a 4-way junction, vehicles from the west have one opposite connection (east).
-    Two vehicles arriving from west with RoundRobin should both go east (only
-    eligible outgoing direction). This test verifies the junction crossing works
-    and vehicles arrive at the expected output.
+    Three vehicles enter from the west. The junction has three valid exits (north,
+    east, south) — all with start_dir=west (opposite of the incoming east tangent).
+    With RoundRobin, each vehicle should be routed to a different output track.
     """
-    track_west, track_east, track_north, track_south = _build_crossroads(game)
+    track_west, track_north, track_east, track_south = _build_fan_junction(game)
+    junction_id = _find_signal_junction(game)
 
-    # Place first vehicle, let it cross
-    vehicle1_id = game.place_vehicle(track=track_west[0], speed=5)
-    game.step(120)
-
-    state1 = game.query_vehicle(vehicle1_id)
-    vehicle1_track = state1.track_id
-
-    # Place second vehicle, let it cross
-    vehicle2_id = game.place_vehicle(track=track_west[0], speed=5)
-    game.step(120)
-
-    state2 = game.query_vehicle(vehicle2_id)
-    vehicle2_track = state2.track_id
-
-    # Both should end up on the east track (only opposite-direction output)
-    east_tracks = set(track_east)
-    assert vehicle1_track in east_tracks, (
-        f"Vehicle 1 should be on east track {east_tracks}, "
-        f"but found on {vehicle1_track}"
+    # Set up RoundRobin rule from west to all three outputs
+    game.clear_signal_rules(junction_id)
+    game.add_signal_rule(
+        junction_id,
+        f"any from direction(west) to "
+        f"[track({track_north[0]}),track({track_east[0]}),track({track_south[0]})] "
+        f"with RoundRobin",
     )
-    assert vehicle2_track in east_tracks, (
-        f"Vehicle 2 should be on east track {east_tracks}, "
-        f"but found on {vehicle2_track}"
+
+    # Send three vehicles through, one at a time
+    vehicle_ids = []
+    for _ in range(3):
+        vid = game.place_vehicle(track=track_west[0], speed=5)
+        vehicle_ids.append(vid)
+        game.step(120)
+
+    # Query where each vehicle ended up
+    output_tracks = []
+    for vid in vehicle_ids:
+        state = game.query_vehicle(vid)
+        output_tracks.append(state.track_id)
+
+    all_north = set(track_north)
+    all_east = set(track_east)
+    all_south = set(track_south)
+    all_outputs = all_north | all_east | all_south
+
+    # Each vehicle should be on one of the output tracks
+    for i, track_id in enumerate(output_tracks):
+        assert track_id in all_outputs, (
+            f"Vehicle {i+1} should be on an output track, "
+            f"but found on {track_id}"
+        )
+
+    # RoundRobin: all three should be on different output branches
+    branches = []
+    for track_id in output_tracks:
+        if track_id in all_north:
+            branches.append("north")
+        elif track_id in all_east:
+            branches.append("east")
+        elif track_id in all_south:
+            branches.append("south")
+
+    assert len(set(branches)) == 3, (
+        f"Expected vehicles on 3 different branches, "
+        f"but got {branches}"
     )

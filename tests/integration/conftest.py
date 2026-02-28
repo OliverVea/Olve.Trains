@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import platform
 import queue
 import subprocess
 import tempfile
@@ -14,7 +15,8 @@ from game import Game
 from screenshot import compare_screenshots, update_reference
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
-REFERENCE_DIR = Path(__file__).parent / "reference"
+_PLATFORM = "windows" if platform.system() == "Windows" else "linux"
+REFERENCE_DIR = Path(__file__).parent / "reference" / _PLATFORM
 DIFF_DIR = Path("/tmp/screenshot-diffs")
 LOG_DIR = PROJECT_DIR / "src" / "Olve.Trains" / "logs"
 
@@ -145,6 +147,7 @@ class ScreenshotAsserter:
         self.reference_dir = reference_dir
         self.updating = updating
         self.screenshots: list[tuple[str, Path]] = []
+        self.diffs: list[tuple[str, Path]] = []
 
 
 class ScreenshotComparer:
@@ -183,6 +186,8 @@ class ScreenshotComparer:
             pixel_tolerance=pixel_tolerance,
             diff_output=diff_path,
         )
+        if not result.passed and result.diff_image_path and result.diff_image_path.exists():
+            self._asserter.diffs.append((f"{name}-diff", result.diff_image_path))
         self._results.append((name, result))
 
     def assert_all(self) -> None:
@@ -228,10 +233,14 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if not session.config.getoption("--s3"):
         return
 
-    if _active_asserter is None or not _active_asserter.screenshots:
+    if _active_asserter is None:
         return
 
-    _upload_to_s3(_active_asserter.screenshots)
+    uploads = _active_asserter.screenshots + _active_asserter.diffs
+    if not uploads:
+        return
+
+    _upload_to_s3(uploads)
 
 
 def _upload_to_s3(screenshots: list[tuple[str, Path]]) -> None:
