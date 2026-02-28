@@ -1,6 +1,7 @@
 #version 330 core
 
 // Per-vertex from unit quad [0..1] (two triangles)
+// @implements(IWithPosition2D.Position)
 layout(location = 0) in vec2 aPosition;
 
 // @instanced

@@ -12,6 +12,8 @@ public class Uniform
     /// </summary>
     public string? PixelType { get; set; }
 
+    public List<ImplementsAnnotation> Implements { get; set; } = [];
+
     public override string ToString()
     {
         return $"{Type} {Name}";

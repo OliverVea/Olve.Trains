@@ -11,6 +11,7 @@ using Olve.Engine3D.Rendering.Parameters;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Utilities.Ids;
+using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
 using Silk.NET.Maths;
 using GL = Silk.NET.OpenGL.GL;
 using VertexAttribPointerType = Silk.NET.OpenGL.VertexAttribPointerType;
@@ -22,7 +23,7 @@ namespace {{ Namespace }};
 public static partial class Shaders
 {
 
-    public partial class {{ Name }} : BaseWorldShader
+    public partial class {{ Name }} : BaseWorldShader{{ for iface in ShaderInterfaces }}, {{ iface.InterfaceName }}{{ end }}
     {
         {{ for x in 0..(Uniforms.size - 1) }}public {{Uniforms[x].DataType}}? {{Uniforms[x].PropertyName}} { get; set; }{{Uniforms[x].Initializer}}
 {{ end }}

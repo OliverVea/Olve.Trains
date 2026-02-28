@@ -1,7 +1,9 @@
 #version 330 core
 
 // Per-vertex attributes (from template mesh, divisor=0)
+// @implements(IWithPosition3D.Position)
 layout(location = 0) in vec3 aPosition;  // x,y = profile offset; z = spline parameter t (0..1)
+// @implements(IWithNormal3D.Normal)
 layout(location = 1) in vec3 aNormal;    // local-space normal of the profile
 
 // Per-instance attributes (Hermite control points, divisor=1)
@@ -14,7 +16,9 @@ layout(location = 4) in vec3 iT0;       // start tangent
 // @instanced
 layout(location = 5) in vec3 iT1;       // end tangent
 
+// @implements(ICameraPositionShader.View)
 uniform mat4 view;
+// @implements(ICameraPositionShader.Projection)
 uniform mat4 projection;
 
 out vec3 FragPos;

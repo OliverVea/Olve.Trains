@@ -4,10 +4,13 @@
 uniform sampler2D heightMap;
 uniform vec2 texelSize;                 // (1/textureWidth, 1/textureHeight)
 
+// @implements(IWithWorldMatrix.WorldMatrix)
 // @instanced
 layout(location = 0) in mat4 iWorld;
 
+// @implements(ICameraPositionShader.View)
 uniform mat4 view;
+// @implements(ICameraPositionShader.Projection)
 uniform mat4 projection;
 
 out vec3 FragPos;

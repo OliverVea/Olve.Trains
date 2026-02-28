@@ -274,8 +274,18 @@ public class ProcessShaders(
         programObject.Add("InstancedAttributes", instancedAttrObjects);
         programObject.Add("PerVertexAttributes", perVertexAttrObjects);
 
-        programObject.Add("VertexInterfaces", GetSemanticInterfaces(perVertexAttributes, false, "Vertex"));
-        programObject.Add("InstanceInterfaces", GetSemanticInterfaces(instancedAttributes, true, "Instance"));
+        programObject.Add("VertexInterfaces", GetAnnotatedInterfaces(perVertexAttributes, "Vertex"));
+        programObject.Add("InstanceInterfaces", GetAnnotatedInterfaces(instancedAttributes, "Instance"));
+
+        // Shader-level interfaces from uniform @implements annotations
+        var shaderInterfaces = shaderProgram.Uniforms
+            .SelectMany(u => u.Implements)
+            .Select(a => a.InterfaceName)
+            .Distinct()
+            .Order()
+            .Select(name => new ScriptObject { { "InterfaceName", name } })
+            .ToList();
+        programObject.Add("ShaderInterfaces", shaderInterfaces);
 
         ScriptObject fragmentShaderObject = new()
         {
@@ -310,50 +320,27 @@ public class ProcessShaders(
         return programObject;
     }
 
-    private static readonly (string NormalizedName, UniformType Type, bool IsInstanced, string InterfaceName, string PropertyName, string PropertyType, string WithMethodName)[] SemanticMap =
-    [
-        ("position", UniformType.Vector2, false, "IWithPosition2D", "Position", "Vector2D<float>", "WithPosition"),
-        ("position", UniformType.Vector3, false, "IWithPosition3D", "Position", "Vector3D<float>", "WithPosition"),
-        ("normal", UniformType.Vector3, false, "IWithNormal3D", "Normal", "Vector3D<float>", "WithNormal"),
-        ("texcoords", UniformType.Vector2, false, "IWithTexCoords2D", "TexCoords", "Vector2D<float>", "WithTexCoords"),
-        ("color", UniformType.Vector3, false, "IWithColor3D", "Color", "Vector3D<float>", "WithColor"),
-        ("world", UniformType.Matrix4, true, "IWithWorldMatrix", "WorldMatrix", "Matrix4X4<float>", "WithWorldMatrix"),
-    ];
-
-    private static string NormalizeAttributeName(string glslName)
-    {
-        if (glslName.Length > 1 && glslName[0] is 'a' or 'i' && char.IsUpper(glslName[1]))
-            return glslName[1..].ToLowerInvariant();
-        return glslName.ToLowerInvariant();
-    }
-
-    private static List<ScriptObject> GetSemanticInterfaces(
+    private static List<ScriptObject> GetAnnotatedInterfaces(
         IEnumerable<VertexAttribute> attributes,
-        bool isInstanced,
         string structName)
     {
         var interfaces = new List<ScriptObject>();
         foreach (var attr in attributes)
         {
-            var normalized = NormalizeAttributeName(attr.Name);
-            var match = SemanticMap
-                .Where(m => m.NormalizedName == normalized && m.Type == attr.Type && m.IsInstanced == isInstanced)
-                .Select(m => (m.InterfaceName, m.PropertyName, m.PropertyType, m.WithMethodName))
-                .FirstOrDefault();
-
-            if (match.InterfaceName is null) continue;
-
-            var paramName = char.ToLower(match.PropertyName[0]) + match.PropertyName[1..];
-            interfaces.Add(new ScriptObject
+            foreach (var impl in attr.Implements)
             {
-                { "InterfaceName", match.InterfaceName },
-                { "PropertyName", match.PropertyName },
-                { "PropertyType", match.PropertyType },
-                { "WithMethodName", match.WithMethodName },
-                { "ParamName", paramName },
-                { "AttributeName", attr.Name },
-                { "StructName", structName },
-            });
+                var paramName = char.ToLower(impl.PropertyName[0]) + impl.PropertyName[1..];
+                interfaces.Add(new ScriptObject
+                {
+                    { "InterfaceName", impl.InterfaceName },
+                    { "PropertyName", impl.PropertyName },
+                    { "PropertyType", attr.Type.GetVertexDataType() },
+                    { "WithMethodName", "With" + impl.PropertyName },
+                    { "ParamName", paramName },
+                    { "AttributeName", attr.Name },
+                    { "StructName", structName },
+                });
+            }
         }
 
         return interfaces;
@@ -386,9 +373,21 @@ public class ProcessShaders(
                 {
                     return new ResultProblem("Uniform '{0}' already exists with type '{1}', but found type '{2}' in shader.", uniform.Name, existingUniform.Type, uniform.Type);
                 }
-            }
 
-            uniforms[uniform.Name] = uniform;
+                // Merge @implements annotations from both shader stages
+                foreach (var impl in uniform.Implements)
+                {
+                    if (!existingUniform.Implements.Any(e =>
+                            e.InterfaceName == impl.InterfaceName && e.PropertyName == impl.PropertyName))
+                    {
+                        existingUniform.Implements.Add(impl);
+                    }
+                }
+            }
+            else
+            {
+                uniforms[uniform.Name] = uniform;
+            }
         }
 
         return Result.Success();

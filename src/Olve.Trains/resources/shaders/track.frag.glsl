@@ -5,15 +5,23 @@ in vec3 FragNormal;
 
 out vec4 FragColor;
 
+// @implements(IDaylightShader.AmbientLightColor)
 uniform vec3 ambientLightColor;
+// @implements(IDaylightShader.AmbientLightIntensity)
 uniform float ambientLightIntensity;
 
+// @implements(IDaylightShader.DirectionalLight0Color)
 uniform vec3 directionalLight0Color;
+// @implements(IDaylightShader.DirectionalLight0Dir)
 uniform vec3 directionalLight0Dir;
+// @implements(IDaylightShader.DirectionalLight0Intensity)
 uniform float directionalLight0Intensity;
 
+// @implements(IDaylightShader.DirectionalLight1Color)
 uniform vec3 directionalLight1Color;
+// @implements(IDaylightShader.DirectionalLight1Dir)
 uniform vec3 directionalLight1Dir;
+// @implements(IDaylightShader.DirectionalLight1Intensity)
 uniform float directionalLight1Intensity;
 
 uniform vec3 uColor;

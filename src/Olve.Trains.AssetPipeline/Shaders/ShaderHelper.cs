@@ -72,11 +72,40 @@ public static class ShaderHelper
                 }
             }
 
+            // Parse @implements(...) annotations from preceding comment lines
+            // Walk backwards through consecutive annotation lines before the uniform
+            var implementsList = new List<ImplementsAnnotation>();
+            {
+                var searchEnd = i; // \n before "uniform"
+                while (searchEnd > 0)
+                {
+                    var searchStart = shaderSource.LastIndexOf('\n', searchEnd - 1);
+                    if (searchStart == -1) searchStart = 0;
+                    var prevLine = shaderSource[searchStart..searchEnd].Trim();
+
+                    if (TryParseImplementsAnnotation(prevLine, out var iface, out var prop))
+                    {
+                        implementsList.Add(new ImplementsAnnotation(iface, prop));
+                        searchEnd = searchStart;
+                    }
+                    else if (prevLine.Contains("@pixelType(", StringComparison.Ordinal))
+                    {
+                        // Skip @pixelType lines, keep walking
+                        searchEnd = searchStart;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
             Uniform uniform = new()
             {
                 Name = uniformName,
                 Type = uniformType.Value,
                 PixelType = pixelType,
+                Implements = implementsList,
             };
 
             uniforms.Add(uniform);
@@ -145,21 +174,34 @@ public static class ShaderHelper
             var nameEnd = nameStart.IndexOfAny([';', ' ']);
             var name = nameEnd == -1 ? nameStart : nameStart[..nameEnd];
 
-            // Check for // @instanced annotation on previous line or same line
+            // Check for annotations on preceding lines and same line
             var isInstanced = false;
-            if (lineIndex > 0)
-            {
-                var prevLine = lines[lineIndex - 1].Trim();
-                if (prevLine.Contains("@instanced", StringComparison.OrdinalIgnoreCase))
-                {
-                    isInstanced = true;
-                }
-            }
+            var attrImplements = new List<ImplementsAnnotation>();
 
+            // Check same line for @instanced
             var commentIndex = line.IndexOf("//", StringComparison.Ordinal);
             if (commentIndex != -1 && line[commentIndex..].Contains("@instanced", StringComparison.OrdinalIgnoreCase))
             {
                 isInstanced = true;
+            }
+
+            // Walk backwards through preceding annotation lines
+            for (var prevIdx = lineIndex - 1; prevIdx >= 0; prevIdx--)
+            {
+                var prevLine = lines[prevIdx].Trim();
+
+                if (prevLine.Contains("@instanced", StringComparison.OrdinalIgnoreCase))
+                {
+                    isInstanced = true;
+                }
+                else if (TryParseImplementsAnnotation(prevLine, out var iface, out var prop))
+                {
+                    attrImplements.Add(new ImplementsAnnotation(iface, prop));
+                }
+                else
+                {
+                    break;
+                }
             }
 
             attributes.Add(new VertexAttribute
@@ -168,6 +210,7 @@ public static class ShaderHelper
                 Name = name,
                 Type = type.Value,
                 IsInstanced = isInstanced,
+                Implements = attrImplements,
             });
         }
 
@@ -175,6 +218,30 @@ public static class ShaderHelper
         attributes.Sort((a, b) => a.Location.CompareTo(b.Location));
 
         return attributes;
+    }
+
+    private static bool TryParseImplementsAnnotation(
+        string text,
+        [NotNullWhen(true)] out string? interfaceName,
+        [NotNullWhen(true)] out string? propertyName)
+    {
+        interfaceName = null;
+        propertyName = null;
+
+        var markerIndex = text.IndexOf("@implements(", StringComparison.Ordinal);
+        if (markerIndex == -1) return false;
+
+        var start = markerIndex + "@implements(".Length;
+        var end = text.IndexOf(')', start);
+        if (end == -1) return false;
+
+        var content = text[start..end].Trim();
+        var dotIndex = content.IndexOf('.');
+        if (dotIndex == -1 || dotIndex == 0 || dotIndex == content.Length - 1) return false;
+
+        interfaceName = content[..dotIndex];
+        propertyName = content[(dotIndex + 1)..];
+        return true;
     }
 
     private static bool TryParsePixelTypeAnnotation(string text, [NotNullWhen(true)] out string? pixelType)
