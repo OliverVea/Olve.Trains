@@ -112,17 +112,18 @@ def _save_diff_image(
     changed_mask: np.ndarray,
     output_path: Path,
 ) -> None:
-    h, w = changed_mask.shape
+    h, w, _ = ref_arr.shape
 
-    diff_img = np.zeros((h, w, 3), dtype=np.uint8)
+    # Greyscale abs delta, scaled to full range
+    abs_diff = np.max(np.abs(actual_arr - ref_arr), axis=2).astype(np.float64)
+    max_val = abs_diff.max() or 1.0
+    delta = np.clip(abs_diff / max_val * 255, 0, 255).astype(np.uint8)
+    delta_rgb = np.stack([delta, delta, delta], axis=2)
 
-    dimmed = (ref_arr.astype(np.uint8) // 3).astype(np.uint8)
-    diff_img[~changed_mask] = dimmed[~changed_mask]
+    # Composite: reference | actual | delta
+    composite = np.concatenate(
+        [ref_arr.astype(np.uint8), actual_arr.astype(np.uint8), delta_rgb],
+        axis=1,
+    )
 
-    abs_diff = np.abs(actual_arr - ref_arr).astype(np.float64)
-    intensity = np.clip(np.max(abs_diff, axis=2) * 4, 0, 255).astype(np.uint8)
-    diff_img[changed_mask, 0] = intensity[changed_mask]
-    diff_img[changed_mask, 1] = 0
-    diff_img[changed_mask, 2] = 0
-
-    Image.fromarray(diff_img).save(output_path)
+    Image.fromarray(composite).save(output_path)
