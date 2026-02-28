@@ -1,11 +1,12 @@
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
 
-namespace Olve.Trains.Scenes.GameLogic.Commands;
+namespace Olve.Trains.Commands.GameLogic;
 
 public class PlaceVehicleHandlerService(
     ILogger<PlaceVehicleHandlerService> logger,
@@ -54,7 +55,8 @@ public class PlaceVehicleHandlerService(
 
         logger.LogInformation("Placed vehicle '{VehicleId}' on track with id '{TrackId}' with position '{VehicleTrackPosition}'", vehicleId, trackId, vehicleTrackPosition);
 
-        return CommandOutput.Empty;
+        var json = JsonSerializer.Serialize(new { vehicleId = vehicleId.ToString() });
+        return new CommandOutput(json);
     }
 
     private Result<Id<Vehicle>> CreateVehicle()

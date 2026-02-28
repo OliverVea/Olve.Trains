@@ -3,7 +3,7 @@ using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.Logging;
-using Olve.Trains.Scenes.GameLogic.Commands;
+using Olve.Trains.Commands.GameLogic;
 
 namespace Olve.Trains.Scenes.GameUI.GUI;
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import atexit
+import json
 import logging
 import os
 import re
@@ -8,7 +9,7 @@ import subprocess
 import tempfile
 import time
 import weakref
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 _live_games: weakref.WeakSet = weakref.WeakSet()
@@ -45,6 +46,38 @@ class CommandResult:
     success: bool
     output: str
     errors: list[str]
+
+
+@dataclass
+class VehicleState:
+    vehicle_id: str
+    track_id: str
+    time: float
+    velocity: float
+    position: tuple[float, float, float] | None = None
+
+
+@dataclass
+class JunctionInfo:
+    junction_id: str
+    position: tuple[int, int]
+    connection_count: int
+    has_signal: bool
+
+
+@dataclass
+class JunctionConnection:
+    track_id: str
+    direction: str
+
+
+@dataclass
+class JunctionDetail:
+    junction_id: str
+    position: tuple[int, int]
+    has_signal: bool
+    connections: list[JunctionConnection] = field(default_factory=list)
+    rules: list[dict] = field(default_factory=list)
 
 
 class CommandError(Exception):
@@ -170,15 +203,18 @@ class Game:
         if end_dir:
             parts.append(f"end-dir={end_dir}")
         result = self.send(" ".join(parts))
-        return UUID_RE.findall(result.output)
+        data = json.loads(result.output)
+        return data["trackIds"]
 
     def place_vehicle(
         self, track: str, speed: float | None = None
-    ) -> CommandResult:
+    ) -> str:
         cmd = f"place-vehicle track={track}"
         if speed is not None:
             cmd += f" speed={speed}"
-        return self.send(cmd)
+        result = self.send(cmd)
+        data = json.loads(result.output)
+        return data["vehicleId"]
 
     def place_building(
         self, pos: str, type: str, dir: str
@@ -219,6 +255,66 @@ class Game:
 
     def load_scene(self, scene: str) -> CommandResult:
         return self.send(f"load-scene scene={scene}")
+
+    # -- Query wrappers --
+
+    def query_vehicle(self, vehicle_id: str) -> VehicleState:
+        result = self.send(f"query-vehicle vehicle={vehicle_id}")
+        data = json.loads(result.output)
+        pos = data.get("position")
+        return VehicleState(
+            vehicle_id=data["vehicleId"],
+            track_id=data["trackId"],
+            time=data["time"],
+            velocity=data["velocity"],
+            position=(float(pos["x"]), float(pos["y"]), float(pos["z"])) if pos else None,
+        )
+
+    def list_vehicles(self) -> list[VehicleState]:
+        result = self.send("list-vehicles")
+        data = json.loads(result.output)
+        return [
+            VehicleState(
+                vehicle_id=v["vehicleId"],
+                track_id=v["trackId"],
+                time=v["time"],
+                velocity=v["velocity"],
+            )
+            for v in data["vehicles"]
+        ]
+
+    def list_junctions(self) -> list[JunctionInfo]:
+        result = self.send("list-junctions")
+        data = json.loads(result.output)
+        return [
+            JunctionInfo(
+                junction_id=j["junctionId"],
+                position=(j["position"]["x"], j["position"]["z"]),
+                connection_count=j["connectionCount"],
+                has_signal=j["hasSignal"],
+            )
+            for j in data["junctions"]
+        ]
+
+    def query_junction(self, junction_id: str) -> JunctionDetail:
+        result = self.send(f"query-junction junction={junction_id}")
+        data = json.loads(result.output)
+        return JunctionDetail(
+            junction_id=data["junctionId"],
+            position=(data["position"]["x"], data["position"]["z"]),
+            has_signal=data["hasSignal"],
+            connections=[
+                JunctionConnection(track_id=c["trackId"], direction=c["direction"])
+                for c in data["connections"]
+            ],
+            rules=data["rules"],
+        )
+
+    def clear_signal_rules(self, junction_id: str) -> CommandResult:
+        return self.send(f"clear-signal-rules junction={junction_id}")
+
+    def add_signal_rule(self, junction_id: str, rule: str) -> CommandResult:
+        return self.send(f"add-signal-rule junction={junction_id} rule='{rule}'")
 
     # -- Internal helpers --
 

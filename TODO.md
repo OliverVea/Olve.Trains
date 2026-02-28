@@ -154,6 +154,9 @@
   - [ ] Add basic support for building upgrades
   - [ ] Require resources for building upgrades
 - [ ] Test coverage epic (Testing):
+  - [x] Add query commands for headless test assertions (query-vehicle, list-vehicles, list-junctions, query-junction)
+  - [x] Add signal routing integration tests (directional rules, junction crossing)
+  - [x] Migrate command output to JSON for structured test assertions
   - [ ] Add tests for core engine services (SceneManager lifecycle, GameManager)
   - [ ] Add tests for command pipe communication (CommandPipeServer/Client)
   - [ ] Add tests for game logic services (tracks, vehicles, buildings)

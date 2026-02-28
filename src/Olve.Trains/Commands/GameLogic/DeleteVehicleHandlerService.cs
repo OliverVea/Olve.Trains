@@ -3,7 +3,7 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
 
-namespace Olve.Trains.Scenes.GameLogic.Commands;
+namespace Olve.Trains.Commands.GameLogic;
 
 public class DeleteVehicleHandlerService(
     ILogger<DeleteVehicleHandlerService> logger,

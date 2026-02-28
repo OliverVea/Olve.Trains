@@ -2,7 +2,7 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 
-namespace Olve.Trains.Scenes.GameLogic.Commands;
+namespace Olve.Trains.Commands.GameLogic;
 
 public class ClearJunctionSignalRulesHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,

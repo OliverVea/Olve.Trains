@@ -11,7 +11,7 @@ using RuleFields = (System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic
     System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleDestination> Destinations,
     Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleDistribution Distribution);
 
-namespace Olve.Trains.Scenes.GameLogic.Commands;
+namespace Olve.Trains.Commands.GameLogic;
 
 public class AddJunctionRuleHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,

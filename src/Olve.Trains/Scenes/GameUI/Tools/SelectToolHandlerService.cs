@@ -1,6 +1,6 @@
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
-using Olve.Trains.Scenes.GameLogic.Commands;
+using Olve.Trains.Commands.GameLogic;
 
 namespace Olve.Trains.Scenes.GameUI.Tools;
 

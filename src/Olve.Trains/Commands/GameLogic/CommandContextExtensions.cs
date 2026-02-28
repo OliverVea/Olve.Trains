@@ -3,7 +3,7 @@ using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Time;
 
-namespace Olve.Trains.Scenes.GameLogic.Commands;
+namespace Olve.Trains.Commands.GameLogic;
 
 public static class CommandContextExtensions
 {

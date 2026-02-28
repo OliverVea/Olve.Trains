@@ -1,10 +1,11 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.GameLogic.Commands;
+namespace Olve.Trains.Commands.GameLogic;
 
 public class PlaceTrackHandlerService(
     ILogger<PlaceTrackHandlerService> logger,
@@ -66,7 +67,7 @@ public class PlaceTrackHandlerService(
         }
 
         logger.LogInformation("Placed {Count} track segments from {Start} to {End}", trackIds.Count, start, end);
-        var idList = string.Join("\n", trackIds);
-        return new CommandOutput($"Placed {trackIds.Count} track segments:\n{idList}");
+        var json = JsonSerializer.Serialize(new { trackIds = trackIds.Select(id => id.ToString()).ToArray() });
+        return new CommandOutput(json);
     }
 }
