@@ -8,6 +8,10 @@ src/Olve.Trains/assets/
 src/Olve.Trains.AssetPipeline/temp/
 [Aa]ppsettings.local.json
 
+# Python / uv
+.venv/
+uv.lock
+
 # dotenv files
 .env
 

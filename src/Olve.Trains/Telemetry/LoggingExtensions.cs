@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NReco.Logging.File;
+using Olve.Paths;
 using OpenTelemetry.Logs;
 
 namespace Olve.Trains.Telemetry;
@@ -32,7 +33,11 @@ public static class LoggingExtensions
         {
             var today = DateTime.Today;
             var todayString = today.ToString("yyyy-MM-dd");
-            var path = loggingSection["File:Directory"] + $"/olve.trains-{todayString}.log";
+            var directory = loggingSection["File:Directory"] ?? "logs";
+            var expandedDirectory = directory.StartsWith("~/")
+                ? (Olve.Paths.Path.GetHomeDirectory() / directory[2..]).Path
+                : directory;
+            var path = expandedDirectory + $"/olve.trains-{todayString}.log";
             builder.AddFile(path, o => { o.Append = true; });
         }
 
