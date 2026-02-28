@@ -14,8 +14,17 @@ dotnet run
 This compiles:
 - Shaders from `src/Olve.Trains/resources/shaders/` → `src/Olve.Trains/assets/Shaders/`
 - Layouts from `src/Olve.Trains/resources/layouts/` → `src/Olve.Trains/assets/Layouts/`
+- Meshes and textures downloaded from S3 → `src/Olve.Trains/assets/Meshes/`, `src/Olve.Trains/assets/Textures/`
 
 Configuration is in `src/Olve.Trains.AssetPipeline/Properties/appsettings.local.json`.
+
+**S3 assets are required for a full build.** The asset pipeline downloads meshes (e.g. `apartment_small_mesh`) and textures (e.g. `Building01a`) from S3. The pipeline generates C# code referencing these assets, so the dotnet build will fail if they're missing. Ensure `UseLocalAssets` is `false` in `appsettings.local.json` to download from S3:
+
+```json
+{ "S3": { "UseLocalAssets": false } }
+```
+
+When `UseLocalAssets` is `true`, the pipeline skips S3 and only uses whatever is already in the local build directory — this will produce an incomplete asset set and the build may fail.
 
 ### Running the Application
 
@@ -108,18 +117,66 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "screenshot pa
 
 **Always run integration tests before committing.**
 
+The integration tests use pytest (managed by `uv`) and compare screenshots against reference images.
+
 ```bash
-# Full integration test (native window)
-bash scripts/integration-test.sh --file ~/test-screenshots/test.png
+# Linux (headless via Xvfb, default)
+bash scripts/integration-test.sh
 
-# Full integration test (headless)
-bash scripts/integration-test.sh --windowing xvfb --file ~/test-screenshots/test.png
+# Windows (must use native windowing)
+bash scripts/integration-test.sh --windowing native
 
-# Skip rebuild if you've already built
-bash scripts/integration-test.sh --skip-build --file ~/test-screenshots/test.png
+# Upload screenshots to S3 and print presigned URLs
+bash scripts/integration-test.sh --s3
+
+# Skip asset pipeline and build steps (if already built)
+bash scripts/integration-test.sh --skip-build
+
+# Save current screenshots as new reference images
+bash scripts/integration-test.sh --update-references
+
+# Custom resolution (default: 1920x1080)
+bash scripts/integration-test.sh --resolution 1280x720
 ```
 
-Both scripts use the named pipe command system to launch the game, place tracks/buildings/trains, and validate via screenshots.
+The script is a thin wrapper around pytest. Tests live in `tests/integration/scenarios/` and use a game instance pool with per-instance Xvfb displays for parallel execution.
+
+### Full End-to-End Build & Test
+
+To ensure tests and reference screenshots are correct, follow this sequence:
+
+1. **Run asset pipeline with S3 enabled** — downloads all meshes/textures from S3
+   ```bash
+   # Ensure UseLocalAssets is false in appsettings.local.json
+   cd src/Olve.Trains.AssetPipeline && dotnet run
+   ```
+2. **Build Release** — compiles game with all S3 assets (will fail if assets are missing)
+   ```bash
+   dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release
+   ```
+3. **Run tests** — validates screenshots against committed references
+   ```bash
+   bash scripts/integration-test.sh --skip-build --s3
+   ```
+
+If assets changed (new meshes/textures added, S3 assets updated), you must regenerate references:
+
+1. Run asset pipeline with S3 (step 1 above)
+2. Build Release (step 2 above)
+3. **Update references**: `bash scripts/integration-test.sh --skip-build --update-references`
+4. **Verify**: `bash scripts/integration-test.sh --skip-build --s3`
+5. **Commit** the updated reference images in `tests/integration/reference/`
+
+**Reference screenshots are the source of truth.** They are generated on developer machines and committed to git (tracked via LFS). CI validates against them. If CI fails but local passes, the most likely cause is missing S3 assets — rerun the asset pipeline with `UseLocalAssets: false`.
+
+### Screenshot Diff Artifacts
+
+When a screenshot comparison fails, a composite diff image is generated in `/tmp/screenshot-diffs/<test_name>/` containing three panels stacked vertically:
+- **Baseline** — the committed reference image
+- **Actual** — what the test produced
+- **Diff** — greyscale absolute delta (brighter = larger difference)
+
+CI uploads these as the `screenshot-diffs` artifact for inspection.
 
 Unit tests (TUnit framework):
 ```bash
@@ -159,11 +216,13 @@ All work must be tied to an epic in `TODO.md`. Before starting any task, identif
 
 ### Asset Pipeline
 
-When modifying shaders or layouts:
+When modifying shaders, layouts, or when S3 assets change:
 
 1. **Modify shaders/layouts** in `src/Olve.Trains/resources/`
-2. **Compile assets**: `cd src/Olve.Trains.AssetPipeline && dotnet run`
-3. **Run app**: `dotnet run --project src/Olve.Trains/Olve.Trains.csproj`
+2. **Compile assets**: `cd src/Olve.Trains.AssetPipeline && dotnet run` (ensure `UseLocalAssets: false` for full S3 assets)
+3. **Build**: `dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release`
+4. **Update references if needed**: `bash scripts/integration-test.sh --skip-build --update-references`
+5. **Verify tests**: `bash scripts/integration-test.sh --skip-build --s3`
 
 ## Package Management
 

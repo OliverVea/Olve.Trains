@@ -224,8 +224,10 @@ Headless rendering uses `LIBGL_ALWAYS_SOFTWARE=1` + Xvfb virtual framebuffer.
 
 `tests/Olve.Engine3D.Tests/` using **TUnit** framework. Run with `dotnet run` (TUnit Exe runner). Tests cover GUI layout computation (`GuiLayoutServiceTests`, `GuiLayoutServicePositioningTests`) and spline sandboxes.
 
-### Integration Test Scripts
+### Integration Tests
 
-**`scripts/integration-test.sh`** — integration test: places station, builds track loop around it, spawns 3 trains, waits for simulation, takes screenshots at 3 times of day (7:30, 11:30, 22:30). Supports `--s3` upload, `--file` local save, `--windowing xvfb` for headless, `--skip-build`. Used in the GitHub Actions workflow.
+**`scripts/integration-test.sh`** — thin wrapper around pytest (`tests/integration/`). Test scenarios live in `tests/integration/scenarios/` and use a game instance pool with per-instance Xvfb displays for parallel execution. Screenshots are compared against reference images in `tests/integration/reference/`.
 
-Both scripts use the named pipe command system to control the game.
+Options: `--s3` (upload screenshots to S3), `--windowing native|xvfb` (default: xvfb; Windows must use native), `--skip-build`, `--update-references` (save current screenshots as new references), `--resolution WxH`.
+
+Tests use the named pipe command system to control the game.
