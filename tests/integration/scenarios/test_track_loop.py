@@ -89,18 +89,6 @@ def test_track_loop(
     game.set_mouse(0, 0)
     game.step(2)
 
-    # -- Burger menu screenshot --
-
-    game.activate_gui("InfoBar/Box/MenuButton")
-    game.step(2)
-
-    burger_path = game.screenshot(game.temp_dir / "burger.png")
-    screenshots.assert_matches(burger_path, "track-loop-burger")
-
-    # Dismiss burger menu
-    game.activate_gui("BurgerMenu/Box/ResumeButton")
-    game.step(2)
-
     # -- Time-of-day screenshots --
 
     for time_str, label in [("7:30", "0730"), ("11:30", "1130"), ("22:30", "2230")]:

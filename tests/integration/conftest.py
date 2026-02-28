@@ -61,7 +61,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-POOL_SIZE = 4
+POOL_SIZE = 2
 
 
 class GamePool:
