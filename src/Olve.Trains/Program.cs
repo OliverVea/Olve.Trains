@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
+using Olve.Engine3D.Utilities;
 using Olve.Trains.Telemetry;
 using Silk.NET.Windowing;
 
@@ -47,6 +48,13 @@ public static class Program
         var services = new ServiceCollection();
         services.AddAllServices(configuration, instanceId, listen);
 
+        var windowOptions = parsedArgs.Resolution is { } res
+            ? WindowOptions with { Size = res, WindowBorder = WindowBorder.Hidden, WindowState = WindowState.Normal }
+            : WindowOptions;
+        var window = Window.Create(windowOptions);
+
+        services.AddSingleton(new Provider<IWindow>(window));
+
         using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,
@@ -60,17 +68,8 @@ public static class Program
         collection.Add(serviceProvider.GetRequiredService<ExitCommandHandler>());
         collection.Add(serviceProvider.GetRequiredService<ScreenshotCommandHandler>());
 
-        var windowOptions = parsedArgs.Resolution is { } res
-            ? WindowOptions with { Size = res, WindowBorder = WindowBorder.Hidden, WindowState = WindowState.Normal }
-            : WindowOptions;
-        var window = Window.Create(windowOptions);
         var gameManager = serviceProvider.GetRequiredService<GameManager>();
         var logger = serviceProvider.GetRequiredService<ILogger<GameManager>>();
-
-        if (listen)
-        {
-            logger.LogInformation("Listening on pipe '{PipeName}'", instanceId.GetPipeName());
-        }
 
         logger.LogInformation("""
 
@@ -80,7 +79,12 @@ public static class Program
                               ----------------------------------------
                               """);
 
-        var result = gameManager.Run(window, SceneIds.MainMenuScene);
+        if (listen)
+        {
+            logger.LogInformation("Listening on pipe '{PipeName}'", instanceId.GetPipeName());
+        }
+
+        var result = gameManager.Run(SceneIds.MainMenuScene);
 
         MetricsExtensions.ShutdownMetrics();
 

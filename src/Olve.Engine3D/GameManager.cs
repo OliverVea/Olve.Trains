@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Diagnostics;
+using Olve.Engine3D.Events;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.TimeStepping;
 using Olve.Engine3D.Utilities;
 using Olve.Utilities.Ids;
 using Silk.NET.Input;
@@ -11,27 +13,34 @@ using Silk.NET.Windowing;
 
 namespace Olve.Engine3D;
 
-public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvider, Provider<IInputContext> inputContextProvider, KeyboardManager keyboardManager, MouseManager mouseManager, SceneManager sceneManager, ScreenResizedEvent screenResizedEvent, AfterRenderEvent afterRenderEvent, CommandPipeServer? commandPipeServer = null)
+public class GameManager(
+    Provider<IWindow> windowProvider,
+    ITimeStepper timeStepper,
+    Provider<GL> glProvider,
+    Provider<IInputContext> inputContextProvider,
+    KeyboardManager keyboardManager,
+    MouseManager mouseManager,
+    SceneManager sceneManager,
+    AfterRenderEvent afterRenderEvent,
+    CommandPipeServer? commandPipeServer = null)
 {
     private Result _result = Result.Success();
     private Id<IScene> _initialScene;
     private readonly Stopwatch _frameSw = new();
     private bool MetricsEnabled => EngineMetrics.IsEnabled;
 
-    public Result Run(IWindow window, Id<IScene> initialScene)
+    public Result Run(Id<IScene> initialScene)
     {
         _initialScene = initialScene;
-        windowProvider.Set(window);
 
-        window.Load += OnLoad;
-        window.Render += OnRender;
-        window.Update += OnUpdate;
-        window.FramebufferResize += OnFramebufferResize;
-        window.Closing += OnClose;
+        timeStepper.Load.Subscribe(OnLoad);
+        timeStepper.Render.Subscribe(OnRender);
+        timeStepper.Update.Subscribe(OnUpdate);
+        timeStepper.Closing.Subscribe(OnClose);
 
-        window.Run();
+        timeStepper.Run();
 
-        window.Dispose();
+        timeStepper.Dispose();
 
         return _result;
     }
@@ -79,11 +88,10 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
             mouseManager.Initialize
         );
 
-    private void OnUpdate(double deltaSeconds)
+    private void OnUpdate(TimeSpan deltaTime)
     {
         if (MetricsEnabled) _frameSw.Restart();
 
-        var deltaTime = TimeSpan.FromSeconds(deltaSeconds);
         if (Update(deltaTime).TryPickProblems(out var problems))
         {
             _result = problems;
@@ -136,9 +144,8 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
         return Result.Success();
     }
 
-    private void OnRender(double deltaSeconds)
+    private void OnRender(TimeSpan deltaTime)
     {
-        var deltaTime = TimeSpan.FromSeconds(deltaSeconds);
         if (Render(deltaTime).TryPickProblems(out var problems))
         {
             _result = problems;
@@ -157,7 +164,7 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
         Stopwatch? renderSw = MetricsEnabled ? Stopwatch.StartNew() : null;
 
         var result = sceneManager.Render(deltaTime);
-        afterRenderEvent.OnAfterRender.Invoke();
+        afterRenderEvent.AfterRender.Invoke();
 
         if (renderSw is not null)
         {
@@ -172,12 +179,6 @@ public class GameManager(Provider<IWindow> windowProvider, Provider<GL> glProvid
     {
         commandPipeServer?.Dispose();
         sceneManager.Close();
-    }
-
-    private void OnFramebufferResize(Vector2D<int> size)
-    {
-        glProvider.Value.Viewport(size);
-        screenResizedEvent.OnWindowResize.Invoke(size);
     }
 
     public void Stop()

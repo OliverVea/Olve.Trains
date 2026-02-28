@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Events;
 using Olve.Engine3D.Utilities;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
@@ -24,7 +25,7 @@ public class ScreenshotManager
         _windowProvider = windowProvider;
         _logger = logger;
 
-        afterRenderEvent.OnAfterRender.Subscribe(CaptureIfRequested);
+        afterRenderEvent.AfterRender.Subscribe(CaptureIfRequested);
     }
 
     public void RequestScreenshot(IPath outputPath)

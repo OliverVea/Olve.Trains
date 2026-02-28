@@ -3,6 +3,7 @@ using Olve.Engine3D.Camera;
 using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Camera.Projections;
 using Olve.Engine3D.Camera.Views;
+using Olve.Engine3D.Events;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Rendering;
