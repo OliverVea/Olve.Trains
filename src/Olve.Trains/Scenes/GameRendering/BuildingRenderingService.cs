@@ -1,120 +1,62 @@
 using Olve.Engine3D;
-using Olve.Engine3D.Assets.Entities;
-using Olve.Engine3D.Rendering;
-using Olve.Engine3D.Rendering.Geometry;
-using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.Primitives;
 using Olve.Engine3D.Rendering.Shaders;
-using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Buildings;
-using Olve.Trains.Scenes.GameLogic.Light;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
 public class BuildingRenderingService(
-    CameraSceneService cameraSceneService,
-    GeometryManager geometryManager,
-    RenderingGroupManager renderingGroupManager,
-    RenderingInstanceManager renderingInstanceManager,
-    RenderingServiceHelper renderingServiceHelper,
+    MeshRenderingService meshRenderingService,
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
-    GridService gridService,
-    SceneLightService sceneLightService,
-    TextureManager textureManager,
-    TextureEntityManager textureEntityManager,
-    TerrainRenderingService terrainRenderingService)
+    GridService gridService)
     : ISceneService
 {
-    public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
+    public int Priority => SceneServicePriority.FromDependencies([meshRenderingService]);
 
-    private readonly TextureId<RGBA> _whitePixel = textureManager.RegisterTexture(TextureData<RGBA>.Single(RGBA.White));
+    private readonly Dictionary<Id<Building>, MeshRenderingService.MeshInstanceHandle> _instanceIds = new();
+    private readonly Dictionary<Id<Building>, MeshRenderingService.MeshInstanceHandle> _ghostInstanceIds = new();
 
-    private readonly Shaders.Default _shader = new()
-    {
-        BlendState = RenderState.Opaque,
-        UColor = new Vector3D<float>(0.7f, 0.7f, 0.7f),
-        UOpacity = 1.0f,
-        UColorOverride = new Vector3D<float>(0, 0, 0),
-        UColorMix = 0.0f,
-    };
-
-    private readonly Dictionary<Id<Building>, Id<Shaders.Default.Instance>> _instanceIds = new();
-
-    private readonly Shaders.Default _ghostShader = new()
-    {
-        BlendState = RenderState.AlphaBlend,
-        UColor = new Vector3D<float>(0.7f, 0.7f, 0.7f),
-        UOpacity = 0.5f,
-        UColorOverride = new Vector3D<float>(0, 0, 0),
-        UColorMix = 0.0f,
-    };
-
-    private readonly Dictionary<Id<Building>, Id<Shaders.Default.Instance>> _ghostInstanceIds = new();
-
-    private GroupId<Shaders.Default.Instance> _groupId = null!;
-    private GroupId<Shaders.Default.Instance> _ghostGroupId = null!;
+    private MeshRenderingService.MeshGroupHandle _groupHandle;
+    private MeshRenderingService.MeshGroupHandle _ghostGroupHandle;
 
     public Result Load()
     {
-        if (textureEntityManager.Register<RGBA, RGBAPixelFormat>(_whitePixel, new TextureUploadOptions())
-            .TryPickProblems(out var problems))
-        {
-            return problems.Prepend("Failed to register white pixel texture with OpenGL");
-        }
-
-        _shader.TextureSampler = _whitePixel;
-        _ghostShader.TextureSampler = _whitePixel;
-
-        if (renderingServiceHelper.LoadShader(_shader).TryPickProblems(out problems))
-        {
-            return problems.Prepend("Failed to load building shader");
-        }
-
-        if (renderingServiceHelper.LoadShader(_ghostShader).TryPickProblems(out problems))
-        {
-            return problems.Prepend("Failed to load ghost building shader");
-        }
-
         var vertices = new Shaders.Default.Vertex[UnitCube.VertexCount];
         UnitCube.Populate(vertices);
 
         var indices = new uint[UnitCube.IndexCount];
         UnitCube.GetIndices(indices);
 
-        if (geometryManager.Register(vertices, indices)
-            .TryPickProblems(out problems, out var geometryId))
+        if (meshRenderingService.RegisterMeshGroup(
+                vertices, indices,
+                parameters: new Shaders.Default.EntityParameters(
+                    UColor: new Vector3D<float>(0.7f, 0.7f, 0.7f)))
+            .TryPickProblems(out var problems, out var groupHandle))
         {
-            return problems.Prepend("Failed to register building geometry");
+            return problems.Prepend("Failed to register building mesh group");
         }
 
-        if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
-                geometryId, _shader, RenderState.Opaque)
-            .TryPickProblems(out problems, out var groupId))
+        _groupHandle = groupHandle;
+
+        if (meshRenderingService.RegisterMeshGroup(
+                vertices, indices,
+                renderState: RenderState.AlphaBlend,
+                parameters: new Shaders.Default.EntityParameters(
+                    UColor: new Vector3D<float>(0.7f, 0.7f, 0.7f),
+                    UOpacity: 0.5f,
+                    UColorOverride: new Vector3D<float>(0, 0, 0),
+                    UColorMix: 0f))
+            .TryPickProblems(out problems, out var ghostGroupHandle))
         {
-            return problems.Prepend("Failed to register building group");
+            return problems.Prepend("Failed to register ghost building mesh group");
         }
 
-        _groupId = groupId;
+        _ghostGroupHandle = ghostGroupHandle;
 
-        if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
-                geometryId, _ghostShader, RenderState.AlphaBlend)
-            .TryPickProblems(out problems, out var ghostGroupId))
-        {
-            return problems.Prepend("Failed to register ghost building group");
-        }
-
-        _ghostGroupId = ghostGroupId;
-
-        return Result.Success();
-    }
-
-    public Result Unload()
-    {
-        textureEntityManager.Unregister(_whitePixel);
         return Result.Success();
     }
 
@@ -132,13 +74,13 @@ public class BuildingRenderingService(
 
         var worldMatrix = ComputeWorldMatrix(blueprint.Footprint, building.Position);
 
-        if (renderingInstanceManager.Add(_groupId, new Shaders.Default.Instance(worldMatrix))
-            .TryPickProblems(out var problems, out var instanceId))
+        if (meshRenderingService.AddInstance(_groupHandle, worldMatrix)
+            .TryPickProblems(out var problems, out var instanceHandle))
         {
             return problems.Prepend("Failed to add building instance for '{0}'", buildingId);
         }
 
-        _instanceIds[buildingId] = instanceId;
+        _instanceIds[buildingId] = instanceHandle;
 
         return Result.Success();
     }
@@ -150,13 +92,13 @@ public class BuildingRenderingService(
     {
         var worldMatrix = ComputeWorldMatrix(footprint, position);
 
-        if (renderingInstanceManager.Add(_ghostGroupId, new Shaders.Default.Instance(worldMatrix))
-            .TryPickProblems(out var problems, out var instanceId))
+        if (meshRenderingService.AddInstance(_ghostGroupHandle, worldMatrix)
+            .TryPickProblems(out var problems, out var instanceHandle))
         {
             return problems.Prepend("Failed to add ghost building instance for '{0}'", ghostId);
         }
 
-        _ghostInstanceIds[ghostId] = instanceId;
+        _ghostInstanceIds[ghostId] = instanceHandle;
 
         return Result.Success();
     }
@@ -166,14 +108,14 @@ public class BuildingRenderingService(
         BuildingPosition position,
         TileFootprint footprint)
     {
-        if (!_ghostInstanceIds.TryGetValue(ghostId, out var instanceId))
+        if (!_ghostInstanceIds.TryGetValue(ghostId, out var instanceHandle))
         {
             return new ResultProblem("Could not find ghost instance for building '{0}'", ghostId);
         }
 
         var worldMatrix = ComputeWorldMatrix(footprint, position);
 
-        if (renderingInstanceManager.Update(_ghostGroupId, instanceId, new Shaders.Default.Instance(worldMatrix))
+        if (meshRenderingService.UpdateInstance(instanceHandle, worldMatrix)
             .TryPickProblems(out var problems))
         {
             return problems.Prepend("Failed to update ghost building instance for '{0}'", ghostId);
@@ -184,21 +126,24 @@ public class BuildingRenderingService(
 
     public void SetGhostAppearance(float opacity, Vector3D<float>? colorOverride = null, float colorMix = 0f)
     {
-        _ghostShader.UOpacity = opacity;
-        _ghostShader.UColorOverride = colorOverride ?? new Vector3D<float>(0, 0, 0);
-        _ghostShader.UColorMix = colorMix;
+        meshRenderingService.UpdateGroupParameters(_ghostGroupHandle,
+            new Shaders.Default.EntityParameters(
+                UColor: new Vector3D<float>(0.7f, 0.7f, 0.7f),
+                UOpacity: opacity,
+                UColorOverride: colorOverride ?? new Vector3D<float>(0, 0, 0),
+                UColorMix: colorMix));
     }
 
     public Result Unregister(Id<Building> buildingId)
     {
-        if (_instanceIds.Remove(buildingId, out var instanceId))
+        if (_instanceIds.Remove(buildingId, out var instanceHandle))
         {
-            return renderingInstanceManager.Remove(_groupId, instanceId);
+            return meshRenderingService.RemoveInstance(instanceHandle);
         }
 
-        if (_ghostInstanceIds.Remove(buildingId, out var ghostInstanceId))
+        if (_ghostInstanceIds.Remove(buildingId, out var ghostInstanceHandle))
         {
-            return renderingInstanceManager.Remove(_ghostGroupId, ghostInstanceId);
+            return meshRenderingService.RemoveInstance(ghostInstanceHandle);
         }
 
         return new ResultProblem("Could not find rendering instance for building '{0}'", buildingId);
@@ -206,14 +151,6 @@ public class BuildingRenderingService(
 
     public Result Update(TimeSpan deltaTime)
     {
-        cameraSceneService.ApplyCameraPositionParameters(_shader);
-        cameraSceneService.ApplyCameraDirectionParameters(_shader);
-        sceneLightService.ApplyShaderParameters(_shader);
-
-        cameraSceneService.ApplyCameraPositionParameters(_ghostShader);
-        cameraSceneService.ApplyCameraDirectionParameters(_ghostShader);
-        sceneLightService.ApplyShaderParameters(_ghostShader);
-
         return Result.Success();
     }
 

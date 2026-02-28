@@ -21,6 +21,8 @@ public class ProcessMeshAssets(ILogger<ProcessMeshAssets> logger, NamespaceProvi
 
         foreach (var meshAsset in meshAssets)
         {
+            MeshNormalizer.Normalize(meshAsset.Data);
+
             var writeResult = await assetWriter.WriteAssetAsync(meshAsset.Data, meshAsset.Destination, ct);
             if (writeResult.TryPickProblems(out var writeProblems))
             {

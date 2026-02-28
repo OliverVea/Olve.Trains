@@ -21,6 +21,7 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<SetCameraHandlerService>(sceneId);
         services.AddSceneService<SetMouseHandlerService>(sceneId);
         services.AddSceneService<TerrainRenderingService>(sceneId);
+        services.AddSceneService<MeshRenderingService>(sceneId);
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
             (TrackRenderingService trs, Id<Track> trackId) =>
