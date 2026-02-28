@@ -99,6 +99,10 @@
   - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
   - [x] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now
   - [ ] Make a visually appealing main menu
+- [ ] Toolbar icons epic (Visual):
+  - Description: Current toolbar icons are placeholder quality. Generate icons from the underlying 3D models (render model to texture) for a consistent, polished look.
+  - [ ] Investigate rendering models to texture for icon generation
+  - [ ] Generate toolbar icons from 3D models
 - [ ] Terrain epic (Visual):
   - [ ] Add bumpy terrain using low-res noise texture for low-poly smooth height variation
 - [ ] Audio support epic (Feature):
