@@ -1,5 +1,12 @@
 ## Done
 
+- [x] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
+  - [x] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
+  - [x] Update `ProcessShaders` to generate explicit interface implementations from annotations (replace convention-based matching)
+  - [x] Annotate vertex/instance attributes in all shaders (`IWithPosition3D`, `IWithNormal3D`, etc.)
+  - [x] Annotate uniforms in all shaders (`ICameraPositionShader`, `IDaylightShader`, etc.)
+  - [x] Remove manual `ShaderExtensions/Shaders.cs` partial declarations
+  - [x] Remove convention-based `SemanticMap`/`NormalizeAttributeName` from pipeline
 - [x] Unit geometry (Technical):
   - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
   - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
@@ -41,13 +48,6 @@
 
 ## Demo
 
-- [ ] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
-  - [ ] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
-  - [ ] Update `ProcessShaders` to generate explicit interface implementations from annotations (replace convention-based matching)
-  - [ ] Annotate vertex/instance attributes in all shaders (`IWithPosition3D`, `IWithNormal3D`, etc.)
-  - [ ] Annotate uniforms in all shaders (`ICameraPositionShader`, `IDaylightShader`, etc.)
-  - [ ] Remove manual `ShaderExtensions/Shaders.cs` partial declarations
-  - [ ] Remove convention-based `SemanticMap`/`NormalizeAttributeName` from pipeline
 - [ ] Collision system epic (Technical):
   - Description: Centralized collision system (e.g. Id<Collider>) queryable when placing tracks, buildings, or future obstacles like trees. Replaces per-type validation with a unified approach.
   - [ ] Design generalized collision system with typed collider IDs
