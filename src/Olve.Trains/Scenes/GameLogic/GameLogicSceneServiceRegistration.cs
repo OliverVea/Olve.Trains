@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
+using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Commands;
 using Olve.Trains.Scenes.GameLogic.Junctions;
@@ -50,6 +52,8 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<StationNameGenerator>();
         services.TryAddScoped<StationService>();
         services.TryAddScoped<StationBlueprintService>();
+        services.TryAddScoped<ResidenceBlueprintService>();
+        services.TryAddScoped<IndustryBlueprintService>();
         services.TryAddScoped<TrackConnectionService>();
         services.TryAddScoped<GridService>();
         services.TryAddScoped<TrackService>();

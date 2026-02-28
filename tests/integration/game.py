@@ -193,17 +193,24 @@ class Game:
         )
 
     def _kill_stale(self) -> None:
-        subprocess.run(
-            ["pkill", "-f", "On Track To Grow"],
-            capture_output=True,
-        )
+        if os.name == "nt":
+            subprocess.run(
+                ["taskkill", "/F", "/FI", "IMAGENAME eq dotnet.exe", "/FI", "WINDOWTITLE eq On Track*"],
+                capture_output=True,
+            )
+        else:
+            subprocess.run(
+                ["pkill", "-f", "On Track To Grow"],
+                capture_output=True,
+            )
         time.sleep(1)
 
     def _start_xvfb(self) -> None:
         if self.windowing != "xvfb":
             return
 
-        subprocess.run(["pkill", "-f", "Xvfb :99"], capture_output=True)
+        if os.name != "nt":
+            subprocess.run(["pkill", "-f", "Xvfb :99"], capture_output=True)
         lock = Path("/tmp/.X99-lock")
         if lock.exists():
             lock.unlink()
