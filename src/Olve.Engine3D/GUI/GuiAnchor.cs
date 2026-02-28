@@ -7,4 +7,5 @@ namespace Olve.Engine3D.GUI;
 public readonly record struct GuiAnchor(
     Id<GuiAnchor> Id,
     AnchorPosition Position,
-    GrowthDirection Growth) : IHasId<Id<GuiAnchor>>;
+    GrowthDirection Growth,
+    int Depth = 0) : IHasId<Id<GuiAnchor>>;

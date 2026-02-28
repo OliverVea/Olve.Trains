@@ -4,7 +4,7 @@ using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI;
 
-public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService guiNodeService) : ISceneService
+public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService guiNodeService, GuiAnchorService guiAnchorService) : ISceneService
 {
     private readonly Dictionary<Id<GuiNode>, int> _depths = [];
 
@@ -28,12 +28,21 @@ public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService gui
     {
         if (guiNodeService.TryGetParent(nodeId, out var parent))
         {
-            if (parent.TryGetT2(out var guiNodeParent, out _))
+            if (parent.TryGetT2(out var guiNodeParent, out var anchorParent))
             {
                 var depth = GetDepth(guiNodeParent) + 1;
                 _depths[nodeId] = depth;
                 return;
             }
+
+            // Parent is an anchor — use anchor's depth as base
+            if (guiAnchorService.TryGetAnchor(anchorParent, out var anchor))
+            {
+                _depths[nodeId] = anchor.Depth;
+                return;
+            }
+
+            logger.LogError("Could not get anchor '{AnchorId}' for node '{NodeId}'. Setting depth to 0.", anchorParent, nodeId);
         }
         else
         {

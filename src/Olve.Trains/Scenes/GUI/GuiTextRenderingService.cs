@@ -29,14 +29,15 @@ public class GuiTextRenderingService(
     RenderingServiceHelper renderingServiceHelper,
     Provider<LayoutContext> layoutContext,
     GuiElementService guiElementService,
-    GuiLayoutService guiLayoutService) : ISceneService
+    GuiLayoutService guiLayoutService,
+    GuiDepthService guiDepthService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([guiLayoutService]);
 
     private static readonly RenderState GuiRenderState = new(BlendMode.Alpha, DepthWrite: false, DepthTest: false);
     private const int GuiSortKey = 1001;
 
-    private readonly record struct TextGroupKey(UntypedTextureId FontAtlasId, float FontWeight);
+    private readonly record struct TextGroupKey(UntypedTextureId FontAtlasId, float FontWeight, int Depth);
 
     /// <summary>
     /// Tracks one text element's glyph instances and cached layout data.
@@ -140,7 +141,8 @@ public class GuiTextRenderingService(
         DeregisterText(nodeId);
 
         var layout = TextLayoutEngine.ComputeLayout(content, font, fontSize);
-        var groupKey = new TextGroupKey(fontAtlasId, fontWeight);
+        var depth = guiDepthService.GetDepth(nodeId);
+        var groupKey = new TextGroupKey(fontAtlasId, fontWeight, depth);
         var groupId = GetOrCreateGroup(groupKey, fontAtlasId, fontWeight);
         var glyphIds = new List<Id<Shaders.MsdfText.Instance>>();
 
@@ -211,7 +213,8 @@ public class GuiTextRenderingService(
         var oldGlyphIds = data.GlyphInstanceIds;
 
         // If font weight changed, we may need a different group
-        var newGroupKey = data.GroupKey with { FontWeight = effectiveFontWeight };
+        var depth = guiDepthService.GetDepth(nodeId);
+        var newGroupKey = data.GroupKey with { FontWeight = effectiveFontWeight, Depth = depth };
         var groupChanged = !newGroupKey.Equals(data.GroupKey);
 
         if (groupChanged)
@@ -346,7 +349,7 @@ public class GuiTextRenderingService(
 
         if (renderingGroupManager.Register<Shaders.MsdfText.Vertex, Shaders.MsdfText.Instance>(
                 _quadGeometryId, _shader, GuiRenderState,
-                sortKey: GuiSortKey, groupParameters: groupParameters)
+                sortKey: GuiSortKey + key.Depth, groupParameters: groupParameters)
             .TryPickProblems(out _, out var groupId))
         {
             throw new InvalidOperationException(

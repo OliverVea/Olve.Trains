@@ -45,7 +45,7 @@ public class BurgerMenuService(
 
     private Result OpenMenu()
     {
-        if (guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight)
+        if (guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight, depth: 10)
             .TryPickProblems(out var problems, out _anchorId))
         {
             return problems;

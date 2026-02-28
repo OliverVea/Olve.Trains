@@ -8,10 +8,10 @@ public class GuiAnchorService(ILogger<GuiAnchorService> logger)
 {
     private readonly Dictionary<Id<GuiAnchor>, GuiAnchor> _anchors = new();
 
-    public Result<Id<GuiAnchor>> RegisterAnchor(AnchorPosition position, GrowthDirection growth)
+    public Result<Id<GuiAnchor>> RegisterAnchor(AnchorPosition position, GrowthDirection growth, int depth = 0)
     {
         var anchorId = Id.New<GuiAnchor>();
-        var anchor = new GuiAnchor(anchorId, position, growth);
+        var anchor = new GuiAnchor(anchorId, position, growth, depth);
         _anchors[anchorId] = anchor;
         logger.LogDebug(
             "Registered anchor '{AnchorId}' at position ({HPos}, {VPos}) with growth ({HGrowth}, {VGrowth}). Total anchors: {Count}",

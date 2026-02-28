@@ -23,19 +23,22 @@ public class GuiRectangleRenderingService(
     RenderingServiceHelper renderingServiceHelper,
     Provider<LayoutContext> layoutContext,
     GuiElementService guiElementService,
-    GuiLayoutService guiLayoutService) : ISceneService
+    GuiLayoutService guiLayoutService,
+    GuiDepthService guiDepthService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([guiLayoutService]);
 
     private static readonly RenderState GuiRenderState = new(BlendMode.Alpha, DepthWrite: false, DepthTest: false);
     private const int GuiSortKey = 1000;
 
+    private readonly record struct RectGroupKey(UntypedTextureId TextureId, int Depth);
+
     private readonly record struct InstanceData(
         Id<Shaders.TexturedRectangle.Instance> InstanceId,
-        UntypedTextureId TextureId);
+        RectGroupKey GroupKey);
 
     private readonly Dictionary<Id<GuiNode>, InstanceData> _instances = new();
-    private readonly Dictionary<UntypedTextureId, GroupId<Shaders.TexturedRectangle.Instance>> _textureGroups = new();
+    private readonly Dictionary<RectGroupKey, GroupId<Shaders.TexturedRectangle.Instance>> _textureGroups = new();
     private readonly List<Id<GuiNode>> _nodesToDelete = [];
     private readonly List<ResultProblem> _updateProblems = [];
     private readonly Shaders.TexturedRectangle _shader = new()
@@ -95,7 +98,7 @@ public class GuiRectangleRenderingService(
                 continue;
             }
 
-            var groupId = _textureGroups[instanceData.TextureId];
+            var groupId = _textureGroups[instanceData.GroupKey];
 
             if (renderingInstanceManager.Update(groupId, instanceData.InstanceId, rectInstance)
                 .TryPickProblems(out var problems))
@@ -126,7 +129,7 @@ public class GuiRectangleRenderingService(
     {
         if (_instances.Remove(nodeId, out var oldInstance))
         {
-            var oldGroupId = _textureGroups[oldInstance.TextureId];
+            var oldGroupId = _textureGroups[oldInstance.GroupKey];
             if (renderingInstanceManager.Remove(oldGroupId, oldInstance.InstanceId)
                 .TryPickProblems(out var problems))
             {
@@ -135,7 +138,9 @@ public class GuiRectangleRenderingService(
         }
 
         UntypedTextureId untypedTextureId = textureId;
-        var groupId = GetOrCreateGroup(untypedTextureId, textureId);
+        var depth = guiDepthService.GetDepth(nodeId);
+        var groupKey = new RectGroupKey(untypedTextureId, depth);
+        var groupId = GetOrCreateGroup(groupKey, textureId);
 
         var initialInstance = new Shaders.TexturedRectangle.Instance(
             iPosPx: Vector2D<float>.Zero,
@@ -151,7 +156,7 @@ public class GuiRectangleRenderingService(
             return addProblems.Prepend("Failed to register rectangle: nodeId={0}, textureId={1}", nodeId, textureId);
         }
 
-        _instances[nodeId] = new InstanceData(instanceId, untypedTextureId);
+        _instances[nodeId] = new InstanceData(instanceId, groupKey);
 
         logger.LogDebug("Registered rectangle rendering for node {NodeId}", nodeId);
 
@@ -165,7 +170,7 @@ public class GuiRectangleRenderingService(
             return DeletionResult.NotFound();
         }
 
-        var groupId = _textureGroups[instanceData.TextureId];
+        var groupId = _textureGroups[instanceData.GroupKey];
 
         if (renderingInstanceManager.Remove(groupId, instanceData.InstanceId)
             .TryPickProblems(out var problems))
@@ -179,10 +184,10 @@ public class GuiRectangleRenderingService(
     }
 
     private GroupId<Shaders.TexturedRectangle.Instance> GetOrCreateGroup(
-        UntypedTextureId untypedTextureId,
+        RectGroupKey key,
         TextureId<RGBA> typedTextureId)
     {
-        if (_textureGroups.TryGetValue(untypedTextureId, out var existingGroupId))
+        if (_textureGroups.TryGetValue(key, out var existingGroupId))
         {
             return existingGroupId;
         }
@@ -191,14 +196,14 @@ public class GuiRectangleRenderingService(
 
         if (renderingGroupManager.Register<Shaders.TexturedRectangle.Vertex, Shaders.TexturedRectangle.Instance>(
                 _quadGeometryId, _shader, GuiRenderState,
-                sortKey: GuiSortKey, groupParameters: groupParameters)
+                sortKey: GuiSortKey + key.Depth, groupParameters: groupParameters)
             .TryPickProblems(out _, out var groupId))
         {
             throw new InvalidOperationException(
-                $"Failed to register GUI rectangle group for texture {untypedTextureId}");
+                $"Failed to register GUI rectangle group for texture {key.TextureId}");
         }
 
-        _textureGroups[untypedTextureId] = groupId;
+        _textureGroups[key] = groupId;
         return groupId;
     }
 
