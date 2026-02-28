@@ -10,10 +10,6 @@ def test_track_loop(
     game: Game,
     screenshots: ScreenshotAsserter,
 ) -> None:
-    # Navigate from main menu
-    game.activate_gui("MainMenu/Box/StartGameButton")
-    game.step(2)
-
     # Set camera to center on the layout
     game.set_camera(target="12.5,0,10", zoom=2.5)
 

@@ -49,11 +49,13 @@ class Game:
         resolution: str = "1920x1080",
         windowing: str = "native",
         skip_build: bool = False,
+        scene: str | None = None,
     ):
         self.instance_id = instance_id
         self.resolution = resolution
         self.windowing = windowing
         self.skip_build = skip_build
+        self.scene = scene
 
         self._game_proc: subprocess.Popen | None = None
         self._xvfb_proc: subprocess.Popen | None = None
@@ -174,6 +176,9 @@ class Game:
     def set_mouse(self, x: float, y: float) -> CommandResult:
         return self.send(f"set-mouse pos={x},{y}")
 
+    def load_scene(self, scene: str) -> CommandResult:
+        return self.send(f"load-scene scene={scene}")
+
     # -- Internal helpers --
 
     def _build(self) -> None:
@@ -225,18 +230,21 @@ class Game:
         time.sleep(2)
 
     def _launch_game(self) -> None:
-        logger.info("Launching game (manual mode)")
+        logger.info("Launching game (manual mode, scene=%s)", self.scene or "default")
+        cmd = [
+            "dotnet",
+            str(GAME_DLL),
+            "--manual",
+            "--listen",
+            "--instance",
+            self.instance_id,
+            "--resolution",
+            self.resolution,
+        ]
+        if self.scene:
+            cmd.extend(["--scene", self.scene])
         self._game_proc = subprocess.Popen(
-            [
-                "dotnet",
-                str(GAME_DLL),
-                "--manual",
-                "--listen",
-                "--instance",
-                self.instance_id,
-                "--resolution",
-                self.resolution,
-            ],
+            cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )

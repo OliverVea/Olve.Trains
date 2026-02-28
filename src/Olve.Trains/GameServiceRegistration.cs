@@ -65,6 +65,7 @@ public static class GameServiceRegistration
         services.AddSingleton<HelpCommandHandler>();
         services.AddSingleton<ExitCommandHandler>();
         services.AddSingleton<ScreenshotCommandHandler>();
+        services.AddSingleton<LoadSceneCommandHandler>();
         if (manual)
         {
             services.AddSingleton<StepCommandHandler>();

@@ -68,6 +68,7 @@ def game(request: pytest.FixtureRequest) -> Game:
         resolution=request.config.getoption("--resolution"),
         windowing=request.config.getoption("--windowing"),
         skip_build=request.config.getoption("--skip-build"),
+        scene="game",
     )
     g.start()
     yield g

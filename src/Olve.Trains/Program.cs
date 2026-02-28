@@ -69,6 +69,7 @@ public static class Program
         collection.Add(serviceProvider.GetRequiredService<HelpCommandHandler>());
         collection.Add(serviceProvider.GetRequiredService<ExitCommandHandler>());
         collection.Add(serviceProvider.GetRequiredService<ScreenshotCommandHandler>());
+        collection.Add(serviceProvider.GetRequiredService<LoadSceneCommandHandler>());
 
         if (manual)
         {
@@ -91,7 +92,13 @@ public static class Program
             logger.LogInformation("Listening on pipe '{PipeName}'", instanceId.GetPipeName());
         }
 
-        var result = gameManager.Run(SceneIds.MainMenuScene);
+        var startScene = parsedArgs.Scene?.ToLowerInvariant() switch
+        {
+            "game" => SceneIds.GameUIScene,
+            _ => SceneIds.MainMenuScene,
+        };
+
+        var result = gameManager.Run(startScene);
 
         MetricsExtensions.ShutdownMetrics();
 
@@ -151,7 +158,7 @@ public static class Program
         return 0;
     }
 
-    private record ParsedArgs(string? SendCommand, string? InstanceId, bool Listen, bool Manual, Vector2D<int>? Resolution);
+    private record ParsedArgs(string? SendCommand, string? InstanceId, bool Listen, bool Manual, Vector2D<int>? Resolution, string? Scene);
 
     private static ParsedArgs ParseArguments(string[] args)
     {
@@ -160,6 +167,7 @@ public static class Program
         var listen = false;
         var manual = false;
         Vector2D<int>? resolution = null;
+        string? scene = null;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -186,9 +194,12 @@ public static class Program
                         resolution = new Vector2D<int>(w, h);
                     }
                     break;
+                case "--scene" when i + 1 < args.Length:
+                    scene = args[++i];
+                    break;
             }
         }
 
-        return new ParsedArgs(sendCommand, instanceId, listen, manual, resolution);
+        return new ParsedArgs(sendCommand, instanceId, listen, manual, resolution, scene);
     }
 }
