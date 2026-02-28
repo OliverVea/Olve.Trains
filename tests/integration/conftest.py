@@ -60,9 +60,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=False,
         help="Upload screenshots to S3 after test run",
     )
-
-
-POOL_SIZE = 2
+    parser.addoption(
+        "--pool-size",
+        type=int,
+        default=1,
+        help="Number of game instances to run in parallel (default: 1)",
+    )
 
 
 class GamePool:
@@ -88,10 +91,11 @@ def _game_pool(request: pytest.FixtureRequest) -> GamePool:
     resolution = request.config.getoption("--resolution")
     windowing = request.config.getoption("--windowing")
     skip_build = request.config.getoption("--skip-build")
+    pool_size = request.config.getoption("--pool-size")
 
     games: list[Game] = []
     try:
-        for i in range(POOL_SIZE):
+        for i in range(pool_size):
             g = Game(
                 instance_id=f"integration-test-{i}",
                 resolution=resolution,

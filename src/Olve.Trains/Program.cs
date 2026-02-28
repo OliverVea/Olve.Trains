@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Commands;
+using Olve.Engine3D.Input;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Utilities;
 using Olve.Trains.Telemetry;
@@ -74,6 +75,7 @@ public static class Program
         if (manual)
         {
             collection.Add(serviceProvider.GetRequiredService<StepCommandHandler>());
+            serviceProvider.GetRequiredService<MouseManager>().NormalizedPositionOverride = new(0, 0);
         }
 
         var gameManager = serviceProvider.GetRequiredService<GameManager>();
