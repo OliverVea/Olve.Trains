@@ -13,9 +13,10 @@ import pytest
 from game import Game
 from screenshot import compare_screenshots, update_reference
 
+PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
 REFERENCE_DIR = Path(__file__).parent / "reference"
 DIFF_DIR = Path("/tmp/screenshot-diffs")
-LOG_DIR = Path.home() / "projects" / "Olve.Trains" / "src" / "Olve.Trains" / "logs"
+LOG_DIR = PROJECT_DIR / "src" / "Olve.Trains" / "logs"
 
 
 def pytest_configure(config: pytest.Config) -> None:
