@@ -128,10 +128,10 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: bash scripts/integration-test.sh --skip-build --windowing xvfb
 
-      - name: Upload validation screenshot
+      - name: Upload screenshot diffs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: validation-screenshot
-          path: validation-screenshot.png
+          name: screenshot-diffs
+          path: /tmp/integration-test-*/*
           if-no-files-found: ignore
