@@ -16,6 +16,9 @@ def test_track_loop(
     # Place station at tile (11,1,12) facing north
     game.place_building(pos="11,1,12", type="station", dir="north")
 
+    # Place residential building down-right of station
+    game.place_building(pos="10,1,13", type="residential", dir="north")
+
     # -- Track loop --
 
     # Top-right curve: from station end going east, curving south

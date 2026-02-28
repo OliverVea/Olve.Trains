@@ -234,6 +234,13 @@ public class BuildingRenderingService(
             isCentered = true;
             modelTransform = Matrix4X4.CreateTranslation(0f, 0f, 0.1f);
         }
+        else if (blueprintId == BuildingBlueprintCatalog.Residential)
+        {
+            meshGroupResult = meshRenderingService.RegisterMeshGroup(
+                Meshes.apartment_small_mesh,
+                Textures.Building01a);
+            isCentered = true;
+        }
         else
         {
             meshGroupResult = meshRenderingService.RegisterMeshGroup(
