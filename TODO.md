@@ -16,6 +16,15 @@
   - [x] Allow deleting tracks
   - [x] Allow deleting trains
   - [x] Allow deleting vehicles
+- [x] Building epic (Feature):
+  - [x] Add basic support for buildings
+  - [x] Add building validation and validation failure rendering
+  - [x] Validate collisions
+  - [x] Add station with station track
+  - [x] Add building models
+- [x] Rendering boilerplate reduction epic (Technical):
+  - [x] Extract mesh loading + index extraction into a shared helper (MeshRenderingService)
+  - [x] Extract repeated per-frame shader parameter application (camera + light) into a helper (MeshRenderingService.Update)
 - [x] Detached mode (Tooling):
   - Description: For e.g. Agentic AI access to the game for debugging, we want to be able to run with --detached or -d. Then, we should be able to use the cli to interact with the game, enumerating options (for main menu it could be clicking buttons, for the game it could be listing and placing tracks, buildings, trains). We should also be able to take screenshots of the screen as .pngs.
   - [x] Launch game in detached mode
@@ -32,19 +41,6 @@
 
 ## Demo
 
-- [ ] Prefab system epic (Technical):
-  - Description: A prefab is a named collection of meshes with per-child transforms, textures, and scale. Definitions live in `resources/prefabs/` (XML or JSON). The asset pipeline source-generates typed C# references (like shaders/layouts). The viewer scene loads source files directly for fast iteration (edit → restart viewer, no pipeline rebuild). Unblocks the "Add building models" step in the building epic.
-  - [ ] Define prefab source format in `resources/prefabs/` (mesh asset refs, per-child position/rotation/scale, texture ref)
-  - [ ] Add runtime loader that reads prefab source files directly (for viewer scene, no pipeline needed)
-  - [ ] Prefab rendering — load meshes, register geometry/groups, instantiate children with composed transforms (group world * child local)
-  - [ ] Prefab viewer scene (load all prefabs from source files, render on a grid, free camera)
-  - [ ] Add prefab source generation to asset pipeline (generate typed `Prefabs.*` references like shaders/layouts)
-  - [ ] Define building prefabs (station, houses, etc.) using the viewer to iterate on placement/scale/textures
-  - [ ] Integrate prefabs into BuildingBlueprintService — buildings reference a generated prefab instead of a unit cube
-- [ ] Rendering boilerplate reduction epic (Technical):
-  - Description: Extract repeated patterns from rendering services (BuildingRenderingService, VehicleRenderingService, JunctionSignalRenderingService) into shared helpers. Keep per-entity services as-is for domain-specific logic.
-  - [ ] Extract mesh loading + index extraction into a shared helper (repeated across Vehicle, JunctionSignal, and future mesh-based services)
-  - [ ] Extract repeated per-frame shader parameter application (camera + light) into a helper or base pattern
 - [ ] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
   - [ ] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
   - [ ] Update `ProcessShaders` to generate explicit interface implementations from annotations (replace convention-based matching)
@@ -52,12 +48,6 @@
   - [ ] Annotate uniforms in all shaders (`ICameraPositionShader`, `IDaylightShader`, etc.)
   - [ ] Remove manual `ShaderExtensions/Shaders.cs` partial declarations
   - [ ] Remove convention-based `SemanticMap`/`NormalizeAttributeName` from pipeline
-- [ ] Building epic (Feature):
-  - [x] Add basic support for buildings
-  - [x] Add building validation and validation failure rendering
-  - [x] Validate collisions
-  - [x] Add station with station track
-  - [ ] Add building models
 - [ ] Collision system epic (Technical):
   - Description: Centralized collision system (e.g. Id<Collider>) queryable when placing tracks, buildings, or future obstacles like trees. Replaces per-type validation with a unified approach.
   - [ ] Design generalized collision system with typed collider IDs
@@ -111,6 +101,12 @@
   - [ ] Add GUI sound effects
   - [ ] Add in-game sound effects
   - [ ] Add spatial effects for e.g. localized sounds, wind blowing when the camera is zoomed out, and so on
+- [ ] Game feel epic (Visual):
+  - Description: Juice and polish to make interactions feel satisfying. Placement animations (grow/stretch/plop) for buildings and tracks, synced with audio cues. Depends on audio support.
+  - [ ] Add placement animation system (scale/bounce keyframes on newly placed entities)
+  - [ ] Sync placement animations with audio cues (plop/click SFX)
+  - [ ] Add placement animations for buildings
+  - [ ] Add placement animations for tracks
 
 ## Version 1.0
 
@@ -185,6 +181,16 @@
   - [ ] Add fallback behavior (missing translation falls back to default locale)
   - [ ] Add initial English locale as the default/baseline
   - [ ] Add tooling or workflow for adding new locales
+
+- [ ] Prefab system epic (Technical):
+  - Description: A prefab is a named collection of meshes with per-child transforms, textures, and scale. Definitions live in `resources/prefabs/` (XML or JSON). The asset pipeline source-generates typed C# references (like shaders/layouts). The viewer scene loads source files directly for fast iteration (edit → restart viewer, no pipeline rebuild).
+  - [ ] Define prefab source format in `resources/prefabs/` (mesh asset refs, per-child position/rotation/scale, texture ref)
+  - [ ] Add runtime loader that reads prefab source files directly (for viewer scene, no pipeline needed)
+  - [ ] Prefab rendering — load meshes, register geometry/groups, instantiate children with composed transforms (group world * child local)
+  - [ ] Prefab viewer scene (load all prefabs from source files, render on a grid, free camera)
+  - [ ] Add prefab source generation to asset pipeline (generate typed `Prefabs.*` references like shaders/layouts)
+  - [ ] Define building prefabs (station, houses, etc.) using the viewer to iterate on placement/scale/textures
+  - [ ] Integrate prefabs into BuildingBlueprintService — buildings reference a generated prefab instead of a unit cube
 
 - [ ] ? WebGPU migration epic (Technical) (see [docs/platform-strategy.md](docs/platform-strategy.md)):
   - Description: Migrate rendering from OpenGL to WebGPU (native, via Silk.NET.WebGPU) for cross-platform support (Windows/Linux/macOS/consoles). OpenGL is deprecated on macOS and unavailable on consoles.
