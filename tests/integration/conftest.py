@@ -90,17 +90,22 @@ def _game_pool(request: pytest.FixtureRequest) -> GamePool:
     skip_build = request.config.getoption("--skip-build")
 
     games: list[Game] = []
-    for i in range(POOL_SIZE):
-        g = Game(
-            instance_id=f"integration-test-{i}",
-            resolution=resolution,
-            windowing=windowing,
-            skip_build=skip_build or i > 0,  # only build once
-            scene="game",
-            kill_stale=i == 0,  # only kill stale processes on first instance
-        )
-        g.start()
-        games.append(g)
+    try:
+        for i in range(POOL_SIZE):
+            g = Game(
+                instance_id=f"integration-test-{i}",
+                resolution=resolution,
+                windowing=windowing,
+                skip_build=skip_build or i > 0,  # only build once
+                scene="game",
+                kill_stale=i == 0,  # only kill stale processes on first instance
+            )
+            g.start()
+            games.append(g)
+    except Exception:
+        for g in games:
+            g.stop()
+        raise
 
     pool = GamePool(games)
     yield pool

@@ -1,14 +1,28 @@
 from __future__ import annotations
 
+import atexit
 import logging
 import os
 import re
-import signal
 import subprocess
 import tempfile
 import time
-from dataclasses import dataclass, field
+import weakref
+from dataclasses import dataclass
 from pathlib import Path
+
+_live_games: weakref.WeakSet = weakref.WeakSet()
+
+
+def _cleanup_all() -> None:
+    for g in list(_live_games):
+        try:
+            g.stop()
+        except Exception:
+            pass
+
+
+atexit.register(_cleanup_all)
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +83,7 @@ class Game:
         self._temp_dir = tempfile.mkdtemp(prefix="integration-test-")
 
     def start(self) -> None:
+        _live_games.add(self)
         self._build()
         if self.kill_stale:
             self._kill_stale()
@@ -77,25 +92,43 @@ class Game:
         self._wait_for_pipe()
 
     def stop(self) -> None:
+        self._stop_game()
+        self._stop_xvfb()
+
+    def _stop_game(self) -> None:
+        if self._game_proc is None:
+            return
+
         try:
             self.send("exit", check=False)
+            self._game_proc.wait(timeout=5)
         except Exception:
             pass
 
-        if self._game_proc and self._game_proc.poll() is None:
+        if self._game_proc.poll() is None:
             self._game_proc.terminate()
             try:
                 self._game_proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self._game_proc.kill()
+                self._game_proc.wait(timeout=5)
 
-        if self._xvfb_proc and self._xvfb_proc.poll() is None:
-            self._xvfb_proc.terminate()
+    def _stop_xvfb(self) -> None:
+        if self._xvfb_proc is None:
+            return
+
+        self._xvfb_proc.terminate()
+        try:
+            self._xvfb_proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            self._xvfb_proc.kill()
+            self._xvfb_proc.wait(timeout=5)
+
+        lock = Path(f"/tmp/.X{self._display}-lock")
+        if lock.exists():
             try:
-                lock = Path(f"/tmp/.X{self._display}-lock")
-                if lock.exists():
-                    lock.unlink()
-            except Exception:
+                lock.unlink()
+            except OSError:
                 pass
 
     def send(self, command: str, *, check: bool = True) -> CommandResult:
