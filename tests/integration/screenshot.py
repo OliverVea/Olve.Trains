@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 
 @dataclass
@@ -57,11 +57,11 @@ def compare_screenshots(
     passed = similarity >= threshold
 
     diff_image_path = None
-    if diff_output or not passed:
+    if not passed:
         diff_image_path = diff_output or actual.with_name(
             actual.stem + "-diff" + actual.suffix
         )
-        _save_diff_image(actual_arr, ref_arr, changed_mask, diff_image_path)
+        _save_diff_image(actual_arr, ref_arr, diff_image_path)
 
     return DiffResult(
         similarity=similarity,
@@ -109,7 +109,6 @@ def update_reference(actual: Path, reference: Path) -> None:
 def _save_diff_image(
     actual_arr: np.ndarray,
     ref_arr: np.ndarray,
-    changed_mask: np.ndarray,
     output_path: Path,
 ) -> None:
     h, w, _ = ref_arr.shape
@@ -120,10 +119,27 @@ def _save_diff_image(
     delta = np.clip(abs_diff / max_val * 255, 0, 255).astype(np.uint8)
     delta_rgb = np.stack([delta, delta, delta], axis=2)
 
-    # Composite: reference | actual | delta
+    # Composite: baseline / actual / delta (vertically stacked)
     composite = np.concatenate(
         [ref_arr.astype(np.uint8), actual_arr.astype(np.uint8), delta_rgb],
-        axis=1,
+        axis=0,
     )
 
-    Image.fromarray(composite).save(output_path)
+    img = Image.fromarray(composite)
+    draw = ImageDraw.Draw(img)
+
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
+    except OSError:
+        font = ImageFont.load_default()
+
+    for i, label in enumerate(["Baseline", "Actual", "Diff"]):
+        x, y = 10, i * h + 10
+        # Black shadow
+        for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1), (-2, 0), (2, 0), (0, -2), (0, 2)]:
+            draw.text((x + dx, y + dy), label, fill="black", font=font)
+        # White text
+        draw.text((x, y), label, fill="white", font=font)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(output_path)

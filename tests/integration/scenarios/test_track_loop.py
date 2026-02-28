@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from conftest import ScreenshotAsserter
+from conftest import ScreenshotComparer
 from game import Game
 
 Y = "0.125"
@@ -8,7 +8,7 @@ Y = "0.125"
 
 def test_track_loop(
     game: Game,
-    screenshots: ScreenshotAsserter,
+    screenshots: ScreenshotComparer,
 ) -> None:
     # Set camera to center on the layout
     game.set_camera(target="12.5,0,10", zoom=2.5)
@@ -96,4 +96,4 @@ def test_track_loop(
         game.step(2)
 
         path = game.screenshot(game.temp_dir / f"{label}.png")
-        screenshots.assert_matches(path, f"track-loop-{label}")
+        screenshots.compare(path, f"track-loop-{label}")
