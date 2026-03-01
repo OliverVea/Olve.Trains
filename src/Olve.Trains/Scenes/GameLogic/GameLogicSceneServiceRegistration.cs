@@ -65,6 +65,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<TrackLineStripDataService>();
         services.TryAddScoped<BuildingValidationService>();
         services.TryAddScoped<TrackValidationService>();
+        services.TryAddScoped<VehicleGroupService>();
         services.TryAddScoped<VehicleJunctionService>();
         services.TryAddScoped<VehiclePositionService>();
         services.TryAddScoped<VehicleService>();

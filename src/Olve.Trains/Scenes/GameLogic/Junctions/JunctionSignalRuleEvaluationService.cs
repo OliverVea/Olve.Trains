@@ -1,15 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
-using Olve.Engine3D;
+﻿using Olve.Engine3D;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
 
 namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 
-public class JunctionSignalRuleEvaluationService(ILogger<JunctionSignalRuleEvaluationService> logger,
+public class JunctionSignalRuleEvaluationService(
     VehicleJunctionService vehicleJunctionService,
     JunctionService junctionService,
-    JunctionSignalRuleService junctionSignalRuleService)
+    JunctionSignalRuleService junctionSignalRuleService,
+    VehicleGroupService vehicleGroupService)
 {
     public Result<RuleEvaluationResult> EvaluateSignalRules(Id<Junction> junctionId, Id<Vehicle> vehicleId, Id<Track> sourceTrackId)
     {
@@ -70,11 +70,7 @@ public class JunctionSignalRuleEvaluationService(ILogger<JunctionSignalRuleEvalu
     {
         return vehicleRule.Match<Result<bool>>(
             any => true,
-            vehicleGroup =>
-            {
-                logger.LogWarning("JunctionSignalRuleEvaluationService VehicleGroup is not implemented. Returning false.");
-                return false;
-            },
+            groupId => vehicleGroupService.IsMemberOf(sourceVehicleId, groupId),
             vehicleId => sourceVehicleId == vehicleId);
     }
 

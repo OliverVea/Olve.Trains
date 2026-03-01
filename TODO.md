@@ -61,7 +61,7 @@
   - [x] CLI commands for signal rule management (add-signal-rule, clear-signal-rules)
   - [x] 3D signal rendering at junctions
   - [x] Implement CardinalDirection matching in signal rules (source only — destination direction matching is a no-op stub)
-  - [ ] Implement VehicleGroup matching in signal rules
+  - [x] Implement VehicleGroup matching in signal rules
   - [ ] Add in-game GUI for viewing and editing signal rules on a selected junction
 - [ ] Industry epic (Feature):
   - [ ] Add basic support for industries
@@ -101,6 +101,15 @@
   - [ ] Add GUI sound effects
   - [ ] Add in-game sound effects
   - [ ] Add spatial effects for e.g. localized sounds, wind blowing when the camera is zoomed out, and so on
+- [ ] Train perspective camera epic (Feature):
+  - Description: First-person camera from the train's perspective as it drives around. Includes a skybox so the sky looks correct from the train's viewpoint. Camera position and orientation derived from the vehicle's current spline parameter via TrackSplineService.
+  - [ ] Add skybox rendering (cubemap or gradient shader, drawn behind all geometry)
+  - [ ] Add perspective camera mode that follows a selected vehicle along its track spline
+  - [ ] Add UI toggle to enter/exit train perspective (keybind or button when selecting a train)
+- [ ] Terrain environment epic (Visual):
+  - Description: Make the terrain feel like a real landmass instead of a floating mesh. Extrude cliff/dirt sides along terrain borders down to a water plane, giving a natural island look.
+  - [ ] Add water plane below terrain height (flat quad with blue/water shading)
+  - [ ] Add cliff/dirt side extrusion along terrain edges (vertical quads from border down to water level)
 - [ ] Game feel epic (Visual):
   - Description: Juice and polish to make interactions feel satisfying. Placement animations (grow/stretch/plop) for buildings and tracks, synced with audio cues. Depends on audio support.
   - [ ] Add placement animation system (scale/bounce keyframes on newly placed entities)
