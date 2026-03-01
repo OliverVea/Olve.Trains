@@ -3,6 +3,8 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+**/*.local.*
+
 # User-specific files
 src/Olve.Trains/assets/
 src/Olve.Trains.AssetPipeline/temp/
