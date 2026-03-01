@@ -68,6 +68,9 @@ public class ScreenshotManager
             // OpenGL reads pixels bottom-up, need to flip vertically
             FlipVertically(pixels, width, height);
 
+            // Force alpha to 255 so semi-transparent GUI overlays appear composited
+            SetAlphaOpaque(pixels);
+
             // Ensure parent directory exists
             var absolutePath = outputPath.Absolute;
             absolutePath.Parent.EnsurePathExists();
@@ -79,6 +82,14 @@ public class ScreenshotManager
 
             _logger.LogInformation("Screenshot saved: {Path}", absolutePath.Path);
         });
+    }
+
+    private static void SetAlphaOpaque(Span<byte> pixels)
+    {
+        for (var i = 3; i < pixels.Length; i += 4)
+        {
+            pixels[i] = 255;
+        }
     }
 
     private static void FlipVertically(Span<byte> pixels, int width, int height)

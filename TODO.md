@@ -44,7 +44,7 @@
 ## Bugs
 
 - [ ] Fast mouse movement sometimes doesn't remove focus/hover from the previous entity
-- [ ] Screenshots saved with alpha channel — semi-transparent GUI overlays (e.g. burger menu) produce non-opaque pixels instead of composited RGB. Should force alpha to 255 or use RGB format when reading the framebuffer.
+- [x] Screenshots saved with alpha channel — semi-transparent GUI overlays (e.g. burger menu) produce non-opaque pixels instead of composited RGB. Should force alpha to 255 or use RGB format when reading the framebuffer.
 
 ## Demo
 
