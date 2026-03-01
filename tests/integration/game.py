@@ -8,6 +8,7 @@ import re
 import subprocess
 import tempfile
 import time
+import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -114,6 +115,11 @@ class Game:
         self._game_proc: subprocess.Popen | None = None
         self._xvfb_proc: subprocess.Popen | None = None
         self._temp_dir = tempfile.mkdtemp(prefix="integration-test-")
+        self._pipe_suffix: str = uuid.uuid4().hex[:8]
+
+    @property
+    def _pipe_id(self) -> str:
+        return f"{self.instance_id}-{self._pipe_suffix}"
 
     def start(self) -> None:
         _live_games.add(self)
@@ -146,6 +152,10 @@ class Game:
                 self._game_proc.kill()
                 self._game_proc.wait(timeout=5)
 
+        # Generate a new pipe name so the next launch doesn't collide
+        # with a stale pipe handle (Windows holds pipe names briefly after close)
+        self._pipe_suffix = uuid.uuid4().hex[:8]
+
     def _stop_xvfb(self) -> None:
         if self._xvfb_proc is None:
             return
@@ -167,10 +177,10 @@ class Game:
     def send(self, command: str, *, check: bool = True) -> CommandResult:
         logger.debug("send: %s", command)
         proc = subprocess.run(
-            ["dotnet", str(GAME_DLL), "--send", command, "--instance", self.instance_id],
+            ["dotnet", str(GAME_DLL), "--send", command, "--instance", self._pipe_id],
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=10,
         )
 
         result = CommandResult(
@@ -369,14 +379,14 @@ class Game:
         time.sleep(2)
 
     def _launch_game(self) -> None:
-        logger.info("Launching game (manual mode, scene=%s)", self.scene or "default")
+        logger.info("Launching game (manual mode, scene=%s, pipe=%s)", self.scene or "default", self._pipe_id)
         cmd = [
             "dotnet",
             str(GAME_DLL),
             "--manual",
             "--listen",
             "--instance",
-            self.instance_id,
+            self._pipe_id,
             "--resolution",
             self.resolution,
         ]
@@ -389,7 +399,7 @@ class Game:
             env=self._game_env,
         )
 
-    def _wait_for_pipe(self, timeout: int = 30) -> None:
+    def _wait_for_pipe(self, timeout: int = 10) -> None:
         logger.info("Waiting for game to start...")
         for i in range(timeout):
             result = self.send("echo message=ping", check=False)

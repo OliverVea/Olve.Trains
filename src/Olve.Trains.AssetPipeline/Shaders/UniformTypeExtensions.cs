@@ -14,6 +14,7 @@ public static class UniformTypeExtensions
             UniformType.Matrix3 => "Matrix3X3<float>",
             UniformType.Matrix4 => "Matrix4X4<float>",
             UniformType.Sampler2D => $"TextureId<{uniform.PixelType}>",
+            UniformType.IntVector2 => "Vector2D<int>",
             _ => "Unknown"
         };
     }
@@ -30,6 +31,7 @@ public static class UniformTypeExtensions
             UniformType.Matrix3 => "RenderingParameter.Matrix3X3",
             UniformType.Matrix4 => "RenderingParameter.Matrix4X4",
             UniformType.Sampler2D => "RenderingParameter.Texture",
+            UniformType.IntVector2 => "RenderingParameter.IntVector2D",
             _ => "Unknown"
         };
     }

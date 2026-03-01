@@ -2,7 +2,7 @@
 
 // @pixelType(float)
 uniform sampler2D heightMap;
-uniform vec2 texelSize;                 // (1/textureWidth, 1/textureHeight)
+uniform ivec2 gridSize;                 // (width, height) in texels
 
 // @implements(IWithWorldMatrix.WorldMatrix)
 // @instanced
@@ -17,9 +17,7 @@ out vec3 FragPos;
 
 void main()
 {
-    // Derive grid dimensions from texelSize
-    int gridW = int(round(1.0 / texelSize.x));
-    int quadsX = gridW - 1;
+    int quadsX = gridSize.x - 1;
 
     // Each quad emits 6 vertices (2 triangles).
     // Determine which quad and which corner this vertex belongs to.
@@ -31,10 +29,10 @@ void main()
 
     // Quad corners: a=(qx,qz) b=(qx+1,qz) c=(qx,qz+1) d=(qx+1,qz+1)
     // Sample heights at all four corners to choose diagonal adaptively
-    float hA = texture(heightMap, vec2(qx,     qz)     * texelSize).r;
-    float hB = texture(heightMap, vec2(qx + 1, qz)     * texelSize).r;
-    float hC = texture(heightMap, vec2(qx,     qz + 1) * texelSize).r;
-    float hD = texture(heightMap, vec2(qx + 1, qz + 1) * texelSize).r;
+    float hA = texelFetch(heightMap, ivec2(qx,     qz),     0).r;
+    float hB = texelFetch(heightMap, ivec2(qx + 1, qz),     0).r;
+    float hC = texelFetch(heightMap, ivec2(qx,     qz + 1), 0).r;
+    float hD = texelFetch(heightMap, ivec2(qx + 1, qz + 1), 0).r;
 
     bool diagAD = (hA + hD) <= (hB + hC);
 
@@ -60,11 +58,9 @@ void main()
 
     ivec2 gridPos = ivec2(qx, qz) + offsets[corner];
 
-    vec2 position = vec2(float(gridPos.x), float(gridPos.y));
-    vec2 texCoord = position * texelSize;
-    float h = texture(heightMap, texCoord).r;
+    float h = texelFetch(heightMap, gridPos, 0).r;
 
-    vec3 pos = vec3(position.x, h, position.y);
+    vec3 pos = vec3(float(gridPos.x), h, float(gridPos.y));
 
     vec4 worldPos = iWorld * vec4(pos, 1.0);
     FragPos = worldPos.xyz;

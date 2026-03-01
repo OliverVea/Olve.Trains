@@ -71,8 +71,7 @@ public class TerrainRenderingService(
             return textureProblems.Prepend("Failed to register heightmap texture with OpenGL");
         }
 
-        Vector2D<float> textureSize = new(1f / heightmap.Width, 1f / heightmap.Length);
-        _terrainShader.TexelSize = textureSize;
+        _terrainShader.GridSize = new Vector2D<int>(heightmap.Width, heightmap.Length);
         _terrainShader.HeightMap = heightmapTextureId;
 
         // Register draw-arrays geometry (no vertex data — terrain uses gl_VertexID)

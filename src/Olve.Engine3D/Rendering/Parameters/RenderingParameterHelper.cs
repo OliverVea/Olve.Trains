@@ -77,6 +77,12 @@ public static class RenderingParameterHelper
             return SetTexture(renderingParameter.AsT7, gl, location, textureSlotManager);
         }
 
+        if (renderingParameter.IsT8)
+        {
+            SetIntVector2D(renderingParameter.AsT8, gl, location);
+            return true;
+        }
+
         return false;
     }
     private static void SetBool(RenderingParameter.Bool b, GL gl, int location)
@@ -111,6 +117,11 @@ public static class RenderingParameterHelper
     private static void SetVector4D(RenderingParameter.Vector4D vector, GL gl, int location)
     {
         gl.Uniform4(location, vector.Value.X, vector.Value.Y, vector.Value.Z, vector.Value.W);
+    }
+
+    private static void SetIntVector2D(RenderingParameter.IntVector2D vector, GL gl, int location)
+    {
+        gl.Uniform2(location, vector.Value.X, vector.Value.Y);
     }
 
     private static void SetFloat(RenderingParameter.Float f, GL gl, int location)

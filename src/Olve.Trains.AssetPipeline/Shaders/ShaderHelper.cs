@@ -271,6 +271,7 @@ public static class ShaderHelper
             "mat3" => UniformType.Matrix3,
             "mat4" => UniformType.Matrix4,
             "sampler2D" => UniformType.Sampler2D,
+            "ivec2" => UniformType.IntVector2,
             _ => null
         };
 

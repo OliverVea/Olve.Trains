@@ -11,4 +11,5 @@ public enum UniformType
     Matrix3,
     Matrix4,
     Sampler2D,
+    IntVector2,
 }

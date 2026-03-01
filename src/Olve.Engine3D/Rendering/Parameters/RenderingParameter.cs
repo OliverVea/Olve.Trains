@@ -26,6 +26,9 @@ public static class RenderingParameter
     [DebuggerDisplay("Bool {Name} ({Value})")]
     public class Bool(string name, bool value) : Base<bool>(name, value);
 
+    [DebuggerDisplay("IntVector2D {Name} (X: {Value.X}, Y: {Value.Y})")]
+    public class IntVector2D(string name, Vector2D<int> value) : Base<Vector2D<int>>(name, value);
+
     [DebuggerDisplay("Texture {Name} ({Value})")]
     public class Texture(string name, UntypedTextureId value) : Base<UntypedTextureId>(name, value);
 
