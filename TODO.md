@@ -51,7 +51,7 @@
 - [ ] Collision system epic (Technical):
   - Description: Centralized collision system (e.g. Id<Collider>) queryable when placing tracks, buildings, or future obstacles like trees. Replaces per-type validation with a unified approach.
   - [ ] Design generalized collision system with typed collider IDs
-  - [ ] Migrate track collision checks to Yep central system
+  - [ ] Migrate track collision checks to central system
   - [ ] Migrate building collision checks to central system
   - [ ] Add terrain as a collision source
 - [ ] Signal logic epic (Feature):
@@ -60,7 +60,7 @@
   - [x] RoundRobin distribution and rule evaluation with train queuing
   - [x] CLI commands for signal rule management (add-signal-rule, clear-signal-rules)
   - [x] 3D signal rendering at junctions
-  - [x] Implement CardinalDirection matching in signal rules
+  - [x] Implement CardinalDirection matching in signal rules (source only — destination direction matching is a no-op stub)
   - [ ] Implement VehicleGroup matching in signal rules
   - [ ] Add in-game GUI for viewing and editing signal rules on a selected junction
 - [ ] Industry epic (Feature):
@@ -71,7 +71,7 @@
   - [ ] Create game-side logic for generating cargo in stations next to industries
   - [ ] Create game-side logic for consuming cargo delivered to stations
 - [ ] Residential buildings epic (Feature):
-  - [ ] Add residential building type, blueprint (1x1), and placement tool
+  - [x] Add residential building type, blueprint (1x1), and placement tool
   - [ ] Add variable-sized residential blueprints (bias toward medium)
   - [ ] Add 'buildings' layer to ORA map format (grey color)
   - [ ] Add deterministic algorithm to split ORA building blobs into variable-sized houses
@@ -84,7 +84,7 @@
   - Description: Add shadow mapping to the game. Requires shader pipeline changes (removing geometry shaders, adding SDF grid), FBO infrastructure for the shadow depth pass, and receiver shader modifications to sample the shadow map.
   - [x] Remove terrain geometry shader — compute flat normals via `dFdx`/`dFdy` in fragment shader, render grid overlay as SDF in terrain fragment shader, delete wireframe shader files
   - [ ] Add shadow map generation — FBO wrapper, depth-only pixel format, depth-only shader, `ShadowMapService` that renders casters from light-space each frame
-  - [ ] Add shadow map sampling to receiver shaders — terrain, default, and building fragment shaders sample the shadow map to attenuate diffuse lighting
+  - [ ] Add shadow map sampling to receiver shaders — terrain, default, and building vertex+fragment shaders pass light-space position and sample the shadow map to attenuate diffuse lighting
 - [ ] Main menu improvements (Visual):
   - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
   - [x] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now
@@ -97,7 +97,7 @@
   - [ ] Add bumpy terrain using low-res noise texture for low-poly smooth height variation
 - [ ] Audio support epic (Feature):
   - [ ] Add basic support for playing audio
-  - [ ] Add in game musig
+  - [ ] Add in-game music
   - [ ] Add GUI sound effects
   - [ ] Add in-game sound effects
   - [ ] Add spatial effects for e.g. localized sounds, wind blowing when the camera is zoomed out, and so on
