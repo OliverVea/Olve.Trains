@@ -42,7 +42,8 @@
       "Bash(dotnet restore:*)",
       "Bash(chmod:*)",
       "Bash(/home/oliver/projects/Olve.Trains/scripts/screenshot-loop-track.sh:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

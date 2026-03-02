@@ -48,12 +48,17 @@
 
 ## Demo
 
-- [ ] Collision system epic (Technical):
-  - Description: Centralized collision system (e.g. Id<Collider>) queryable when placing tracks, buildings, or future obstacles like trees. Replaces per-type validation with a unified approach.
-  - [ ] Design generalized collision system with typed collider IDs
-  - [ ] Migrate track collision checks to central system
-  - [ ] Migrate building collision checks to central system
+- [ ] Collision system epic (Technical) (see [docs/DESIGN_COLLISION_SYSTEM.md](docs/DESIGN_COLLISION_SYSTEM.md)):
+  - Description: Centralized MeshManager (mesh registry with cached AABBs) and CollisionSystem (spatial queries with raycasting). First consumer: junction signals. Eventually all meshes go through MeshManager and rendering accepts mesh IDs.
+  - [ ] Add MeshManager and MeshLoadingManager to engine
+  - [ ] Add CollisionSystem with mesh colliders (AABB broad phase, ray-AABB intersection)
+  - [ ] Register junction signal meshes and colliders
+  - [ ] Add raycast query and wire to mouse click (log signal clicks)
+  - [ ] Migrate building meshes to MeshManager + register building colliders
+  - [ ] Migrate vehicle meshes to MeshManager + register vehicle colliders
+  - [ ] Migrate track collision to CollisionSystem
   - [ ] Add terrain as a collision source
+  - [ ] Update MeshRenderingService to accept Id<Mesh> (rendering integration)
 - [ ] Signal logic epic (Feature):
   - [x] Automatic junction and signal creation/removal based on track topology
   - [x] Rule-based routing system (vehicle, source, destination, distribution)
