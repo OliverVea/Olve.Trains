@@ -326,6 +326,31 @@ class Game:
     def add_signal_rule(self, junction_id: str, rule: str) -> CommandResult:
         return self.send(f"add-signal-rule junction={junction_id} rule='{rule}'")
 
+    # -- Collision / projection wrappers --
+
+    @dataclass
+    class RaycastHit:
+        collider_id: str
+        group: str
+        distance: float
+
+    def raycast(self, x: float, y: float) -> list[RaycastHit]:
+        result = self.send(f"raycast pos={x},{y}")
+        data = json.loads(result.output)
+        return [
+            Game.RaycastHit(
+                collider_id=h["colliderId"],
+                group=h["group"],
+                distance=float(h["distance"]),
+            )
+            for h in data["hits"]
+        ]
+
+    def project_to_screen(self, x: float, y: float, z: float) -> tuple[float, float]:
+        result = self.send(f"project-to-screen pos={x},{y},{z}")
+        data = json.loads(result.output)
+        return (float(data["x"]), float(data["y"]))
+
     # -- Internal helpers --
 
     def _build(self) -> None:

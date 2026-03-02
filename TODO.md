@@ -53,7 +53,7 @@
   - [x] Add MeshManager and MeshLoadingManager to engine
   - [x] Add CollisionSystem with mesh colliders (AABB broad phase, ray-AABB intersection)
   - [x] Register junction signal meshes and colliders
-  - [ ] Add raycast query and wire to mouse click (log signal clicks)
+  - [x] Add raycast query and wire to mouse click (log signal clicks)
   - [ ] Migrate building meshes to MeshManager + register building colliders
   - [ ] Migrate vehicle meshes to MeshManager + register vehicle colliders
   - [ ] Migrate track collision to CollisionSystem

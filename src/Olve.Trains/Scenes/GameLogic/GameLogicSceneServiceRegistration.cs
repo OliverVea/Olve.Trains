@@ -13,6 +13,7 @@ using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Time;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameRendering;
 
 namespace Olve.Trains.Scenes.GameLogic;
 
@@ -26,6 +27,11 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<CommandProcessingService>(sceneId);
 
         // Scene services (participate in scene lifecycle)
+        services.AddSceneService<CameraSceneService>(sceneId);
+        services.AddSceneService<SetCameraHandlerService>(sceneId);
+        services.AddSceneService<SetMouseHandlerService>(sceneId);
+        services.AddSceneService<TerrainRaycastService>(sceneId);
+        services.AddSceneService<CollisionRaycastService>(sceneId);
         services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);
         services.AddSceneService<ClearJunctionSignalRulesHandlerService>(sceneId);
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
@@ -38,6 +44,8 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<ListVehiclesHandlerService>(sceneId);
         services.AddSceneService<ListJunctionsHandlerService>(sceneId);
         services.AddSceneService<QueryJunctionHandlerService>(sceneId);
+        services.AddSceneService<RaycastHandlerService>(sceneId);
+        services.AddSceneService<ProjectToScreenHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);
         services.AddSceneService<TerrainService>(sceneId);

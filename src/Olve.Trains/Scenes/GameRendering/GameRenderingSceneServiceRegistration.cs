@@ -16,10 +16,7 @@ public static class GameRenderingSceneServiceRegistration
         var sceneId = SceneIds.GameRenderingScene;
 
         services.AddSceneService<GLService>(sceneId);
-        services.AddSceneService<CameraSceneService>(sceneId);
         services.AddSceneService<RenderingManagerSceneService>(sceneId);
-        services.AddSceneService<SetCameraHandlerService>(sceneId);
-        services.AddSceneService<SetMouseHandlerService>(sceneId);
         services.AddSceneService<TerrainRenderingService>(sceneId);
         services.AddSceneService<MeshRenderingService>(sceneId);
         services.AddEventSceneService(sceneId,
@@ -39,7 +36,6 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<TrackGhostRenderingService>(sceneId);
         services.AddSceneService<VehicleRenderingService>(sceneId);
         services.AddSceneService<JunctionSignalRenderingService>(sceneId);
-        services.AddSceneService<TerrainRaycastService>(sceneId);
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
             (BuildingRenderingService brs, Id<Building> id) => brs.Register(id),
