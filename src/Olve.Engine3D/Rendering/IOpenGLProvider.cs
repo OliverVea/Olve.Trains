@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Assets;
+using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Geometry;
 using Olve.Engine3D.Rendering.Instancing;
@@ -29,6 +30,8 @@ public static class OpenGLServiceRegistration
         services.TryAddScoped<TextureSlotManager>();
         services.TryAddScoped<AssetLoader>();
         services.TryAddScoped<TextureLoadingManager>();
+        services.TryAddScoped<MeshManager>();
+        services.TryAddScoped<MeshLoadingManager>();
         return services;
     }
 }
