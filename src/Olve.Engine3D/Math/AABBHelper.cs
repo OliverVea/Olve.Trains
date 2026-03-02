@@ -40,6 +40,41 @@ public static class AABBHelper
             new Vector3D<float>(maxX, maxY, maxZ));
     }
 
+    public static AABB TransformAABB(in AABB localAABB, in Matrix4X4<float> worldMatrix)
+    {
+        Span<Vector3D<float>> corners =
+        [
+            new(localAABB.Min.X, localAABB.Min.Y, localAABB.Min.Z),
+            new(localAABB.Max.X, localAABB.Min.Y, localAABB.Min.Z),
+            new(localAABB.Min.X, localAABB.Max.Y, localAABB.Min.Z),
+            new(localAABB.Max.X, localAABB.Max.Y, localAABB.Min.Z),
+            new(localAABB.Min.X, localAABB.Min.Y, localAABB.Max.Z),
+            new(localAABB.Max.X, localAABB.Min.Y, localAABB.Max.Z),
+            new(localAABB.Min.X, localAABB.Max.Y, localAABB.Max.Z),
+            new(localAABB.Max.X, localAABB.Max.Y, localAABB.Max.Z),
+        ];
+
+        float minX = float.MaxValue, minY = float.MaxValue, minZ = float.MaxValue;
+        float maxX = float.MinValue, maxY = float.MinValue, maxZ = float.MinValue;
+
+        foreach (var corner in corners)
+        {
+            var t = Vector3D.Transform(corner, worldMatrix);
+
+            minX = MathF.Min(minX, t.X);
+            minY = MathF.Min(minY, t.Y);
+            minZ = MathF.Min(minZ, t.Z);
+
+            maxX = MathF.Max(maxX, t.X);
+            maxY = MathF.Max(maxY, t.Y);
+            maxZ = MathF.Max(maxZ, t.Z);
+        }
+
+        return new AABB(
+            new Vector3D<float>(minX, minY, minZ),
+            new Vector3D<float>(maxX, maxY, maxZ));
+    }
+
     public static Result<float> GetUniformScaleToFitInside(MeshData meshData, AABB target)
     {
         if (GetHeterogeneousScaleToFitInside(meshData, target).TryPickProblems(out var problems, out var heterogeneousScale))

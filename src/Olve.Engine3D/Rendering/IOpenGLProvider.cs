@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Assets.Meshes;
+using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Geometry;
 using Olve.Engine3D.Rendering.Instancing;
@@ -32,6 +33,7 @@ public static class OpenGLServiceRegistration
         services.TryAddScoped<TextureLoadingManager>();
         services.TryAddScoped<MeshManager>();
         services.TryAddScoped<MeshLoadingManager>();
+        services.TryAddScoped<CollisionSystem>();
         return services;
     }
 }

@@ -17,6 +17,32 @@ public static class AABBExtensions
                    p.Y >= a.Min.Y && p.Y <= a.Max.Y &&
                    p.Z >= a.Min.Z && p.Z <= a.Max.Z;
         }
+
+        public bool TryIntersectRay(in Ray3D<float> ray, out float tMin)
+        {
+            var invDirX = 1f / ray.Direction.X;
+            var invDirY = 1f / ray.Direction.Y;
+            var invDirZ = 1f / ray.Direction.Z;
+
+            var t1X = (a.Min.X - ray.Origin.X) * invDirX;
+            var t2X = (a.Max.X - ray.Origin.X) * invDirX;
+            var t1Y = (a.Min.Y - ray.Origin.Y) * invDirY;
+            var t2Y = (a.Max.Y - ray.Origin.Y) * invDirY;
+            var t1Z = (a.Min.Z - ray.Origin.Z) * invDirZ;
+            var t2Z = (a.Max.Z - ray.Origin.Z) * invDirZ;
+
+            var tEnter = float.Max(float.Max(float.Min(t1X, t2X), float.Min(t1Y, t2Y)), float.Min(t1Z, t2Z));
+            var tExit = float.Min(float.Min(float.Max(t1X, t2X), float.Max(t1Y, t2Y)), float.Max(t1Z, t2Z));
+
+            if (tExit < 0f || tEnter > tExit)
+            {
+                tMin = default;
+                return false;
+            }
+
+            tMin = tEnter >= 0f ? tEnter : tExit;
+            return true;
+        }
     }
 
 }
