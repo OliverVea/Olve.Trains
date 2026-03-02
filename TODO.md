@@ -45,6 +45,7 @@
 
 - [ ] Fast mouse movement sometimes doesn't remove focus/hover from the previous entity
 - [x] Screenshots saved with alpha channel — semi-transparent GUI overlays (e.g. burger menu) produce non-opaque pixels instead of composited RGB. Should force alpha to 255 or use RGB format when reading the framebuffer.
+- [ ] Rotation of station building causes incorrect footprint and building mesh location (note: track calculation is actually correct).
 
 ## Demo
 
