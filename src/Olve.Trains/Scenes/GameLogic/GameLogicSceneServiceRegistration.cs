@@ -51,6 +51,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<JunctionService>();
         services.TryAddScoped<JunctionSignalRuleEvaluationService>();
         services.TryAddScoped<JunctionSignalService>();
+        services.TryAddScoped<JunctionSignalCollisionService>();
         services.TryAddScoped<BuildingService>();
         services.TryAddScoped<BuildingBlueprintService>();
         services.TryAddScoped<StationNameGenerator>();
@@ -101,6 +102,13 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (JunctionService js) => js.OnJunctionConnectionsUpdated,
             (JunctionSignalService jss, Id<Junction> id) => jss.EvaluateSignal(id));
+        services.AddEventSceneService(sceneId,
+            (JunctionSignalService jss) => jss.OnJunctionAdded,
+            (JunctionSignalCollisionService jscs, Id<Junction> id) => jscs.Register(id),
+            prefill: jss => jss.SignalJunctions);
+        services.AddEventSceneService(sceneId,
+            (JunctionSignalService jss) => jss.OnJunctionRemoved,
+            (JunctionSignalCollisionService jscs, Id<Junction> id) => jscs.Unregister(id));
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
             (StationService ss, Id<Building> id) => ss.CreateStationForBuilding(id),

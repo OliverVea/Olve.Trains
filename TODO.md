@@ -52,7 +52,7 @@
   - Description: Centralized MeshManager (mesh registry with cached AABBs) and CollisionSystem (spatial queries with raycasting). First consumer: junction signals. Eventually all meshes go through MeshManager and rendering accepts mesh IDs.
   - [x] Add MeshManager and MeshLoadingManager to engine
   - [x] Add CollisionSystem with mesh colliders (AABB broad phase, ray-AABB intersection)
-  - [ ] Register junction signal meshes and colliders
+  - [x] Register junction signal meshes and colliders
   - [ ] Add raycast query and wire to mouse click (log signal clicks)
   - [ ] Migrate building meshes to MeshManager + register building colliders
   - [ ] Migrate vehicle meshes to MeshManager + register vehicle colliders
