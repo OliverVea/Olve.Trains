@@ -1,5 +1,14 @@
 ## Done
 
+- [x] Signal logic epic (Feature):
+  - [x] Automatic junction and signal creation/removal based on track topology
+  - [x] Rule-based routing system (vehicle, source, destination, distribution)
+  - [x] RoundRobin distribution and rule evaluation with train queuing
+  - [x] CLI commands for signal rule management (add-signal-rule, clear-signal-rules)
+  - [x] 3D signal rendering at junctions
+  - [x] Implement CardinalDirection matching in signal rules (source only — destination direction matching is a no-op stub)
+  - [x] Implement VehicleGroup matching in signal rules
+  - [x] Add in-game GUI for viewing and editing signal rules on a selected junction
 - [x] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
   - [x] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
   - [x] Update `ProcessShaders` to generate explicit interface implementations from annotations (replace convention-based matching)
@@ -60,15 +69,6 @@
   - [ ] Migrate track collision to CollisionSystem
   - [ ] Add terrain as a collision source
   - [ ] Update MeshRenderingService to accept Id<Mesh> (rendering integration)
-- [ ] Signal logic epic (Feature):
-  - [x] Automatic junction and signal creation/removal based on track topology
-  - [x] Rule-based routing system (vehicle, source, destination, distribution)
-  - [x] RoundRobin distribution and rule evaluation with train queuing
-  - [x] CLI commands for signal rule management (add-signal-rule, clear-signal-rules)
-  - [x] 3D signal rendering at junctions
-  - [x] Implement CardinalDirection matching in signal rules (source only — destination direction matching is a no-op stub)
-  - [x] Implement VehicleGroup matching in signal rules
-  - [ ] Add in-game GUI for viewing and editing signal rules on a selected junction
 - [ ] Industry epic (Feature):
   - [ ] Add basic support for industries
   - [ ] Add building for industries
