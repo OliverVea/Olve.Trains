@@ -1,6 +1,7 @@
 using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Generated.Meshes;
+using Olve.Utilities.Collections;
 
 namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
@@ -10,13 +11,18 @@ public class JunctionSignalCollisionService(
     JunctionService junctionService,
     GridService gridService)
 {
-    private readonly Dictionary<Id<Junction>, Id<Collider>> _colliders = new();
+    private readonly OneToManyLookup<Id<Junction>, Id<Collider>> _colliders = new();
 
     private Id<Mesh> _meshId;
 
+    public bool TryGetJunctionId(Id<Collider> colliderId, out Id<Junction> junctionId)
+    {
+        return _colliders.TryGet(colliderId, out junctionId);
+    }
+
     public Result Register(Id<Junction> junctionId)
     {
-        if (_colliders.ContainsKey(junctionId))
+        if (_colliders.TryGet(junctionId, out _))
         {
             return new ResultProblem("Collider already exists for junction signal '{0}'", junctionId);
         }
@@ -45,18 +51,26 @@ public class JunctionSignalCollisionService(
             return problems.Prepend("Failed to register collider for junction signal '{0}'", junctionId);
         }
 
-        _colliders[junctionId] = colliderId;
+        _colliders.Set(junctionId, colliderId, true);
 
         return Result.Success();
     }
 
     public Result Unregister(Id<Junction> junctionId)
     {
-        if (!_colliders.Remove(junctionId, out var colliderId))
+        if (!_colliders.TryGet(junctionId, out var colliderIds) || colliderIds.Count == 0)
         {
             return new ResultProblem("Could not find collider for signal with junction id '{0}'", junctionId);
         }
 
-        return collisionSystem.Unregister(colliderId).MapToResult();
+        var result = Result.Success();
+        foreach (var colliderId in colliderIds)
+        {
+            result = Result.Concat(result, collisionSystem.Unregister(colliderId).MapToResult());
+        }
+
+        _colliders.Remove(junctionId);
+
+        return result;
     }
 }
