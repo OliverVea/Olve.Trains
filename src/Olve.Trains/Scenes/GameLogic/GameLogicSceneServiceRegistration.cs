@@ -62,6 +62,9 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<JunctionSignalCollisionService>();
         services.TryAddScoped<BuildingService>();
         services.TryAddScoped<BuildingBlueprintService>();
+        services.TryAddScoped<BuildingMeshBlueprintService>();
+        services.TryAddScoped<BuildingPositionService>();
+        services.TryAddScoped<BuildingCollisionService>();
         services.TryAddScoped<StationNameGenerator>();
         services.TryAddScoped<StationService>();
         services.TryAddScoped<StationBlueprintService>();
@@ -124,6 +127,13 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
             (StationService ss, Id<Building> id) => ss.DeleteStationForBuilding(id));
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingAdded,
+            (BuildingCollisionService bcs, Id<Building> id) => bcs.Register(id),
+            prefill: bs => bs.BuildingIds);
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingRemoved,
+            (BuildingCollisionService bcs, Id<Building> id) => bcs.Unregister(id));
         services.AddEventSceneService(sceneId,
             (BuildingBlueprintService blueprintService) => blueprintService.OnBlueprintRemoved,
             (BuildingService buildingService, Id<BuildingBlueprint> id) => buildingService.DeleteBuildingsWithBlueprint(id));
