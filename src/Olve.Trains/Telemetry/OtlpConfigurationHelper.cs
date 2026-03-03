@@ -7,7 +7,7 @@ namespace Olve.Trains.Telemetry;
 public static class OtlpConfigurationHelper
 {
     public static bool IsEnabled(IConfiguration configuration) =>
-        configuration.GetSection("Logging").GetValue("OpenTelemetry:Enabled", true);
+        configuration.GetSection("Logging").GetValue("OpenTelemetry:Enabled", false);
 
     public static OtlpRegistrationHelper CreateRegistrationHelper(
         IConfiguration configuration,

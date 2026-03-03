@@ -17,7 +17,8 @@ public static class Program
     {
         Title = "On Track to Grow",
         Size = new Vector2D<int>(1280, 720),
-        Samples = 8
+        Samples = 8,
+        VSync = true,
     };
 
     public static async Task<int> Main(string[] args)

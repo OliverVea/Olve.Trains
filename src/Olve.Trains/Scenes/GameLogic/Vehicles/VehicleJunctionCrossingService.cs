@@ -1,45 +1,36 @@
 using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Time;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
 namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public class VehicleJunctionCrossingService(
-    DayTimeManager dayTimeManager,
     VehiclePositionService vehiclePositionService,
     VehicleJunctionService vehicleJunctionService,
     JunctionService junctionService,
     JunctionSignalService junctionSignalService,
     JunctionSignalRuleEvaluationService junctionSignalRuleEvaluationService) : ISceneService
 {
-    private static readonly DayTimeSpan Delay = new(minutes: 5);
-
-    private readonly PriorityQueue<Id<Vehicle>, long> _queue = new();
+    private readonly List<Id<Vehicle>> _queue = new();
 
     public Result OnVehicleReachedEnd(Id<Vehicle> vehicleId)
     {
-        if (vehicleJunctionService.GetVehicleJunction(vehicleId).TryPickProblems(out var problems, out var vehicleJunction))
-        {
-            return problems;
-        }
-
-        _queue.Enqueue(vehicleId, dayTimeManager.AbsoluteMinutes);
+        _queue.Add(vehicleId);
         return Result.Success();
     }
 
     public Result Update(TimeSpan deltaTime)
     {
-        while (_queue.TryPeek(out var vehicleId, out var time) && time <= dayTimeManager.AbsoluteMinutes)
+        foreach (var vehicleId in _queue)
         {
 
             if (CheckVehicle(vehicleId).TryPickProblems(out var problems))
             {
                 return problems;
             }
-
-            _queue.Dequeue();
         }
+
+        _queue.Clear();
 
         return Result.Success();
     }
@@ -93,8 +84,7 @@ public class VehicleJunctionCrossingService(
 
     private Result SuspendVehicle(Id<Vehicle> vehicleId)
     {
-        var nextEvaluationTime = dayTimeManager.InMinutesFromNow(Delay);
-        _queue.Enqueue(vehicleId, nextEvaluationTime);
+        _queue.Add(vehicleId);
         return Result.Success();
     }
 

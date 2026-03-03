@@ -29,7 +29,7 @@ public static class LoggingExtensions
             });
         }
 
-        if (loggingSection.GetValue("File:Enabled", true))
+        if (loggingSection.GetValue("File:Enabled", false))
         {
             var today = DateTime.Today;
             var todayString = today.ToString("yyyy-MM-dd");
