@@ -83,6 +83,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<VehicleJunctionService>();
         services.TryAddScoped<VehiclePositionService>();
         services.TryAddScoped<VehicleService>();
+        services.TryAddScoped<TrackCollisionService>();
         services.TryAddScoped<VehicleCollisionService>();
 
         // Scene Events
@@ -140,6 +141,13 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (BuildingBlueprintService blueprintService) => blueprintService.OnBlueprintRemoved,
             (BuildingService buildingService, Id<BuildingBlueprint> id) => buildingService.DeleteBuildingsWithBlueprint(id));
+        services.AddEventSceneService(sceneId,
+            (TrackService ts) => ts.OnTrackAdded,
+            (TrackCollisionService tcs, Id<Track> id) => tcs.Register(id),
+            prefill: ts => ts.TrackIds);
+        services.AddEventSceneService(sceneId,
+            (TrackService ts) => ts.OnTrackRemoved,
+            (TrackCollisionService tcs, Id<Track> id) => tcs.Unregister(id));
         services.AddEventSceneService(sceneId,
             (VehicleService vs) => vs.OnVehicleAdded,
             (VehicleCollisionService vcs, Id<Vehicle> id) => vcs.Register(id),

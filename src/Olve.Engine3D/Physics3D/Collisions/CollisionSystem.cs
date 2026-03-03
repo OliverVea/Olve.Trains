@@ -10,7 +10,8 @@ public class CollisionSystem(MeshManager meshManager)
         Id<Mesh> MeshId,
         Id<ColliderGroup> Group,
         AABB LocalAABB,
-        AABB WorldAABB);
+        AABB WorldAABB,
+        Matrix4X4<float> WorldMatrix);
 
     private readonly Dictionary<Id<Collider>, ColliderEntry> _colliders = new();
 
@@ -27,7 +28,7 @@ public class CollisionSystem(MeshManager meshManager)
         var worldAABB = AABBHelper.TransformAABB(localAABB, worldMatrix);
         var colliderId = Id.New<Collider>();
 
-        _colliders[colliderId] = new ColliderEntry(meshId, group, localAABB, worldAABB);
+        _colliders[colliderId] = new ColliderEntry(meshId, group, localAABB, worldAABB, worldMatrix);
 
         return colliderId;
     }
@@ -40,7 +41,7 @@ public class CollisionSystem(MeshManager meshManager)
         }
 
         var worldAABB = AABBHelper.TransformAABB(entry.LocalAABB, worldMatrix);
-        _colliders[colliderId] = entry with { WorldAABB = worldAABB };
+        _colliders[colliderId] = entry with { WorldAABB = worldAABB, WorldMatrix = worldMatrix };
 
         return Result.Success();
     }
@@ -62,7 +63,7 @@ public class CollisionSystem(MeshManager meshManager)
 
         foreach (var (colliderId, entry) in _colliders)
         {
-            if (entry.WorldAABB.TryIntersectRay(ray, out var distance))
+            if (TryOBBRaycast(ray, entry, out var distance))
             {
                 hits.Add(new RaycastHit(colliderId, entry.Group, distance));
             }
@@ -80,7 +81,7 @@ public class CollisionSystem(MeshManager meshManager)
         {
             if (entry.Group != group) continue;
 
-            if (entry.WorldAABB.TryIntersectRay(ray, out var distance))
+            if (TryOBBRaycast(ray, entry, out var distance))
             {
                 hits.Add(new RaycastHit(colliderId, entry.Group, distance));
             }
@@ -88,5 +89,39 @@ public class CollisionSystem(MeshManager meshManager)
 
         hits.Sort((a, b) => a.Distance.CompareTo(b.Distance));
         return hits;
+    }
+
+    private static bool TryOBBRaycast(Ray3D<float> ray, in ColliderEntry entry, out float distance)
+    {
+        // Broad phase: test against world-space AABB (fast cull)
+        if (!entry.WorldAABB.TryIntersectRay(ray, out _))
+        {
+            distance = default;
+            return false;
+        }
+
+        // Narrow phase: transform ray to local space for true OBB test
+        if (!Matrix4X4.Invert(entry.WorldMatrix, out var inverseMatrix))
+        {
+            distance = default;
+            return false;
+        }
+
+        var localOrigin = Vector3D.Transform(ray.Origin, inverseMatrix);
+        var localTarget = Vector3D.Transform(ray.Origin + ray.Direction, inverseMatrix);
+        var localDirection = localTarget - localOrigin;
+        var localRay = new Ray3D<float>(localOrigin, localDirection);
+
+        if (!entry.LocalAABB.TryIntersectRay(localRay, out var tLocal))
+        {
+            distance = default;
+            return false;
+        }
+
+        // Convert local-space t back to world-space distance
+        var localHitPoint = localOrigin + tLocal * localDirection;
+        var worldHitPoint = Vector3D.Transform(localHitPoint, entry.WorldMatrix);
+        distance = (worldHitPoint - ray.Origin).Length;
+        return true;
     }
 }

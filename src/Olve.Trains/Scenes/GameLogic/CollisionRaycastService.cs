@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
@@ -8,6 +9,7 @@ using Silk.NET.Input;
 namespace Olve.Trains.Scenes.GameLogic;
 
 public class CollisionRaycastService(
+    ILogger<CollisionRaycastService> logger,
     MouseManager mouseManager,
     TerrainRaycastService terrainRaycastService,
     CollisionSystem collisionSystem)
@@ -33,7 +35,9 @@ public class CollisionRaycastService(
 
         if (hits.Count > 0)
         {
-            OnColliderClicked.Invoke(hits[0]);
+            var hit = hits[0];
+            logger.LogInformation("Collider clicked: {ColliderId} (group: {Group}, distance: {Distance:F3})", hit.ColliderId, hit.Group, hit.Distance);
+            OnColliderClicked.Invoke(hit);
         }
 
         return Result.Success();

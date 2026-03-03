@@ -46,6 +46,7 @@ public static class GameRenderingSceneServiceRegistration
             (BuildingRenderingService brs, Id<Building> id) => brs.Unregister(id),
             before: BeforeBuildingRendering);
         services.AddSceneService<BuildingRenderingService>(sceneId);
+        services.AddSceneService<TrackCollisionRenderingService>(sceneId);
 
         return services;
     }
