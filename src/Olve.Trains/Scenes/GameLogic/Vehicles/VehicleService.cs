@@ -11,6 +11,7 @@ public class VehicleService(EntityStoreFactory entityStoreFactory)
 
     public Event<Id<Vehicle>> OnVehicleAdded => _vehicles.OnAdded;
     public Event<Id<Vehicle>> OnVehicleRemoved => _vehicles.OnRemoved;
+    public IEnumerable<Id<Vehicle>> VehicleIds => _vehicles.Keys;
 
     public int Count => _count;
 

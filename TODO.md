@@ -56,7 +56,7 @@
   - [x] Register junction signal meshes and colliders
   - [x] Add raycast query and wire to mouse click (log signal clicks)
   - [x] Migrate building meshes to MeshManager + register building colliders
-  - [ ] Migrate vehicle meshes to MeshManager + register vehicle colliders
+  - [x] Migrate vehicle meshes to MeshManager + register vehicle colliders
   - [ ] Migrate track collision to CollisionSystem
   - [ ] Add terrain as a collision source
   - [ ] Update MeshRenderingService to accept Id<Mesh> (rendering integration)

@@ -98,13 +98,7 @@ public class VehicleRenderingService(
                 return problems.Prepend("Failed to sample point with t '{0}' on track with id '{1}' for vehicle with id '{2}'", trackPosition.Time, trackPosition.TrackId, vehicleId);
             }
 
-            var worldMatrix = Matrix4X4<float>.Identity;
-            if (trackPosition.Velocity > 0)
-            {
-                worldMatrix *= Matrix4X4.CreateRotationY(float.Pi);
-            }
-
-            worldMatrix *= position.ToMatrix4X4();
+            var worldMatrix = VehicleWorldMatrix.Compute(trackPosition.Velocity, position);
 
             if (meshRenderingService.UpdateInstance(instanceHandle, worldMatrix)
                 .TryPickProblems(out problems))

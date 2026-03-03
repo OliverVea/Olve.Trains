@@ -54,6 +54,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<VehicleMovementService>(sceneId);
         services.AddSceneService<DayTimeSteppingService>(sceneId);
         services.AddSceneService<BuildingBlueprintLibraryService>(sceneId);
+        services.AddSceneService<VehicleCollisionService>(sceneId);
 
         // Non-scene singletons (dependencies only, not in scene lifecycle)
         services.TryAddScoped<JunctionService>();
@@ -81,6 +82,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<VehicleJunctionService>();
         services.TryAddScoped<VehiclePositionService>();
         services.TryAddScoped<VehicleService>();
+        services.TryAddScoped<VehicleCollisionService>();
 
         // Scene Events
         services.AddEventSceneService(sceneId,
@@ -137,6 +139,13 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (BuildingBlueprintService blueprintService) => blueprintService.OnBlueprintRemoved,
             (BuildingService buildingService, Id<BuildingBlueprint> id) => buildingService.DeleteBuildingsWithBlueprint(id));
+        services.AddEventSceneService(sceneId,
+            (VehicleService vs) => vs.OnVehicleAdded,
+            (VehicleCollisionService vcs, Id<Vehicle> id) => vcs.Register(id),
+            prefill: vs => vs.VehicleIds);
+        services.AddEventSceneService(sceneId,
+            (VehicleService vs) => vs.OnVehicleRemoved,
+            (VehicleCollisionService vcs, Id<Vehicle> id) => vcs.Unregister(id));
         services.AddEventSceneService(sceneId,
             (VehicleMovementService vms) => vms.OnVehicleReachedTrackEnd,
             (VehicleJunctionCrossingService vjcs, Id<Vehicle> id) => vjcs.OnVehicleReachedEnd(id),
