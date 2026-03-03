@@ -33,6 +33,7 @@ public static class UISceneServiceRegistration
         services.AddSceneService<ToolBarService>(sceneId);
         services.AddSceneService<InfoBarService>(sceneId);
         services.AddSceneService<BurgerMenuService>(sceneId);
+        services.AddSceneService<SignalRulesPanelService>(sceneId);
         services.AddSceneService<ActivateGuiHandlerService>(sceneId);
 
         services.AddSceneService<ScreenshotService>(sceneId);

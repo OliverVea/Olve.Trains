@@ -218,6 +218,55 @@ public static class Styles
         }
     };
 
+    public static readonly GuiElementStyling<Box> SignalPanelOverlayStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(SignalPanelOverlayStyle)),
+        OnStateChanged = (box, _) =>
+        {
+            box.BackgroundColor = (0f, 0f, 0f, 0f);
+            box.Weight = 1;
+            box.Justify = Justify.End;
+            box.Align = Align.Start;
+        }
+    };
+
+    public static readonly GuiElementStyling<Box> SignalPanelStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(SignalPanelStyle)),
+        OnStateChanged = (box, _) =>
+        {
+            box.BackgroundColor = (0.2f, 0.22f, 0.21f, 0.9f);
+            box.Vertical = true;
+            box.Padding = 15;
+            box.Gap = 8;
+            box.Width = 250;
+            box.BorderColor = DefaultBorder;
+            box.BorderWidth = DefaultBorderWidth;
+            box.BorderRadius = DefaultBorderRadius;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> SignalPanelHeaderStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(SignalPanelHeaderStyle)),
+        OnStateChanged = (text, _) =>
+        {
+            text.Color = (0.95f, 0.95f, 0.95f, 1f);
+            text.FontSize = 18f;
+            text.FontWeight = 1f;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> SignalPanelInfoTextStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(SignalPanelInfoTextStyle)),
+        OnStateChanged = (text, _) =>
+        {
+            text.Color = DimTextColor;
+            text.FontSize = 12f;
+        }
+    };
+
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
     private static RGBA Lerp(RGBA a, RGBA b, float t)

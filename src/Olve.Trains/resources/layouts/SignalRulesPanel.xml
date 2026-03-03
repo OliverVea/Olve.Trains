@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Overlay" Style="SignalPanelOverlayStyle" Interactive="true">
+    <Box id="Panel" Style="SignalPanelStyle" Interactive="true">
+        <Text id="Header" Content='"Signal Rules"' Style="SignalPanelHeaderStyle" />
+        <Text id="JunctionInfo" Content='""' Style="SignalPanelInfoTextStyle" />
+        <Text id="RulesText" Content='""' Style="SignalPanelInfoTextStyle" />
+        <Box id="AddRuleButton" Style="ModalButtonStyle" Interactive="true">
+            <Text Content='"Add Default Rule"' Style="ModalButtonTextStyle" InheritParentState="true" />
+        </Box>
+        <Box id="ClearRulesButton" Style="ModalButtonStyle" Interactive="true">
+            <Text Content='"Clear All Rules"' Style="ModalButtonTextStyle" InheritParentState="true" />
+        </Box>
+    </Box>
+</Box>

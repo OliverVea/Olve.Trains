@@ -15,7 +15,9 @@ public class GameStyleService(
         Styles.InfoBarButtonStyle,
         Styles.BurgerButtonStyle, Styles.BurgerLineStyle,
         Styles.BurgerOverlayStyle, Styles.BurgerMenuPanelStyle,
-        Styles.ModalButtonStyle, Styles.ModalButtonTextStyle
+        Styles.ModalButtonStyle, Styles.ModalButtonTextStyle,
+        Styles.SignalPanelOverlayStyle, Styles.SignalPanelStyle,
+        Styles.SignalPanelHeaderStyle, Styles.SignalPanelInfoTextStyle
     ];
 
     public Result Load()

@@ -69,6 +69,16 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
         return Result.Success();
     }
 
+    public void SimulateButtonPress(MouseButton button)
+    {
+        _pressedButtons.Add(button);
+    }
+
+    public void SimulateButtonRelease(MouseButton button)
+    {
+        _releasedButtons.Add(button);
+    }
+
     private void OnButtonPressed(IMouse mouse, MouseButton button)
     {
         _pressedButtons.Add(button);

@@ -30,6 +30,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<CameraSceneService>(sceneId);
         services.AddSceneService<SetCameraHandlerService>(sceneId);
         services.AddSceneService<SetMouseHandlerService>(sceneId);
+        services.AddSceneService<ClickHandlerService>(sceneId);
         services.AddSceneService<TerrainRaycastService>(sceneId);
         services.AddSceneService<CollisionRaycastService>(sceneId);
         services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);

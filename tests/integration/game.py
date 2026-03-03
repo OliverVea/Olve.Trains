@@ -266,6 +266,9 @@ class Game:
     def load_scene(self, scene: str) -> CommandResult:
         return self.send(f"load-scene scene={scene}")
 
+    def click(self, x: float, y: float) -> CommandResult:
+        return self.send(f"click pos={x},{y}")
+
     # -- Query wrappers --
 
     def query_vehicle(self, vehicle_id: str) -> VehicleState:

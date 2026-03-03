@@ -1,0 +1,32 @@
+using Olve.Engine3D.Commands;
+using Olve.Engine3D.Input;
+using Olve.Engine3D.Logging;
+using Olve.Trains.Commands.GameLogic;
+using Silk.NET.Input;
+
+namespace Olve.Trains.Scenes.GameRendering;
+
+public class ClickHandlerService(
+    CommandHandlerServiceCollection commandHandlerServiceCollection,
+    MouseManager mouseManager) : CommandHandlerService(commandHandlerServiceCollection)
+{
+    private static readonly CommandArgument PosArgument = new("pos", "Normalized screen position as x,y in range -1 to 1 (0,0 = center)", true);
+
+    public override string Verb => "click";
+    public override string HelpString => "Simulates a left-click at the given normalized position. Example: click pos=0.5,0.3";
+    public override IReadOnlyList<CommandArgument> Arguments { get; } = [PosArgument];
+
+    public override Result<CommandOutput> Handle(CommandContext commandContext)
+    {
+        if (commandContext.GetRequiredArgument(PosArgument).Bind(s => s.ParseVector2())
+            .TryPickProblems(out var problems, out var pos))
+        {
+            return problems;
+        }
+
+        mouseManager.NormalizedPositionOverride = pos;
+        mouseManager.SimulateButtonPress(MouseButton.Left);
+
+        return new CommandOutput($"Click simulated at ({pos.X}, {pos.Y})");
+    }
+}
