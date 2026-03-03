@@ -71,7 +71,7 @@ public class GuiAnimationService(
 
     private void AddAnimation(Id<GuiNode> nodeId, GuiNodeState state, bool isOut)
     {
-        _animations.RemoveAll(x => x.NodeId == nodeId && x.State == state && x.IsOut == isOut);
+        _animations.RemoveAll(x => x.NodeId == nodeId && x.State == state);
         _animations.Add(new WeightAnimation(nodeId, state, isOut, TimeSpan.Zero));
     }
 
