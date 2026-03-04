@@ -67,7 +67,9 @@
   - [x] Migrate building meshes to MeshManager + register building colliders
   - [x] Migrate vehicle meshes to MeshManager + register vehicle colliders
   - [x] Migrate track collision to CollisionSystem
-  - [ ] Add terrain as a collision source
+  - [x] Add terrain as a collision source
+  - [ ] Generalize CollisionSystem with IColliderShape interface (GetAABB, TryRaycast)
+  - [ ] Cache mouse ray hits per frame in CollisionSystem or TerrainRaycastService
   - [ ] Update MeshRenderingService to accept Id<Mesh> (rendering integration)
 - [ ] Industry epic (Feature):
   - [ ] Add basic support for industries

@@ -13,10 +13,10 @@ public class TerrainRaycastService(
     MouseManager mouseManager,
     CameraSceneService cameraSceneService,
     TerrainService terrainService,
-    GridService gridService) : ISceneService
+    GridService gridService,
+    CollisionSystem collisionSystem,
+    TerrainHighlightSettings terrainHighlightSettings) : ISceneService
 {
-    private HeightmapRaycaster? _heightmapRaycaster;
-
     public Ray3D<float>? MouseRay { get; private set; }
     public Vector3D<float>? TerrainIntersection { get; private set; }
     public Vector3D<float>? TerrainIntersectionTileCenter => TerrainIntersection is { } world
@@ -27,18 +27,6 @@ public class TerrainRaycastService(
         : null;
 
     public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService]);
-
-    public Result Load()
-    {
-        if (terrainService.Terrain is not { } terrain)
-        {
-            return new ResultProblem("TerrainService.Terrain is null");
-        }
-
-        _heightmapRaycaster = new HeightmapRaycaster(terrain.Heightmap);
-
-        return Result.Success();
-    }
 
     public Result<Pass> Input(TimeSpan deltaTime)
     {
@@ -62,19 +50,16 @@ public class TerrainRaycastService(
     {
         TerrainIntersection = null;
 
-        if (_heightmapRaycaster is null)
-        {
-            return new ResultProblem("HeightmapRaycaster is null");
-        }
-
-        if (MouseRay is null)
+        if (MouseRay is not { } ray)
         {
             return Result.Success();
         }
 
-        if (_heightmapRaycaster.TryRaycast(MouseRay.Value, out var terrainIntersection))
+        var hits = collisionSystem.Raycast(ray, ColliderGroups.Terrain);
+
+        if (hits.Count > 0)
         {
-            TerrainIntersection = terrainIntersection;
+            TerrainIntersection = hits[0].HitPosition;
         }
 
         return Result.Success();
@@ -82,7 +67,7 @@ public class TerrainRaycastService(
 
     public void ApplyTerrainIntersectionParameters(IWorldMousePositionShader shader)
     {
-        if (TerrainIntersection is {} intersection)
+        if (terrainHighlightSettings.ShowGrid && TerrainIntersection is {} intersection)
         {
             shader.MousePosition = intersection;
         }
@@ -91,5 +76,4 @@ public class TerrainRaycastService(
             shader.MousePosition = new Vector3D<float>(-1000f, -1000f, -1000f);
         }
     }
-
 }

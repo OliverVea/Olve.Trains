@@ -1,9 +1,11 @@
+using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Math;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Physics3D.Collisions;
 
+// TODO: Generalize CollisionSystem with IColliderShape interface (GetAABB, TryRaycast, TryCollision)
 public class CollisionSystem(MeshManager meshManager)
 {
     private readonly record struct ColliderEntry(
@@ -14,6 +16,10 @@ public class CollisionSystem(MeshManager meshManager)
         Matrix4X4<float> WorldMatrix);
 
     private readonly Dictionary<Id<Collider>, ColliderEntry> _colliders = new();
+
+    private HeightmapRaycaster? _heightmapRaycaster;
+    private Id<Collider>? _heightmapColliderId;
+    private Id<ColliderGroup> _heightmapGroup;
 
     public Result<Id<Collider>> RegisterMeshCollider(
         Id<Mesh> meshId,
@@ -33,6 +39,14 @@ public class CollisionSystem(MeshManager meshManager)
         return colliderId;
     }
 
+    public Id<Collider> RegisterHeightmapCollider(HeightmapData data, Id<ColliderGroup> group)
+    {
+        _heightmapRaycaster = new HeightmapRaycaster(data);
+        _heightmapColliderId = Id.New<Collider>();
+        _heightmapGroup = group;
+        return _heightmapColliderId.Value;
+    }
+
     public Result UpdateTransform(Id<Collider> colliderId, Matrix4X4<float> worldMatrix)
     {
         if (!_colliders.TryGetValue(colliderId, out var entry))
@@ -48,6 +62,13 @@ public class CollisionSystem(MeshManager meshManager)
 
     public DeletionResult Unregister(Id<Collider> colliderId)
     {
+        if (_heightmapColliderId == colliderId)
+        {
+            _heightmapRaycaster = null;
+            _heightmapColliderId = null;
+            return DeletionResult.Success();
+        }
+
         if (!_colliders.ContainsKey(colliderId))
         {
             return DeletionResult.NotFound();
@@ -63,11 +84,13 @@ public class CollisionSystem(MeshManager meshManager)
 
         foreach (var (colliderId, entry) in _colliders)
         {
-            if (TryOBBRaycast(ray, entry, out var distance))
+            if (TryOBBRaycast(ray, entry, out var distance, out var hitPosition))
             {
-                hits.Add(new RaycastHit(colliderId, entry.Group, distance));
+                hits.Add(new RaycastHit(colliderId, entry.Group, distance, hitPosition));
             }
         }
+
+        TryAddHeightmapHit(ray, hits);
 
         hits.Sort((a, b) => a.Distance.CompareTo(b.Distance));
         return hits;
@@ -81,22 +104,43 @@ public class CollisionSystem(MeshManager meshManager)
         {
             if (entry.Group != group) continue;
 
-            if (TryOBBRaycast(ray, entry, out var distance))
+            if (TryOBBRaycast(ray, entry, out var distance, out var hitPosition))
             {
-                hits.Add(new RaycastHit(colliderId, entry.Group, distance));
+                hits.Add(new RaycastHit(colliderId, entry.Group, distance, hitPosition));
             }
+        }
+
+        if (_heightmapGroup == group)
+        {
+            TryAddHeightmapHit(ray, hits);
         }
 
         hits.Sort((a, b) => a.Distance.CompareTo(b.Distance));
         return hits;
     }
 
-    private static bool TryOBBRaycast(Ray3D<float> ray, in ColliderEntry entry, out float distance)
+    private void TryAddHeightmapHit(Ray3D<float> ray, List<RaycastHit> hits)
+    {
+        if (_heightmapRaycaster is null || _heightmapColliderId is not { } heightmapId)
+        {
+            return;
+        }
+
+        // No AABB broad phase — HeightmapRaycaster does its own bounds checking
+        if (_heightmapRaycaster.TryRaycast(ray, out var hitPoint))
+        {
+            var distance = (hitPoint.Value - ray.Origin).Length;
+            hits.Add(new RaycastHit(heightmapId, _heightmapGroup, distance, hitPoint.Value));
+        }
+    }
+
+    private static bool TryOBBRaycast(Ray3D<float> ray, in ColliderEntry entry, out float distance, out Vector3D<float> hitPosition)
     {
         // Broad phase: test against world-space AABB (fast cull)
         if (!entry.WorldAABB.TryIntersectRay(ray, out _))
         {
             distance = default;
+            hitPosition = default;
             return false;
         }
 
@@ -104,6 +148,7 @@ public class CollisionSystem(MeshManager meshManager)
         if (!Matrix4X4.Invert(entry.WorldMatrix, out var inverseMatrix))
         {
             distance = default;
+            hitPosition = default;
             return false;
         }
 
@@ -115,6 +160,7 @@ public class CollisionSystem(MeshManager meshManager)
         if (!entry.LocalAABB.TryIntersectRay(localRay, out var tLocal))
         {
             distance = default;
+            hitPosition = default;
             return false;
         }
 
@@ -122,6 +168,7 @@ public class CollisionSystem(MeshManager meshManager)
         var localHitPoint = localOrigin + tLocal * localDirection;
         var worldHitPoint = Vector3D.Transform(localHitPoint, entry.WorldMatrix);
         distance = (worldHitPoint - ray.Origin).Length;
+        hitPosition = worldHitPoint;
         return true;
     }
 }

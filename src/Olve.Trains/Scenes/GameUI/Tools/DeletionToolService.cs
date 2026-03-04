@@ -20,7 +20,8 @@ public class DeletionToolService(
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
     MouseManager mouseManager,
-    ILogger<DeletionToolService> logger) : BaseToolService<DeletionToolService.State>(toolManagementService, new State())
+    ILogger<DeletionToolService> logger,
+    TerrainHighlightSettings terrainHighlightSettings) : BaseToolService<DeletionToolService.State>(toolManagementService, new State())
 {
     public record State(bool ActivatedThisFrame = false);
 
@@ -29,6 +30,18 @@ public class DeletionToolService(
 
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Delete Entities");
+
+    protected override State OnToolSelected(State toolState)
+    {
+        terrainHighlightSettings.ShowGrid = true;
+        return toolState;
+    }
+
+    protected override State OnToolDeselected(State toolState)
+    {
+        terrainHighlightSettings.ShowGrid = false;
+        return toolState;
+    }
 
     protected override Result<Pass> OnSelectedInput(TimeSpan deltaTime)
     {

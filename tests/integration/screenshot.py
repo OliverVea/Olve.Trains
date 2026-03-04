@@ -100,10 +100,29 @@ def assert_screenshot_matches(
         raise AssertionError(msg)
 
 
-def update_reference(actual: Path, reference: Path) -> None:
+def update_reference(
+    actual: Path,
+    reference: Path,
+    threshold: float = 0.995,
+    pixel_tolerance: int = 2,
+) -> None:
     reference.parent.mkdir(parents=True, exist_ok=True)
+
+    if reference.exists():
+        result = compare_screenshots(
+            actual, reference,
+            threshold=threshold,
+            pixel_tolerance=pixel_tolerance,
+        )
+        if result.passed:
+            print(f"  Skipped (similarity={result.similarity:.4f}): {reference.name}")
+            return
+
+        print(f"  Updated (similarity={result.similarity:.4f}): {reference.name}")
+    else:
+        print(f"  Created: {reference.name}")
+
     shutil.copy2(actual, reference)
-    print(f"  Updated reference: {reference}")
 
 
 def _save_diff_image(

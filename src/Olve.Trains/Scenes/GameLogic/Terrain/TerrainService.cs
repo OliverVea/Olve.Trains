@@ -1,10 +1,11 @@
 using Olve.Engine3D.Assets.Entities;
+using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 
 namespace Olve.Trains.Scenes.GameLogic.Terrain;
 
-public class TerrainService : ISceneService
+public class TerrainService(CollisionSystem collisionSystem) : ISceneService
 {
     private TerrainData? _terrain;
     public TerrainData Terrain => _terrain ?? throw new NotInitializedException<TerrainData>();
@@ -39,6 +40,8 @@ public class TerrainService : ISceneService
         {
             Heightmap = heightmap
         };
+
+        collisionSystem.RegisterHeightmapCollider(heightmap, ColliderGroups.Terrain);
 
         return Result.Success();
     }

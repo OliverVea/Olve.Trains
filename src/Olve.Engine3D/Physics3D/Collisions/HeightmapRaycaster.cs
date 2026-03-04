@@ -61,7 +61,8 @@ public class HeightmapRaycaster
 
                 if (float.Abs(mid - height) < _epsilon + _heightmapData.Step)
                 {
-                    raycastHit = point;
+                    // Snap Y to actual terrain height (mid is an approximation from binary search)
+                    raycastHit = point with { Y = height };
                     return true;
                 }
                 if (mid < height)

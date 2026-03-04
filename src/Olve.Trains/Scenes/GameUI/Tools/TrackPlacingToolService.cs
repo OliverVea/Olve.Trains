@@ -19,7 +19,8 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
     TrackPlacingService trackPlacingService,
     TrackGhostRenderingService trackGhostRenderingService,
     TrackLineStripDataService trackLineStripDataService,
-    TrackValidationService trackValidationService) : BaseToolService<TrackPlacingToolService.State>(toolManagementService, new State())
+    TrackValidationService trackValidationService,
+    TerrainHighlightSettings terrainHighlightSettings) : BaseToolService<TrackPlacingToolService.State>(toolManagementService, new State())
 {
     public record State(TrackEndpoint? From = null, CardinalDirection Direction = CardinalDirection.North, bool ActivatedThisFrame = false);
 
@@ -61,12 +62,14 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
     protected override State OnToolSelected(State toolState)
     {
         arrowIndicatorService.Show(_arrowIndicatorId);
+        terrainHighlightSettings.ShowGrid = true;
         return toolState with { From = null, ActivatedThisFrame = false };
     }
 
     protected override State OnToolDeselected(State toolState)
     {
         arrowIndicatorService.Hide(_arrowIndicatorId);
+        terrainHighlightSettings.ShowGrid = false;
         UnregisterGhost();
         return toolState;
     }

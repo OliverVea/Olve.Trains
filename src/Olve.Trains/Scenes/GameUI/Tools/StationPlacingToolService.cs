@@ -15,7 +15,8 @@ public sealed class StationPlacingToolService(
     BuildingValidationService buildingValidationService,
     BuildingService buildingService,
     MouseManager mouseManager,
-    KeyboardManager keyboardManager) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
+    KeyboardManager keyboardManager,
+    TerrainHighlightSettings terrainHighlightSettings) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
 {
     public record State(bool ActivatedThisFrame = false, CardinalDirection CardinalDirection = CardinalDirection.North);
 
@@ -31,8 +32,15 @@ public sealed class StationPlacingToolService(
         return Result.Success();
     }
 
+    protected override State OnToolSelected(State toolState)
+    {
+        terrainHighlightSettings.ShowGrid = true;
+        return toolState;
+    }
+
     protected override State OnToolDeselected(State toolState)
     {
+        terrainHighlightSettings.ShowGrid = false;
         UnregisterGhost();
         return toolState;
     }
