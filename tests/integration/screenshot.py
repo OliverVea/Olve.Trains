@@ -29,7 +29,7 @@ class DiffResult:
 def compare_screenshots(
     actual: Path,
     reference: Path,
-    threshold: float = 0.995,
+    threshold: float = 0.999,
     pixel_tolerance: int = 2,
     diff_output: Path | None = None,
 ) -> DiffResult:
@@ -76,7 +76,7 @@ def compare_screenshots(
 def assert_screenshot_matches(
     actual: Path,
     reference: Path,
-    threshold: float = 0.995,
+    threshold: float = 0.999,
     pixel_tolerance: int = 2,
 ) -> None:
     if not reference.exists():
@@ -103,7 +103,7 @@ def assert_screenshot_matches(
 def update_reference(
     actual: Path,
     reference: Path,
-    threshold: float = 0.995,
+    threshold: float = 0.999,
     pixel_tolerance: int = 2,
 ) -> None:
     reference.parent.mkdir(parents=True, exist_ok=True)

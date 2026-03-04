@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+import game as game_module
 from game import Game
 from screenshot import compare_screenshots, update_reference
 
@@ -122,8 +123,16 @@ def _game_pool(request: pytest.FixtureRequest) -> GamePool:
 @pytest.fixture
 def game(_game_pool: GamePool) -> Game:
     g = _game_pool.acquire()
-    g.load_scene("game")
-    g.step(2)
+    try:
+        g.load_scene("game")
+        g.step(2)
+    except game_module.GameCrashedError:
+        # Game died — restart it before handing to the test
+        g._stop_game()
+        g._launch_game()
+        g._wait_for_pipe()
+        g.load_scene("game")
+        g.step(2)
     yield g
     _game_pool.release(g)
 

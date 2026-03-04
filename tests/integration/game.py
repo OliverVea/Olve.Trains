@@ -81,6 +81,16 @@ class JunctionDetail:
     rules: list[dict] = field(default_factory=list)
 
 
+class GameCrashedError(Exception):
+    def __init__(self, exit_code: int | None, stderr: str = ""):
+        self.exit_code = exit_code
+        self.stderr = stderr
+        msg = f"Game process exited unexpectedly (exit code: {exit_code})"
+        if stderr:
+            msg += f"\n--- game stderr ---\n{stderr}\n---"
+        super().__init__(msg)
+
+
 class CommandError(Exception):
     def __init__(self, command: str, result: CommandResult):
         self.command = command
@@ -152,6 +162,9 @@ class Game:
                 self._game_proc.kill()
                 self._game_proc.wait(timeout=5)
 
+        if hasattr(self, "_game_stderr_file") and self._game_stderr_file:
+            self._game_stderr_file.close()
+
         # Generate a new pipe name so the next launch doesn't collide
         # with a stale pipe handle (Windows holds pipe names briefly after close)
         self._pipe_suffix = uuid.uuid4().hex[:8]
@@ -174,14 +187,34 @@ class Game:
             except OSError:
                 pass
 
+    def _check_alive(self) -> None:
+        if self._game_proc is not None and self._game_proc.poll() is not None:
+            stderr = ""
+            try:
+                self._game_stderr_file.flush()
+                stderr = self._game_stderr_path.read_text(errors="replace").strip()
+                # Keep last 50 lines to avoid huge tracebacks
+                lines = stderr.splitlines()
+                if len(lines) > 50:
+                    stderr = "\n".join(lines[-50:])
+            except Exception:
+                pass
+            raise GameCrashedError(self._game_proc.returncode, stderr)
+
     def send(self, command: str, *, check: bool = True) -> CommandResult:
+        self._check_alive()
         logger.debug("send: %s", command)
-        proc = subprocess.run(
-            ["dotnet", str(GAME_DLL), "--send", command, "--instance", self._pipe_id],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
+        try:
+            proc = subprocess.run(
+                ["dotnet", str(GAME_DLL), "--send", command, "--instance", self._pipe_id],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except subprocess.TimeoutExpired:
+            # Pipe timed out — check if game crashed
+            self._check_alive()
+            raise
 
         result = CommandResult(
             success=proc.returncode == 0,
@@ -191,6 +224,8 @@ class Game:
 
         if not result.success:
             logger.warning("command failed: %s — %s", command, "; ".join(result.errors))
+            # Check if failure is due to game crash
+            self._check_alive()
             if check:
                 raise CommandError(command, result)
         elif result.output:
@@ -420,10 +455,12 @@ class Game:
         ]
         if self.scene:
             cmd.extend(["--scene", self.scene])
+        self._game_stderr_path = Path(self._temp_dir) / "game-stderr.log"
+        self._game_stderr_file = open(self._game_stderr_path, "w")
         self._game_proc = subprocess.Popen(
             cmd,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stderr=self._game_stderr_file,
             env=self._game_env,
         )
 

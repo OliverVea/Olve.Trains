@@ -12,6 +12,7 @@ public class VehicleJunctionCrossingService(
     JunctionSignalRuleEvaluationService junctionSignalRuleEvaluationService) : ISceneService
 {
     private readonly List<Id<Vehicle>> _queue = new();
+    private readonly List<Id<Vehicle>> _suspended = new();
 
     public Result OnVehicleReachedEnd(Id<Vehicle> vehicleId)
     {
@@ -21,9 +22,10 @@ public class VehicleJunctionCrossingService(
 
     public Result Update(TimeSpan deltaTime)
     {
+        _suspended.Clear();
+
         foreach (var vehicleId in _queue)
         {
-
             if (CheckVehicle(vehicleId).TryPickProblems(out var problems))
             {
                 return problems;
@@ -31,6 +33,7 @@ public class VehicleJunctionCrossingService(
         }
 
         _queue.Clear();
+        _queue.AddRange(_suspended);
 
         return Result.Success();
     }
@@ -84,7 +87,7 @@ public class VehicleJunctionCrossingService(
 
     private Result SuspendVehicle(Id<Vehicle> vehicleId)
     {
-        _queue.Add(vehicleId);
+        _suspended.Add(vehicleId);
         return Result.Success();
     }
 

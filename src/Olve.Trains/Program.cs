@@ -101,9 +101,20 @@ public static class Program
             _ => SceneIds.MainMenuScene,
         };
 
-        var result = gameManager.Run(startScene);
-
-        MetricsExtensions.ShutdownMetrics();
+        Result result;
+        try
+        {
+            result = gameManager.Run(startScene);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "Unhandled exception in game loop");
+            throw;
+        }
+        finally
+        {
+            MetricsExtensions.ShutdownMetrics();
+        }
 
         return LogResult(result);
     }
