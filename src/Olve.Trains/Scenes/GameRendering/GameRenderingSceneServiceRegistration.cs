@@ -47,6 +47,7 @@ public static class GameRenderingSceneServiceRegistration
             before: BeforeBuildingRendering);
         services.AddSceneService<BuildingRenderingService>(sceneId);
         services.AddSceneService<TrackCollisionRenderingService>(sceneId);
+        services.AddSceneService<ColliderDebugRenderingService>(sceneId);
 
         return services;
     }

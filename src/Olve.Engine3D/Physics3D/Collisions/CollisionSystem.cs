@@ -1,5 +1,6 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Math;
+using Olve.Engine3D.Systems;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Physics3D.Collisions;
@@ -14,6 +15,12 @@ public class CollisionSystem
 
     private readonly Dictionary<Id<Collider>, ColliderEntry> _colliders = new();
 
+    public Event<Id<Collider>> OnColliderRegistered { get; } = new();
+    public Event<Id<Collider>> OnColliderUnregistered { get; } = new();
+    public Event<Id<Collider>> OnColliderTransformUpdated { get; } = new();
+
+    public IEnumerable<Id<Collider>> ColliderIds => _colliders.Keys;
+
     public Id<Collider> Register(
         IColliderShape shape,
         Id<ColliderGroup> group,
@@ -23,6 +30,8 @@ public class CollisionSystem
         var colliderId = Id.New<Collider>();
 
         _colliders[colliderId] = new ColliderEntry(shape, group, worldAABB, worldMatrix);
+
+        OnColliderRegistered.Invoke(colliderId);
 
         return colliderId;
     }
@@ -43,6 +52,8 @@ public class CollisionSystem
         var worldAABB = entry.Shape.GetWorldAABB(worldMatrix);
         _colliders[colliderId] = entry with { WorldAABB = worldAABB, WorldMatrix = worldMatrix };
 
+        OnColliderTransformUpdated.Invoke(colliderId);
+
         return Result.Success();
     }
 
@@ -53,7 +64,29 @@ public class CollisionSystem
             return DeletionResult.NotFound();
         }
 
+        OnColliderUnregistered.Invoke(colliderId);
+
         return DeletionResult.Success();
+    }
+
+    public bool TryGetColliderInfo(
+        Id<Collider> colliderId,
+        out IColliderShape shape,
+        out Matrix4X4<float> worldMatrix,
+        out AABB worldAABB)
+    {
+        if (_colliders.TryGetValue(colliderId, out var entry))
+        {
+            shape = entry.Shape;
+            worldMatrix = entry.WorldMatrix;
+            worldAABB = entry.WorldAABB;
+            return true;
+        }
+
+        shape = default!;
+        worldMatrix = default;
+        worldAABB = default;
+        return false;
     }
 
     public IReadOnlyList<RaycastHit> Raycast(Ray3D<float> ray)

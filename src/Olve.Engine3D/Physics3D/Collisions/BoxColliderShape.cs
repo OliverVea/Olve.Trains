@@ -7,6 +7,7 @@ namespace Olve.Engine3D.Physics3D.Collisions;
 
 public class BoxColliderShape(Vector3D<float> halfExtents) : IColliderShape
 {
+    public Vector3D<float> HalfExtents { get; } = halfExtents;
     private readonly AABB _localAABB = new(-halfExtents, halfExtents);
 
     public AABB GetWorldAABB(in Matrix4X4<float> worldMatrix)
