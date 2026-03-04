@@ -8,6 +8,7 @@ namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 
 public class VehicleCollisionService(
     MeshLoadingManager meshLoadingManager,
+    MeshManager meshManager,
     CollisionSystem collisionSystem,
     VehiclePositionService vehiclePositionService,
     TrackSplineService trackSplineService)
@@ -16,7 +17,8 @@ public class VehicleCollisionService(
     public int Priority => SceneServicePriority.FromDependencies([trackSplineService, vehiclePositionService]);
 
     private readonly Dictionary<Id<Vehicle>, Id<Collider>> _colliders = new();
-    private Id<Mesh> _meshId;
+    private BoxColliderShape? _shape;
+    private Vector3D<float> _centerOffset;
 
     public Result Load()
     {
@@ -26,7 +28,15 @@ public class VehicleCollisionService(
             return problems.Prepend("Failed to load vehicle mesh for collision");
         }
 
-        _meshId = meshId;
+        if (!meshManager.TryGetLocalAABB(meshId, out var localAABB))
+        {
+            return new ResultProblem("Mesh AABB not found for vehicle mesh");
+        }
+
+        var halfExtents = (localAABB.Max - localAABB.Min) * 0.5f;
+        _centerOffset = (localAABB.Min + localAABB.Max) * 0.5f;
+        _shape = new BoxColliderShape(halfExtents);
+
         return Result.Success();
     }
 
@@ -37,11 +47,8 @@ public class VehicleCollisionService(
             return new ResultProblem("Collider already exists for vehicle '{0}'", vehicleId);
         }
 
-        if (collisionSystem.RegisterMeshCollider(_meshId, ColliderGroups.Vehicle, Matrix4X4<float>.Identity)
-            .TryPickProblems(out var problems, out var colliderId))
-        {
-            return problems.Prepend("Failed to register collider for vehicle '{0}'", vehicleId);
-        }
+        var centerMatrix = Matrix4X4.CreateTranslation(_centerOffset);
+        var colliderId = collisionSystem.Register(_shape!, ColliderGroups.Vehicle, centerMatrix);
 
         _colliders[vehicleId] = colliderId;
         return Result.Success();
@@ -74,8 +81,10 @@ public class VehicleCollisionService(
             }
 
             var worldMatrix = VehicleWorldMatrix.Compute(trackPosition.Velocity, position);
+            var centerMatrix = Matrix4X4.CreateTranslation(_centerOffset);
+            var adjustedMatrix = centerMatrix * worldMatrix;
 
-            if (collisionSystem.UpdateTransform(colliderId, worldMatrix)
+            if (collisionSystem.UpdateTransform(colliderId, adjustedMatrix)
                 .TryPickProblems(out problems))
             {
                 return problems.Prepend(

@@ -5,6 +5,7 @@ namespace Olve.Trains.Scenes.GameLogic.Buildings;
 
 public class BuildingCollisionService(
     MeshLoadingManager meshLoadingManager,
+    MeshManager meshManager,
     CollisionSystem collisionSystem,
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
@@ -42,15 +43,23 @@ public class BuildingCollisionService(
             return problems.Prepend("Failed to load building mesh for collision");
         }
 
+        if (!meshManager.TryGetLocalAABB(meshId, out var localAABB))
+        {
+            return new ResultProblem("Mesh AABB not found for building '{0}'", buildingId);
+        }
+
+        var halfExtents = (localAABB.Max - localAABB.Min) * 0.5f;
+        var center = (localAABB.Min + localAABB.Max) * 0.5f;
+        var shape = new BoxColliderShape(halfExtents);
+
         var worldMatrix = buildingPositionService.ComputeBuildingWorldMatrix(
             blueprint.Footprint, building.Position, building.BlueprintId);
 
-        if (collisionSystem.RegisterMeshCollider(meshId, ColliderGroups.Building, worldMatrix)
-            .TryPickProblems(out problems, out var colliderId))
-        {
-            return problems.Prepend("Failed to register collider for building '{0}'", buildingId);
-        }
+        // Adjust world matrix to account for mesh center offset
+        var centerOffset = Matrix4X4.CreateTranslation(center);
+        var adjustedMatrix = centerOffset * worldMatrix;
 
+        var colliderId = collisionSystem.Register(shape, ColliderGroups.Building, adjustedMatrix);
         _colliders[buildingId] = colliderId;
 
         return Result.Success();

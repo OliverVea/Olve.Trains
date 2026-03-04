@@ -7,13 +7,15 @@ namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 public class JunctionSignalCollisionService(
     MeshLoadingManager meshLoadingManager,
+    MeshManager meshManager,
     CollisionSystem collisionSystem,
     JunctionService junctionService,
     GridService gridService)
 {
     private readonly OneToManyLookup<Id<Junction>, Id<Collider>> _colliders = new();
 
-    private Id<Mesh> _meshId;
+    private BoxColliderShape? _shape;
+    private Vector3D<float> _centerOffset;
 
     public bool TryGetJunctionId(Id<Collider> colliderId, out Id<Junction> junctionId)
     {
@@ -27,13 +29,23 @@ public class JunctionSignalCollisionService(
             return new ResultProblem("Collider already exists for junction signal '{0}'", junctionId);
         }
 
-        if (meshLoadingManager.LoadMesh(Meshes.SM_Prop_CrossingLight_01)
-            .TryPickProblems(out var problems, out var meshId))
+        if (_shape is null)
         {
-            return problems.Prepend("Failed to load junction signal mesh for collision");
-        }
+            if (meshLoadingManager.LoadMesh(Meshes.SM_Prop_CrossingLight_01)
+                .TryPickProblems(out var loadProblems, out var meshId))
+            {
+                return loadProblems.Prepend("Failed to load junction signal mesh for collision");
+            }
 
-        _meshId = meshId;
+            if (!meshManager.TryGetLocalAABB(meshId, out var localAABB))
+            {
+                return new ResultProblem("Mesh AABB not found for junction signal mesh");
+            }
+
+            var halfExtents = (localAABB.Max - localAABB.Min) * 0.5f;
+            _centerOffset = (localAABB.Min + localAABB.Max) * 0.5f;
+            _shape = new BoxColliderShape(halfExtents);
+        }
 
         if (!junctionService.TryGetJunction(junctionId, out var junction))
         {
@@ -45,12 +57,10 @@ public class JunctionSignalCollisionService(
                             * Matrix4X4.CreateTranslation(0.3f, 0f, 0.3f)
                             * Matrix4X4.CreateTranslation(gridService.ToTileCenter(junction.Position));
 
-        if (collisionSystem.RegisterMeshCollider(_meshId, ColliderGroups.Signal, junctionWorld)
-            .TryPickProblems(out problems, out var colliderId))
-        {
-            return problems.Prepend("Failed to register collider for junction signal '{0}'", junctionId);
-        }
+        var centerMatrix = Matrix4X4.CreateTranslation(_centerOffset);
+        var adjustedMatrix = centerMatrix * junctionWorld;
 
+        var colliderId = collisionSystem.Register(_shape, ColliderGroups.Signal, adjustedMatrix);
         _colliders.Set(junctionId, colliderId, true);
 
         return Result.Success();

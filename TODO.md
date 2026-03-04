@@ -68,7 +68,8 @@
   - [x] Migrate vehicle meshes to MeshManager + register vehicle colliders
   - [x] Migrate track collision to CollisionSystem
   - [x] Add terrain as a collision source
-  - [ ] Generalize CollisionSystem with IColliderShape interface (GetAABB, TryRaycast)
+  - [x] Generalize CollisionSystem with IColliderShape interface (GetAABB, TryRaycast)
+  - [ ] Add debug collider wireframe renderer (priority ~5000, before GUI)
   - [ ] Cache mouse ray hits per frame in CollisionSystem or TerrainRaycastService
   - [ ] Update MeshRenderingService to accept Id<Mesh> (rendering integration)
 - [ ] Industry epic (Feature):

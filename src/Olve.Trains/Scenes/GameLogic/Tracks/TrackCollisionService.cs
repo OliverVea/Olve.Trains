@@ -1,12 +1,8 @@
-using Olve.Engine3D.Assets.Entities;
-using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Physics3D.Collisions;
-using Olve.Engine3D.Rendering.Primitives;
 
 namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
 public class TrackCollisionService(
-    MeshManager meshManager,
     CollisionSystem collisionSystem,
     TrackSplineService trackSplineService)
 {
@@ -14,35 +10,13 @@ public class TrackCollisionService(
     private const float TrackWidth = 0.16f;
     private const float TrackHeight = 0.02f;
 
+    private static readonly BoxColliderShape HalfUnitBox = new(new(0.5f, 0.5f, 0.5f));
+
     private readonly Dictionary<Id<Track>, (Id<Collider>[] ColliderIds, Matrix4X4<float>[] Matrices)> _trackColliders = new();
     private readonly Dictionary<Id<Collider>, Id<Track>> _colliderToTrack = new();
-    private Id<Mesh> _unitCubeMeshId;
-    private bool _initialized;
-
-    private Result EnsureInitialized()
-    {
-        if (_initialized) return Result.Success();
-
-        var meshData = CreateCenteredCubeMeshData();
-
-        if (meshManager.Register(meshData)
-            .TryPickProblems(out var problems, out var meshId))
-        {
-            return problems.Prepend("Failed to register unit cube mesh for track collision");
-        }
-
-        _unitCubeMeshId = meshId;
-        _initialized = true;
-        return Result.Success();
-    }
 
     public Result Register(Id<Track> trackId)
     {
-        if (EnsureInitialized().TryPickProblems(out var initProblems))
-        {
-            return initProblems;
-        }
-
         if (_trackColliders.ContainsKey(trackId))
         {
             return new ResultProblem("Track colliders already exist for track '{0}'", trackId);
@@ -65,12 +39,7 @@ public class TrackCollisionService(
             var matrix = ComputeSegmentOBBMatrix(from, to);
             matrices[i] = matrix;
 
-            if (collisionSystem.RegisterMeshCollider(_unitCubeMeshId, ColliderGroups.Track, matrix)
-                .TryPickProblems(out problems, out var colliderId))
-            {
-                return problems.Prepend("Failed to register collider for track '{0}' segment {1}", trackId, i);
-            }
-
+            var colliderId = collisionSystem.Register(HalfUnitBox, ColliderGroups.Track, matrix);
             colliderIds[i] = colliderId;
             _colliderToTrack[colliderId] = trackId;
         }
@@ -143,36 +112,5 @@ public class TrackCollisionService(
         var translation = Matrix4X4.CreateTranslation(midpoint);
 
         return scale * rotation * translation;
-    }
-
-    private static MeshData CreateCenteredCubeMeshData()
-    {
-        var positions = new Vector3D<float>[UnitCube.VertexCount];
-        var normals = new Vector3D<float>[UnitCube.VertexCount];
-        UnitCube.GetVertices(positions, normals);
-
-        // Center the cube: shift from (0,0,0)→(1,1,1) to (-0.5,-0.5,-0.5)→(0.5,0.5,0.5)
-        var offset = new Vector3D<float>(0.5f, 0.5f, 0.5f);
-        for (var i = 0; i < positions.Length; i++)
-        {
-            positions[i] -= offset;
-        }
-
-        var indices = new uint[UnitCube.IndexCount];
-        UnitCube.GetIndices(indices);
-
-        var triangleIndices = new TriangleIndex[UnitCube.IndexCount / 3];
-        for (var i = 0; i < triangleIndices.Length; i++)
-        {
-            triangleIndices[i] = new TriangleIndex(indices[i * 3], indices[i * 3 + 1], indices[i * 3 + 2]);
-        }
-
-        return new MeshData
-        {
-            Positions = positions,
-            Normals = normals,
-            Indices = triangleIndices,
-            TextureCoordinates = new Vector2D<float>[UnitCube.VertexCount],
-        };
     }
 }
