@@ -457,11 +457,12 @@ class Game:
             cmd.extend(["--scene", self.scene])
         self._game_stderr_path = Path(self._temp_dir) / "game-stderr.log"
         self._game_stderr_file = open(self._game_stderr_path, "w")
+        env = {**(self._game_env or os.environ), "Logging__File__LogLevel__Default": "Information"}
         self._game_proc = subprocess.Popen(
             cmd,
             stdout=subprocess.DEVNULL,
             stderr=self._game_stderr_file,
-            env=self._game_env,
+            env=env,
         )
 
     def _wait_for_pipe(self, timeout: int = 10) -> None:

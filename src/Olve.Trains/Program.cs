@@ -38,6 +38,7 @@ public static class Program
         var configuration = new ConfigurationBuilder()
             .AddJsonFile("Properties/appsettings.json", optional: true)
             .AddJsonFile("Properties/appsettings.local.json", optional: true)
+            .AddEnvironmentVariables()
             .Build();
 
         var listen = parsedArgs.Listen
