@@ -86,6 +86,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<TrackCollisionService>();
         services.TryAddScoped<VehicleCollisionService>();
         services.TryAddScoped<TerrainHighlightSettings>();
+        services.TryAddScoped<ColliderDebugSettings>();
 
         // Scene Events
         services.AddEventSceneService(sceneId,

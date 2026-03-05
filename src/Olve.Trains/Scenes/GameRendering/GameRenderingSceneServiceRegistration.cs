@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
+using Olve.Trains.Commands.GameRendering;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
@@ -46,8 +47,8 @@ public static class GameRenderingSceneServiceRegistration
             (BuildingRenderingService brs, Id<Building> id) => brs.Unregister(id),
             before: BeforeBuildingRendering);
         services.AddSceneService<BuildingRenderingService>(sceneId);
-        services.AddSceneService<TrackCollisionRenderingService>(sceneId);
         services.AddSceneService<ColliderDebugRenderingService>(sceneId);
+        services.AddSceneService<ToggleColliderDebugHandlerService>(sceneId);
 
         return services;
     }

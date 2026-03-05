@@ -1,3 +1,4 @@
+using Olve.Engine3D.Input;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Rendering;
@@ -7,6 +8,7 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Generated.Shaders;
+using Silk.NET.Input;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.GameRendering;
@@ -18,7 +20,9 @@ public class ColliderDebugRenderingService(
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
     EventQueueFactory eventQueueFactory,
-    CollisionSystem collisionSystem)
+    CollisionSystem collisionSystem,
+    ColliderDebugSettings settings,
+    KeyboardManager keyboardManager)
     : ISceneService
 {
     public int Priority => 5000;
@@ -27,6 +31,10 @@ public class ColliderDebugRenderingService(
         Id<Shaders.LineStrip.Instance> AabbInstanceId,
         Id<Shaders.LineStrip.Instance> ObbInstanceId);
 
+    // Tracked collider IDs (box colliders only) — always maintained regardless of IsEnabled
+    private readonly HashSet<Id<Collider>> _trackedColliders = new();
+
+    // Rendering instances — only populated when enabled
     private readonly Dictionary<Id<Collider>, ColliderDebugEntry> _entries = new();
 
     private readonly EventQueue<Id<Collider>> _registerQueue =
@@ -48,6 +56,7 @@ public class ColliderDebugRenderingService(
     private GeometryId<Shaders.LineStrip.Vertex> _cubeGeometryId = null!;
     private GroupId<Shaders.LineStrip.Instance> _whiteGroupId = null!;
     private GroupId<Shaders.LineStrip.Instance> _greenGroupId = null!;
+    private bool _wasEnabled;
 
     public Result Load()
     {
@@ -97,11 +106,21 @@ public class ColliderDebugRenderingService(
 
         _greenGroupId = greenGroup;
 
-        _registerQueue.SetHandler(AddCollider).Init(collisionSystem.ColliderIds);
-        _unregisterQueue.SetHandler(RemoveCollider).Init();
+        _registerQueue.SetHandler(TrackCollider).Init(collisionSystem.ColliderIds);
+        _unregisterQueue.SetHandler(UntrackCollider).Init();
         _transformQueue.SetHandler(UpdateCollider).Init();
 
         return Result.Success();
+    }
+
+    public Result<Pass> Input(TimeSpan deltaTime)
+    {
+        if (keyboardManager.State.IsKeyPressed(Key.F3))
+        {
+            settings.IsEnabled = !settings.IsEnabled;
+        }
+
+        return Pass.Pass;
     }
 
     public Result Update(TimeSpan deltaTime)
@@ -112,6 +131,19 @@ public class ColliderDebugRenderingService(
         _unregisterQueue.Update();
         _transformQueue.Update();
 
+        var isEnabled = settings.IsEnabled;
+
+        if (isEnabled && !_wasEnabled)
+        {
+            EnableAll();
+        }
+        else if (!isEnabled && _wasEnabled)
+        {
+            DisableAll();
+        }
+
+        _wasEnabled = isEnabled;
+
         return Result.Success();
     }
 
@@ -121,13 +153,8 @@ public class ColliderDebugRenderingService(
         _unregisterQueue.Cleanup();
         _transformQueue.Cleanup();
 
-        foreach (var entry in _entries.Values)
-        {
-            renderingInstanceManager.Remove(_whiteGroupId, entry.AabbInstanceId);
-            renderingInstanceManager.Remove(_greenGroupId, entry.ObbInstanceId);
-        }
-
-        _entries.Clear();
+        DisableAll();
+        _trackedColliders.Clear();
 
         renderingGroupManager.Deregister(_whiteGroupId);
         renderingGroupManager.Deregister(_greenGroupId);
@@ -136,16 +163,11 @@ public class ColliderDebugRenderingService(
         return Result.Success();
     }
 
-    private Result AddCollider(Id<Collider> colliderId)
+    private Result TrackCollider(Id<Collider> colliderId)
     {
-        if (_entries.ContainsKey(colliderId))
+        if (!collisionSystem.TryGetColliderInfo(colliderId, out var shape, out _, out _))
         {
             return Result.Success();
-        }
-
-        if (!collisionSystem.TryGetColliderInfo(colliderId, out var shape, out var worldMatrix, out var worldAABB))
-        {
-            return new ResultProblem("Collider '{0}' not found", colliderId);
         }
 
         if (shape is not BoxColliderShape)
@@ -153,36 +175,20 @@ public class ColliderDebugRenderingService(
             return Result.Success();
         }
 
-        var aabbMatrix = ComputeAabbMatrix(worldAABB);
-        var obbMatrix = ComputeObbMatrix((BoxColliderShape)shape, worldMatrix);
+        _trackedColliders.Add(colliderId);
 
-        if (renderingInstanceManager.Add(_whiteGroupId, new Shaders.LineStrip.Instance(aabbMatrix))
-            .TryPickProblems(out var problems, out var aabbInstanceId))
+        if (settings.IsEnabled)
         {
-            return problems.Prepend("Failed to add AABB instance for collider '{0}'", colliderId);
+            return AddRenderingInstances(colliderId);
         }
 
-        if (renderingInstanceManager.Add(_greenGroupId, new Shaders.LineStrip.Instance(obbMatrix))
-            .TryPickProblems(out problems, out var obbInstanceId))
-        {
-            return problems.Prepend("Failed to add OBB instance for collider '{0}'", colliderId);
-        }
-
-        _entries[colliderId] = new ColliderDebugEntry(aabbInstanceId, obbInstanceId);
         return Result.Success();
     }
 
-    private Result RemoveCollider(Id<Collider> colliderId)
+    private Result UntrackCollider(Id<Collider> colliderId)
     {
-        if (!_entries.Remove(colliderId, out var entry))
-        {
-            return Result.Success();
-        }
-
-        renderingInstanceManager.Remove(_whiteGroupId, entry.AabbInstanceId);
-        renderingInstanceManager.Remove(_greenGroupId, entry.ObbInstanceId);
-
-        return Result.Success();
+        _trackedColliders.Remove(colliderId);
+        return RemoveRenderingInstances(colliderId);
     }
 
     private Result UpdateCollider(Id<Collider> colliderId)
@@ -210,6 +216,71 @@ public class ColliderDebugRenderingService(
                 _whiteGroupId, entry.AabbInstanceId, new Shaders.LineStrip.Instance(aabbMatrix)),
             renderingInstanceManager.Update(
                 _greenGroupId, entry.ObbInstanceId, new Shaders.LineStrip.Instance(obbMatrix)));
+    }
+
+    private void EnableAll()
+    {
+        foreach (var colliderId in _trackedColliders)
+        {
+            AddRenderingInstances(colliderId);
+        }
+    }
+
+    private void DisableAll()
+    {
+        foreach (var colliderId in _entries.Keys.ToList())
+        {
+            RemoveRenderingInstances(colliderId);
+        }
+    }
+
+    private Result AddRenderingInstances(Id<Collider> colliderId)
+    {
+        if (_entries.ContainsKey(colliderId))
+        {
+            return Result.Success();
+        }
+
+        if (!collisionSystem.TryGetColliderInfo(colliderId, out var shape, out var worldMatrix, out var worldAABB))
+        {
+            return new ResultProblem("Collider '{0}' not found", colliderId);
+        }
+
+        if (shape is not BoxColliderShape box)
+        {
+            return Result.Success();
+        }
+
+        var aabbMatrix = ComputeAabbMatrix(worldAABB);
+        var obbMatrix = ComputeObbMatrix(box, worldMatrix);
+
+        if (renderingInstanceManager.Add(_whiteGroupId, new Shaders.LineStrip.Instance(aabbMatrix))
+            .TryPickProblems(out var problems, out var aabbInstanceId))
+        {
+            return problems.Prepend("Failed to add AABB instance for collider '{0}'", colliderId);
+        }
+
+        if (renderingInstanceManager.Add(_greenGroupId, new Shaders.LineStrip.Instance(obbMatrix))
+            .TryPickProblems(out problems, out var obbInstanceId))
+        {
+            return problems.Prepend("Failed to add OBB instance for collider '{0}'", colliderId);
+        }
+
+        _entries[colliderId] = new ColliderDebugEntry(aabbInstanceId, obbInstanceId);
+        return Result.Success();
+    }
+
+    private Result RemoveRenderingInstances(Id<Collider> colliderId)
+    {
+        if (!_entries.Remove(colliderId, out var entry))
+        {
+            return Result.Success();
+        }
+
+        renderingInstanceManager.Remove(_whiteGroupId, entry.AabbInstanceId);
+        renderingInstanceManager.Remove(_greenGroupId, entry.ObbInstanceId);
+
+        return Result.Success();
     }
 
     private static Matrix4X4<float> ComputeAabbMatrix(AABB aabb)
