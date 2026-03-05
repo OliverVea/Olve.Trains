@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Olve.Trains (Slim)" type="DotNetProject" factoryName=".NET Project">
+  <configuration default="false" name="Olve.Trains (Slim)" type="DotNetProject" factoryName=".NET Project" activateToolWindowBeforeRun="false">
     <option name="EXE_PATH" value="$PROJECT_DIR$/src/Olve.Trains/bin/Debug/net10.0/On Track To Grow.exe" />
     <option name="PROGRAM_PARAMETERS" value="" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/Olve.Trains/bin/Debug/net10.0" />
