@@ -5,28 +5,35 @@ using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Collision;
-using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
+using Olve.Trains.Scenes.GameLogic.Terrain;
 
-namespace Olve.Trains.Scenes.GameLogic.Terrain;
+namespace Olve.Trains.Scenes.GameUI;
 
-public class TerrainRaycastService(
+public class MouseRaycastService(
     MouseManager mouseManager,
     CameraSceneService cameraSceneService,
-    TerrainService terrainService,
-    GridService gridService,
     CollisionSystem collisionSystem,
+    GridService gridService,
     TerrainHighlightSettings terrainHighlightSettings) : ISceneService
 {
+    private static readonly IReadOnlyList<RaycastHit> EmptyHits = [];
+
+    private IReadOnlyList<RaycastHit> _hits = EmptyHits;
+
     public Ray3D<float>? MouseRay { get; private set; }
     public Vector3D<float>? TerrainIntersection { get; private set; }
+
     public Vector3D<float>? TerrainIntersectionTileCenter => TerrainIntersection is { } world
         ? gridService.ToTileCenter(gridService.ToTilePosition(world))
         : null;
+
     public TilePosition? TerrainIntersectionTile => TerrainIntersection is { } world
         ? gridService.ToTilePosition(world)
         : null;
 
-    public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService]);
+    public int Priority => SceneServicePriority.FromDependencies([cameraSceneService]);
+
+    public IEnumerable<RaycastHit> Hits => _hits.Where(hit => collisionSystem.ColliderExists(hit.ColliderId));
 
     public Result<Pass> Input(TimeSpan deltaTime)
     {
@@ -52,28 +59,15 @@ public class TerrainRaycastService(
 
         if (MouseRay is not { } ray)
         {
+            _hits = EmptyHits;
+            terrainHighlightSettings.MouseWorldPosition = null;
             return Result.Success();
         }
 
-        var hits = collisionSystem.Raycast(ray, ColliderGroups.Terrain);
-
-        if (hits.Count > 0)
-        {
-            TerrainIntersection = hits[0].HitPosition;
-        }
+        _hits = collisionSystem.Raycast(ray);
+        TerrainIntersection = _hits.FirstOrDefault(x => x.Group == ColliderGroups.Terrain).HitPosition;
+        terrainHighlightSettings.MouseWorldPosition = TerrainIntersection;
 
         return Result.Success();
-    }
-
-    public void ApplyTerrainIntersectionParameters(IWorldMousePositionShader shader)
-    {
-        if (terrainHighlightSettings.ShowGrid && TerrainIntersection is {} intersection)
-        {
-            shader.MousePosition = intersection;
-        }
-        else
-        {
-            shader.MousePosition = new Vector3D<float>(-1000f, -1000f, -1000f);
-        }
     }
 }

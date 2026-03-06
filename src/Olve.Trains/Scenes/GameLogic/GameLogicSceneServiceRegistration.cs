@@ -34,7 +34,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<CameraSceneService>(sceneId);
         services.AddSceneService<ClearJunctionSignalRulesHandlerService>(sceneId);
         services.AddSceneService<ClickHandlerService>(sceneId);
-        services.AddSceneService<CollisionRaycastService>(sceneId);
+
         services.AddSceneService<DayTimeSteppingService>(sceneId);
         services.AddSceneService<DeleteTrackHandlerService>(sceneId);
         services.AddSceneService<DeleteVehicleHandlerService>(sceneId);
@@ -52,7 +52,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<SetCameraHandlerService>(sceneId);
         services.AddSceneService<SetMouseHandlerService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);
-        services.AddSceneService<TerrainRaycastService>(sceneId);
+
         services.AddSceneService<TerrainService>(sceneId);
         services.AddSceneService<TrackSplineService>(sceneId);
         services.AddSceneService<VehicleCollisionService>(sceneId);

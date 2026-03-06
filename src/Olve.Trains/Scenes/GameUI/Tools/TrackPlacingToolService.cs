@@ -3,8 +3,6 @@ using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
-using Olve.Trains.Scenes.GameLogic;
-using Olve.Trains.Scenes.GameLogic.Mouse;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameRendering;
@@ -14,7 +12,7 @@ using Silk.NET.Input;
 namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> logger,
-    TerrainRaycastService terrainRaycastService,
+    MouseRaycastService mouseRaycastService,
     ToolManagementService toolManagementService,
     TrackArrowIndicatorService arrowIndicatorService,
     MouseManager mouseManager,
@@ -97,7 +95,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
     protected override Result OnSelectedUpdate(TimeSpan deltaTime)
     {
 
-        if (terrainRaycastService.TerrainIntersectionTileCenter is not { } terrainIntersectionTileCenter)
+        if (mouseRaycastService.TerrainIntersectionTileCenter is not { } terrainIntersectionTileCenter)
         {
             UnregisterGhost();
             return Result.Success();

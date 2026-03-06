@@ -22,6 +22,9 @@ public static class UISceneServiceRegistration
         // Shared GUI services (rendering, layout, text, input, etc.)
         services.AddGuiSceneServices(sceneId);
 
+        // Mouse raycasting (per-frame hit cache)
+        services.AddSceneService<MouseRaycastService>(sceneId);
+
         // Tool / indicator services
         services.AddSceneService<TrackArrowIndicatorService>(sceneId);
         services.AddSceneService<TrackPlacingToolService>(sceneId);

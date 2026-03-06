@@ -70,7 +70,7 @@
   - [x] Add terrain as a collision source
   - [x] Generalize CollisionSystem with IColliderShape interface (GetAABB, TryRaycast)
   - [x] Add debug collider wireframe renderer (priority ~5000, before GUI)
-  - [ ] Cache mouse ray hits per frame in CollisionSystem or TerrainRaycastService
+  - [x] Cache mouse ray hits per frame in CollisionSystem or TerrainRaycastService
   - [ ] Update MeshRenderingService to accept Id<Mesh> (rendering integration)
 - [ ] Industry epic (Feature):
   - [ ] Add basic support for industries

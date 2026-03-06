@@ -2,19 +2,16 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
-using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Buildings;
-using Olve.Trains.Scenes.GameLogic.Mouse;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Vehicles;
-using Olve.Trains.Scenes.GameRendering;
 using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public class DeletionToolService(
-    TerrainRaycastService terrainRaycastService,
+    MouseRaycastService mouseRaycastService,
     ToolManagementService toolManagementService,
     TrackSplineService trackSplineService,
     TrackService trackService,
@@ -55,7 +52,7 @@ public class DeletionToolService(
 
     protected override Result OnSelectedUpdate(TimeSpan deltaTime)
     {
-        if (terrainRaycastService.TerrainIntersection is not { } terrainIntersection)
+        if (mouseRaycastService.TerrainIntersection is not { } terrainIntersection)
         {
             return Result.Success();
         }
@@ -74,7 +71,7 @@ public class DeletionToolService(
         }
 
         // 2. Check for buildings at the tile position
-        if (terrainRaycastService.TerrainIntersectionTile is { } tilePosition
+        if (mouseRaycastService.TerrainIntersectionTile is { } tilePosition
             && TryDeleteBuildingAtTile(tilePosition))
         {
             return Result.Success();

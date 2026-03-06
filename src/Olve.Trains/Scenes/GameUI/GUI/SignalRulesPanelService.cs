@@ -3,13 +3,13 @@ using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
-using Olve.Engine3D.Physics3D.Collisions;
+using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
-using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Utilities.Types;
+using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.GUI;
 
@@ -19,7 +19,8 @@ public class SignalRulesPanelService(
     GuiAnchorService guiAnchorService,
     JunctionService junctionService,
     JunctionSignalRuleService junctionSignalRuleService,
-    CollisionRaycastService collisionRaycastService,
+    MouseRaycastService mouseRaycastService,
+    MouseManager mouseManager,
     JunctionSignalCollisionService junctionSignalCollisionService) : ISceneService
 {
     private static readonly Layouts.SignalRulesPanel Panel = Layouts.BuildSignalRulesPanel();
@@ -27,19 +28,18 @@ public class SignalRulesPanelService(
     private Id<GuiElementRegistrations> _registrationId;
     private Id<GuiAnchor> _anchorId;
     private bool _isOpen;
+    private bool _clickedThisFrame;
     private Id<Junction> _junctionId;
 
     public Result Load()
     {
         guiActivationService.GuiElementActivated.Subscribe(OnGuiElementActivated);
-        collisionRaycastService.OnColliderClicked.Subscribe(OnColliderClicked);
         return Result.Success();
     }
 
     public Result Unload()
     {
         guiActivationService.GuiElementActivated.Unsubscribe(OnGuiElementActivated);
-        collisionRaycastService.OnColliderClicked.Unsubscribe(OnColliderClicked);
 
         if (_isOpen)
         {
@@ -49,14 +49,10 @@ public class SignalRulesPanelService(
         return Result.Success();
     }
 
-    private void OnColliderClicked(RaycastHit hit)
+    public Result<Pass> Input(TimeSpan deltaTime)
     {
-        if (hit.Group != ColliderGroups.Signal) return;
-
-        if (junctionSignalCollisionService.TryGetJunctionId(hit.ColliderId, out var junctionId))
-        {
-            OpenPanel(junctionId);
-        }
+        _clickedThisFrame = mouseManager.State.IsButtonPressed(MouseButton.Left);
+        return Pass.Pass;
     }
 
     public Result OpenPanel(Id<Junction> junctionId)
@@ -94,6 +90,21 @@ public class SignalRulesPanelService(
 
     public Result Update(TimeSpan deltaTime)
     {
+        if (_clickedThisFrame)
+        {
+            foreach (var hit in mouseRaycastService.Hits)
+            {
+                if (hit.Group != ColliderGroups.Signal) continue;
+
+                if (junctionSignalCollisionService.TryGetJunctionId(hit.ColliderId, out var junctionId))
+                {
+                    OpenPanel(junctionId);
+                }
+
+                break;
+            }
+        }
+
         if (_isOpen)
         {
             UpdatePanelContent();

@@ -69,6 +69,8 @@ public class CollisionSystem
         return DeletionResult.Success();
     }
 
+    public bool ColliderExists(Id<Collider> colliderId) => _colliders.ContainsKey(colliderId);
+
     public bool TryGetColliderInfo(
         Id<Collider> colliderId,
         out IColliderShape shape,

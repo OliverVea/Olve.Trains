@@ -5,10 +5,8 @@ using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
-using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Light;
-using Olve.Trains.Scenes.GameLogic.Mouse;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Silk.NET.OpenGL;
 
@@ -23,7 +21,7 @@ public class TerrainRenderingService(
     RenderingInstanceManager renderingInstanceManager,
     RenderingServiceHelper renderingServiceHelper,
     CameraSceneService cameraSceneService,
-    TerrainRaycastService terrainRaycastService,
+    TerrainHighlightSettings terrainHighlightSettings,
     SceneLightService sceneLightService) : ISceneService
 {
     private readonly Shaders.Terrain _terrainShader = new()
@@ -31,7 +29,7 @@ public class TerrainRenderingService(
         MouseRadius = 5f,
     };
 
-    public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, terrainRaycastService, sceneLightService]);
+    public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, sceneLightService]);
 
     public Result Load()
     {
@@ -108,7 +106,12 @@ public class TerrainRenderingService(
         sceneLightService.ApplyShaderParameters(_terrainShader);
         cameraSceneService.ApplyCameraPositionParameters(_terrainShader);
         cameraSceneService.ApplyCameraDirectionParameters(_terrainShader);
-        terrainRaycastService.ApplyTerrainIntersectionParameters(_terrainShader);
+
+        _terrainShader.MousePosition = null;
+        if (terrainHighlightSettings is { ShowGrid: true, MouseWorldPosition: { } pos })
+        {
+            _terrainShader.MousePosition = pos;
+        }
 
         return Result.Success();
     }
