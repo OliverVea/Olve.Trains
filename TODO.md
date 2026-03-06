@@ -74,7 +74,7 @@
 
 - [ ] Industry epic (Feature):
   - [x] Add basic support for industries
-  - [ ] Add building for industries
+  - [x] Add building for industries
   - [ ] Add 'harvest range' for buildings and register entities within range
   - [ ] Create game-side logic for supporting cargo and train inventories
   - [ ] Create game-side logic for generating cargo in stations next to industries

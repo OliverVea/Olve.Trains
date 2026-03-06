@@ -10,6 +10,9 @@
         <Box id="PlaceStation" Style="MenuButtonStyle" Interactive="true">
             <Image Texture="Textures.Textures.icons_station" Style="ToolIconStyle" InheritParentState="true" />
         </Box>
+        <Box id="PlaceIndustry" Style="MenuButtonStyle" Interactive="true">
+            <Image Texture="Textures.Textures.PolygonPrototype_Texture_01" Style="ToolIconStyle" InheritParentState="true" />
+        </Box>
         <Box id="Delete" Style="MenuButtonStyle" Interactive="true">
             <Image Texture="Textures.Textures.PolygonPrototype_Texture_01" Style="ToolIconStyle" InheritParentState="true" />
         </Box>
