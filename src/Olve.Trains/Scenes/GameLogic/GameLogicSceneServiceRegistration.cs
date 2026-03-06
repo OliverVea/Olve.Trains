@@ -6,6 +6,7 @@ using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
+using Olve.Trains.Scenes.GameLogic.Cargo;
 using Olve.Trains.Commands.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Collision;
@@ -30,6 +31,7 @@ public static class GameLogicSceneServiceRegistration
         // Scene services (participate in scene lifecycle)
         services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);
         services.AddSceneService<BuildingBlueprintLibraryService>(sceneId);
+        services.AddSceneService<CargoAndRecipeLibraryService>(sceneId);
         services.AddSceneService<CameraSceneService>(sceneId);
         services.AddSceneService<ClearJunctionSignalRulesHandlerService>(sceneId);
         services.AddSceneService<ClickHandlerService>(sceneId);
@@ -65,9 +67,11 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<BuildingPositionService>();
         services.TryAddScoped<BuildingService>();
         services.TryAddScoped<BuildingValidationService>();
+        services.TryAddScoped<CargoTypeService>();
         services.TryAddScoped<ColliderDebugSettings>();
         services.TryAddScoped<GridService>();
         services.TryAddScoped<IndustryBlueprintService>();
+        services.TryAddScoped<IndustryRecipeService>();
         services.TryAddScoped<JunctionService>();
         services.TryAddScoped<JunctionSignalCollisionService>();
         services.TryAddScoped<JunctionSignalRuleEvaluationService>();

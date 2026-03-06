@@ -1,3 +1,5 @@
-﻿namespace Olve.Trains.Scenes.GameLogic.Buildings.Industries;
+﻿using Olve.Trains.Scenes.GameLogic.Cargo;
 
-public readonly record struct IndustryProperties;
+namespace Olve.Trains.Scenes.GameLogic.Buildings.Industries;
+
+public readonly record struct IndustryProperties(Id<IndustryRecipe> RecipeId);
