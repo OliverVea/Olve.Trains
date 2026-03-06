@@ -5,6 +5,7 @@ using Olve.Generated.Meshes;
 using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Junctions;
+using Olve.Trains.Scenes.GameLogic.Terrain;
 
 namespace Olve.Trains.Scenes.GameRendering;
 

@@ -10,6 +10,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
+using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameRendering;
 
 namespace Olve.Trains.Scenes.GameUI.Indicators;

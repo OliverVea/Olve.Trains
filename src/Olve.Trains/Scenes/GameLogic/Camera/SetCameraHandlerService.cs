@@ -3,7 +3,7 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Commands.GameLogic;
 
-namespace Olve.Trains.Scenes.GameRendering;
+namespace Olve.Trains.Scenes.GameLogic.Camera;
 
 public class SetCameraHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,

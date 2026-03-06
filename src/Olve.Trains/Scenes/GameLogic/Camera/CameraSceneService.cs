@@ -1,4 +1,3 @@
-using Olve.Engine3D;
 using Olve.Engine3D.Camera;
 using Olve.Engine3D.Camera.Controllers;
 using Olve.Engine3D.Camera.Projections;
@@ -12,7 +11,7 @@ using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
 using Silk.NET.Windowing;
 
-namespace Olve.Trains.Scenes.GameRendering;
+namespace Olve.Trains.Scenes.GameLogic.Camera;
 
 public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent) : ISceneService
 {

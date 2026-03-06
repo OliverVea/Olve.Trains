@@ -3,11 +3,11 @@ using Olve.Engine3D.Camera;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
-using Olve.Trains.Scenes.GameLogic;
+using Olve.Trains.Scenes.GameLogic.Camera;
+using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
-using Olve.Trains.Scenes.GameLogic.Terrain;
 
-namespace Olve.Trains.Scenes.GameRendering;
+namespace Olve.Trains.Scenes.GameLogic.Terrain;
 
 public class TerrainRaycastService(
     MouseManager mouseManager,

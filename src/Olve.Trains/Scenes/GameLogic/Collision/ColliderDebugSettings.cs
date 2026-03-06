@@ -1,4 +1,4 @@
-namespace Olve.Trains.Scenes.GameRendering;
+namespace Olve.Trains.Scenes.GameLogic.Collision;
 
 public class ColliderDebugSettings
 {

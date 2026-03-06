@@ -1,7 +1,6 @@
 using Olve.Engine3D;
-using Olve.Trains.Scenes.GameLogic.Terrain;
 
-namespace Olve.Trains.Scenes.GameLogic;
+namespace Olve.Trains.Scenes.GameLogic.Terrain;
 
 public class GridService(TerrainService terrainService)
 {

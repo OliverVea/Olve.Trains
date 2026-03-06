@@ -4,6 +4,7 @@ using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Rendering;
+using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameRendering;
 
 namespace Olve.Trains.Commands.GameLogic;

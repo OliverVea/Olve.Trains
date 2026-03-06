@@ -1,5 +1,6 @@
 using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Physics3D.Collisions;
+using Olve.Trains.Scenes.GameLogic.Collision;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings;
 

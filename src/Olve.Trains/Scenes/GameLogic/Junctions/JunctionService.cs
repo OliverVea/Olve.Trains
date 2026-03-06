@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Systems;
+using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Utilities.CollectionExtensions;
 

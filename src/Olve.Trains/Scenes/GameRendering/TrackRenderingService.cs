@@ -4,6 +4,7 @@ using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
+using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 

@@ -2,17 +2,18 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Commands.GameLogic;
+using Silk.NET.Input;
 
-namespace Olve.Trains.Scenes.GameRendering;
+namespace Olve.Trains.Scenes.GameLogic.Mouse;
 
-public class SetMouseHandlerService(
+public class ClickHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,
     MouseManager mouseManager) : CommandHandlerService(commandHandlerServiceCollection)
 {
-    private static readonly CommandArgument PosArgument = new("pos", "Normalized mouse position as x,y in range -1 to 1 (0,0 = center)", true);
+    private static readonly CommandArgument PosArgument = new("pos", "Normalized screen position as x,y in range -1 to 1 (0,0 = center)", true);
 
-    public override string Verb => "set-mouse";
-    public override string HelpString => "Sets the normalized mouse position (-1 to 1). Example: set-mouse pos=0,0 (center of screen)";
+    public override string Verb => "click";
+    public override string HelpString => "Simulates a left-click at the given normalized position. Example: click pos=0.5,0.3";
     public override IReadOnlyList<CommandArgument> Arguments { get; } = [PosArgument];
 
     public override Result<CommandOutput> Handle(CommandContext commandContext)
@@ -24,7 +25,8 @@ public class SetMouseHandlerService(
         }
 
         mouseManager.NormalizedPositionOverride = pos;
+        mouseManager.SimulateButtonPress(MouseButton.Left);
 
-        return new CommandOutput($"Mouse set to normalized ({pos.X}, {pos.Y})");
+        return new CommandOutput($"Click simulated at ({pos.X}, {pos.Y})");
     }
 }

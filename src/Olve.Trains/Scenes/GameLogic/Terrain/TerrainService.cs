@@ -2,6 +2,7 @@ using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
+using Olve.Trains.Scenes.GameLogic.Collision;
 
 namespace Olve.Trains.Scenes.GameLogic.Terrain;
 

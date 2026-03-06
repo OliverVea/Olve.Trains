@@ -2,6 +2,7 @@ using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Meshes;
+using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
 namespace Olve.Trains.Scenes.GameLogic.Vehicles;

@@ -1,7 +1,10 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
+using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Mouse;
+using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameRendering;
 using Silk.NET.Input;
 

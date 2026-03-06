@@ -1,6 +1,6 @@
 using Olve.Engine3D.Physics3D.Collisions;
 
-namespace Olve.Trains.Scenes.GameLogic;
+namespace Olve.Trains.Scenes.GameLogic.Collision;
 
 public static class ColliderGroups
 {

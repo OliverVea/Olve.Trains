@@ -1,5 +1,7 @@
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
+using Olve.Trains.Scenes.GameLogic;
+using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameRendering;
 
 namespace Olve.Trains.Commands.GameRendering;

@@ -3,10 +3,11 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
-using Olve.Trains.Scenes.GameRendering;
+using Olve.Trains.Scenes.GameLogic.Mouse;
+using Olve.Trains.Scenes.GameLogic.Terrain;
 using Silk.NET.Input;
 
-namespace Olve.Trains.Scenes.GameLogic;
+namespace Olve.Trains.Scenes.GameLogic.Collision;
 
 public class CollisionRaycastService(
     ILogger<CollisionRaycastService> logger,

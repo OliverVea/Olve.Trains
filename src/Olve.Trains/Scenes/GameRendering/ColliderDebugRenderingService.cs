@@ -8,6 +8,9 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Generated.Shaders;
+using Olve.Trains.Scenes.GameLogic;
+using Olve.Trains.Scenes.GameLogic.Camera;
+using Olve.Trains.Scenes.GameLogic.Collision;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 

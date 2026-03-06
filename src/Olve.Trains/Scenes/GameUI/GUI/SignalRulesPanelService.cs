@@ -7,6 +7,7 @@ using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
 using Olve.Trains.Scenes.GameLogic;
+using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Utilities.Types;
 
