@@ -15,7 +15,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
 
-namespace Olve.Trains.Scenes.GUI;
+namespace Olve.Trains.Shared.GUI;
 
 /// <summary>
 /// Renders text elements using MSDF font atlas rendering.

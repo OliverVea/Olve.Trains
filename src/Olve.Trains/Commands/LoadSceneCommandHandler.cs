@@ -1,7 +1,7 @@
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Scenes;
 
-namespace Olve.Trains;
+namespace Olve.Trains.Commands;
 
 public class LoadSceneCommandHandler(SceneManager sceneManager) : ICommandHandler
 {

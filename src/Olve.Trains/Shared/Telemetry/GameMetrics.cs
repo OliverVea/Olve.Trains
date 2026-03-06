@@ -1,6 +1,6 @@
 using System.Diagnostics.Metrics;
 
-namespace Olve.Trains.Telemetry;
+namespace Olve.Trains.Shared.Telemetry;
 
 public static class GameMetrics
 {

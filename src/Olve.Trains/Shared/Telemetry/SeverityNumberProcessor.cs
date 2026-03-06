@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
 
-namespace Olve.Trains.Telemetry;
+namespace Olve.Trains.Shared.Telemetry;
 
 public class SeverityNumberProcessor : BaseProcessor<LogRecord>
 {

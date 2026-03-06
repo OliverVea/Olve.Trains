@@ -2,7 +2,7 @@ using Duende.IdentityModel.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Olve.Trains.Telemetry;
+namespace Olve.Trains.Shared.Telemetry;
 
 public class OAuth2TokenProvider(
     string tokenUrl,

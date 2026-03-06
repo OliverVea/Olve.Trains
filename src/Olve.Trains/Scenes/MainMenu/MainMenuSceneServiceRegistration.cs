@@ -4,7 +4,7 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameRendering;
 using Olve.Trains.Scenes.GameUI.GUI;
-using Olve.Trains.Scenes.GUI;
+using Olve.Trains.Shared.GUI;
 
 namespace Olve.Trains.Scenes.MainMenu;
 

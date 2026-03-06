@@ -12,11 +12,12 @@ using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Time;
 using Olve.Engine3D.TimeStepping;
+using Olve.Trains.Commands;
 using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameRendering;
 using Olve.Trains.Scenes.GameUI;
 using Olve.Trains.Scenes.MainMenu;
-using Olve.Trains.Telemetry;
+using Olve.Trains.Shared.Telemetry;
 
 namespace Olve.Trains;
 

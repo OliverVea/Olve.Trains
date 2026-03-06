@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Exporter;
 
-namespace Olve.Trains.Telemetry;
+namespace Olve.Trains.Shared.Telemetry;
 
 public class OtlpRegistrationHelper : IDisposable
 {

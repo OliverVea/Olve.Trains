@@ -1,9 +1,8 @@
 using System.Globalization;
-using Olve.Engine3D;
-using Olve.Engine3D.Commands;
 using Olve.Engine3D.Time;
+using Olve.Utilities.Ids;
 
-namespace Olve.Trains.Commands.GameLogic;
+namespace Olve.Engine3D.Commands;
 
 public static class CommandContextExtensions
 {

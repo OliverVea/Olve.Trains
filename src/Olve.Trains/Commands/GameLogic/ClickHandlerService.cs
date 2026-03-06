@@ -1,10 +1,9 @@
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Logging;
-using Olve.Trains.Commands.GameLogic;
 using Silk.NET.Input;
 
-namespace Olve.Trains.Scenes.GameLogic.Mouse;
+namespace Olve.Trains.Commands.GameLogic;
 
 public class ClickHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,

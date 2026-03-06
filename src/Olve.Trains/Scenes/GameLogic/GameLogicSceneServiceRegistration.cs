@@ -11,7 +11,6 @@ using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Light;
-using Olve.Trains.Scenes.GameLogic.Mouse;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Time;
 using Olve.Trains.Scenes.GameLogic.Tracks;

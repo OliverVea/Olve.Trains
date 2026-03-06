@@ -4,10 +4,8 @@ using Olve.Engine3D.Camera;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Physics3D.Collisions;
-using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Collision;
-using Olve.Trains.Scenes.GameRendering;
 
 namespace Olve.Trains.Commands.GameLogic;
 

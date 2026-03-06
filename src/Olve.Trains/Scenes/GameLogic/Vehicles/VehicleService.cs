@@ -1,6 +1,6 @@
 using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
-using Olve.Trains.Telemetry;
+using Olve.Trains.Shared.Telemetry;
 
 namespace Olve.Trains.Scenes.GameLogic.Vehicles;
 

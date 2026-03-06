@@ -4,7 +4,7 @@ using Olve.Engine3D.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 
-namespace Olve.Trains.Telemetry;
+namespace Olve.Trains.Shared.Telemetry;
 
 public static class MetricsExtensions
 {

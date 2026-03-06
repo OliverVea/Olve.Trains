@@ -11,7 +11,7 @@ using Olve.Engine3D.Utilities;
 using Olve.Generated.Fonts;
 using Silk.NET.OpenGL;
 
-namespace Olve.Trains.Scenes.GUI;
+namespace Olve.Trains.Shared.GUI;
 
 /// <summary>
 /// Handles lifecycle for text elements: loads font atlases and registers/deregisters

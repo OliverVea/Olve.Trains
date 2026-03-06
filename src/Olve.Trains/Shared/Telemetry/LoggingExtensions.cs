@@ -1,10 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NReco.Logging.File;
-using Olve.Paths;
 using OpenTelemetry.Logs;
 
-namespace Olve.Trains.Telemetry;
+namespace Olve.Trains.Shared.Telemetry;
 
 public static class LoggingExtensions
 {

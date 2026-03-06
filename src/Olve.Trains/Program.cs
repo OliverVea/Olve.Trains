@@ -6,7 +6,8 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Utilities;
-using Olve.Trains.Telemetry;
+using Olve.Trains.Commands;
+using Olve.Trains.Shared.Telemetry;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains;

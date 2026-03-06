@@ -9,7 +9,7 @@ using Olve.Engine3D.GUI.Styling.Animation;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 
-namespace Olve.Trains.Scenes.GUI;
+namespace Olve.Trains.Shared.GUI;
 
 public static class GuiSceneServiceRegistration
 {

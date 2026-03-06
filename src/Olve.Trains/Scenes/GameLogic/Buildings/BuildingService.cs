@@ -2,7 +2,7 @@
 using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
-using Olve.Trains.Telemetry;
+using Olve.Trains.Shared.Telemetry;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings;
 
