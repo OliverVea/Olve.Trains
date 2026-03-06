@@ -1,6 +1,7 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Assets.Entities;
+using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Geometry;
 using Olve.Engine3D.Rendering.Instancing;
@@ -20,7 +21,7 @@ public class MeshRenderingService(
     GeometryManager geometryManager,
     RenderingGroupManager renderingGroupManager,
     RenderingInstanceManager renderingInstanceManager,
-    AssetLoader assetLoader,
+    MeshManager meshManager,
     TextureLoadingManager textureLoadingManager,
     TextureEntityManager textureEntityManager,
     TextureManager textureManager,
@@ -73,14 +74,14 @@ public class MeshRenderingService(
     }
 
     public Result<MeshGroupHandle> RegisterMeshGroup(
-        AssetPath<MeshData> mesh,
+        Id<Mesh> meshId,
         AssetPath<TextureData<RGBA>>? texture = null,
         RenderState? renderState = null,
         Shaders.Default.EntityParameters? parameters = null)
     {
-        if (assetLoader.LoadAsset(mesh).TryPickProblems(out var problems, out var meshData))
+        if (!meshManager.TryGetMeshData(meshId, out var meshData))
         {
-            return problems.Prepend("Failed to load mesh '{0}'", mesh.Name);
+            return new ResultProblem("Mesh not found: '{0}'", meshId);
         }
 
         var vertices = new Shaders.Default.Vertex[meshData.VertexCount];

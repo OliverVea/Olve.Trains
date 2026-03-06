@@ -1,9 +1,8 @@
-using Olve.Engine3D;
+using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Textures;
-using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 
@@ -11,6 +10,7 @@ namespace Olve.Trains.Scenes.GameRendering;
 
 public class JunctionSignalRenderingService(
     EventQueueFactory eventQueueFactory,
+    MeshLoadingManager meshLoadingManager,
     MeshRenderingService meshRenderingService,
     JunctionService junctionService,
     JunctionSignalService junctionSignalService,
@@ -35,8 +35,14 @@ public class JunctionSignalRenderingService(
             .SetHandler(OnRemoved)
             .Init();
 
-        if (meshRenderingService.RegisterMeshGroup(Meshes.SM_Prop_CrossingLight_01, Textures.SimpleTrains_Texture_01)
-            .TryPickProblems(out var problems, out var groupHandle))
+        if (meshLoadingManager.LoadMesh(Meshes.SM_Prop_CrossingLight_01)
+            .TryPickProblems(out var problems, out var meshId))
+        {
+            return problems.Prepend("Failed to load junction signal mesh");
+        }
+
+        if (meshRenderingService.RegisterMeshGroup(meshId, Textures.SimpleTrains_Texture_01)
+            .TryPickProblems(out problems, out var groupHandle))
         {
             return problems.Prepend("Failed to register junction signal mesh group");
         }

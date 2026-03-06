@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Olve.Engine3D;
+using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
@@ -12,6 +12,7 @@ namespace Olve.Trains.Scenes.GameRendering;
 public class VehicleRenderingService(
     ILogger<VehicleRenderingService> logger,
     EventQueueFactory eventQueueFactory,
+    MeshLoadingManager meshLoadingManager,
     MeshRenderingService meshRenderingService,
     VehicleService vehicleService,
     VehiclePositionService vehiclePositionService,
@@ -30,8 +31,14 @@ public class VehicleRenderingService(
 
     public Result Load()
     {
-        if (meshRenderingService.RegisterMeshGroup(Meshes.SM_Veh_Bullet_01, Textures.SimpleTrains_Texture_01)
-            .TryPickProblems(out var problems, out var groupHandle))
+        if (meshLoadingManager.LoadMesh(Meshes.SM_Veh_Bullet_01)
+            .TryPickProblems(out var problems, out var meshId))
+        {
+            return problems.Prepend("Failed to load vehicle mesh");
+        }
+
+        if (meshRenderingService.RegisterMeshGroup(meshId, Textures.SimpleTrains_Texture_01)
+            .TryPickProblems(out problems, out var groupHandle))
         {
             return problems.Prepend("Failed to register vehicle mesh group");
         }

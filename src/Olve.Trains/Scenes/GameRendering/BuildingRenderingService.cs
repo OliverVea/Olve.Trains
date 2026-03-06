@@ -1,6 +1,7 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Assets.Entities;
+using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Rendering.Primitives;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
@@ -14,6 +15,7 @@ using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 namespace Olve.Trains.Scenes.GameRendering;
 
 public class BuildingRenderingService(
+    MeshLoadingManager meshLoadingManager,
     MeshRenderingService meshRenderingService,
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
@@ -232,7 +234,12 @@ public class BuildingRenderingService(
         if (buildingMeshBlueprintService.TryGetProperties(blueprintId, out var meshProps)
             && meshProps.MeshPath is { } meshPath)
         {
-            meshGroupResult = meshRenderingService.RegisterMeshGroup(meshPath, GetTextureForBlueprint(blueprintId));
+            if (meshLoadingManager.LoadMesh(meshPath).TryPickProblems(out var loadProblems, out var meshId))
+            {
+                return loadProblems.Prepend("Failed to load mesh for blueprint '{0}'", blueprintId);
+            }
+
+            meshGroupResult = meshRenderingService.RegisterMeshGroup(meshId, GetTextureForBlueprint(blueprintId));
         }
         else
         {

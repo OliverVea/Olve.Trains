@@ -49,16 +49,7 @@
   - [x] Add commands for navigating the main menu
   - [x] Add support for taking screenshots of the current state of the game
   - [x] Add predefined command handler argument parsers (e.g. TilePosition, Vector3, CardinalDirection)
-
-## Bugs
-
-- [x] Fast mouse movement sometimes doesn't remove focus/hover from the previous entity
-- [x] Screenshots saved with alpha channel — semi-transparent GUI overlays (e.g. burger menu) produce non-opaque pixels instead of composited RGB. Should force alpha to 255 or use RGB format when reading the framebuffer.
-- [x] Rotation of station building causes incorrect footprint and building mesh location (note: track calculation is actually correct).
-
-## Demo
-
-- [ ] Collision system epic (Technical) (see [docs/DESIGN_COLLISION_SYSTEM.md](docs/DESIGN_COLLISION_SYSTEM.md)):
+- [x] Collision system epic (Technical) (see [docs/DESIGN_COLLISION_SYSTEM.md](docs/DESIGN_COLLISION_SYSTEM.md)):
   - Description: Centralized MeshManager (mesh registry with cached AABBs) and CollisionSystem (spatial queries with raycasting). First consumer: junction signals. Eventually all meshes go through MeshManager and rendering accepts mesh IDs.
   - [x] Add MeshManager and MeshLoadingManager to engine
   - [x] Add CollisionSystem with mesh colliders (AABB broad phase, ray-AABB intersection)
@@ -71,7 +62,16 @@
   - [x] Generalize CollisionSystem with IColliderShape interface (GetAABB, TryRaycast)
   - [x] Add debug collider wireframe renderer (priority ~5000, before GUI)
   - [x] Cache mouse ray hits per frame in CollisionSystem or TerrainRaycastService
-  - [ ] Update MeshRenderingService to accept Id<Mesh> (rendering integration)
+  - [x] Update MeshRenderingService to accept Id<Mesh> (rendering integration)
+
+## Bugs
+
+- [x] Fast mouse movement sometimes doesn't remove focus/hover from the previous entity
+- [x] Screenshots saved with alpha channel — semi-transparent GUI overlays (e.g. burger menu) produce non-opaque pixels instead of composited RGB. Should force alpha to 255 or use RGB format when reading the framebuffer.
+- [x] Rotation of station building causes incorrect footprint and building mesh location (note: track calculation is actually correct).
+
+## Demo
+
 - [ ] Industry epic (Feature):
   - [ ] Add basic support for industries
   - [ ] Add building for industries
