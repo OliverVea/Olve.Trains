@@ -25,7 +25,6 @@ public static class MainMenuSceneServiceRegistration
         services.AddSceneService<CommandProcessingService>(sceneId);
 
         // Main menu command handlers
-        services.AddSceneService<StartGameCommandHandler>(sceneId);
         services.AddSceneService<ActivateGuiHandlerService>(sceneId);
 
         // Main menu-specific services
