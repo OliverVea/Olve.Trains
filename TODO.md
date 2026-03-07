@@ -72,13 +72,14 @@
 
 ## Demo
 
-- [ ] Industry epic (Feature):
+- [ ] Industry epic (Feature) (see [docs/DESIGN_CARGO_SYSTEM.md](docs/DESIGN_CARGO_SYSTEM.md)):
   - [x] Add basic support for industries
   - [x] Add building for industries
-  - [ ] Add 'harvest range' for buildings and register entities within range
-  - [ ] Create game-side logic for supporting cargo and train inventories
-  - [ ] Create game-side logic for generating cargo in stations next to industries
-  - [ ] Create game-side logic for consuming cargo delivered to stations
+  - [ ] Add CargoInventory data model (fixed capacity, optional cargo type filter, add/remove/query)
+  - [ ] Add building inventories (per-building inventory filtered by recipe inputs/outputs)
+  - [ ] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
+  - [ ] Add loading/unloading at stations (stations as access points to nearby building inventories)
+  - [ ] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
 - [ ] Residential buildings epic (Feature):
   - [x] Add residential building type, blueprint (1x1), and placement tool
   - [ ] Add variable-sized residential blueprints (bias toward medium)
