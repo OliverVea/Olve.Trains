@@ -90,7 +90,7 @@
     - [x] Add station info panel service (click station → query industries → mount inventory rows)
   - [ ] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
   - [ ] Add loading/unloading at stations (stations as access points to nearby building inventories)
-  - [ ] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
+  - [x] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
 - [ ] Resources epic (Feature):
   - [ ] Design resource system (discrete entities, field deposits, geometric resources; harvest range; production linking)
   - [ ] Implement resource system based on design

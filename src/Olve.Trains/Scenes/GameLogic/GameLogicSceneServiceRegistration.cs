@@ -46,6 +46,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<PlaceTrackHandlerService>(sceneId);
         services.AddSceneService<PlaceVehicleHandlerService>(sceneId);
         services.AddSceneService<ProjectToScreenHandlerService>(sceneId);
+        services.AddSceneService<QueryBuildingHandlerService>(sceneId);
         services.AddSceneService<QueryJunctionHandlerService>(sceneId);
         services.AddSceneService<QueryVehicleHandlerService>(sceneId);
         services.AddSceneService<RaycastHandlerService>(sceneId);
@@ -58,6 +59,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<TrackSplineService>(sceneId);
         services.AddSceneService<VehicleCollisionService>(sceneId);
         services.AddSceneService<VehicleJunctionCrossingService>(sceneId);
+        services.AddSceneService<IndustryProductionService>(sceneId);
         services.AddSceneService<VehicleMovementService>(sceneId);
 
         // Non-scene singletons (dependencies only, not in scene lifecycle)
@@ -74,6 +76,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<GridService>();
         services.TryAddScoped<IndustryBlueprintService>();
         services.TryAddScoped<IndustryRecipeService>();
+        services.TryAddScoped<RecipeTransactionService>();
         services.TryAddScoped<IndustryService>();
         services.TryAddScoped<JunctionService>();
         services.TryAddScoped<JunctionSignalCollisionService>();

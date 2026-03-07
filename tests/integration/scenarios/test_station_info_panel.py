@@ -26,8 +26,11 @@ def test_station_info_panel(
 
     game.step(5)
 
-    # Zoom camera onto the station
-    # Station at (5,0,5) with 4x2 footprint facing north, center roughly (7,0,6)
+    # Let forest produce: 2 cycles ≈ 370 frames (3s × 2 with margin)
+    # Forest: Wood 2/10, Sawmill: no inputs so Wood 0/10, Planks 0/10
+    game.step(370)
+
+    # Set up camera and time for screenshot (after production steps)
     game.set_camera(target="7,0,6", zoom=5)
     game.set_time("11:30")
     game.step(2)

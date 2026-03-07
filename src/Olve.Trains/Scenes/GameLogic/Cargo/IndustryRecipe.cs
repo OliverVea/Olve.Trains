@@ -7,4 +7,5 @@ public readonly record struct IndustryRecipe(
     Id<IndustryRecipe> Id,
     string Name,
     ImmutableArray<CargoAmount> Inputs,
-    ImmutableArray<CargoAmount> Outputs) : IHasId<Id<IndustryRecipe>>;
+    ImmutableArray<CargoAmount> Outputs,
+    TimeSpan ProductionInterval) : IHasId<Id<IndustryRecipe>>;

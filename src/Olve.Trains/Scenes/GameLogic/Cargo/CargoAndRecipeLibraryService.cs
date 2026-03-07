@@ -17,19 +17,22 @@ public class CargoAndRecipeLibraryService(
             IndustryRecipeCatalog.Forest,
             "Forest",
             Inputs: [],
-            Outputs: [new CargoAmount(CargoTypeCatalog.Wood, 1)]));
+            Outputs: [new CargoAmount(CargoTypeCatalog.Wood, 1)],
+            ProductionInterval: TimeSpan.FromSeconds(3)));
 
         industryRecipeService.AddRecipe(new IndustryRecipe(
             IndustryRecipeCatalog.Mine,
             "Mine",
             Inputs: [],
-            Outputs: [new CargoAmount(CargoTypeCatalog.Coal, 1)]));
+            Outputs: [new CargoAmount(CargoTypeCatalog.Coal, 1)],
+            ProductionInterval: TimeSpan.FromSeconds(3)));
 
         industryRecipeService.AddRecipe(new IndustryRecipe(
             IndustryRecipeCatalog.Sawmill,
             "Sawmill",
             Inputs: [new CargoAmount(CargoTypeCatalog.Wood, 1)],
-            Outputs: [new CargoAmount(CargoTypeCatalog.Planks, 1)]));
+            Outputs: [new CargoAmount(CargoTypeCatalog.Planks, 1)],
+            ProductionInterval: TimeSpan.FromSeconds(2)));
 
         return Result.Success();
     }

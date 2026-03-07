@@ -67,6 +67,8 @@ public class IndustryService(
         return Result.Success();
     }
 
+    public IEnumerable<Industry> Industries => _industries.Values;
+
     public bool TryGetByBuilding(Id<Building> buildingId, out Industry industry) =>
         _industries.TryGetValue(buildingId, out industry);
 }

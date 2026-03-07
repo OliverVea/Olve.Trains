@@ -263,8 +263,14 @@ class Game:
 
     def place_building(
         self, pos: str, type: str, dir: str
-    ) -> CommandResult:
-        return self.send(f"place-building pos={pos} type={type} dir={dir}")
+    ) -> str:
+        result = self.send(f"place-building pos={pos} type={type} dir={dir}")
+        # Output format: "Placed <type> building: <id>"
+        return result.output.rsplit(": ", 1)[-1]
+
+    def query_building(self, building_id: str) -> dict:
+        result = self.send(f"query-building building={building_id}")
+        return json.loads(result.output)
 
     def screenshot(self, path: str | Path) -> Path:
         path = Path(path)
