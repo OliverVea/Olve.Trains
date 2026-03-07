@@ -8,10 +8,12 @@ Industries exist as buildings with recipes (inputs/outputs), but there's no runt
 
 ### Core Principles
 
-- **Stations are access points, not storage.** Stations connect trains to nearby buildings. They hold no cargo themselves.
+- **Stations are access points, not storage.** Stations connect trains to nearby buildings and cities. They hold no cargo themselves.
 - **Buildings have inventories.** Industries store their inputs and outputs locally.
+- **Cities are the consumption endpoint.** Cities consume goods delivered to stations in range and pay out money. Cities determine demand and pricing.
 - **Trains have wagons with inventories.** Each wagon has a fixed capacity and an optional cargo type filter.
 - **No category abstraction.** Cargo filtering is done with explicit sets of allowed `Id<CargoType>`. An empty/null filter means "accept all."
+- **Cargo flow:** Industries → Trains → Stations → Cities (for consumption) or → Industries (for secondary processing).
 
 ### CargoInventory
 
