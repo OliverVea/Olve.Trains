@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Row" Style="InventoryRowStyle">
+    <Text id="DirectionIndicator" Content='""' Style="InventoryRowDirectionStyle" />
+    <Text id="CargoName" Content='""' Style="InventoryRowTextStyle" />
+    <Text id="AmountText" Content='""' Style="InventoryRowAmountStyle" />
+</Box>

@@ -267,6 +267,123 @@ public static class Styles
         }
     };
 
+    // Station info panel styles
+
+    public static readonly GuiElementStyling<Box> StationPanelOverlayStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(StationPanelOverlayStyle)),
+        OnStateChanged = (box, _) =>
+        {
+            box.BackgroundColor = (0f, 0f, 0f, 0f);
+            box.Weight = 1;
+            box.Justify = Justify.End;
+            box.Align = Align.Start;
+        }
+    };
+
+    public static readonly GuiElementStyling<Box> StationPanelStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(StationPanelStyle)),
+        OnStateChanged = (box, _) =>
+        {
+            box.BackgroundColor = (0.2f, 0.22f, 0.21f, 0.9f);
+            box.Vertical = true;
+            box.Padding = 15;
+            box.Gap = 8;
+            box.Width = 280;
+            box.BorderColor = DefaultBorder;
+            box.BorderWidth = DefaultBorderWidth;
+            box.BorderRadius = DefaultBorderRadius;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> StationPanelHeaderStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(StationPanelHeaderStyle)),
+        OnStateChanged = (text, _) =>
+        {
+            text.Color = (0.95f, 0.95f, 0.95f, 1f);
+            text.FontSize = 18f;
+            text.FontWeight = 1f;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> StationPanelSubHeaderStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(StationPanelSubHeaderStyle)),
+        OnStateChanged = (text, _) =>
+        {
+            text.Color = (0.85f, 0.85f, 0.85f, 1f);
+            text.FontSize = 14f;
+            text.FontWeight = 0.5f;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> StationPanelInfoTextStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(StationPanelInfoTextStyle)),
+        OnStateChanged = (text, _) =>
+        {
+            text.Color = DimTextColor;
+            text.FontSize = 12f;
+        }
+    };
+
+    public static readonly GuiElementStyling<Box> StationPanelContainerStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(StationPanelContainerStyle)),
+        OnStateChanged = (box, _) =>
+        {
+            box.Vertical = true;
+            box.Gap = 4;
+        }
+    };
+
+    // Inventory row styles
+
+    public static readonly GuiElementStyling<Box> InventoryRowStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(InventoryRowStyle)),
+        OnStateChanged = (box, _) =>
+        {
+            box.Gap = 8;
+            box.Align = Align.Center;
+            box.Padding = 2;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> InventoryRowDirectionStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(InventoryRowDirectionStyle)),
+        OnStateChanged = (text, _) =>
+        {
+            text.Color = DimTextColor;
+            text.FontSize = 12f;
+            text.Width = 16;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> InventoryRowTextStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(InventoryRowTextStyle)),
+        OnStateChanged = (text, _) =>
+        {
+            text.Color = (0.9f, 0.9f, 0.9f, 1f);
+            text.FontSize = 12f;
+            text.Weight = 1f;
+        }
+    };
+
+    public static readonly GuiElementStyling<Text> InventoryRowAmountStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(InventoryRowAmountStyle)),
+        OnStateChanged = (text, _) =>
+        {
+            text.Color = DimTextColor;
+            text.FontSize = 12f;
+        }
+    };
+
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
     private static RGBA Lerp(RGBA a, RGBA b, float t)

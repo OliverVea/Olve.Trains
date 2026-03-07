@@ -14,6 +14,7 @@ public class BuildingCollisionService(
     BuildingPositionService buildingPositionService)
 {
     private readonly Dictionary<Id<Building>, Id<Collider>> _colliders = new();
+    private readonly Dictionary<Id<Collider>, Id<Building>> _reverseColliders = new();
 
     public Result Register(Id<Building> buildingId)
     {
@@ -62,6 +63,7 @@ public class BuildingCollisionService(
 
         var colliderId = collisionSystem.Register(shape, ColliderGroups.Building, adjustedMatrix);
         _colliders[buildingId] = colliderId;
+        _reverseColliders[colliderId] = buildingId;
 
         return Result.Success();
     }
@@ -73,6 +75,10 @@ public class BuildingCollisionService(
             return Result.Success();
         }
 
+        _reverseColliders.Remove(colliderId);
         return collisionSystem.Unregister(colliderId).MapToResult();
     }
+
+    public bool TryGetBuildingId(Id<Collider> colliderId, out Id<Building> buildingId) =>
+        _reverseColliders.TryGetValue(colliderId, out buildingId);
 }

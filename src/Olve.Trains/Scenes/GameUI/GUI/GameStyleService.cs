@@ -17,7 +17,12 @@ public class GameStyleService(
         Styles.BurgerOverlayStyle, Styles.BurgerMenuPanelStyle,
         Styles.ModalButtonStyle, Styles.ModalButtonTextStyle,
         Styles.SignalPanelOverlayStyle, Styles.SignalPanelStyle,
-        Styles.SignalPanelHeaderStyle, Styles.SignalPanelInfoTextStyle
+        Styles.SignalPanelHeaderStyle, Styles.SignalPanelInfoTextStyle,
+        Styles.StationPanelOverlayStyle, Styles.StationPanelStyle,
+        Styles.StationPanelHeaderStyle, Styles.StationPanelSubHeaderStyle,
+        Styles.StationPanelInfoTextStyle, Styles.StationPanelContainerStyle,
+        Styles.InventoryRowStyle, Styles.InventoryRowDirectionStyle,
+        Styles.InventoryRowTextStyle, Styles.InventoryRowAmountStyle
     ];
 
     public Result Load()
