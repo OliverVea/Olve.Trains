@@ -49,6 +49,35 @@ An `IndustryProductionService` runs each frame/tick:
 
 Production rate is configurable per recipe.
 
+### Economics
+
+Money is earned on cargo transfers. Payout scales with chain complexity:
+
+- **Small payout** for industry → industry transfers (raw materials to secondary industries)
+- **Big payout** for delivering finished goods to cities
+
+Cities are the primary economic driver. All entity types (industries, cities) participate in the same station-based cargo system — loading/unloading logic doesn't distinguish between them.
+
+### City Leveling
+
+Cities have levels (1–5). Leveling requires cumulative delivery of specific goods:
+
+- **Level 1 → 2:** Simple requirements (e.g., 100 wood, 100 wheat, 100 cows)
+- **Level 2 → 3, 3 → 4, 4 → 5:** Rapidly growing complexity — more cargo types, higher quantities, processed goods
+
+Higher city level provides:
+- More population → more consumption → more money from deliveries
+- More passengers (for City → City transport, future)
+- Potentially unlocks demand for new cargo types
+
+### Future Cargo Routes
+
+The system should be generic enough to support:
+- **Industry → Industry** (wood → sawmill)
+- **Industry → City** (goods → consumption, main money source)
+- **City → Industry** (workers to factories, future)
+- **City → City** (passengers, future)
+
 ## Implementation Order
 
 1. `CargoInventory` data model
