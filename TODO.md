@@ -80,6 +80,9 @@
   - [ ] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
   - [ ] Add loading/unloading at stations (stations as access points to nearby building inventories)
   - [ ] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
+- [ ] Resources epic (Feature):
+  - [ ] Design resource system (discrete entities, field deposits, geometric resources; harvest range; production linking)
+  - [ ] Implement resource system based on design
 - [ ] Residential buildings epic (Feature):
   - [x] Add residential building type, blueprint (1x1), and placement tool
   - [ ] Add variable-sized residential blueprints (bias toward medium)
