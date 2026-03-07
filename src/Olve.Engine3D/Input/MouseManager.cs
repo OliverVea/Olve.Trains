@@ -9,7 +9,7 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
     private float _scroll;
     private readonly HashSet<MouseButton> _pressedButtons = [];
     private readonly HashSet<MouseButton> _releasedButtons = [];
-
+    private readonly HashSet<MouseButton> _scheduledRelease = [];
     public MouseState State { get; } = new();
 
     /// <summary>
@@ -42,6 +42,18 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
         _pressedButtons.Clear();
         _releasedButtons.Clear();
 
+        // Deliver scheduled releases (from SimulateClick) on the NEXT frame
+        var clearOverrideAfterPosition = false;
+        if (_scheduledRelease.Count > 0)
+        {
+            foreach (var button in _scheduledRelease)
+            {
+                _releasedButtons.Add(button);
+            }
+            _scheduledRelease.Clear();
+            clearOverrideAfterPosition = true;
+        }
+
         var position = Vector2D<float>.Zero;
 
         foreach (var mouse in inputContextProvider.Value.Mice)
@@ -56,6 +68,13 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
         if (NormalizedPositionOverride is { } normalizedOverride)
         {
             State.NormalizedPosition = normalizedOverride;
+
+            // Also update pixel position so GUI collision matches the override
+            var windowSize = windowProvider.Value.Size;
+            State.Position = new Vector2D<float>(
+                (normalizedOverride.X / 2f + 0.5f) * windowSize.X,
+                (normalizedOverride.Y / 2f + 0.5f) * windowSize.Y);
+            State.Delta = Vector2D<float>.Zero;
         }
         else
         {
@@ -65,6 +84,13 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
             ) * 2f;
         }
         State.Scroll = _scroll;
+
+        // Clear the position override after the click cycle completes
+        // (done after position computation so the release frame uses the correct position)
+        if (clearOverrideAfterPosition)
+        {
+            NormalizedPositionOverride = null;
+        }
 
         return Result.Success();
     }
@@ -77,6 +103,15 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
     public void SimulateButtonRelease(MouseButton button)
     {
         _releasedButtons.Add(button);
+    }
+
+    /// <summary>
+    /// Simulates a complete click: press now, release on the next frame.
+    /// </summary>
+    public void SimulateClick(MouseButton button)
+    {
+        _pressedButtons.Add(button);
+        _scheduledRelease.Add(button);
     }
 
     private void OnButtonPressed(IMouse mouse, MouseButton button)

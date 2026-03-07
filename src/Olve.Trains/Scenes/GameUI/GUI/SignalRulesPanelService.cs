@@ -23,7 +23,7 @@ public class SignalRulesPanelService(
     MouseManager mouseManager,
     JunctionSignalCollisionService junctionSignalCollisionService) : ISceneService
 {
-    private static readonly Layouts.SignalRulesPanel Panel = Layouts.BuildSignalRulesPanel();
+    private Layouts.SignalRulesPanel? _panel;
 
     private Id<GuiElementRegistrations> _registrationId;
     private Id<GuiAnchor> _anchorId;
@@ -68,6 +68,7 @@ public class SignalRulesPanelService(
         }
 
         _junctionId = junctionId;
+        _panel = Layouts.BuildSignalRulesPanel();
 
         if (guiAnchorService.RegisterAnchor(AnchorPosition.TopRight, GrowthDirection.DownLeft, depth: 10)
             .TryPickProblems(out var problems, out _anchorId))
@@ -77,7 +78,7 @@ public class SignalRulesPanelService(
 
         UpdatePanelContent();
 
-        if (guiElementService.RegisterElementAndChildren(_anchorId, Panel.Overlay)
+        if (guiElementService.RegisterElementAndChildren(_anchorId, _panel.Overlay)
             .TryPickProblems(out problems, out _registrationId))
         {
             guiAnchorService.UnregisterAnchor(_anchorId);
@@ -118,22 +119,25 @@ public class SignalRulesPanelService(
         guiElementService.UnregisterElementAndChildren(_registrationId);
         guiAnchorService.UnregisterAnchor(_anchorId);
         _isOpen = false;
+        _panel = null;
         return Result.Success();
     }
 
     private void UpdatePanelContent()
     {
+        if (_panel is null) return;
+
         var connections = junctionService.GetConnections(_junctionId);
 
         if (junctionService.TryGetJunction(_junctionId, out var junction))
         {
-            Panel.JunctionInfo.Content = $"Position: ({junction.Position.X}, {junction.Position.Z}) | Connections: {connections.Count}";
+            _panel.JunctionInfo.Content = $"Position: ({junction.Position.X}, {junction.Position.Z}) | Connections: {connections.Count}";
         }
 
         var rules = junctionSignalRuleService.GetRulesForJunction(_junctionId);
         if (rules.Count == 0)
         {
-            Panel.RulesText.Content = "No rules configured.";
+            _panel.RulesText.Content = "No rules configured.";
         }
         else
         {
@@ -148,19 +152,19 @@ public class SignalRulesPanelService(
                 sb.AppendLine($"{i + 1}. {vehicles} > {sources} > {destinations} ({distribution})");
             }
 
-            Panel.RulesText.Content = sb.ToString().TrimEnd();
+            _panel.RulesText.Content = sb.ToString().TrimEnd();
         }
     }
 
     private void OnGuiElementActivated(GuiActivationService.GuiElementActivatedMessage message)
     {
-        if (!_isOpen) return;
+        if (!_isOpen || _panel is null) return;
 
-        if (NodeIdMatches(Panel.Overlay, message.NodeId))
+        if (NodeIdMatches(_panel.Overlay, message.NodeId))
         {
             ClosePanel();
         }
-        else if (NodeIdMatches(Panel.AddRuleButton, message.NodeId))
+        else if (NodeIdMatches(_panel.AddRuleButton, message.NodeId))
         {
             junctionSignalRuleService.AddRuleForJunction(
                 _junctionId,
@@ -169,7 +173,7 @@ public class SignalRulesPanelService(
                 [new Any()],
                 new RoundRobin());
         }
-        else if (NodeIdMatches(Panel.ClearRulesButton, message.NodeId))
+        else if (NodeIdMatches(_panel.ClearRulesButton, message.NodeId))
         {
             junctionSignalRuleService.ClearRulesForJunction(_junctionId);
         }

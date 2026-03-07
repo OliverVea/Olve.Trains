@@ -78,8 +78,10 @@ public class StationInfoPanelService(
             {
                 if (hit.Group != ColliderGroups.Building) continue;
 
-                if (buildingCollisionService.TryGetBuildingId(hit.ColliderId, out var buildingId)
-                    && stationService.TryGetStation(buildingId, out _))
+                var hasBuildingId = buildingCollisionService.TryGetBuildingId(hit.ColliderId, out var buildingId);
+                var hasStation = hasBuildingId && stationService.TryGetStation(buildingId, out _);
+
+                if (hasBuildingId && hasStation)
                 {
                     OpenPanel(buildingId);
                 }

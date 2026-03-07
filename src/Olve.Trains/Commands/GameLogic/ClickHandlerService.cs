@@ -24,7 +24,7 @@ public class ClickHandlerService(
         }
 
         mouseManager.NormalizedPositionOverride = pos;
-        mouseManager.SimulateButtonPress(MouseButton.Left);
+        mouseManager.SimulateClick(MouseButton.Left);
 
         return new CommandOutput($"Click simulated at ({pos.X}, {pos.Y})");
     }

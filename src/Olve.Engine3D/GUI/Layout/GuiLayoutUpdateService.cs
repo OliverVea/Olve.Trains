@@ -22,6 +22,13 @@ public class GuiLayoutUpdateService(
         return Result.Success();
     }
 
+    public Result Unload()
+    {
+        _elementAddedQueue.Cleanup();
+        _elementRemovedQueue.Cleanup();
+        return Result.Success();
+    }
+
     public Result Update(TimeSpan deltaTime)
     {
         return Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update, guiLayoutService.ComputeLayout);
