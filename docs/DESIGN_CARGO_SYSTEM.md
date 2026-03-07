@@ -1,9 +1,5 @@
 # Cargo System
 
-## Problem
-
-Industries exist as buildings with recipes (inputs/outputs), but there's no runtime cargo flow. No inventories, no train loading/unloading, no production. Cargo types and recipes are defined but inert.
-
 ## Design
 
 ### Core Principles
