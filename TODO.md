@@ -74,7 +74,7 @@
 
 - [ ] CI/CD improvements epic (Tooling):
   - [x] Add screenshot approval flow using GitHub Environment protection rules
-  - [ ] Fix .gitattributes LFS pattern for reference screenshots in subdirectories
+  - [x] Fix .gitattributes LFS pattern for reference screenshots in subdirectories
   - [ ] Add Windows screenshot validation to CI
   - [ ] Add nightly release builds
   - [ ] Add Steam/itch.io publishing pipeline
