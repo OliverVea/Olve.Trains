@@ -84,6 +84,7 @@
   - [ ] Design resource system (discrete entities, field deposits, geometric resources; harvest range; production linking)
   - [ ] Implement resource system based on design
 - [ ] Residential buildings epic (Feature):
+  - Description: Residences are the demand side of the cargo system. Residences form cities, cities consume goods delivered via stations. Chain: Industries → Trains → Stations → Cities → Residences.
   - [x] Add residential building type, blueprint (1x1), and placement tool
   - [ ] Add variable-sized residential blueprints (bias toward medium)
   - [ ] Add 'buildings' layer to ORA map format (grey color)
@@ -156,7 +157,7 @@
   - [ ] Add random terrain generation
   - [ ] Add random residential building generation
 - [ ] Cities epic (Feature):
-  - Description: Cities form automatically from clusters of residential buildings. On building placement, unassigned houses are checked against a density map — if a density spike exceeds a threshold, a new city is created. Houses near existing cities are assigned to them. Cities have a level that can be upgraded by delivering cargo. When a city upgrades, buildings in the city gradually upgrade to match the city level. A designated town hall upgrades immediately. Cities can also merge when they grow into each other.
+  - Description: Cities form automatically from clusters of residential buildings. Cities consume goods delivered to stations in range — this is the demand side of the cargo loop (Industries → Trains → Stations → Cities → Residences). Cities have a level that can be upgraded by delivering cargo. When a city upgrades, buildings in the city gradually upgrade to match the city level. A designated town hall upgrades immediately. Cities can also merge when they grow into each other.
   - [ ] Create city entity with name, level, and assigned buildings
   - [ ] Listen to building added/removed events to trigger city evaluation
   - [ ] Calculate density map from unassigned residential buildings
