@@ -95,10 +95,19 @@ jobs:
           name: ${{ steps.version.outputs.artifact-name }}
           path: build/${{ matrix.rid }}
 
-  # 3️⃣ Screenshot validation (Linux only)
+  # 3️⃣ Screenshot validation (Linux & Windows)
   validate-screenshot:
     needs: build-dotnet
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            windowing: xvfb
+          - os: windows-latest
+            platform: windows
+            windowing: native
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -118,36 +127,56 @@ jobs:
           name: built-assets
           path: src/Olve.Trains/assets
 
-      - name: Install Xvfb, GLFW, and Mesa software renderer
+      - name: Install Xvfb, GLFW, and Mesa software renderer (Linux)
+        if: matrix.platform == 'linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb libglfw3 mesa-utils libgl1-mesa-dri libglx-mesa0 libegl-mesa0
+
+      - name: Download Mesa software renderer (Windows)
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          MESA_VERSION="24.3.2"
+          curl -sL -o mesa.7z "https://github.com/pal1000/mesa-dist-win/releases/download/${MESA_VERSION}/mesa3d-${MESA_VERSION}-release-msvc.7z"
+          7z x mesa.7z -omesa
 
       - name: Build Release
         run: dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release
 
+      - name: Install Mesa software renderer (Windows)
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: cp mesa/x64/opengl32.dll mesa/x64/libgallium_wgl.dll mesa/x64/libglapi.dll "src/Olve.Trains/bin/Release/net10.0/"
+
       - name: Run screenshot validation
         env:
-          LIBGL_ALWAYS_SOFTWARE: "1"
-        run: bash scripts/integration-test.sh --skip-build --windowing xvfb
+          LIBGL_ALWAYS_SOFTWARE: ${{ matrix.platform == 'linux' && '1' || '' }}
+          GALLIUM_DRIVER: ${{ matrix.platform == 'windows' && 'llvmpipe' || '' }}
+          SCREENSHOT_DIFF_DIR: ${{ runner.temp }}/screenshot-diffs
+        shell: bash
+        run: bash scripts/integration-test.sh --skip-build --windowing ${{ matrix.windowing }}
 
       - name: Upload screenshot diffs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshot-diffs
-          path: /tmp/screenshot-diffs/
+          name: screenshot-diffs-${{ matrix.platform }}
+          path: ${{ runner.temp }}/screenshot-diffs/
           if-no-files-found: ignore
 
       - name: Upload images and create review
         if: failure()
+        shell: bash
         env:
           AUTHENTIK_CLIENT_ID: ${{ secrets.AUTHENTIK_CLIENT_ID }}
           AUTHENTIK_CLIENT_SECRET: ${{ secrets.AUTHENTIK_CLIENT_SECRET }}
         run: |
           VR_BASE="https://vr.ovhome.online"
+          PLATFORM="${{ matrix.platform }}"
+          DIFF_BASE="${RUNNER_TEMP}/screenshot-diffs"
 
           # Get Authentik token
           if [ -z "$AUTHENTIK_CLIENT_ID" ] || [ -z "$AUTHENTIK_CLIENT_SECRET" ]; then
-            echo "## Screenshot Validation Failed" >> $GITHUB_STEP_SUMMARY
+            echo "## Screenshot Validation Failed ($PLATFORM)" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "AUTHENTIK_CLIENT_ID/SECRET not configured — cannot create review." >> $GITHUB_STEP_SUMMARY
             exit 0
@@ -174,7 +203,7 @@ jobs:
 
           SCREENSHOTS='[]'
 
-          for diff_dir in /tmp/screenshot-diffs/*/; do
+          for diff_dir in "${DIFF_BASE}"/*/; do
             [ -d "$diff_dir" ] || continue
 
             for diff_file in "$diff_dir"/*-diff.png; do
@@ -192,7 +221,7 @@ jobs:
               fi
 
               baseline_url=""
-              baseline="tests/integration/reference/linux/${name}.png"
+              baseline="tests/integration/reference/${PLATFORM}/${name}.png"
               if [ -f "$baseline" ]; then
                 baseline_url=$(upload_image "$baseline")
               fi
@@ -224,6 +253,7 @@ jobs:
               'branch': 'master',
               'commitSha': '${{ github.sha }}',
               'runNumber': ${{ github.run_number }},
+              'platform': '${PLATFORM}',
               'screenshots': json.loads(sys.stdin.read())
           }))" <<< "$SCREENSHOTS")
 
@@ -232,6 +262,6 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$REVIEW_BODY" | python3 -c "import sys,json; r=json.load(sys.stdin); print(f'https://vr.ovhome.online/review/{r[\"id\"]}')")
 
-          echo "## Screenshot Validation Failed" >> $GITHUB_STEP_SUMMARY
+          echo "## Screenshot Validation Failed ($PLATFORM)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Review and approve the changes: [Open Review](${REVIEW_URL})" >> $GITHUB_STEP_SUMMARY

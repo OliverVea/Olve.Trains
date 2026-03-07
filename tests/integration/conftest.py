@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import platform
 import queue
 import subprocess
-import tempfile
 from datetime import date
 from pathlib import Path
 
@@ -18,7 +18,7 @@ from screenshot import compare_screenshots, update_reference
 PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
 _PLATFORM = "windows" if platform.system() == "Windows" else "linux"
 REFERENCE_DIR = Path(__file__).parent / "reference" / _PLATFORM
-DIFF_DIR = Path("/tmp/screenshot-diffs")
+DIFF_DIR = Path(os.environ.get("SCREENSHOT_DIFF_DIR", "/tmp/screenshot-diffs"))
 LOG_DIR = PROJECT_DIR / "src" / "Olve.Trains" / "logs"
 
 

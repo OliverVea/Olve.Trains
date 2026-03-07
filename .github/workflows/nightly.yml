@@ -1,0 +1,155 @@
+name: Nightly Release
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: 10.0.x
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for new commits since last release
+        id: check
+        run: |
+          LAST_TAG=$(git tag -l 'nightly-*' --sort=-creatordate | head -n1)
+          if [ -z "$LAST_TAG" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          elif [ "$(git rev-parse HEAD)" = "$(git rev-parse "$LAST_TAG")" ]; then
+            echo "No new commits since $LAST_TAG"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "New commits since $LAST_TAG"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+  build-assets:
+    needs: check-changes
+    if: needs.check-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y libassimp-dev
+
+      - name: Run asset pipeline
+        env:
+          S3__Bucket: ${{ secrets.S3_BUCKET }}
+          S3__Key: ${{ secrets.S3_KEY }}
+          S3__Secret: ${{ secrets.S3_SECRET }}
+          Build__OutputDirectory: ${{ github.workspace }}/src/Olve.Trains/assets
+          Build__BuildDirectory: ${{ github.workspace }}/src/Olve.Trains.AssetPipeline/temp
+          Shader__ShadersDirectory: ${{ github.workspace }}/src/Olve.Trains/resources/shaders
+          Layout__LayoutsDirectory: ${{ github.workspace }}/src/Olve.Trains/resources/layouts
+        run: dotnet run --project src/Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj
+
+      - name: Upload assets to artifact storage
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-assets
+          path: src/Olve.Trains/assets
+
+  build-release:
+    needs: build-assets
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: windows-latest
+            rid: win-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download built assets
+        uses: actions/download-artifact@v4
+        with:
+          name: built-assets
+          path: src/Olve.Trains/assets
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          output=$(dotnet run tools/version.cs -- --ci --run-number ${{ github.run_number }} --rid ${{ matrix.rid }})
+          echo "$output"
+          echo "$output" >> $GITHUB_OUTPUT
+
+      - name: Publish
+        run: dotnet publish src/Olve.Trains/Olve.Trains.csproj --configuration Release --output build/${{ matrix.rid }} -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Zip release
+        shell: bash
+        run: |
+          cd build
+          if [ "${{ matrix.rid }}" = "win-x64" ]; then
+            7z a -tzip "${{ steps.version.outputs.artifact-name }}.zip" "${{ matrix.rid }}/"
+          else
+            tar czf "${{ steps.version.outputs.artifact-name }}.tar.gz" "${{ matrix.rid }}/"
+          fi
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.rid }}
+          path: |
+            build/*.zip
+            build/*.tar.gz
+
+  create-release:
+    needs: build-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          output=$(dotnet run tools/version.cs -- --ci --run-number ${{ github.run_number }})
+          echo "$output"
+          echo "$output" >> $GITHUB_OUTPUT
+
+      - name: Download all release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="nightly-${{ steps.version.outputs.version }}"
+          git tag "$TAG"
+          git push origin "$TAG"
+
+          gh release create "$TAG" \
+            --title "Nightly ${{ steps.version.outputs.version }}" \
+            --prerelease \
+            --generate-notes \
+            artifacts/*
