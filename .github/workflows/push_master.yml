@@ -137,49 +137,71 @@ jobs:
           path: /tmp/screenshot-diffs/
           if-no-files-found: ignore
 
-      - name: Upload diffs to S3 and create review
+      - name: Upload images and create review
         if: failure()
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET }}
-          AWS_DEFAULT_REGION: ap-southeast-2
           AUTHENTIK_CLIENT_ID: ${{ secrets.AUTHENTIK_CLIENT_ID }}
           AUTHENTIK_CLIENT_SECRET: ${{ secrets.AUTHENTIK_CLIENT_SECRET }}
         run: |
-          S3_PREFIX="screenshots/ci-run-${{ github.run_number }}"
+          VR_BASE="https://vr.ovhome.online"
+
+          # Get Authentik token
+          if [ -z "$AUTHENTIK_CLIENT_ID" ] || [ -z "$AUTHENTIK_CLIENT_SECRET" ]; then
+            echo "## Screenshot Validation Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "AUTHENTIK_CLIENT_ID/SECRET not configured — cannot create review." >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+
+          TOKEN=$(curl -sf -X POST "https://authentik.ovhome.online/application/o/token/" \
+            -d "grant_type=client_credentials" \
+            -d "client_id=${AUTHENTIK_CLIENT_ID}" \
+            -d "client_secret=${AUTHENTIK_CLIENT_SECRET}" \
+            -d "scope=openid" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+          upload_image() {
+            local file="$1"
+            if [ ! -f "$file" ]; then echo ""; return; fi
+            local url=$(curl -sf -X POST "${VR_BASE}/api/images" \
+              -H "Authorization: Bearer $TOKEN" \
+              -F "file=@${file}" | python3 -c "import sys,json; print(json.load(sys.stdin)['url'])")
+            echo "${VR_BASE}${url}"
+          }
+
+          # Parse similarity values from pytest output if available
+          SIMILARITY_FILE="/tmp/pytest-similarities.json"
+          echo '{}' > "$SIMILARITY_FILE"
+
           SCREENSHOTS='[]'
 
           for diff_dir in /tmp/screenshot-diffs/*/; do
             [ -d "$diff_dir" ] || continue
-            test_name=$(basename "$diff_dir")
 
             for diff_file in "$diff_dir"/*-diff.png; do
               [ -f "$diff_file" ] || continue
               name=$(basename "$diff_file" -diff.png)
 
-              # Upload diff image as public-read
-              s3_key="${S3_PREFIX}/${name}-diff.png"
-              aws s3 cp "$diff_file" "s3://olve.trains/${s3_key}" --quiet
-              diff_url="https://olve.trains.s3.ap-southeast-2.amazonaws.com/${s3_key}"
+              # Upload images to VR app
+              diff_url=$(upload_image "$diff_file")
 
-              # Upload actual screenshot if it exists
               actual_url=""
               for actual in /tmp/integration-test-*/"${name}.png"; do
                 if [ -f "$actual" ]; then
-                  actual_key="${S3_PREFIX}/${name}-actual.png"
-                  aws s3 cp "$actual" "s3://olve.trains/${actual_key}" --quiet
-                  actual_url="https://olve.trains.s3.ap-southeast-2.amazonaws.com/${actual_key}"
+                  actual_url=$(upload_image "$actual")
                   break
                 fi
               done
 
-              # Upload baseline if it exists
               baseline_url=""
               baseline="tests/integration/reference/linux/${name}.png"
               if [ -f "$baseline" ]; then
-                baseline_key="${S3_PREFIX}/${name}-baseline.png"
-                aws s3 cp "$baseline" "s3://olve.trains/${baseline_key}" --quiet
-                baseline_url="https://olve.trains.s3.ap-southeast-2.amazonaws.com/${baseline_key}"
+                baseline_url=$(upload_image "$baseline")
+              fi
+
+              similarity=0.0
+              similarity_file="${diff_dir}${name}-similarity.txt"
+              if [ -f "$similarity_file" ]; then
+                similarity=$(cat "$similarity_file")
               fi
 
               SCREENSHOTS=$(echo "$SCREENSHOTS" | python3 -c "
@@ -190,21 +212,13 @@ jobs:
               'baselineUrl': '${baseline_url}',
               'actualUrl': '${actual_url}',
               'diffUrl': '${diff_url}',
-              'similarity': 0.0
+              'similarity': ${similarity}
           })
           json.dump(s, sys.stdout)")
             done
           done
 
-          # Create review in VR app
-          if [ -n "$AUTHENTIK_CLIENT_ID" ] && [ -n "$AUTHENTIK_CLIENT_SECRET" ]; then
-            TOKEN=$(curl -sf -X POST "https://authentik.ovhome.online/application/o/token/" \
-              -d "grant_type=client_credentials" \
-              -d "client_id=${AUTHENTIK_CLIENT_ID}" \
-              -d "client_secret=${AUTHENTIK_CLIENT_SECRET}" \
-              -d "scope=openid" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-
-            REVIEW_BODY=$(python3 -c "
+          REVIEW_BODY=$(python3 -c "
           import json, sys
           print(json.dumps({
               'project': 'Olve.Trains',
@@ -214,16 +228,11 @@ jobs:
               'screenshots': json.loads(sys.stdin.read())
           }))" <<< "$SCREENSHOTS")
 
-            REVIEW_URL=$(curl -sf -X POST "https://vr.ovhome.online/api/reviews" \
-              -H "Authorization: Bearer $TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "$REVIEW_BODY" | python3 -c "import sys,json; r=json.load(sys.stdin); print(f'https://vr.ovhome.online/review/{r[\"id\"]}')")
+          REVIEW_URL=$(curl -sf -X POST "${VR_BASE}/api/reviews" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$REVIEW_BODY" | python3 -c "import sys,json; r=json.load(sys.stdin); print(f'https://vr.ovhome.online/review/{r[\"id\"]}')")
 
-            echo "## Screenshot Validation Failed" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Review and approve the changes: [Open Review](${REVIEW_URL})" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "## Screenshot Validation Failed" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "AUTHENTIK_CLIENT_ID/SECRET not configured — cannot create review." >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "## Screenshot Validation Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Review and approve the changes: [Open Review](${REVIEW_URL})" >> $GITHUB_STEP_SUMMARY
