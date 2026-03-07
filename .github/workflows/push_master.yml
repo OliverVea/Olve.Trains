@@ -159,7 +159,7 @@ jobs:
 
               # Upload diff image as public-read
               s3_key="${S3_PREFIX}/${name}-diff.png"
-              aws s3 cp "$diff_file" "s3://olve.trains/${s3_key}" --acl public-read --quiet
+              aws s3 cp "$diff_file" "s3://olve.trains/${s3_key}" --quiet
               diff_url="https://olve.trains.s3.ap-southeast-2.amazonaws.com/${s3_key}"
 
               # Upload actual screenshot if it exists
@@ -167,7 +167,7 @@ jobs:
               for actual in /tmp/integration-test-*/"${name}.png"; do
                 if [ -f "$actual" ]; then
                   actual_key="${S3_PREFIX}/${name}-actual.png"
-                  aws s3 cp "$actual" "s3://olve.trains/${actual_key}" --acl public-read --quiet
+                  aws s3 cp "$actual" "s3://olve.trains/${actual_key}" --quiet
                   actual_url="https://olve.trains.s3.ap-southeast-2.amazonaws.com/${actual_key}"
                   break
                 fi
@@ -178,7 +178,7 @@ jobs:
               baseline="tests/integration/reference/linux/${name}.png"
               if [ -f "$baseline" ]; then
                 baseline_key="${S3_PREFIX}/${name}-baseline.png"
-                aws s3 cp "$baseline" "s3://olve.trains/${baseline_key}" --acl public-read --quiet
+                aws s3 cp "$baseline" "s3://olve.trains/${baseline_key}" --quiet
                 baseline_url="https://olve.trains.s3.ap-southeast-2.amazonaws.com/${baseline_key}"
               fi
 
