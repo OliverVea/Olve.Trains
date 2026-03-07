@@ -72,6 +72,13 @@
 
 ## Demo
 
+- [ ] CI/CD improvements epic (Tooling):
+  - [x] Add screenshot approval flow using GitHub Environment protection rules
+  - [ ] Fix .gitattributes LFS pattern for reference screenshots in subdirectories
+  - [ ] Add Windows screenshot validation to CI
+  - [ ] Add nightly release builds
+  - [ ] Add Steam/itch.io publishing pipeline
+
 - [ ] Industry epic (Feature) (see [docs/DESIGN_CARGO_SYSTEM.md](docs/DESIGN_CARGO_SYSTEM.md)):
   - [x] Add basic support for industries
   - [x] Add building for industries

@@ -135,3 +135,30 @@ jobs:
           name: screenshot-diffs
           path: /tmp/screenshot-diffs/
           if-no-files-found: ignore
+
+      - name: Upload diffs to S3 and write job summary
+        if: failure()
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET }}
+          AWS_DEFAULT_REGION: ap-southeast-2
+        run: |
+          echo "## Screenshot Validation Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Review the diff images below. If the changes are expected, run the **Accept Screenshots** workflow to update references." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          found=false
+          for diff_file in /tmp/screenshot-diffs/*/*.png; do
+            [ -f "$diff_file" ] || continue
+            found=true
+            name=$(basename "$diff_file" .png)
+            s3_key="screenshots/ci-run-${{ github.run_number }}/${name}.png"
+            aws s3 cp "$diff_file" "s3://olve.trains/${s3_key}" --quiet
+            url=$(aws s3 presign "s3://olve.trains/${s3_key}" --expires-in 604800)
+            echo "- [${name}](${url})" >> $GITHUB_STEP_SUMMARY
+          done
+
+          if [ "$found" = false ]; then
+            echo "No diff images found in /tmp/screenshot-diffs/" >> $GITHUB_STEP_SUMMARY
+          fi
