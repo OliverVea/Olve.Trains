@@ -185,12 +185,11 @@ jobs:
               diff_url=$(upload_image "$diff_file")
 
               actual_url=""
-              for actual in /tmp/integration-test-*/"${name}.png"; do
-                if [ -f "$actual" ]; then
-                  actual_url=$(upload_image "$actual")
-                  break
-                fi
-              done
+              actual_path_file="${diff_dir}${name}-actual.txt"
+              if [ -f "$actual_path_file" ]; then
+                actual_file=$(cat "$actual_path_file")
+                actual_url=$(upload_image "$actual_file")
+              fi
 
               baseline_url=""
               baseline="tests/integration/reference/linux/${name}.png"

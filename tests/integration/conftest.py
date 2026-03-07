@@ -197,9 +197,11 @@ class ScreenshotComparer:
         )
         if not result.passed and result.diff_image_path and result.diff_image_path.exists():
             self._asserter.diffs.append((f"{name}-diff", result.diff_image_path))
-            # Write similarity value for CI to pick up
+            # Write metadata for CI to pick up
             sim_path = result.diff_image_path.parent / f"{name}-similarity.txt"
             sim_path.write_text(f"{result.similarity:.6f}")
+            actual_path_file = result.diff_image_path.parent / f"{name}-actual.txt"
+            actual_path_file.write_text(str(actual))
         self._results.append((name, result))
 
     def assert_all(self) -> None:
