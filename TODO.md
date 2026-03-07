@@ -82,8 +82,12 @@
 - [ ] Industry epic (Feature) (see [docs/DESIGN_CARGO_SYSTEM.md](docs/DESIGN_CARGO_SYSTEM.md)):
   - [x] Add basic support for industries
   - [x] Add building for industries
-  - [ ] Add CargoInventory data model (fixed capacity, optional cargo type filter, add/remove/query)
-  - [ ] Add building inventories (per-building inventory filtered by recipe inputs/outputs)
+  - [x] Add CargoInventory data model (fixed capacity, optional cargo type filter, add/remove/query)
+  - [x] Add building inventories (per-building inventory filtered by recipe inputs/outputs)
+  - [ ] Add station info panel (click station → show nearby industry inventories and transfer directions) (see [docs/DESIGN_STATION_INFO_PANEL.md](docs/DESIGN_STATION_INFO_PANEL.md))
+    - [ ] Add station info panel and inventory row XML layouts
+    - [ ] Add station-to-nearby-industries query
+    - [ ] Add station info panel service (click station → query industries → mount inventory rows)
   - [ ] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
   - [ ] Add loading/unloading at stations (stations as access points to nearby building inventories)
   - [ ] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
@@ -106,6 +110,9 @@
   - [x] Remove terrain geometry shader — compute flat normals via `dFdx`/`dFdy` in fragment shader, render grid overlay as SDF in terrain fragment shader, delete wireframe shader files
   - [ ] Add shadow map generation — FBO wrapper, depth-only pixel format, depth-only shader, `ShadowMapService` that renders casters from light-space each frame
   - [ ] Add shadow map sampling to receiver shaders — terrain, default, and building vertex+fragment shaders pass light-space position and sample the shadow map to attenuate diffuse lighting
+- [ ] GUI layout previewer (Tooling):
+  - [ ] Standalone viewer that renders XML layouts via the existing GUI system
+  - [ ] File watcher for live reload on XML changes
 - [ ] Main menu improvements (Visual):
   - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
   - [x] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now

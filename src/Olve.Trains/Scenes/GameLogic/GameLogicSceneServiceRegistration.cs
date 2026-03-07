@@ -67,11 +67,14 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<BuildingPositionService>();
         services.TryAddScoped<BuildingService>();
         services.TryAddScoped<BuildingValidationService>();
+        services.TryAddScoped<CargoInventoryService>();
+        services.TryAddScoped<CargoTransferPolicyService>();
         services.TryAddScoped<CargoTypeService>();
         services.TryAddScoped<ColliderDebugSettings>();
         services.TryAddScoped<GridService>();
         services.TryAddScoped<IndustryBlueprintService>();
         services.TryAddScoped<IndustryRecipeService>();
+        services.TryAddScoped<IndustryService>();
         services.TryAddScoped<JunctionService>();
         services.TryAddScoped<JunctionSignalCollisionService>();
         services.TryAddScoped<JunctionSignalRuleEvaluationService>();
@@ -138,6 +141,13 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
             (StationService ss, Id<Building> id) => ss.DeleteStationForBuilding(id));
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingAdded,
+            (IndustryService ist, Id<Building> id) => ist.CreateIndustryForBuilding(id),
+            prefill: bs => bs.BuildingIds);
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingRemoved,
+            (IndustryService ist, Id<Building> id) => ist.RemoveIndustryForBuilding(id));
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
             (BuildingCollisionService bcs, Id<Building> id) => bcs.Register(id),

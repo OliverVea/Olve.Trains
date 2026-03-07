@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Meshes;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
@@ -27,13 +28,23 @@ public class BuildingBlueprintLibraryService(
             new BuildingMeshProperties(Meshes.apartment_small_mesh, Matrix4X4<float>.Identity));
 
         buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Forest, "Forest", new TileFootprint(2, 1, 2));
-        industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Forest, new IndustryProperties(IndustryRecipeCatalog.Forest));
+        industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Forest,
+            new IndustryProperties(IndustryRecipeCatalog.Forest, Capacity: 10,
+                new Dictionary<Id<CargoType>, int> { [CargoTypeCatalog.Wood] = 10 }.ToImmutableDictionary()));
 
         buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Mine, "Mine", new TileFootprint(2, 1, 2));
-        industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Mine, new IndustryProperties(IndustryRecipeCatalog.Mine));
+        industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Mine,
+            new IndustryProperties(IndustryRecipeCatalog.Mine, Capacity: 10,
+                new Dictionary<Id<CargoType>, int> { [CargoTypeCatalog.Coal] = 10 }.ToImmutableDictionary()));
 
         buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Sawmill, "Sawmill", new TileFootprint(3, 1, 2));
-        industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Sawmill, new IndustryProperties(IndustryRecipeCatalog.Sawmill));
+        industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Sawmill,
+            new IndustryProperties(IndustryRecipeCatalog.Sawmill, Capacity: 20,
+                new Dictionary<Id<CargoType>, int>
+                {
+                    [CargoTypeCatalog.Wood] = 10,
+                    [CargoTypeCatalog.Planks] = 10,
+                }.ToImmutableDictionary()));
 
         return Result.Success();
     }
