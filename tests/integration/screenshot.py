@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 
 @dataclass
@@ -130,35 +130,10 @@ def _save_diff_image(
     ref_arr: np.ndarray,
     output_path: Path,
 ) -> None:
-    h, w, _ = ref_arr.shape
-
-    # Greyscale abs delta, scaled to full range
     abs_diff = np.max(np.abs(actual_arr - ref_arr), axis=2).astype(np.float64)
     max_val = abs_diff.max() or 1.0
     delta = np.clip(abs_diff / max_val * 255, 0, 255).astype(np.uint8)
-    delta_rgb = np.stack([delta, delta, delta], axis=2)
 
-    # Composite: baseline / actual / delta (vertically stacked)
-    composite = np.concatenate(
-        [ref_arr.astype(np.uint8), actual_arr.astype(np.uint8), delta_rgb],
-        axis=0,
-    )
-
-    img = Image.fromarray(composite)
-    draw = ImageDraw.Draw(img)
-
-    try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
-    except OSError:
-        font = ImageFont.load_default()
-
-    for i, label in enumerate(["Baseline", "Actual", "Diff"]):
-        x, y = 10, i * h + 10
-        # Black shadow
-        for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1), (-2, 0), (2, 0), (0, -2), (0, 2)]:
-            draw.text((x + dx, y + dy), label, fill="black", font=font)
-        # White text
-        draw.text((x, y), label, fill="white", font=font)
-
+    img = Image.fromarray(delta, mode="L")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     img.save(output_path)
