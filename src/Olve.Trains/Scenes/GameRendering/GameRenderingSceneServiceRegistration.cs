@@ -46,6 +46,7 @@ public static class GameRenderingSceneServiceRegistration
             (BuildingService bs) => bs.OnBuildingRemoved,
             (BuildingRenderingService brs, Id<Building> id) => brs.Unregister(id),
             before: BeforeBuildingRendering);
+        services.AddSceneService<FootprintRenderingService>(sceneId);
         services.AddSceneService<BuildingRenderingService>(sceneId);
         services.AddSceneService<ColliderDebugRenderingService>(sceneId);
         services.AddSceneService<ToggleColliderDebugHandlerService>(sceneId);

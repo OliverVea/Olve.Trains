@@ -11,12 +11,14 @@ using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
+using Silk.NET.Maths;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
 public class BuildingRenderingService(
     MeshLoadingManager meshLoadingManager,
     MeshRenderingService meshRenderingService,
+    FootprintRenderingService footprintRenderingService,
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
     BuildingMeshBlueprintService buildingMeshBlueprintService,
@@ -26,19 +28,21 @@ public class BuildingRenderingService(
     IndustryBlueprintService industryBlueprintService)
     : ISceneService
 {
-    public int Priority => SceneServicePriority.FromDependencies([meshRenderingService]);
+    public int Priority => SceneServicePriority.FromDependencies([meshRenderingService, footprintRenderingService]);
+
+    private const float FootprintBorderWidth = 0.06f;
+    private const float FootprintCornerRadius = 0.15f;
+    private const float FootprintFillOpacity = 0.2f;
 
     private record struct BlueprintRenderInfo(
         MeshRenderingService.MeshGroupHandle MeshGroup,
-        MeshRenderingService.MeshGroupHandle FootprintGroup);
+        FootprintRenderingService.FootprintGroupHandle FootprintGroup);
 
     private readonly Dictionary<Id<BuildingBlueprint>, BlueprintRenderInfo> _blueprintRenderInfos = new();
     private readonly Dictionary<Id<Building>, MeshRenderingService.MeshInstanceHandle> _instanceIds = new();
-    private readonly Dictionary<Id<Building>, MeshRenderingService.MeshInstanceHandle> _footprintInstanceIds = new();
+    private readonly Dictionary<Id<Building>, FootprintRenderingService.FootprintInstanceHandle> _footprintInstanceIds = new();
     private readonly Dictionary<Id<Building>, MeshRenderingService.MeshInstanceHandle> _ghostInstanceIds = new();
 
-    private Shaders.Default.Vertex[] _quadVertices = null!;
-    private uint[] _quadIndices = null!;
     private Shaders.Default.Vertex[] _cubeVertices = null!;
     private uint[] _cubeIndices = null!;
 
@@ -46,16 +50,6 @@ public class BuildingRenderingService(
 
     public Result Load()
     {
-        var up = new Vector3D<float>(0, 1, 0);
-        _quadVertices =
-        [
-            new(new(0, 0, 0), up, new(0, 0)),
-            new(new(1, 0, 0), up, new(1, 0)),
-            new(new(1, 0, 1), up, new(1, 1)),
-            new(new(0, 0, 1), up, new(0, 1)),
-        ];
-        _quadIndices = [0, 1, 2, 0, 2, 3];
-
         _cubeVertices = new Shaders.Default.Vertex[UnitCube.VertexCount];
         UnitCube.Populate(_cubeVertices);
         _cubeIndices = new uint[UnitCube.IndexCount];
@@ -113,7 +107,15 @@ public class BuildingRenderingService(
         var footprintMatrix = buildingPositionService.ComputeFootprintWorldMatrix(
             blueprint.Footprint, building.Position, footprintScale, yOffset: 0.01f);
 
-        if (meshRenderingService.AddInstance(renderInfo.FootprintGroup, footprintMatrix)
+        var color = ComputeFootprintColor(building.BlueprintId);
+        var size = new Vector2D<float>(footprint.Width, footprint.Depth);
+        var border = new Vector4D<float>(FootprintBorderWidth);
+        var borderColor = new Vector4D<float>(color.X, color.Y, color.Z, 1f);
+        var tint = new Vector4D<float>(color.X, color.Y, color.Z, FootprintFillOpacity);
+        var radius = new Vector4D<float>(FootprintCornerRadius);
+
+        if (footprintRenderingService.AddInstance(
+                renderInfo.FootprintGroup, footprintMatrix, size, tint, border, borderColor, radius)
             .TryPickProblems(out problems, out var footprintHandle))
         {
             return problems.Prepend("Failed to add footprint instance for '{0}'", buildingId);
@@ -191,7 +193,7 @@ public class BuildingRenderingService(
 
         if (_footprintInstanceIds.Remove(buildingId, out var footprintHandle))
         {
-            if (meshRenderingService.RemoveInstance(footprintHandle).TryPickProblems(out var problems))
+            if (footprintRenderingService.RemoveInstance(footprintHandle).TryPickProblems(out var problems))
             {
                 return problems.Prepend("Failed to remove footprint instance for '{0}'", buildingId);
             }
@@ -255,11 +257,12 @@ public class BuildingRenderingService(
         }
 
         var color = ComputeFootprintColor(blueprintId);
+        var borderColor = new Vector4D<float>(color.X, color.Y, color.Z, 1f);
+        var tint = new Vector4D<float>(color.X, color.Y, color.Z, FootprintFillOpacity);
+        var border = new Vector4D<float>(FootprintBorderWidth);
+        var radius = new Vector4D<float>(FootprintCornerRadius);
 
-        if (meshRenderingService.RegisterMeshGroup(
-                _quadVertices, _quadIndices,
-                parameters: new Shaders.Default.EntityParameters(
-                    UColor: color))
+        if (footprintRenderingService.RegisterGroup(tint, border, borderColor, radius)
             .TryPickProblems(out problems, out var footprintGroup))
         {
             return problems.Prepend("Failed to register footprint group for blueprint '{0}'", blueprintId);
