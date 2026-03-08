@@ -120,6 +120,12 @@ jobs:
             build/*.zip
             build/*.tar.gz
 
+      - name: Upload build directory for itch.io
+        uses: actions/upload-artifact@v4
+        with:
+          name: itch-${{ matrix.rid }}
+          path: build/${{ matrix.rid }}/
+
   create-release:
     needs: build-release
     runs-on: ubuntu-latest
@@ -167,12 +173,11 @@ jobs:
           echo "$output"
           echo "$output" >> $GITHUB_OUTPUT
 
-      - name: Download all release artifacts
+      - name: Download build directories
         uses: actions/download-artifact@v4
         with:
-          pattern: release-*
-          path: artifacts
-          merge-multiple: true
+          pattern: itch-*
+          path: builds
 
       - name: Install butler
         run: |
@@ -185,9 +190,5 @@ jobs:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          for f in artifacts/*.zip; do
-            butler/butler push "$f" cookiscuit/on-track-to-grow:windows --userversion "$VERSION"
-          done
-          for f in artifacts/*.tar.gz; do
-            butler/butler push "$f" cookiscuit/on-track-to-grow:linux --userversion "$VERSION"
-          done
+          butler/butler push builds/itch-win-x64 cookiscuit/on-track-to-grow:windows --userversion "$VERSION"
+          butler/butler push builds/itch-linux-x64 cookiscuit/on-track-to-grow:linux --userversion "$VERSION"
