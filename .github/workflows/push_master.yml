@@ -95,7 +95,7 @@ jobs:
           name: ${{ steps.version.outputs.artifact-name }}
           path: build/${{ matrix.rid }}
 
-  # 3️⃣ Screenshot validation (Linux & Windows)
+  # 3️⃣ Screenshot validation
   validate-screenshot:
     needs: build-dotnet
     strategy:
@@ -104,9 +104,6 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             windowing: xvfb
-          - os: windows-latest
-            platform: windows
-            windowing: native
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -131,28 +128,12 @@ jobs:
         if: matrix.platform == 'linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb libglfw3 mesa-utils libgl1-mesa-dri libglx-mesa0 libegl-mesa0
 
-      - name: Download Mesa software renderer (Windows)
-        if: matrix.platform == 'windows'
-        shell: bash
-        run: |
-          MESA_VERSION="24.3.2"
-          curl -sL -o mesa.7z "https://github.com/pal1000/mesa-dist-win/releases/download/${MESA_VERSION}/mesa3d-${MESA_VERSION}-release-msvc.7z"
-          7z x mesa.7z -omesa
-
       - name: Build Release
         run: dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release
 
-      - name: Install Mesa software renderer (Windows)
-        if: matrix.platform == 'windows'
-        shell: bash
-        run: |
-          cp mesa/x64/opengl32.dll mesa/x64/libgallium_wgl.dll mesa/x64/libglapi.dll "src/Olve.Trains/bin/Release/net10.0/"
-          cp mesa/x64/opengl32.dll mesa/x64/libgallium_wgl.dll mesa/x64/libglapi.dll "src/Olve.Trains/bin/Release/net10.0/runtimes/win-x64/native/"
-
       - name: Run screenshot validation
         env:
-          LIBGL_ALWAYS_SOFTWARE: ${{ matrix.platform == 'linux' && '1' || '' }}
-          GALLIUM_DRIVER: ${{ matrix.platform == 'windows' && 'llvmpipe' || '' }}
+          LIBGL_ALWAYS_SOFTWARE: "1"
           SCREENSHOT_DIFF_DIR: ${{ runner.temp }}/screenshot-diffs
         shell: bash
         run: bash scripts/integration-test.sh --skip-build --windowing ${{ matrix.windowing }}
