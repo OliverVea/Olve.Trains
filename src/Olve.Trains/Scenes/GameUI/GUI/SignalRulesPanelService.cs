@@ -25,6 +25,8 @@ public class SignalRulesPanelService(
 {
     private Layouts.SignalRulesPanel? _panel;
 
+    public int Priority => SceneServicePriority.FromDependencies([mouseRaycastService]);
+
     private Id<GuiElementRegistrations> _registrationId;
     private Id<GuiAnchor> _anchorId;
     private bool _isOpen;

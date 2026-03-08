@@ -80,7 +80,7 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
         {
             State.NormalizedPosition = new Vector2D<float>(
                 position.X / windowProvider.Value.Size.X - 0.5f,
-                position.Y / windowProvider.Value.Size.Y - 0.5f
+                -(position.Y / windowProvider.Value.Size.Y - 0.5f)
             ) * 2f;
         }
         State.Scroll = _scroll;

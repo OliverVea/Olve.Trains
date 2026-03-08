@@ -32,6 +32,8 @@ public class StationInfoPanelService(
     CargoInventoryService cargoInventoryService,
     CargoTransferPolicyService cargoTransferPolicyService) : ISceneService
 {
+    public int Priority => SceneServicePriority.FromDependencies([mouseRaycastService]);
+
     private readonly record struct MountedRow(
         Layouts.InventoryRow Row,
         Id<GuiElementRegistrations> RegistrationId,
