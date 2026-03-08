@@ -49,6 +49,7 @@ jobs:
         with:
           name: built-assets
           path: src/Olve.Trains/assets
+          retention-days: 1
 
   # 2️⃣ Build .NET for both Linux & Windows using a Matrix
   build-dotnet:
@@ -89,11 +90,6 @@ jobs:
       - name: Build
         run: dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release --output build/${{ matrix.rid }} -p:Version=${{ steps.version.outputs.version }}
 
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.version.outputs.artifact-name }}
-          path: build/${{ matrix.rid }}
 
   # 3️⃣ Screenshot validation
   validate-screenshot:
@@ -137,14 +133,6 @@ jobs:
           SCREENSHOT_DIFF_DIR: ${{ runner.temp }}/screenshot-diffs
         shell: bash
         run: bash scripts/integration-test.sh --skip-build --windowing ${{ matrix.windowing }}
-
-      - name: Upload screenshot diffs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: screenshot-diffs-${{ matrix.platform }}
-          path: ${{ runner.temp }}/screenshot-diffs/
-          if-no-files-found: ignore
 
       - name: Upload images and create review
         if: failure()

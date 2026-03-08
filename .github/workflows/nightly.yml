@@ -66,6 +66,7 @@ jobs:
         with:
           name: built-assets
           path: src/Olve.Trains/assets
+          retention-days: 1
 
   build-release:
     needs: build-assets
@@ -119,12 +120,14 @@ jobs:
           path: |
             build/*.zip
             build/*.tar.gz
+          retention-days: 1
 
       - name: Upload build directory for itch.io
         uses: actions/upload-artifact@v4
         with:
           name: itch-${{ matrix.rid }}
           path: build/${{ matrix.rid }}/
+          retention-days: 1
 
   create-release:
     needs: build-release
