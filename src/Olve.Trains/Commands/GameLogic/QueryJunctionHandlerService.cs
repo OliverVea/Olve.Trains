@@ -62,7 +62,7 @@ public class QueryJunctionHandlerService(
         return new
         {
             ruleId = rule.Id.ToString(),
-            vehicles = rule.Vehicles.Select(SerializeVehicleConstraint).ToArray(),
+            trains = rule.Trains.Select(SerializeTrainConstraint).ToArray(),
             sources = rule.Sources.Select(SerializeSourceConstraint).ToArray(),
             destinations = rule.Destinations.Select(SerializeDestinationConstraint).ToArray(),
             distribution = rule.Distribution.Match(
@@ -70,12 +70,12 @@ public class QueryJunctionHandlerService(
         };
     }
 
-    private static string SerializeVehicleConstraint(SignalRuleVehicle v)
+    private static string SerializeTrainConstraint(SignalRuleTrain v)
     {
         return v.Match(
             _ => "any",
             groupId => $"group({groupId})",
-            vehicleId => $"vehicle({vehicleId})");
+            trainId => $"train({trainId})");
     }
 
     private static string SerializeSourceConstraint(SignalRuleSource s)

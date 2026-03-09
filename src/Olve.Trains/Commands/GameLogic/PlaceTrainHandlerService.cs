@@ -4,38 +4,38 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Scenes.GameLogic.Tracks;
-using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Trains;
 
 namespace Olve.Trains.Commands.GameLogic;
 
-public class PlaceVehicleHandlerService(
-    ILogger<PlaceVehicleHandlerService> logger,
+public class PlaceTrainHandlerService(
+    ILogger<PlaceTrainHandlerService> logger,
     CommandHandlerServiceCollection commandHandlerServiceCollection,
     TrackService trackService,
-    VehicleService vehicleService,
-    VehiclePositionService vehiclePositionService) : CommandHandlerService(commandHandlerServiceCollection)
+    TrainService trainService,
+    TrainPositionService trainPositionService) : CommandHandlerService(commandHandlerServiceCollection)
 {
-    private static readonly CommandArgument TrackArgument = new ("track", "The track to place the vehicle on.", true);
-    private static readonly CommandArgument VehicleIdArgument = new("vehicle", "The vehicle to place. If empty, a new vehicle will be created.");
-    private static readonly CommandArgument SpeedArgument = new("speed", "The speed of the vehicle.");
+    private static readonly CommandArgument TrackArgument = new ("track", "The track to place the train on.", true);
+    private static readonly CommandArgument TrainIdArgument = new("train", "The train to place. If empty, a new train will be created.");
+    private static readonly CommandArgument SpeedArgument = new("speed", "The speed of the train.");
 
-    public override string Verb => "place-vehicle";
-    public override string HelpString => "Places the specified vehicle on the specified track";
-    public override IReadOnlyList<CommandArgument> Arguments { get; } = [VehicleIdArgument, TrackArgument, SpeedArgument];
+    public override string Verb => "place-train";
+    public override string HelpString => "Places the specified train on the specified track";
+    public override IReadOnlyList<CommandArgument> Arguments { get; } = [TrainIdArgument, TrackArgument, SpeedArgument];
     public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
         var trackIdResult = commandContext.GetId<Track>(TrackArgument);
 
-        var vehicleIdResult = commandContext.Arguments.ContainsKey(VehicleIdArgument.Key)
-            ? commandContext.GetId<Vehicle>(VehicleIdArgument)
-            : CreateVehicle();
+        var trainIdResult = commandContext.Arguments.ContainsKey(TrainIdArgument.Key)
+            ? commandContext.GetId<Train>(TrainIdArgument)
+            : CreateTrain();
 
-        if (Result.Concat(trackIdResult, vehicleIdResult).TryPickProblems(out var problems, out var trackAndVehicleId))
+        if (Result.Concat(trackIdResult, trainIdResult).TryPickProblems(out var problems, out var trackAndTrainId))
         {
             return problems;
         }
 
-        var (trackId, vehicleId) = trackAndVehicleId;
+        var (trackId, trainId) = trackAndTrainId;
 
         if (!trackService.TrackExists(trackId))
         {
@@ -49,19 +49,19 @@ public class PlaceVehicleHandlerService(
         }
 
         TrackPoint trackPoint = new(trackId, 0);
-        VehicleTrackPosition vehicleTrackPosition = new(trackPoint, speed);
+        TrainTrackPosition trainTrackPosition = new(trackPoint, speed);
 
-        vehiclePositionService.SetTrackPosition(vehicleId, vehicleTrackPosition);
+        trainPositionService.SetTrackPosition(trainId, trainTrackPosition);
 
-        logger.LogInformation("Placed vehicle '{VehicleId}' on track with id '{TrackId}' with position '{VehicleTrackPosition}'", vehicleId, trackId, vehicleTrackPosition);
+        logger.LogInformation("Placed train '{TrainId}' on track with id '{TrackId}' with position '{TrainTrackPosition}'", trainId, trackId, trainTrackPosition);
 
-        var json = JsonSerializer.Serialize(new { vehicleId = vehicleId.ToString() });
+        var json = JsonSerializer.Serialize(new { trainId = trainId.ToString() });
         return new CommandOutput(json);
     }
 
-    private Result<Id<Vehicle>> CreateVehicle()
+    private Result<Id<Train>> CreateTrain()
     {
-        var vehicleName = "Vehicle_" + vehicleService.Count + 1;
-        return vehicleService.AddVehicle(vehicleName);
+        var trainName = "Train_" + trainService.Count + 1;
+        return trainService.AddTrain(trainName);
     }
 }

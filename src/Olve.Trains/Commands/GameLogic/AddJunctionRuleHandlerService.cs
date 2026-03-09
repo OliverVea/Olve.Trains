@@ -4,9 +4,9 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Tracks;
-using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Utilities.Types;
-using RuleFields = (System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleVehicle> Vehicles,
+using RuleFields = (System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleTrain> Trains,
     System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleSource> Sources,
     System.Collections.Generic.List<Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleDestination> Destinations,
     Olve.Trains.Scenes.GameLogic.Junctions.SignalRuleDistribution Distribution);
@@ -34,7 +34,7 @@ public class AddJunctionRuleHandlerService(
         }
 
         if (junctionSignalRuleService.AddRuleForJunction(junctionId,
-                ruleFields.Vehicles,
+                ruleFields.Trains,
                 ruleFields.Sources,
                 ruleFields.Destinations,
                 ruleFields.Distribution).ToEmptyResult().TryPickProblems(out problems))
@@ -46,13 +46,13 @@ public class AddJunctionRuleHandlerService(
     }
 
     private const string RulePattern = @"^\s*
-         (?<vehicle>.+?)\s+from\b\s+
+         (?<train>.+?)\s+from\b\s+
          (?<source>.+?)\s+to\b\s+
          (?<destination>.+?)\s+with\b\s+
          (?<distribution>.+?)\s*$
         ";
 
-    private static Result<(string Vehicles, string Sources, string Destinations, string Distribution)>
+    private static Result<(string Trains, string Sources, string Destinations, string Distribution)>
         ParseRuleString(string rule)
     {
 #pragma warning disable MA0009
@@ -65,12 +65,12 @@ public class AddJunctionRuleHandlerService(
             return new ResultProblem("Failed to parse rule '{0}'", rule);
         }
 
-        var vehicles = match.Groups["vehicle"].Value;
+        var trains = match.Groups["train"].Value;
         var sources = match.Groups["source"].Value;
         var destinations = match.Groups["destination"].Value;
         var distribution = match.Groups["distribution"].Value;
 
-        return (vehicles, sources, destinations, distribution);
+        return (trains, sources, destinations, distribution);
     }
 
     private static Result<RuleFields> ParseRule(string rule)
@@ -80,31 +80,31 @@ public class AddJunctionRuleHandlerService(
             return problems.Prepend("Failed to parse rule fields");
         }
 
-        var vehiclesResult = ParseVehicles(ruleFields.Vehicles.Trim());
+        var trainsResult = ParseTrains(ruleFields.Trains.Trim());
         var sourcesResult = ParseSources(ruleFields.Sources.Trim());
         var destinationsResult = ParseDestinations(ruleFields.Destinations.Trim());
         var distributionResult = ParseDistribution(ruleFields.Distribution.Trim());
 
-        return Result.Concat<List<SignalRuleVehicle>, List<SignalRuleSource>, List<SignalRuleDestination>, SignalRuleDistribution>(
-            vehiclesResult, sourcesResult, destinationsResult, distributionResult);
+        return Result.Concat<List<SignalRuleTrain>, List<SignalRuleSource>, List<SignalRuleDestination>, SignalRuleDistribution>(
+            trainsResult, sourcesResult, destinationsResult, distributionResult);
     }
 
-    private static Result<List<SignalRuleVehicle>> ParseVehicles(string vehicleStrings)
+    private static Result<List<SignalRuleTrain>> ParseTrains(string trainStrings)
     {
-        if (vehicleStrings.Length == 0)
+        if (trainStrings.Length == 0)
         {
-            return new ResultProblem("Got empty vehicles");
+            return new ResultProblem("Got empty trains");
         }
 
-        return ParseField(vehicleStrings, ParseVehicle);
+        return ParseField(trainStrings, ParseTrain);
     }
 
-    private static Result<SignalRuleVehicle> ParseVehicle(string vehicle)
+    private static Result<SignalRuleTrain> ParseTrain(string train)
     {
-        if (string.Equals(vehicle, "any", StringComparison.InvariantCultureIgnoreCase)) return Result.Success<SignalRuleVehicle>(new Any());
-        if (vehicle.StartsWith("vehicle", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Vehicle>(vehicle).Map(x => (SignalRuleVehicle)x);
-        if (vehicle.StartsWith("group", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<VehicleGroup>(vehicle).Map(x => (SignalRuleVehicle)x);
-        return new ResultProblem("Could not parse vehicle '{0}'", vehicle);
+        if (string.Equals(train, "any", StringComparison.InvariantCultureIgnoreCase)) return Result.Success<SignalRuleTrain>(new Any());
+        if (train.StartsWith("train", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<Train>(train).Map(x => (SignalRuleTrain)x);
+        if (train.StartsWith("group", StringComparison.InvariantCultureIgnoreCase)) return ParseIdArgument<TrainGroup>(train).Map(x => (SignalRuleTrain)x);
+        return new ResultProblem("Could not parse train '{0}'", train);
     }
 
     private static Result<List<SignalRuleSource>> ParseSources(string sources)

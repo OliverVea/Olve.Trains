@@ -1,10 +1,10 @@
 using OneOf;
 using OneOf.Types;
 
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Trains;
 
 [GenerateOneOf]
-public partial class VehiclePosition : OneOfBase<None, VehicleTrackPosition>
+public partial class TrainPosition : OneOfBase<None, TrainTrackPosition>
 {
-    public static VehiclePosition None { get; } = new None();
+    public static TrainPosition None { get; } = new None();
 }

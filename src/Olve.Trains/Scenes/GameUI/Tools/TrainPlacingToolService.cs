@@ -1,7 +1,7 @@
-﻿using Olve.Engine3D.Input;
+using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Tracks;
-using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Trains.Scenes.GameUI.Indicators;
 using Silk.NET.Input;
 
@@ -12,8 +12,8 @@ public class TrainPlacingToolService(
     ToolManagementService toolManagementService,
     TrackArrowIndicatorService arrowIndicatorService,
     TrackSplineService trackSplineService,
-    VehicleService vehicleService,
-    VehiclePositionService vehiclePositionService,
+    TrainService trainService,
+    TrainPositionService trainPositionService,
     MouseManager mouseManager,
     KeyboardManager keyboardManager) : BaseToolService<TrainPlacingToolService.State>(toolManagementService, new State())
 {
@@ -105,10 +105,10 @@ public class TrainPlacingToolService(
         if (ToolState.ActivatedThisFrame)
         {
             var velocity = ToolState.Forward ? 6f : -6f;
-            var vehicleTrackPosition = new VehicleTrackPosition(closestTrackPoint, velocity);
+            var trainTrackPosition = new TrainTrackPosition(closestTrackPoint, velocity);
 
-            if (vehicleService.AddVehicle("Vehicle :D").TryPickProblems(out problems, out var vehicleId)
-                || vehiclePositionService.SetTrackPosition(vehicleId, vehicleTrackPosition).TryPickProblems(out problems))
+            if (trainService.AddTrain("Train :D").TryPickProblems(out problems, out var trainId)
+                || trainPositionService.SetTrackPosition(trainId, trainTrackPosition).TryPickProblems(out problems))
             {
                 return problems;
             }

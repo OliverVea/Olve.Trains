@@ -1,8 +1,8 @@
 using Olve.Engine3D.Math;
 
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public static class VehicleWorldMatrix
+public static class TrainWorldMatrix
 {
     public static Matrix4X4<float> Compute(float velocity, Position3D splinePosition)
     {

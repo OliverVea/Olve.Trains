@@ -9,8 +9,8 @@ public static class GameMetrics
     public static readonly UpDownCounter<int> TrackCount =
         Meter.CreateUpDownCounter<int>("game.tracks.count", description: "Number of tracks");
 
-    public static readonly UpDownCounter<int> VehicleCount =
-        Meter.CreateUpDownCounter<int>("game.vehicles.count", description: "Number of vehicles");
+    public static readonly UpDownCounter<int> TrainCount =
+        Meter.CreateUpDownCounter<int>("game.trains.count", description: "Number of trains");
 
     public static readonly UpDownCounter<int> BuildingCount =
         Meter.CreateUpDownCounter<int>("game.buildings.count", description: "Number of buildings");

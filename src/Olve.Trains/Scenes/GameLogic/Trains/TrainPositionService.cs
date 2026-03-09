@@ -1,45 +1,45 @@
 using System.Collections.Concurrent;
 using Olve.Engine3D.Scenes;
 
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public class VehiclePositionService(VehicleService vehicleService) : ISceneService
+public class TrainPositionService(TrainService trainService) : ISceneService
 {
-    private readonly ConcurrentDictionary<Id<Vehicle>, VehiclePositionType> _positionTypes = new();
-    private readonly ConcurrentDictionary<Id<Vehicle>, VehicleTrackPosition> _trackPositions = new();
+    private readonly ConcurrentDictionary<Id<Train>, TrainPositionType> _positionTypes = new();
+    private readonly ConcurrentDictionary<Id<Train>, TrainTrackPosition> _trackPositions = new();
 
     public Result Load()
     {
-        vehicleService.OnVehicleRemoved.Subscribe(OnRemoved);
+        trainService.OnTrainRemoved.Subscribe(OnRemoved);
         return Result.Success();
     }
 
     public Result Unload()
     {
-        vehicleService.OnVehicleRemoved.Unsubscribe(OnRemoved);
+        trainService.OnTrainRemoved.Unsubscribe(OnRemoved);
         return Result.Success();
     }
 
-    public IEnumerable<(Id<Vehicle>, VehicleTrackPosition)> TrackPositions => _trackPositions.Select(x => (x.Key, x.Value));
+    public IEnumerable<(Id<Train>, TrainTrackPosition)> TrackPositions => _trackPositions.Select(x => (x.Key, x.Value));
 
-    public VehiclePositionType GetPositionType(Id<Vehicle> vehicleId)
+    public TrainPositionType GetPositionType(Id<Train> trainId)
     {
-        return _positionTypes.GetValueOrDefault(vehicleId, VehiclePositionType.None);
+        return _positionTypes.GetValueOrDefault(trainId, TrainPositionType.None);
     }
 
-    public Result SetTrackPosition(Id<Vehicle> vehicleId, VehicleTrackPosition vehicleTrackPosition)
+    public Result SetTrackPosition(Id<Train> trainId, TrainTrackPosition trainTrackPosition)
     {
-        _positionTypes[vehicleId] = VehiclePositionType.OnTrack;
-        _trackPositions[vehicleId] = vehicleTrackPosition;
+        _positionTypes[trainId] = TrainPositionType.OnTrack;
+        _trackPositions[trainId] = trainTrackPosition;
         return Result.Success();
     }
 
-    public bool TryGetTrackPosition(Id<Vehicle> vehicleId, out VehicleTrackPosition vehicleTrackPosition)
+    public bool TryGetTrackPosition(Id<Train> trainId, out TrainTrackPosition trainTrackPosition)
     {
-        return _trackPositions.TryGetValue(vehicleId, out vehicleTrackPosition);
+        return _trackPositions.TryGetValue(trainId, out trainTrackPosition);
     }
 
-    private void OnRemoved(Id<Vehicle> id)
+    private void OnRemoved(Id<Train> id)
     {
         _positionTypes.Remove(id, out _);
         _trackPositions.Remove(id, out _);

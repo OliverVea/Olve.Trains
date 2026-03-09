@@ -5,19 +5,19 @@ using Olve.Generated.Meshes;
 using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public class VehicleCollisionService(
+public class TrainCollisionService(
     MeshLoadingManager meshLoadingManager,
     MeshManager meshManager,
     CollisionSystem collisionSystem,
-    VehiclePositionService vehiclePositionService,
+    TrainPositionService trainPositionService,
     TrackSplineService trackSplineService)
     : ISceneService
 {
-    public int Priority => SceneServicePriority.FromDependencies([trackSplineService, vehiclePositionService]);
+    public int Priority => SceneServicePriority.FromDependencies([trackSplineService, trainPositionService]);
 
-    private readonly Dictionary<Id<Vehicle>, Id<Collider>> _colliders = new();
+    private readonly Dictionary<Id<Train>, Id<Collider>> _colliders = new();
     private BoxColliderShape? _shape;
     private Vector3D<float> _centerOffset;
 
@@ -26,12 +26,12 @@ public class VehicleCollisionService(
         if (meshLoadingManager.LoadMesh(Meshes.SM_Veh_Bullet_01)
             .TryPickProblems(out var problems, out var meshId))
         {
-            return problems.Prepend("Failed to load vehicle mesh for collision");
+            return problems.Prepend("Failed to load train mesh for collision");
         }
 
         if (!meshManager.TryGetLocalAABB(meshId, out var localAABB))
         {
-            return new ResultProblem("Mesh AABB not found for vehicle mesh");
+            return new ResultProblem("Mesh AABB not found for train mesh");
         }
 
         var halfExtents = (localAABB.Max - localAABB.Min) * 0.5f;
@@ -41,23 +41,23 @@ public class VehicleCollisionService(
         return Result.Success();
     }
 
-    public Result Register(Id<Vehicle> vehicleId)
+    public Result Register(Id<Train> trainId)
     {
-        if (_colliders.ContainsKey(vehicleId))
+        if (_colliders.ContainsKey(trainId))
         {
-            return new ResultProblem("Collider already exists for vehicle '{0}'", vehicleId);
+            return new ResultProblem("Collider already exists for train '{0}'", trainId);
         }
 
         var centerMatrix = Matrix4X4.CreateTranslation(_centerOffset);
-        var colliderId = collisionSystem.Register(_shape!, ColliderGroups.Vehicle, centerMatrix);
+        var colliderId = collisionSystem.Register(_shape!, ColliderGroups.Train, centerMatrix);
 
-        _colliders[vehicleId] = colliderId;
+        _colliders[trainId] = colliderId;
         return Result.Success();
     }
 
-    public Result Unregister(Id<Vehicle> vehicleId)
+    public Result Unregister(Id<Train> trainId)
     {
-        if (!_colliders.Remove(vehicleId, out var colliderId))
+        if (!_colliders.Remove(trainId, out var colliderId))
         {
             return Result.Success();
         }
@@ -67,9 +67,9 @@ public class VehicleCollisionService(
 
     public Result Update(TimeSpan deltaTime)
     {
-        foreach (var (vehicleId, trackPosition) in vehiclePositionService.TrackPositions)
+        foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
         {
-            if (!_colliders.TryGetValue(vehicleId, out var colliderId))
+            if (!_colliders.TryGetValue(trainId, out var colliderId))
             {
                 continue;
             }
@@ -78,10 +78,10 @@ public class VehicleCollisionService(
                 .TryPickProblems(out var problems, out var position))
             {
                 return problems.Prepend(
-                    "Failed to sample spline for vehicle '{0}' collision update", vehicleId);
+                    "Failed to sample spline for train '{0}' collision update", trainId);
             }
 
-            var worldMatrix = VehicleWorldMatrix.Compute(trackPosition.Velocity, position);
+            var worldMatrix = TrainWorldMatrix.Compute(trackPosition.Velocity, position);
             var centerMatrix = Matrix4X4.CreateTranslation(_centerOffset);
             var adjustedMatrix = centerMatrix * worldMatrix;
 
@@ -89,7 +89,7 @@ public class VehicleCollisionService(
                 .TryPickProblems(out problems))
             {
                 return problems.Prepend(
-                    "Failed to update collider transform for vehicle '{0}'", vehicleId);
+                    "Failed to update collider transform for train '{0}'", trainId);
             }
         }
 

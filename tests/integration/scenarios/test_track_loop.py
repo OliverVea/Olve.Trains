@@ -72,11 +72,11 @@ def test_track_loop(
         end_dir="west",
     )
 
-    # -- Vehicles --
+    # -- Trains --
 
-    game.place_vehicle(track=track1_ids[0], speed=3)
-    game.place_vehicle(track=track2_ids[0], speed=3)
-    game.place_vehicle(track=track3_ids[0], speed=3)
+    game.place_train(track=track1_ids[0], speed=3)
+    game.place_train(track=track2_ids[0], speed=3)
+    game.place_train(track=track3_ids[0], speed=3)
 
     # Simulate 5 seconds at 60fps
     game.step(300)

@@ -50,8 +50,8 @@ def _find_signal_junction(game: Game) -> str:
     return signal_junctions[0].junction_id
 
 
-def test_signal_rule_routes_vehicle(game: Game) -> None:
-    """A directional signal rule should route a vehicle to the specified output track."""
+def test_signal_rule_routes_train(game: Game) -> None:
+    """A directional signal rule should route a train to the specified output track."""
     track_a, track_b, track_c = _build_y_junction(game)
     junction_id = _find_signal_junction(game)
 
@@ -62,20 +62,20 @@ def test_signal_rule_routes_vehicle(game: Game) -> None:
         f"any from direction(west) to track({track_b[0]}) with RoundRobin",
     )
 
-    # Place vehicle on Track A heading east
-    vehicle_id = game.place_vehicle(track=track_a[0], speed=5)
+    # Place train on Track A heading east
+    train_id = game.place_train(track=track_a[0], speed=5)
 
-    # Step enough frames for the vehicle to traverse Track A and cross the junction.
+    # Step enough frames for the train to traverse Track A and cross the junction.
     # Track A is 4 units long, speed=5 units/s, at 60fps ~= 48 frames.
     # Give extra margin for junction crossing.
     game.step(120)
 
-    # Vehicle should now be on Track B (the north output)
-    state = game.query_vehicle(vehicle_id)
+    # Train should now be on Track B (the north output)
+    state = game.query_train(train_id)
     all_b_tracks = set(track_b)
     all_c_tracks = set(track_c)
     assert state.track_id in all_b_tracks, (
-        f"Expected vehicle on Track B {all_b_tracks}, "
+        f"Expected train on Track B {all_b_tracks}, "
         f"but found on track {state.track_id}. "
         f"Track C was {all_c_tracks}"
     )
@@ -134,12 +134,12 @@ def _build_fan_junction(game: Game) -> tuple[list[str], list[str], list[str], li
     return track_west, track_north, track_east, track_south
 
 
-def test_round_robin_distributes_vehicles(game: Game) -> None:
-    """RoundRobin should distribute successive vehicles across different output tracks.
+def test_round_robin_distributes_trains(game: Game) -> None:
+    """RoundRobin should distribute successive trains across different output tracks.
 
-    Three vehicles enter from the west. The junction has three valid exits (north,
+    Three trains enter from the west. The junction has three valid exits (north,
     east, south) — all with start_dir=west (opposite of the incoming east tangent).
-    With RoundRobin, each vehicle should be routed to a different output track.
+    With RoundRobin, each train should be routed to a different output track.
     """
     track_west, track_north, track_east, track_south = _build_fan_junction(game)
     junction_id = _find_signal_junction(game)
@@ -153,17 +153,17 @@ def test_round_robin_distributes_vehicles(game: Game) -> None:
         f"with RoundRobin",
     )
 
-    # Send three vehicles through, one at a time
-    vehicle_ids = []
+    # Send three trains through, one at a time
+    train_ids = []
     for _ in range(3):
-        vid = game.place_vehicle(track=track_west[0], speed=5)
-        vehicle_ids.append(vid)
+        vid = game.place_train(track=track_west[0], speed=5)
+        train_ids.append(vid)
         game.step(120)
 
-    # Query where each vehicle ended up
+    # Query where each train ended up
     output_tracks = []
-    for vid in vehicle_ids:
-        state = game.query_vehicle(vid)
+    for vid in train_ids:
+        state = game.query_train(vid)
         output_tracks.append(state.track_id)
 
     all_north = set(track_north)
@@ -171,10 +171,10 @@ def test_round_robin_distributes_vehicles(game: Game) -> None:
     all_south = set(track_south)
     all_outputs = all_north | all_east | all_south
 
-    # Each vehicle should be on one of the output tracks
+    # Each train should be on one of the output tracks
     for i, track_id in enumerate(output_tracks):
         assert track_id in all_outputs, (
-            f"Vehicle {i+1} should be on an output track, "
+            f"Train {i+1} should be on an output track, "
             f"but found on {track_id}"
         )
 
@@ -189,6 +189,6 @@ def test_round_robin_distributes_vehicles(game: Game) -> None:
             branches.append("south")
 
     assert len(set(branches)) == 3, (
-        f"Expected vehicles on 3 different branches, "
+        f"Expected trains on 3 different branches, "
         f"but got {branches}"
     )

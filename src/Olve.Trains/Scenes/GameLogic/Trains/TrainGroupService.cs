@@ -1,23 +1,23 @@
 using Olve.Utilities.Collections;
 
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public class VehicleGroupService
+public class TrainGroupService
 {
-    private readonly ManyToManyLookup<Id<VehicleGroup>, Id<Vehicle>> _membership = new();
+    private readonly ManyToManyLookup<Id<TrainGroup>, Id<Train>> _membership = new();
 
-    public void AddToGroup(Id<Vehicle> vehicleId, Id<VehicleGroup> groupId)
+    public void AddToGroup(Id<Train> trainId, Id<TrainGroup> groupId)
     {
-        _membership.Set(groupId, vehicleId, true);
+        _membership.Set(groupId, trainId, true);
     }
 
-    public void RemoveFromGroup(Id<Vehicle> vehicleId, Id<VehicleGroup> groupId)
+    public void RemoveFromGroup(Id<Train> trainId, Id<TrainGroup> groupId)
     {
-        _membership.Set(groupId, vehicleId, false);
+        _membership.Set(groupId, trainId, false);
     }
 
-    public bool IsMemberOf(Id<Vehicle> vehicleId, Id<VehicleGroup> groupId)
+    public bool IsMemberOf(Id<Train> trainId, Id<TrainGroup> groupId)
     {
-        return _membership.Contains(groupId, vehicleId);
+        return _membership.Contains(groupId, trainId);
     }
 }

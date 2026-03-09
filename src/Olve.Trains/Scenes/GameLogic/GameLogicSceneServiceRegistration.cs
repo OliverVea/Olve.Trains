@@ -15,7 +15,7 @@ using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Time;
 using Olve.Trains.Scenes.GameLogic.Tracks;
-using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Trains;
 
 namespace Olve.Trains.Scenes.GameLogic;
 
@@ -38,17 +38,17 @@ public static class GameLogicSceneServiceRegistration
 
         services.AddSceneService<DayTimeSteppingService>(sceneId);
         services.AddSceneService<DeleteTrackHandlerService>(sceneId);
-        services.AddSceneService<DeleteVehicleHandlerService>(sceneId);
+        services.AddSceneService<DeleteTrainHandlerService>(sceneId);
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
         services.AddSceneService<ListJunctionsHandlerService>(sceneId);
-        services.AddSceneService<ListVehiclesHandlerService>(sceneId);
+        services.AddSceneService<ListTrainsHandlerService>(sceneId);
         services.AddSceneService<PlaceBuildingHandlerService>(sceneId);
         services.AddSceneService<PlaceTrackHandlerService>(sceneId);
-        services.AddSceneService<PlaceVehicleHandlerService>(sceneId);
+        services.AddSceneService<PlaceTrainHandlerService>(sceneId);
         services.AddSceneService<ProjectToScreenHandlerService>(sceneId);
         services.AddSceneService<QueryBuildingHandlerService>(sceneId);
         services.AddSceneService<QueryJunctionHandlerService>(sceneId);
-        services.AddSceneService<QueryVehicleHandlerService>(sceneId);
+        services.AddSceneService<QueryTrainHandlerService>(sceneId);
         services.AddSceneService<RaycastHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetCameraHandlerService>(sceneId);
@@ -57,10 +57,10 @@ public static class GameLogicSceneServiceRegistration
 
         services.AddSceneService<TerrainService>(sceneId);
         services.AddSceneService<TrackSplineService>(sceneId);
-        services.AddSceneService<VehicleCollisionService>(sceneId);
-        services.AddSceneService<VehicleJunctionCrossingService>(sceneId);
+        services.AddSceneService<TrainCollisionService>(sceneId);
+        services.AddSceneService<TrainJunctionCrossingService>(sceneId);
         services.AddSceneService<IndustryProductionService>(sceneId);
-        services.AddSceneService<VehicleMovementService>(sceneId);
+        services.AddSceneService<TrainMovementService>(sceneId);
 
         // Non-scene singletons (dependencies only, not in scene lifecycle)
         services.TryAddScoped<BuildingBlueprintService>();
@@ -93,11 +93,11 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<TrackPlacingService>();
         services.TryAddScoped<TrackService>();
         services.TryAddScoped<TrackValidationService>();
-        services.TryAddScoped<VehicleCollisionService>();
-        services.TryAddScoped<VehicleGroupService>();
-        services.TryAddScoped<VehicleJunctionService>();
-        services.TryAddScoped<VehiclePositionService>();
-        services.TryAddScoped<VehicleService>();
+        services.TryAddScoped<TrainCollisionService>();
+        services.TryAddScoped<TrainGroupService>();
+        services.TryAddScoped<TrainJunctionService>();
+        services.TryAddScoped<TrainPositionService>();
+        services.TryAddScoped<TrainService>();
 
         // Scene Events
         services.AddEventSceneService(sceneId,
@@ -169,17 +169,17 @@ public static class GameLogicSceneServiceRegistration
             (TrackService ts) => ts.OnTrackRemoved,
             (TrackCollisionService tcs, Id<Track> id) => tcs.Unregister(id));
         services.AddEventSceneService(sceneId,
-            (VehicleService vs) => vs.OnVehicleAdded,
-            (VehicleCollisionService vcs, Id<Vehicle> id) => vcs.Register(id),
-            prefill: vs => vs.VehicleIds);
+            (TrainService vs) => vs.OnTrainAdded,
+            (TrainCollisionService vcs, Id<Train> id) => vcs.Register(id),
+            prefill: vs => vs.TrainIds);
         services.AddEventSceneService(sceneId,
-            (VehicleService vs) => vs.OnVehicleRemoved,
-            (VehicleCollisionService vcs, Id<Vehicle> id) => vcs.Unregister(id));
+            (TrainService vs) => vs.OnTrainRemoved,
+            (TrainCollisionService vcs, Id<Train> id) => vcs.Unregister(id));
         services.AddEventSceneService(sceneId,
-            (VehicleMovementService vms) => vms.OnVehicleReachedTrackEnd,
-            (VehicleJunctionCrossingService vjcs, Id<Vehicle> id) => vjcs.OnVehicleReachedEnd(id),
-            after: [new SceneServiceType<VehicleMovementService>()],
-            before: [new SceneServiceType<VehicleJunctionCrossingService>()]);
+            (TrainMovementService vms) => vms.OnTrainReachedTrackEnd,
+            (TrainJunctionCrossingService vjcs, Id<Train> id) => vjcs.OnTrainReachedEnd(id),
+            after: [new SceneServiceType<TrainMovementService>()],
+            before: [new SceneServiceType<TrainJunctionCrossingService>()]);
 
         return services;
     }

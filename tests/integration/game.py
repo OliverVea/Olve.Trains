@@ -50,8 +50,8 @@ class CommandResult:
 
 
 @dataclass
-class VehicleState:
-    vehicle_id: str
+class TrainState:
+    train_id: str
     track_id: str
     time: float
     velocity: float
@@ -251,15 +251,15 @@ class Game:
         data = json.loads(result.output)
         return data["trackIds"]
 
-    def place_vehicle(
+    def place_train(
         self, track: str, speed: float | None = None
     ) -> str:
-        cmd = f"place-vehicle track={track}"
+        cmd = f"place-train track={track}"
         if speed is not None:
             cmd += f" speed={speed}"
         result = self.send(cmd)
         data = json.loads(result.output)
-        return data["vehicleId"]
+        return data["trainId"]
 
     def place_building(
         self, pos: str, type: str, dir: str
@@ -312,29 +312,29 @@ class Game:
 
     # -- Query wrappers --
 
-    def query_vehicle(self, vehicle_id: str) -> VehicleState:
-        result = self.send(f"query-vehicle vehicle={vehicle_id}")
+    def query_train(self, train_id: str) -> TrainState:
+        result = self.send(f"query-train train={train_id}")
         data = json.loads(result.output)
         pos = data.get("position")
-        return VehicleState(
-            vehicle_id=data["vehicleId"],
+        return TrainState(
+            train_id=data["trainId"],
             track_id=data["trackId"],
             time=data["time"],
             velocity=data["velocity"],
             position=(float(pos["x"]), float(pos["y"]), float(pos["z"])) if pos else None,
         )
 
-    def list_vehicles(self) -> list[VehicleState]:
-        result = self.send("list-vehicles")
+    def list_trains(self) -> list[TrainState]:
+        result = self.send("list-trains")
         data = json.loads(result.output)
         return [
-            VehicleState(
-                vehicle_id=v["vehicleId"],
+            TrainState(
+                train_id=v["trainId"],
                 track_id=v["trackId"],
                 time=v["time"],
                 velocity=v["velocity"],
             )
-            for v in data["vehicles"]
+            for v in data["trains"]
         ]
 
     def list_junctions(self) -> list[JunctionInfo]:

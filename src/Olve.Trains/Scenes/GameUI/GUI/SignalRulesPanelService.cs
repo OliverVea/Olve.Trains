@@ -147,11 +147,11 @@ public class SignalRulesPanelService(
             for (var i = 0; i < rules.Count; i++)
             {
                 var rule = rules[i];
-                var vehicles = string.Join(",", rule.Vehicles);
+                var trains = string.Join(",", rule.Trains);
                 var sources = string.Join(",", rule.Sources);
                 var destinations = string.Join(",", rule.Destinations);
                 var distribution = FormatDistribution(rule.Distribution);
-                sb.AppendLine($"{i + 1}. {vehicles} > {sources} > {destinations} ({distribution})");
+                sb.AppendLine($"{i + 1}. {trains} > {sources} > {destinations} ({distribution})");
             }
 
             _panel.RulesText.Content = sb.ToString().TrimEnd();

@@ -55,7 +55,7 @@ public class RaycastHandlerService(
     private static string GroupName(Id<ColliderGroup> group) =>
         group == ColliderGroups.Signal ? "Signal" :
         group == ColliderGroups.Building ? "Building" :
-        group == ColliderGroups.Vehicle ? "Vehicle" :
+        group == ColliderGroups.Train ? "Train" :
         group == ColliderGroups.Track ? "Track" :
         group.ToString();
 }

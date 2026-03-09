@@ -3,31 +3,31 @@ using System.Text.Json;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Scenes.GameLogic.Tracks;
-using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Trains;
 
 namespace Olve.Trains.Commands.GameLogic;
 
-public class QueryVehicleHandlerService(
+public class QueryTrainHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,
-    VehiclePositionService vehiclePositionService,
+    TrainPositionService trainPositionService,
     TrackSplineService trackSplineService) : CommandHandlerService(commandHandlerServiceCollection)
 {
-    private static readonly CommandArgument VehicleArgument = new("vehicle", "The vehicle ID to query", true);
+    private static readonly CommandArgument TrainArgument = new("train", "The train ID to query", true);
 
-    public override string Verb => "query-vehicle";
-    public override string HelpString => "Queries the current state of a vehicle";
-    public override IReadOnlyList<CommandArgument> Arguments { get; } = [VehicleArgument];
+    public override string Verb => "query-train";
+    public override string HelpString => "Queries the current state of a train";
+    public override IReadOnlyList<CommandArgument> Arguments { get; } = [TrainArgument];
 
     public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
-        if (commandContext.GetId<Vehicle>(VehicleArgument).TryPickProblems(out var problems, out var vehicleId))
+        if (commandContext.GetId<Train>(TrainArgument).TryPickProblems(out var problems, out var trainId))
         {
             return problems;
         }
 
-        if (!vehiclePositionService.TryGetTrackPosition(vehicleId, out var trackPosition))
+        if (!trainPositionService.TryGetTrackPosition(trainId, out var trackPosition))
         {
-            return new ResultProblem("Vehicle '{0}' has no track position", vehicleId);
+            return new ResultProblem("Train '{0}' has no track position", trainId);
         }
 
         object? position = null;
@@ -48,7 +48,7 @@ public class QueryVehicleHandlerService(
 
         var json = JsonSerializer.Serialize(new
         {
-            vehicleId = vehicleId.ToString(),
+            trainId = trainId.ToString(),
             trackId = trackPosition.TrackPoint.TrackId.ToString(),
             time = trackPosition.TrackPoint.Time,
             velocity = trackPosition.Velocity,

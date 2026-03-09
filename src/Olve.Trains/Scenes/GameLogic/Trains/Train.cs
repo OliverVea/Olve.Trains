@@ -1,16 +1,16 @@
 using Olve.Utilities.Lookup;
 
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public class Vehicle(Id<Vehicle> id, string name) : IHasId<Id<Vehicle>>, IEquatable<Vehicle?>
+public class Train(Id<Train> id, string name) : IHasId<Id<Train>>, IEquatable<Train?>
 {
     private readonly string _toString = $"{name} ({id.Value})";
 
-    public Id<Vehicle> Id { get; } = id;
+    public Id<Train> Id { get; } = id;
     public string Name { get; set; } = name;
     
     public override string ToString() => _toString;
     public override int GetHashCode() => Id.GetHashCode();
-    public bool Equals(Vehicle? other) => other != null && Id == other.Id;
-    public override bool Equals(object? obj) => Equals(obj as Vehicle);
+    public bool Equals(Train? other) => other != null && Id == other.Id;
+    public override bool Equals(object? obj) => Equals(obj as Train);
 }

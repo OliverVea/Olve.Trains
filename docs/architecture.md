@@ -135,7 +135,7 @@ renderingInstanceManager.Remove(groupId, instanceId);
 | Scene | Layer | Parent | Role |
 |-------|-------|--------|------|
 | MainMenuScene | 0 | (root) | Main menu UI |
-| GameLogicScene | 0 | (root) | Game state, tracks, vehicles, lighting |
+| GameLogicScene | 0 | (root) | Game state, tracks, trains, lighting |
 | GameRenderingScene | 1 | GameLogicScene | 3D rendering |
 | GameUIScene | 2 | GameRenderingScene | In-game UI overlays |
 

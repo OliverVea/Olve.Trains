@@ -1,22 +1,22 @@
-﻿using Olve.Engine3D;
+using Olve.Engine3D;
 using Olve.Trains.Scenes.GameLogic.Tracks;
-using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Trains;
 
 namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 
 public class JunctionSignalRuleEvaluationService(
-    VehicleJunctionService vehicleJunctionService,
+    TrainJunctionService trainJunctionService,
     JunctionService junctionService,
     JunctionSignalRuleService junctionSignalRuleService,
-    VehicleGroupService vehicleGroupService)
+    TrainGroupService trainGroupService)
 {
-    public Result<RuleEvaluationResult> EvaluateSignalRules(Id<Junction> junctionId, Id<Vehicle> vehicleId, Id<Track> sourceTrackId)
+    public Result<RuleEvaluationResult> EvaluateSignalRules(Id<Junction> junctionId, Id<Train> trainId, Id<Track> sourceTrackId)
     {
         var junctionSignalRules = junctionSignalRuleService.GetRulesForJunction(junctionId);
         foreach (var junctionSignalRule in junctionSignalRules)
         {
-            if (IsEligibleForRule(junctionId, vehicleId, sourceTrackId, junctionSignalRule)
+            if (IsEligibleForRule(junctionId, trainId, sourceTrackId, junctionSignalRule)
                 .TryPickProblems(out var problems, out var isEligibleForRule))
             {
                 return problems;
@@ -27,7 +27,7 @@ public class JunctionSignalRuleEvaluationService(
                 continue;
             }
             
-            var ruleResult = ApplyRule(vehicleId, sourceTrackId, junctionSignalRule);
+            var ruleResult = ApplyRule(trainId, sourceTrackId, junctionSignalRule);
             if (ruleResult.TryPickProblems(out problems, out var ruleEvaluation))
             {
                 return problems;
@@ -42,22 +42,22 @@ public class JunctionSignalRuleEvaluationService(
         return RuleEvaluationResult.None;
     }
 
-    private Result<bool> IsEligibleForRule(Id<Junction> junctionId, Id<Vehicle> vehicleId, Id<Track> sourceTrackId, JunctionSignalRule junctionSignalRule)
+    private Result<bool> IsEligibleForRule(Id<Junction> junctionId, Id<Train> trainId, Id<Track> sourceTrackId, JunctionSignalRule junctionSignalRule)
     {
         if (Result.Concat(
-                IsVehicleEligible(vehicleId, junctionSignalRule.Vehicles),
+                IsTrainEligible(trainId, junctionSignalRule.Trains),
                 IsSourceEligible(junctionId, sourceTrackId, junctionSignalRule.Sources)).TryPickProblems(out var problems, out var eligibilities))
         {
             return problems;
         }
 
-        var (isVehicleEligible, isSourceEligible) = eligibilities;
-        return isVehicleEligible && isSourceEligible;
+        var (isTrainEligible, isSourceEligible) = eligibilities;
+        return isTrainEligible && isSourceEligible;
     }
 
-    private Result<bool> IsVehicleEligible(Id<Vehicle> sourceVehicleId, IReadOnlyCollection<SignalRuleVehicle> vehicleRules)
+    private Result<bool> IsTrainEligible(Id<Train> sourceTrainId, IReadOnlyCollection<SignalRuleTrain> trainRules)
     {
-        var results = vehicleRules.Select(vehicleRule => IsVehicleEligible(sourceVehicleId, vehicleRule));
+        var results = trainRules.Select(trainRule => IsTrainEligible(sourceTrainId, trainRule));
         if (results.TryPickProblems(out var problems, out var eligibilities))
         {
             return problems;
@@ -66,12 +66,12 @@ public class JunctionSignalRuleEvaluationService(
         return eligibilities.Any(x => x);
     }
 
-    private Result<bool> IsVehicleEligible(Id<Vehicle> sourceVehicleId, SignalRuleVehicle vehicleRule)
+    private Result<bool> IsTrainEligible(Id<Train> sourceTrainId, SignalRuleTrain trainRule)
     {
-        return vehicleRule.Match<Result<bool>>(
+        return trainRule.Match<Result<bool>>(
             any => true,
-            groupId => vehicleGroupService.IsMemberOf(sourceVehicleId, groupId),
-            vehicleId => sourceVehicleId == vehicleId);
+            groupId => trainGroupService.IsMemberOf(sourceTrainId, groupId),
+            trainId => sourceTrainId == trainId);
     }
 
     private Result<bool> IsSourceEligible(Id<Junction> junctionId, Id<Track> sourceTrackId, IReadOnlyCollection<SignalRuleSource> sourceRules)
@@ -104,9 +104,9 @@ public class JunctionSignalRuleEvaluationService(
             trackId => sourceTrackId == trackId);
     }
 
-    private Result<RuleEvaluationResult> ApplyRule(Id<Vehicle> vehicleId, Id<Track> sourceTrackId, JunctionSignalRule junctionSignalRule)
+    private Result<RuleEvaluationResult> ApplyRule(Id<Train> trainId, Id<Track> sourceTrackId, JunctionSignalRule junctionSignalRule)
     {
-        var getAllowedDestinationsResult = GetAllowedDestinations(vehicleId, junctionSignalRule);
+        var getAllowedDestinationsResult = GetAllowedDestinations(trainId, junctionSignalRule);
         if (getAllowedDestinationsResult.TryPickProblems(out var problems, out var allowedDestinations))
         {
             return problems;
@@ -125,9 +125,9 @@ public class JunctionSignalRuleEvaluationService(
 
     }
 
-    private Result<IReadOnlyList<Id<Track>>> GetAllowedDestinations(Id<Vehicle> vehicleId, JunctionSignalRule junctionSignalRule)
+    private Result<IReadOnlyList<Id<Track>>> GetAllowedDestinations(Id<Train> trainId, JunctionSignalRule junctionSignalRule)
     {
-        if (vehicleJunctionService.GetVehicleTrackPoint(vehicleId).TryPickProblems(out var problems, out var vehicleTrackPoint))
+        if (trainJunctionService.GetTrainTrackPoint(trainId).TryPickProblems(out var problems, out var trainTrackPoint))
         {
             return problems;
         }
@@ -140,13 +140,13 @@ public class JunctionSignalRuleEvaluationService(
             destinationRule.Switch(
                 any =>
                 {
-                    allowedDestinations = junctionService.GetConnections(vehicleTrackPoint).Select(x => x.TrackId).ToList();
+                    allowedDestinations = junctionService.GetConnections(trainTrackPoint).Select(x => x.TrackId).ToList();
                     finished = true;
                 },
                 direction => { },
                 trackId =>
                 {
-                    if (junctionService.IsConnected(trackId, vehicleTrackPoint))
+                    if (junctionService.IsConnected(trackId, trainTrackPoint))
                     {
                         allowedDestinations.Add(trackId);
                     }

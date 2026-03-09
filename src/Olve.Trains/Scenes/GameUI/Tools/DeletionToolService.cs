@@ -5,7 +5,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Tracks;
-using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Trains;
 using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.Tools;
@@ -15,8 +15,8 @@ public class DeletionToolService(
     ToolManagementService toolManagementService,
     TrackSplineService trackSplineService,
     TrackService trackService,
-    VehicleService vehicleService,
-    VehiclePositionService vehiclePositionService,
+    TrainService trainService,
+    TrainPositionService trainPositionService,
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
     MouseManager mouseManager,
@@ -26,7 +26,7 @@ public class DeletionToolService(
     public record State(bool ActivatedThisFrame = false);
 
     private const float SnappingDistance = 1.0f;
-    private const float VehicleDetectionDistance = 1.5f;
+    private const float TrainDetectionDistance = 1.5f;
 
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Delete Entities");
@@ -62,10 +62,10 @@ public class DeletionToolService(
             return Result.Success();
         }
 
-        // Priority: Vehicle > Building > Track
+        // Priority: Train > Building > Track
 
-        // 1. Check for vehicles near the cursor
-        if (TryDeleteNearestVehicle(terrainIntersection))
+        // 1. Check for trains near the cursor
+        if (TryDeleteNearestTrain(terrainIntersection))
         {
             return Result.Success();
         }
@@ -83,12 +83,12 @@ public class DeletionToolService(
         return Result.Success();
     }
 
-    private bool TryDeleteNearestVehicle(Vector3D<float> position)
+    private bool TryDeleteNearestTrain(Vector3D<float> position)
     {
-        Id<Vehicle>? closestVehicleId = null;
-        var closestDistanceSq = VehicleDetectionDistance * VehicleDetectionDistance;
+        Id<Train>? closestTrainId = null;
+        var closestDistanceSq = TrainDetectionDistance * TrainDetectionDistance;
 
-        foreach (var (vehicleId, trackPosition) in vehiclePositionService.TrackPositions)
+        foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
         {
             if (trackSplineService.GetPoint(trackPosition.TrackPoint.TrackId, trackPosition.TrackPoint.Time)
                 .TryPickProblems(out _, out var worldPosition))
@@ -100,23 +100,23 @@ public class DeletionToolService(
             if (distanceSq < closestDistanceSq)
             {
                 closestDistanceSq = distanceSq;
-                closestVehicleId = vehicleId;
+                closestTrainId = trainId;
             }
         }
 
-        if (closestVehicleId is not { } id)
+        if (closestTrainId is not { } id)
         {
             return false;
         }
 
-        var result = vehicleService.DeleteVehicle(id);
+        var result = trainService.DeleteTrain(id);
         if (result.TryPickProblems(out var problems))
         {
-            logger.LogWarning("Failed to delete vehicle {VehicleId}: {Problems}", id, problems);
+            logger.LogWarning("Failed to delete train {TrainId}: {Problems}", id, problems);
             return false;
         }
 
-        logger.LogInformation("Deleted vehicle {VehicleId}", id);
+        logger.LogInformation("Deleted train {TrainId}", id);
         return true;
     }
 

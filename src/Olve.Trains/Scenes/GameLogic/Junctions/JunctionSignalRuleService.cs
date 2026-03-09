@@ -51,7 +51,7 @@ public sealed class JunctionSignalRuleService(ILogger<JunctionSignalRuleService>
     public IReadOnlyList<JunctionSignalRule> GetRulesForJunction(Id<Junction> junctionId) => _rules.GetValueOrDefault(junctionId, []);
 
     public Result<Id<JunctionSignalRule>> AddRuleForJunction(Id<Junction> junctionId,
-        IReadOnlyList<SignalRuleVehicle> vehicles,
+        IReadOnlyList<SignalRuleTrain> trains,
         IReadOnlyList<SignalRuleSource> sources,
         IReadOnlyList<SignalRuleDestination> destinations,
         SignalRuleDistribution distribution)
@@ -62,7 +62,7 @@ public sealed class JunctionSignalRuleService(ILogger<JunctionSignalRuleService>
         }
 
         var junctionSignalId = Id.New<JunctionSignalRule>();
-        JunctionSignalRule rule = new(junctionSignalId, junctionId, vehicles, sources, destinations, distribution);
+        JunctionSignalRule rule = new(junctionSignalId, junctionId, trains, sources, destinations, distribution);
         junctionRules.Add(rule);
 
         _ruleJunctions[junctionSignalId] = junctionId;

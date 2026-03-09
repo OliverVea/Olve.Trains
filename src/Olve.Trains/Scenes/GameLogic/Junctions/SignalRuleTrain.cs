@@ -1,11 +1,11 @@
-using Olve.Trains.Scenes.GameLogic.Vehicles;
+using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Utilities.Types;
 using OneOf;
 
 namespace Olve.Trains.Scenes.GameLogic.Junctions;
 
 [GenerateOneOf]
-public partial class SignalRuleVehicle : OneOfBase<Any, Id<VehicleGroup>, Id<Vehicle>>
+public partial class SignalRuleTrain : OneOfBase<Any, Id<TrainGroup>, Id<Train>>
 {
     public override string ToString()
     {

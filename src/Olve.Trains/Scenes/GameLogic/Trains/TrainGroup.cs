@@ -1,5 +1,5 @@
 using Olve.Utilities.Lookup;
 
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public readonly record struct VehicleGroup(Id<VehicleGroup> Id, string Name) : IHasId<Id<VehicleGroup>>;
+public readonly record struct TrainGroup(Id<TrainGroup> Id, string Name) : IHasId<Id<TrainGroup>>;

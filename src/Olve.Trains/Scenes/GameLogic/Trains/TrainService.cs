@@ -2,40 +2,40 @@ using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
 using Olve.Trains.Shared.Telemetry;
 
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public class VehicleService(EntityStoreFactory entityStoreFactory)
+public class TrainService(EntityStoreFactory entityStoreFactory)
 {
-    private readonly EntityStore<Vehicle> _vehicles = entityStoreFactory.Create<Vehicle>();
+    private readonly EntityStore<Train> _trains = entityStoreFactory.Create<Train>();
     private int _count;
 
-    public Event<Id<Vehicle>> OnVehicleAdded => _vehicles.OnAdded;
-    public Event<Id<Vehicle>> OnVehicleRemoved => _vehicles.OnRemoved;
-    public IEnumerable<Id<Vehicle>> VehicleIds => _vehicles.Keys;
+    public Event<Id<Train>> OnTrainAdded => _trains.OnAdded;
+    public Event<Id<Train>> OnTrainRemoved => _trains.OnRemoved;
+    public IEnumerable<Id<Train>> TrainIds => _trains.Keys;
 
     public int Count => _count;
 
-    public Result<Id<Vehicle>> AddVehicle(string name)
+    public Result<Id<Train>> AddTrain(string name)
     {
-        var vehicleId = Id.New<Vehicle>();
-        Vehicle vehicle = new(vehicleId, name);
-        if (!_vehicles.TryAdd(vehicle))
+        var trainId = Id.New<Train>();
+        Train train = new(trainId, name);
+        if (!_trains.TryAdd(train))
         {
-            return new ResultProblem("Vehicle already exists: '{0}'", vehicleId);
+            return new ResultProblem("Train already exists: '{0}'", trainId);
         }
 
         _count++;
-        if (EngineMetrics.IsEnabled) GameMetrics.VehicleCount.Add(1);
-        return vehicleId;
+        if (EngineMetrics.IsEnabled) GameMetrics.TrainCount.Add(1);
+        return trainId;
     }
 
-    public DeletionResult DeleteVehicle(Id<Vehicle> vehicleId)
+    public DeletionResult DeleteTrain(Id<Train> trainId)
     {
-        var result = _vehicles.Remove(vehicleId);
+        var result = _trains.Remove(trainId);
         if (!result.WasNotFound)
         {
             _count--;
-            if (EngineMetrics.IsEnabled) GameMetrics.VehicleCount.Add(-1);
+            if (EngineMetrics.IsEnabled) GameMetrics.TrainCount.Add(-1);
         }
         return result;
     }

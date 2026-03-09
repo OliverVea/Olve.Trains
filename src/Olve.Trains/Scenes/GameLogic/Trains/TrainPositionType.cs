@@ -1,6 +1,6 @@
-namespace Olve.Trains.Scenes.GameLogic.Vehicles;
+namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public enum VehiclePositionType
+public enum TrainPositionType
 {
     None = 0,
     OnTrack

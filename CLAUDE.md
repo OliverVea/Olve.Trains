@@ -72,9 +72,9 @@ Use `help` to see all available commands. Key commands:
 
 Directions: `north`, `south`, `east`, `west` (or `n`, `s`, `e`, `w`)
 
-**place-vehicle** - Place a vehicle (train) on a track.
+**place-train** - Place a train on a track.
 ```bash
---send "place-vehicle track=<track-id>"
+--send "place-train track=<track-id>"
 ```
 
 **screenshot** - Take a screenshot.
@@ -107,7 +107,7 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-track s
 dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-track start=0,0.125,4 end=0,0.125,0 start-dir=south end-dir=east"
 
 # Place a train on the first track segment (use track ID from place-track output)
-dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-vehicle track=<track-id-from-output>"
+dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-train track=<track-id-from-output>"
 
 # Take a screenshot
 dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "screenshot path=~/circle-track.png"

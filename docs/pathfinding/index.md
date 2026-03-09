@@ -14,10 +14,10 @@ Since tracks are only allowed on the intersection of tiles (integer 3D coordinat
 
 ### Next steps
 
-We will need to implement basic movement along a train, establishing a `VehicleService` which tracks the position of point-based vehicles.
+We will need to implement basic movement along a train, establishing a `VehicleService` which tracks the position of point-based trains.
 
 To move the trains, we will need to make a movement system which focuses on maintainability and extensibility. For example `VehicleNavigationStrategy` where we can implement a dummy `KeepRightVehicleNavigationStrategy`.
 
 Then we implement pathfinding, getting the sequence of tracks from (closest to) A to (closest to) B. This should be implemented as A* and, again, the `TrackPathfindingStrategy` should be modular and replacable in nature. for now, sample the points of the spline similarly to how the splines are drawn.
 
-Paths from the pathfinding should be cached under a From, To. we can keep the cache with a limited size (e.g. 50). Any updates to the train network at all should mark the path as Old (but still allowed for direct lookup for existing trains), but changes to any of a track's path must invalidate the path and mark it for recalculation, even for vehicles with the actual path id.
+Paths from the pathfinding should be cached under a From, To. we can keep the cache with a limited size (e.g. 50). Any updates to the train network at all should mark the path as Old (but still allowed for direct lookup for existing trains), but changes to any of a track's path must invalidate the path and mark it for recalculation, even for trains with the actual path id.

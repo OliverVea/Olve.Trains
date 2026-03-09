@@ -59,7 +59,7 @@ public static class ColliderGroups
 {
     public static readonly Id<ColliderGroup> Signal = Id.FromName<ColliderGroup>("Signal");
     public static readonly Id<ColliderGroup> Building = Id.FromName<ColliderGroup>("Building");
-    public static readonly Id<ColliderGroup> Vehicle = Id.FromName<ColliderGroup>("Vehicle");
+    public static readonly Id<ColliderGroup> Train = Id.FromName<ColliderGroup>("Train");
     public static readonly Id<ColliderGroup> Track = Id.FromName<ColliderGroup>("Track");
 }
 ```
@@ -105,7 +105,7 @@ For collision, tracks can generate a low-poly band mesh from their spline (sampl
 3. Register junction signal meshes and colliders (first consumer)
 4. Add raycast query and wire to mouse click (log signal clicks)
 5. Migrate building meshes to `MeshManager` + register building colliders
-6. Migrate vehicle meshes to `MeshManager` + register vehicle colliders
+6. Migrate train meshes to `MeshManager` + register train colliders
 7. Migrate track collision to `CollisionSystem`
 8. Add terrain as a collision source
 9. Update `MeshRenderingService` to accept `Id<Mesh>` (rendering integration)

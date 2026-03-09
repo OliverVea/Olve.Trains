@@ -2,12 +2,12 @@
 
 - [x] Signal logic epic (Feature):
   - [x] Automatic junction and signal creation/removal based on track topology
-  - [x] Rule-based routing system (vehicle, source, destination, distribution)
+  - [x] Rule-based routing system (train, source, destination, distribution)
   - [x] RoundRobin distribution and rule evaluation with train queuing
   - [x] CLI commands for signal rule management (add-signal-rule, clear-signal-rules)
   - [x] 3D signal rendering at junctions
   - [x] Implement CardinalDirection matching in signal rules (source only — destination direction matching is a no-op stub)
-  - [x] Implement VehicleGroup matching in signal rules
+  - [x] Implement TrainGroup matching in signal rules
   - [x] Add in-game GUI for viewing and editing signal rules on a selected junction
 - [x] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](docs/DESIGN_SHADER_ANNOTATIONS.md)):
   - [x] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
@@ -22,7 +22,7 @@
 - [x] Unified renderer epic (Technical)
 - [x] OpenTelemetry metrics epic (Technical):
   - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts, scene update/render duration, commands processed)
-  - [x] Add game-level OTel metrics (track count, vehicle count, building count)
+  - [x] Add game-level OTel metrics (track count, train count, building count)
 - [x] Track creation epic (Feature):
   - [x] Allow ghost preview during track creation
   - [x] Disallow tracks with collisions with geometry, other tracks, and extreme curvature
@@ -30,8 +30,7 @@
 - [x] Deletion epic (Feature):
   - [x] Add deletion tool
   - [x] Allow deleting tracks
-  - [x] Allow deleting trains
-  - [x] Allow deleting vehicles
+  - [x] Allow deleting tracks and trains
 - [x] Building epic (Feature):
   - [x] Add basic support for buildings
   - [x] Add building validation and validation failure rendering
@@ -56,7 +55,7 @@
   - [x] Register junction signal meshes and colliders
   - [x] Add raycast query and wire to mouse click (log signal clicks)
   - [x] Migrate building meshes to MeshManager + register building colliders
-  - [x] Migrate vehicle meshes to MeshManager + register vehicle colliders
+  - [x] Migrate train meshes to MeshManager + register train colliders
   - [x] Migrate track collision to CollisionSystem
   - [x] Add terrain as a collision source
   - [x] Generalize CollisionSystem with IColliderShape interface (GetAABB, TryRaycast)
@@ -124,9 +123,9 @@
   - [ ] Add in-game sound effects
   - [ ] Add spatial effects for e.g. localized sounds, wind blowing when the camera is zoomed out, and so on
 - [ ] Train perspective camera epic (Feature):
-  - Description: First-person camera from the train's perspective as it drives around. Includes a skybox so the sky looks correct from the train's viewpoint. Camera position and orientation derived from the vehicle's current spline parameter via TrackSplineService.
+  - Description: First-person camera from the train's perspective as it drives around. Includes a skybox so the sky looks correct from the train's viewpoint. Camera position and orientation derived from the train's current spline parameter via TrackSplineService.
   - [ ] Add skybox rendering (cubemap or gradient shader, drawn behind all geometry)
-  - [ ] Add perspective camera mode that follows a selected vehicle along its track spline
+  - [ ] Add perspective camera mode that follows a selected train along its track spline
   - [ ] Add UI toggle to enter/exit train perspective (keybind or button when selecting a train)
 - [ ] Terrain environment epic (Visual):
   - Description: Make the terrain feel like a real landmass instead of a floating mesh. Extrude cliff/dirt sides along terrain borders down to a water plane, giving a natural island look.
@@ -186,12 +185,12 @@
   - [ ] Add basic support for building upgrades
   - [ ] Require resources for building upgrades
 - [ ] Test coverage epic (Testing):
-  - [x] Add query commands for headless test assertions (query-vehicle, list-vehicles, list-junctions, query-junction)
+  - [x] Add query commands for headless test assertions (query-train, list-trains, list-junctions, query-junction)
   - [x] Add signal routing integration tests (directional rules, junction crossing)
   - [x] Migrate command output to JSON for structured test assertions
   - [ ] Add tests for core engine services (SceneManager lifecycle, GameManager)
   - [ ] Add tests for command pipe communication (CommandPipeServer/Client)
-  - [ ] Add tests for game logic services (tracks, vehicles, buildings)
+  - [ ] Add tests for game logic services (tracks, trains, buildings)
   - [ ] Add test execution step to CI pipeline
 - [ ] Money epic (Feature):
   - [ ] Add money/balance entity and service
