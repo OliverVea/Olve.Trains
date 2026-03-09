@@ -68,6 +68,9 @@
             Condition="!Exists('$(MSBuildThisFileDirectory)assets\Shaders')">
         <Message Importance="high" Text="Asset pipeline: shaders missing, rebuilding" />
         <Exec Command="dotnet run --project &quot;$(AssetPipelineProject)&quot; --no-build -- --targets Shaders" />
+        <ItemGroup>
+            <Compile Include="$(MSBuildThisFileDirectory)assets\Shaders\*.cs" />
+        </ItemGroup>
     </Target>
 
     <Target Name="_RunLayoutPipeline"
@@ -83,6 +86,9 @@
             Condition="!Exists('$(MSBuildThisFileDirectory)assets\Layouts')">
         <Message Importance="high" Text="Asset pipeline: layouts missing, rebuilding" />
         <Exec Command="dotnet run --project &quot;$(AssetPipelineProject)&quot; --no-build -- --targets Layouts" />
+        <ItemGroup>
+            <Compile Include="$(MSBuildThisFileDirectory)assets\Layouts\*.cs" />
+        </ItemGroup>
     </Target>
 
     <Target Name="_RunS3Pipeline"
@@ -98,6 +104,21 @@
             Condition="!Exists('$(MSBuildThisFileDirectory)assets\Meshes') or !Exists('$(MSBuildThisFileDirectory)assets\Textures') or !Exists('$(MSBuildThisFileDirectory)assets\Terrains') or !Exists('$(MSBuildThisFileDirectory)assets\Fonts')">
         <Message Importance="high" Text="Asset pipeline: S3 assets missing, rebuilding" />
         <Exec Command="dotnet run --project &quot;$(AssetPipelineProject)&quot; --no-build -- --targets Meshes,Textures,Terrains,Fonts" />
+        <ItemGroup>
+            <Compile Include="$(MSBuildThisFileDirectory)assets\**\*.cs" />
+        </ItemGroup>
+    </Target>
+
+    <!-- dotnet clean: wipe generated assets (next build regenerates from cached S3 files) -->
+    <Target Name="CleanAssets" AfterTargets="Clean">
+        <Message Importance="high" Text="Cleaning generated assets..." />
+        <RemoveDir Directories="$(MSBuildThisFileDirectory)assets" />
+    </Target>
+
+    <!-- dotnet msbuild -t:CleanS3Cache: also wipe S3 cache (next build must re-download from S3) -->
+    <Target Name="CleanS3Cache">
+        <Message Importance="high" Text="Cleaning S3 cache..." />
+        <RemoveDir Directories="$(AssetPipelineS3Cache)" />
     </Target>
 
 </Project>
