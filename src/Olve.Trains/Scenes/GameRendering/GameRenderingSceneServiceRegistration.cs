@@ -36,6 +36,7 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<TrackRenderingService>(sceneId);
         services.AddSceneService<TrackGhostRenderingService>(sceneId);
         services.AddSceneService<TrainRenderingService>(sceneId);
+        services.AddSceneService<WagonRenderingService>(sceneId);
         services.AddSceneService<JunctionSignalRenderingService>(sceneId);
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,

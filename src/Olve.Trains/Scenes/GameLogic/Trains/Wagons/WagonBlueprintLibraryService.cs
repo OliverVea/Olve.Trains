@@ -11,7 +11,7 @@ public class WagonBlueprintLibraryService(WagonBlueprintService wagonBlueprintSe
             "Goods Wagon",
             Capacity: 10,
             AllowedTypes: null,
-            Length: 2.0f));
+            Length: 1.0f));
 
         return Result.Success();
     }

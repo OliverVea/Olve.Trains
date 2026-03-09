@@ -34,8 +34,9 @@ public class TrainCollisionService(
             return new ResultProblem("Mesh AABB not found for train mesh");
         }
 
-        var halfExtents = (localAABB.Max - localAABB.Min) * 0.5f;
-        _centerOffset = (localAABB.Min + localAABB.Max) * 0.5f;
+        var scale = TrainWorldMatrix.TrainScale;
+        var halfExtents = (localAABB.Max - localAABB.Min) * 0.5f * scale;
+        _centerOffset = (localAABB.Min + localAABB.Max) * 0.5f * scale;
         _shape = new BoxColliderShape(halfExtents);
 
         return Result.Success();

@@ -4,9 +4,11 @@ namespace Olve.Trains.Scenes.GameLogic.Trains;
 
 public static class TrainWorldMatrix
 {
+    public const float TrainScale = 0.6f;
+
     public static Matrix4X4<float> Compute(float velocity, Position3D splinePosition)
     {
-        var worldMatrix = Matrix4X4<float>.Identity;
+        var worldMatrix = Matrix4X4.CreateScale(TrainScale);
         if (velocity > 0)
         {
             worldMatrix *= Matrix4X4.CreateRotationY(float.Pi);

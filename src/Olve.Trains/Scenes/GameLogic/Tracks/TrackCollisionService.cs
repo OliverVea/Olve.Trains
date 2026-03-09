@@ -8,8 +8,8 @@ public class TrackCollisionService(
     TrackSplineService trackSplineService)
 {
     private const int SegmentCount = 10;
-    private const float TrackWidth = 0.16f;
-    private const float TrackHeight = 0.02f;
+    private const float TrackWidth = 0.16f * 0.6f;
+    private const float TrackHeight = 0.02f * 0.6f;
 
     private static readonly BoxColliderShape HalfUnitBox = new(new(0.5f, 0.5f, 0.5f));
 

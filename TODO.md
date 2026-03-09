@@ -81,7 +81,7 @@
     - [x] Add station-to-nearby-industries query
     - [x] Add station info panel service (click station → query industries → mount inventory rows)
   - [x] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
-  - [ ] Add wagon mesh rendering (non-locomotive cars follow behind the locomotive along the track spline)
+  - [x] Add wagon mesh rendering (non-locomotive cars follow behind the locomotive along the track spline)
   - [ ] Add loading/unloading at stations (stations as access points to nearby building inventories)
   - [x] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
 - [ ] Resources epic (Feature):

@@ -69,9 +69,13 @@ void main()
         1.0 - smoothstep(0.0, fw.y * 1.5, gridDist.y)
     );
 
-    float dist = distance(FragPos.xz, mousePosition.xz);
-    float t = clamp(1.0 - dist / mouseRadius, 0.0, 1.0);
-    float gridAlpha = smoothstep(0.1, 0.5, t);
+    float gridAlpha = 0.0;
+    if (mouseRadius > 0.0)
+    {
+        float dist = distance(FragPos.xz, mousePosition.xz);
+        float t = clamp(1.0 - dist / mouseRadius, 0.0, 1.0);
+        gridAlpha = smoothstep(0.1, 0.5, t);
+    }
 
     finalColor = mix(finalColor, vec3(1.0), gridLine * gridAlpha * 0.6);
 

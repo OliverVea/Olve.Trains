@@ -24,10 +24,7 @@ public class TerrainRenderingService(
     TerrainHighlightSettings terrainHighlightSettings,
     SceneLightService sceneLightService) : ISceneService
 {
-    private readonly Shaders.Terrain _terrainShader = new()
-    {
-        MouseRadius = 5f,
-    };
+    private readonly Shaders.Terrain _terrainShader = new();
 
     public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, sceneLightService]);
 
@@ -108,9 +105,11 @@ public class TerrainRenderingService(
         cameraSceneService.ApplyCameraDirectionParameters(_terrainShader);
 
         _terrainShader.MousePosition = null;
+        _terrainShader.MouseRadius = null;
         if (terrainHighlightSettings is { ShowGrid: true, MouseWorldPosition: { } pos })
         {
             _terrainShader.MousePosition = pos;
+            _terrainShader.MouseRadius = 5f;
         }
 
         return Result.Success();

@@ -9,7 +9,8 @@ public class TrainJunctionCrossingService(
     TrainJunctionService trainJunctionService,
     JunctionService junctionService,
     JunctionSignalService junctionSignalService,
-    JunctionSignalRuleEvaluationService junctionSignalRuleEvaluationService) : ISceneService
+    JunctionSignalRuleEvaluationService junctionSignalRuleEvaluationService,
+    TrainTrackHistoryService trainTrackHistoryService) : ISceneService
 {
     private readonly List<Id<Train>> _queue = new();
     private readonly List<Id<Train>> _suspended = new();
@@ -101,6 +102,8 @@ public class TrainJunctionCrossingService(
 
         var newVelocity = isAtDestinationEnd ? -float.Abs(trainTrackPosition.Velocity) : float.Abs(trainTrackPosition.Velocity);
         var newTime = isAtDestinationEnd ? 1 : 0;
+
+        trainTrackHistoryService.RecordTransition(trainId, trainTrackPosition.TrackId, trainTrackPosition.Velocity);
 
         TrackPoint newTrainTrackPoint = new(transferredTracks.To, newTime);
         TrainTrackPosition newTrainTrackPosition = new(newTrainTrackPoint, newVelocity);

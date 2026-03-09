@@ -5,9 +5,9 @@ namespace Olve.Trains.Scenes.GameRendering;
 public static class TrackTemplateMeshService
 {
     private const int Subdivisions = 64;
-    private const float HalfGauge = 0.07f;
-    private const float RailHalfWidth = 0.005f;
-    private const float RailHeight = 0.01f;
+    private const float HalfGauge = 0.07f * 0.6f;
+    private const float RailHalfWidth = 0.005f * 0.6f;
+    private const float RailHeight = 0.01f * 0.6f;
 
     public static (TVertex[] Vertices, uint[] Indices) Generate<TVertex>()
         where TVertex : struct, IWithPosition3D<TVertex>, IWithNormal3D<TVertex>

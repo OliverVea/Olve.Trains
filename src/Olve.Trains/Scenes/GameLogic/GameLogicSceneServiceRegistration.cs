@@ -101,6 +101,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<TrackValidationService>();
         services.TryAddScoped<TrainCollisionService>();
         services.TryAddScoped<TrainGroupService>();
+        services.TryAddScoped<TrainTrackHistoryService>();
         services.TryAddScoped<TrainJunctionService>();
         services.TryAddScoped<TrainPositionService>();
         services.TryAddScoped<TrainService>();
@@ -206,6 +207,15 @@ public static class GameLogicSceneServiceRegistration
             (TrainWagonService tws, Id<Train> trainId) =>
             {
                 tws.RemoveAllWagons(trainId);
+                return Result.Success();
+            });
+
+        // Clean up track history when a train is removed
+        services.AddEventSceneService(sceneId,
+            (TrainService ts) => ts.OnTrainRemoved,
+            (TrainTrackHistoryService tths, Id<Train> trainId) =>
+            {
+                tths.RemoveHistory(trainId);
                 return Result.Success();
             });
 
