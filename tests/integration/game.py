@@ -82,10 +82,17 @@ class JunctionDetail:
 
 
 @dataclass
+class WagonCargo:
+    cargo_type: str
+    amount: int
+
+
+@dataclass
 class WagonInfo:
     wagon_id: str
     blueprint_id: str
     inventory_id: str
+    cargo: list[WagonCargo] = field(default_factory=list)
 
 
 class GameCrashedError(Exception):
@@ -330,6 +337,16 @@ class Game:
             velocity=data["velocity"],
             position=(float(pos["x"]), float(pos["y"]), float(pos["z"])) if pos else None,
         )
+
+    def query_train_cargo(self, train_id: str) -> dict[str, int]:
+        """Query train and return aggregated cargo across all wagons as {cargoType: totalAmount}."""
+        result = self.send(f"query-train train={train_id}")
+        data = json.loads(result.output)
+        totals: dict[str, int] = {}
+        for w in data.get("wagons", []):
+            for c in w.get("cargo", []):
+                totals[c["cargoType"]] = totals.get(c["cargoType"], 0) + c["amount"]
+        return totals
 
     def list_trains(self) -> list[TrainState]:
         result = self.send("list-trains")

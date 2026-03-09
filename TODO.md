@@ -69,6 +69,10 @@
 - [x] Screenshots saved with alpha channel — semi-transparent GUI overlays (e.g. burger menu) produce non-opaque pixels instead of composited RGB. Should force alpha to 255 or use RGB format when reading the framebuffer.
 - [x] Rotation of station building causes incorrect footprint and building mesh location (note: track calculation is actually correct).
 
+## Tech Debt
+
+- [ ] Integration tests should use user-facing validated placement tools (e.g. select tool, click to place) instead of raw `place-track`/`place-building` commands. If validation logic breaks, raw commands bypass it silently — at least some tests should go through the full GUI placement flow to catch that.
+
 ## Demo
 
 - [ ] Industry epic (Feature) (see [docs/DESIGN_CARGO_SYSTEM.md](docs/DESIGN_CARGO_SYSTEM.md)):
@@ -82,7 +86,7 @@
     - [x] Add station info panel service (click station → query industries → mount inventory rows)
   - [x] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
   - [x] Add wagon mesh rendering (non-locomotive cars follow behind the locomotive along the track spline)
-  - [ ] Add loading/unloading at stations (stations as access points to nearby building inventories)
+  - [x] Add loading/unloading at stations (stations as access points to nearby building inventories)
   - [x] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
 - [ ] Resources epic (Feature):
   - [ ] Design resource system (discrete entities, field deposits, geometric resources; harvest range; production linking)

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
+using Olve.Trains.Scenes.GameLogic.Cargo;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Trains.Scenes.GameLogic.Trains.Wagons;
@@ -12,7 +13,10 @@ public class QueryTrainHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,
     TrainPositionService trainPositionService,
     TrackSplineService trackSplineService,
-    TrainWagonService trainWagonService) : CommandHandlerService(commandHandlerServiceCollection)
+    TrainWagonService trainWagonService,
+    WagonInventoryService wagonInventoryService,
+    CargoInventoryService cargoInventoryService,
+    CargoTypeService cargoTypeService) : CommandHandlerService(commandHandlerServiceCollection)
 {
     private static readonly CommandArgument TrainArgument = new("train", "The train ID to query", true);
 
@@ -49,7 +53,28 @@ public class QueryTrainHandlerService(
         }
 
         var wagons = trainWagonService.GetWagons(trainId)
-            .Select(w => new { wagonId = w.Id.ToString(), blueprintId = w.BlueprintId.ToString() })
+            .Select(w =>
+            {
+                List<object>? cargo = null;
+                if (wagonInventoryService.TryGetInventory(w.Id, out var inventoryId))
+                {
+                    cargo = [];
+                    foreach (var (cargoTypeId, _, amount) in cargoInventoryService.GetEntries(inventoryId))
+                    {
+                        var cargoName = cargoTypeService.TryGetCargoType(cargoTypeId, out var cargoType)
+                            ? cargoType.Name
+                            : "Unknown";
+                        cargo.Add(new { cargoType = cargoName, amount });
+                    }
+                }
+
+                return new
+                {
+                    wagonId = w.Id.ToString(),
+                    blueprintId = w.BlueprintId.ToString(),
+                    cargo = cargo ?? [],
+                };
+            })
             .ToArray();
 
         var json = JsonSerializer.Serialize(new

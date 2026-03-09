@@ -25,8 +25,6 @@ public class StationInfoPanelService(
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
     StationService stationService,
-    StationBlueprintService stationBlueprintService,
-    IndustryService industryService,
     IndustryRecipeService industryRecipeService,
     CargoTypeService cargoTypeService,
     CargoInventoryService cargoInventoryService,
@@ -167,16 +165,8 @@ public class StationInfoPanelService(
             return;
         }
 
-        if (!buildingService.TryGetBuilding(_buildingId, out var stationBuilding)) return;
-        if (!stationBlueprintService.TryGetProperties(stationBuilding.BlueprintId, out var stationProps)) return;
-
-        foreach (var building in buildingService.Buildings)
+        foreach (var industry in stationService.GetNearbyIndustries(_buildingId))
         {
-            if (!industryService.TryGetByBuilding(building.Id, out var industry)) continue;
-
-            var distance = TileDistance(stationBuilding.Position.BottomLeft, building.Position.BottomLeft);
-            if (distance > stationProps.Range) continue;
-
             if (!industryRecipeService.TryGetRecipe(industry.RecipeId, out var recipe)) continue;
 
             foreach (var (cargoTypeId, direction) in cargoTransferPolicyService.GetPolicies(industry.InventoryId))
@@ -260,10 +250,4 @@ public class StationInfoPanelService(
         return nodeId == guiElementNodeId;
     }
 
-    private static int TileDistance(TilePosition a, TilePosition b)
-    {
-        var dx = Math.Abs(a.X - b.X);
-        var dz = Math.Abs(a.Z - b.Z);
-        return Math.Max(dx, dz);
-    }
 }

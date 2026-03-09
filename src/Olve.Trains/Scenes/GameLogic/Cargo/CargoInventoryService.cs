@@ -72,17 +72,20 @@ public class CargoInventoryService(EntityStoreFactory entityStoreFactory)
 
     public bool CanAccept(Id<CargoInventory> id, Id<CargoType> cargoTypeId)
     {
-        if (!_inventories.TryGet(id, out var inventory)) return false;
-        if (inventory.AllowedTypes is null) return true;
-        return inventory.AllowedTypes.ContainsKey(cargoTypeId);
+        return _inventories.TryGet(id, out var inventory)
+               && (inventory.AllowedTypes is null
+                   || inventory.AllowedTypes.ContainsKey(cargoTypeId));
     }
 
     public bool TryUpdateExact(Id<CargoInventory> id, Id<CargoType> cargoTypeId,
         int delta, Id<CargoInventory> origin)
     {
-        if (delta == 0) return true;
-        if (!_amounts.TryGetValue(id, out var amounts)) return false;
-        if (!_inventories.TryGet(id, out var inventory)) return false;
+        if (delta == 0
+            || !_amounts.TryGetValue(id, out var amounts)
+            || !_inventories.TryGet(id, out _))
+        {
+            return false;
+        }
 
         var key = (cargoTypeId, origin);
 
@@ -109,12 +112,25 @@ public class CargoInventoryService(EntityStoreFactory entityStoreFactory)
         return true;
     }
 
+    public IEnumerable<(Id<CargoType> CargoTypeId, Id<CargoInventory> Origin, int Amount)> GetEntries(Id<CargoInventory> id)
+    {
+        if (!_amounts.TryGetValue(id, out var amounts)) yield break;
+
+        foreach (var (key, amount) in amounts)
+        {
+            yield return (key.CargoTypeId, key.Origin, amount);
+        }
+    }
+
     public int UpdateWithinCapacity(Id<CargoInventory> id, Id<CargoType> cargoTypeId,
         int delta, Id<CargoInventory> origin)
     {
-        if (delta == 0) return 0;
-        if (!_amounts.TryGetValue(id, out var amounts)) return 0;
-        if (!_inventories.TryGet(id, out _)) return 0;
+        if (delta == 0
+            || !_amounts.TryGetValue(id, out var amounts)
+            || !_inventories.TryGet(id, out _))
+        {
+            return 0;
+        }
 
         var key = (cargoTypeId, origin);
 
@@ -123,7 +139,10 @@ public class CargoInventoryService(EntityStoreFactory entityStoreFactory)
             if (!CanAccept(id, cargoTypeId)) return 0;
             var maxAdd = GetRemainingCapacityForType(id, cargoTypeId);
             var actualDelta = Math.Min(delta, maxAdd);
-            if (actualDelta <= 0) return 0;
+            if (actualDelta <= 0)
+            {
+                return 0;
+            }
 
             amounts.TryGetValue(key, out var current);
             amounts[key] = current + actualDelta;
@@ -137,9 +156,13 @@ public class CargoInventoryService(EntityStoreFactory entityStoreFactory)
 
             var newAmount = current + actualDelta;
             if (newAmount == 0)
+            {
                 amounts.Remove(key);
+            }
             else
+            {
                 amounts[key] = newAmount;
+            }
             return actualDelta;
         }
     }

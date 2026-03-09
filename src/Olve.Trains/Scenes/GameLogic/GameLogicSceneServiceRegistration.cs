@@ -64,6 +64,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<TrainCollisionService>(sceneId);
         services.AddSceneService<TrainJunctionCrossingService>(sceneId);
         services.AddSceneService<IndustryProductionService>(sceneId);
+        services.AddSceneService<StationCargoTransferService>(sceneId);
         services.AddSceneService<TrainMovementService>(sceneId);
         services.AddSceneService<WagonBlueprintLibraryService>(sceneId);
         services.AddSceneService<WagonInventoryService>(sceneId);

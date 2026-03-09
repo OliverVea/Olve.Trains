@@ -1,14 +1,16 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Systems;
+using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 
-public class StationService(ILogger<StationService> logger, StationBlueprintService stationBlueprintService, BuildingService buildingService, BuildingBlueprintService buildingBlueprintService, TrackService trackService, GridService gridService)
+public class StationService(ILogger<StationService> logger, StationBlueprintService stationBlueprintService, BuildingService buildingService, BuildingBlueprintService buildingBlueprintService, TrackService trackService, GridService gridService, IndustryService industryService)
 {
     private readonly Dictionary<Id<Building>, Station> _stations = [];
+    private readonly Dictionary<Id<Track>, Station> _stationsByTrack = [];
 
     public Event<Id<Building>> StationCreated { get; } = new();
     public Event<Id<Building>> StationDeleted { get; } = new();
@@ -47,6 +49,7 @@ public class StationService(ILogger<StationService> logger, StationBlueprintServ
 
         Station station = new(buildingId, trackId);
         _stations[buildingId] = station;
+        _stationsByTrack[trackId] = station;
         StationCreated.Invoke(buildingId);
 
         logger.LogInformation("Created station for building {BuildingId} with track {TrackId}", buildingId, trackId);
@@ -61,6 +64,7 @@ public class StationService(ILogger<StationService> logger, StationBlueprintServ
             return Result.Success();
         }
 
+        _stationsByTrack.Remove(station.TrackId);
         trackService.DeleteTrack(station.TrackId);
         StationDeleted.Invoke(buildingId);
 
@@ -71,4 +75,30 @@ public class StationService(ILogger<StationService> logger, StationBlueprintServ
 
     public bool TryGetStation(Id<Building> buildingId, out Station station) =>
         _stations.TryGetValue(buildingId, out station);
+
+    public bool TryGetStationByTrack(Id<Track> trackId, out Station station) =>
+        _stationsByTrack.TryGetValue(trackId, out station);
+
+    public IEnumerable<Industry> GetNearbyIndustries(Id<Building> stationBuildingId)
+    {
+        if (!buildingService.TryGetBuilding(stationBuildingId, out var stationBuilding)) yield break;
+        if (!stationBlueprintService.TryGetProperties(stationBuilding.BlueprintId, out var stationProps)) yield break;
+
+        foreach (var building in buildingService.Buildings)
+        {
+            if (!industryService.TryGetByBuilding(building.Id, out var industry)) continue;
+
+            var distance = TileDistance(stationBuilding.Position.BottomLeft, building.Position.BottomLeft);
+            if (distance > stationProps.Range) continue;
+
+            yield return industry;
+        }
+    }
+
+    internal static int TileDistance(TilePosition a, TilePosition b)
+    {
+        var dx = Math.Abs(a.X - b.X);
+        var dz = Math.Abs(a.Z - b.Z);
+        return Math.Max(dx, dz);
+    }
 }
