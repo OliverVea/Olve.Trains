@@ -103,6 +103,7 @@
   - [ ] Add sleepers/ties to track mesh generation
   - [ ] Create and render procedurally generated station meshes
   - [ ] Improve positioning of track signals based on track positioning
+  - [ ] Add train stop sign at the end of dead-end tracks
 - [ ] GUI layout previewer (Tooling):
   - [ ] Standalone viewer that renders XML layouts via the existing GUI system
   - [ ] File watcher for live reload on XML changes
