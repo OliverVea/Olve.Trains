@@ -111,13 +111,6 @@
   - [ ] Add shadow map generation — FBO wrapper, depth-only pixel format, depth-only shader, `ShadowMapService` that renders casters from light-space each frame
   - [ ] Add shadow map sampling to receiver shaders — terrain, default, and building vertex+fragment shaders pass light-space position and sample the shadow map to attenuate diffuse lighting
 
-- [ ] Demo map epic (Feature):
-  - Description: A single hand-crafted map for the demo. Geography should teach systems through natural bottlenecks — force the player to confront signal complexity, cross-line cargo transfers, and network scaling at specific points. Resource placement creates natural transport corridors. The map should support meaningful play at city levels 1-4 with different optimal strategies at each tier.
-  - [ ] Design the demo map (terrain shape, elevation, resource deposits, city seed locations, natural bottleneck points)
-  - [ ] Implement map loading from a designed heightmap/layout format
-  - [ ] Place pre-defined resource deposits and initial industries on the map
-  - [ ] Place initial residential clusters / city seeds on the map
-
 ### Gameplay mechanics (build after core systems are validated)
 
 - [ ] Money epic (Feature):
@@ -146,7 +139,14 @@
   - [ ] Add water plane below terrain height (flat quad with blue/water shading)
   - [ ] Add cliff/dirt side extrusion along terrain edges (vertical quads from border down to water level)
 
-### Content & polish (last quarter — systems are proven, fill in the content)
+### Content & polish (final stretch — systems are proven, fill in the content)
+
+- [ ] Demo map epic (Feature):
+  - Description: A single hand-crafted map for the demo. Geography should teach systems through natural bottlenecks — force the player to confront signal complexity, cross-line cargo transfers, and network scaling at specific points. Resource placement creates natural transport corridors. The map should support meaningful play at city levels 1-4 with different optimal strategies at each tier. Depends on all core systems being in place (industries, cities, money, resources).
+  - [ ] Design the demo map (terrain shape, elevation, resource deposits, city seed locations, natural bottleneck points)
+  - [ ] Implement map loading from a designed heightmap/layout format
+  - [ ] Place pre-defined resource deposits and initial industries on the map
+  - [ ] Place initial residential clusters / city seeds on the map
 
 - [ ] Industry content epic (Feature):
   - Description: The cargo system infrastructure is done. This epic adds the full set of industries, recipes, and cargo types needed for the game, plus the in-game industry builder tool so players can place industries from the toolbar.
@@ -231,6 +231,12 @@
   - [ ] Add variable-sized residential blueprints (bias toward medium)
   - [ ] Integrate city placement into procedural and premade map generation
   - [ ] Add residential cluster generation rules for map generation
+- [ ] Technology epic (Feature):
+  - Description: A tech tree that gives players meaningful spending targets for accumulated money. Unlocks improve train speed, industry efficiency, new locomotive/wagon types, and infrastructure options. Tech choices should create strategic tradeoffs — not linear upgrades — so different playstyles emerge. Extends the depot and industry UIs.
+  - [ ] Design tech tree (tiers, costs, unlocks, tradeoffs between branches)
+  - [ ] Add tech research service (spend money → unlock tech over time or instantly)
+  - [ ] Apply tech effects to trains (speed, capacity), industries (production rate), and infrastructure
+  - [ ] Add tech tree UI (accessible from main HUD, shows available/researched/locked techs)
 - [ ] Building upgrading epic (Feature):
   - [ ] Add basic support for building upgrades
   - [ ] Require resources for building upgrades
