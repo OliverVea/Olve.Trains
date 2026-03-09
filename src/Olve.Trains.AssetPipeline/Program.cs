@@ -19,13 +19,31 @@ var projectPath = Olve.Paths.Path.TryGetAssemblyExecutable(out var assemblyExecu
     ? assemblyExecutable.Parent
     : Olve.Paths.Path.GetCurrentDirectory();
 
+// Support --targets Shaders,Layouts shorthand (converts to Build:Targets array for config)
+// Accepts comma and/or semicolon delimiters (MSBuild properties use semicolons)
+var configArgs = args;
+for (var i = 0; i < configArgs.Length; i++)
+{
+    if (configArgs[i] == "--targets" && i + 1 < configArgs.Length)
+    {
+        var targetNames = configArgs[i + 1]
+            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var expanded = new List<string>();
+        for (var j = 0; j < i; j++) expanded.Add(configArgs[j]);
+        for (var j = 0; j < targetNames.Length; j++) expanded.Add($"--Build:Targets:{j}={targetNames[j]}");
+        for (var j = i + 2; j < configArgs.Length; j++) expanded.Add(configArgs[j]);
+        configArgs = expanded.ToArray();
+        break;
+    }
+}
+
 var configurationRoot = new ConfigurationBuilder()
     .SetBasePath(projectPath.Path)
     .AddEnvironmentVariables()
     .AddJsonFile("Properties/appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile("Properties/appsettings.local.json", optional: true, reloadOnChange: true)
     .AddUserSecrets(typeof(RunAssetPipeline).Assembly, optional: true, reloadOnChange: true)
-    .AddCommandLine(args)
+    .AddCommandLine(configArgs)
     .Build();
 
 var logLevelString = configurationRoot["Logging:LogLevel:Default"] ?? "Warning";
