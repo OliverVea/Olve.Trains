@@ -94,6 +94,13 @@
   - [ ] Implement all industry types, recipes, and cargo types from the design
   - [ ] Add industry builder tool (toolbar button → select industry type → click to place)
   - [ ] Add industry info panel showing production status and inventory when clicking an industry
+- [ ] Train depot epic (Feature):
+  - Description: Train depots are buildings where players build and customize trains. Place them like a station, click it to open a train builder UI. Players choose a locomotive, add/remove/reorder wagons, and deploy the train onto the depot's track. Replaces the current auto-spawn with 2 goods wagons.
+  - [ ] Add train depot building type (placed with new owned track, like stations)
+  - [ ] Add depot UI panel (click depot → open train builder)
+  - [ ] Add 'create new train dialog' in the UI - creating a new train immediately deploys the train to the depo track
+  - [ ] Allow for editing existing train in the UI - a train on the depo track can be edited until released
+  - [ ] Remove automatic 2-goods-wagon attachment on train creation
 - [ ] GUI clipping epic (Technical):
   - Description: Add clipping rectangle support to the GUI rendering system. Elements can define a clip mask so children are only visible within the parent's bounds. Enables slide-in animations (e.g. a progress bar appearing from behind another element, rising into view) and scroll containers.
   - [ ] Add clip rectangle property to GUI elements (inherited by children, intersected hierarchically)
@@ -165,6 +172,13 @@
   - [ ] Add Steam publishing pipeline
 - [ ] Per-scene OTel metrics (Technical):
   - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)
+- [ ] Train customization epic (Feature):
+  - Description: Let players personalize their trains. Pick colors (primary/accent) and designs/liveries in the depot UI. Colors are applied as tint uniforms to the train shader. Designs are predefined texture/pattern variants (e.g. stripes, logos). Extends the train depot UI.
+  - [ ] Add per-train color properties (primary, accent) stored on the train entity
+  - [ ] Pass train colors as instance data to the train shader and apply as tint
+  - [ ] Add color picker to the depot train builder UI
+  - [ ] Add predefined design/livery variants (texture or pattern options)
+  - [ ] Add design selector to the depot train builder UI
 - [ ] Train routing decision (Feature):
   - Description: Decide between intelligent pathfinding (trains auto-route to destinations) vs train plans ("go to A then B then C") with signal logic as core gameplay. Depends on how fun signal management feels in the demo. Leaning toward train plans + manual signal control.
   - [ ] Evaluate signal management gameplay feel from demo feedback
