@@ -16,6 +16,7 @@ using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Time;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
+using Olve.Trains.Scenes.GameLogic.Trains.Wagons;
 
 namespace Olve.Trains.Scenes.GameLogic;
 
@@ -30,6 +31,7 @@ public static class GameLogicSceneServiceRegistration
 
         // Scene services (participate in scene lifecycle)
         services.AddSceneService<AddJunctionRuleHandlerService>(sceneId);
+        services.AddSceneService<AddWagonHandlerService>(sceneId);
         services.AddSceneService<BuildingBlueprintLibraryService>(sceneId);
         services.AddSceneService<CargoAndRecipeLibraryService>(sceneId);
         services.AddSceneService<CameraSceneService>(sceneId);
@@ -42,6 +44,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
         services.AddSceneService<ListJunctionsHandlerService>(sceneId);
         services.AddSceneService<ListTrainsHandlerService>(sceneId);
+        services.AddSceneService<ListWagonsHandlerService>(sceneId);
         services.AddSceneService<PlaceBuildingHandlerService>(sceneId);
         services.AddSceneService<PlaceTrackHandlerService>(sceneId);
         services.AddSceneService<PlaceTrainHandlerService>(sceneId);
@@ -50,6 +53,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<QueryJunctionHandlerService>(sceneId);
         services.AddSceneService<QueryTrainHandlerService>(sceneId);
         services.AddSceneService<RaycastHandlerService>(sceneId);
+        services.AddSceneService<RemoveWagonHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetCameraHandlerService>(sceneId);
         services.AddSceneService<SetMouseHandlerService>(sceneId);
@@ -61,6 +65,8 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<TrainJunctionCrossingService>(sceneId);
         services.AddSceneService<IndustryProductionService>(sceneId);
         services.AddSceneService<TrainMovementService>(sceneId);
+        services.AddSceneService<WagonBlueprintLibraryService>(sceneId);
+        services.AddSceneService<WagonInventoryService>(sceneId);
 
         // Non-scene singletons (dependencies only, not in scene lifecycle)
         services.TryAddScoped<BuildingBlueprintService>();
@@ -98,6 +104,8 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<TrainJunctionService>();
         services.TryAddScoped<TrainPositionService>();
         services.TryAddScoped<TrainService>();
+        services.TryAddScoped<TrainWagonService>();
+        services.TryAddScoped<WagonBlueprintService>();
 
         // Scene Events
         services.AddEventSceneService(sceneId,
@@ -180,6 +188,26 @@ public static class GameLogicSceneServiceRegistration
             (TrainJunctionCrossingService vjcs, Id<Train> id) => vjcs.OnTrainReachedEnd(id),
             after: [new SceneServiceType<TrainMovementService>()],
             before: [new SceneServiceType<TrainJunctionCrossingService>()]);
+
+        // Wagon auto-attach: add 2 goods wagons when a train is created
+        services.AddEventSceneService(sceneId,
+            (TrainService ts) => ts.OnTrainAdded,
+            (TrainWagonService tws, Id<Train> trainId) =>
+            {
+                return Result.Concat(
+                    tws.AddWagon(trainId, WagonBlueprintCatalog.GoodsWagon).ToEmptyResult(),
+                    tws.AddWagon(trainId, WagonBlueprintCatalog.GoodsWagon).ToEmptyResult());
+            },
+            prefill: ts => ts.TrainIds);
+
+        // Cascade delete: remove all wagons when a train is removed
+        services.AddEventSceneService(sceneId,
+            (TrainService ts) => ts.OnTrainRemoved,
+            (TrainWagonService tws, Id<Train> trainId) =>
+            {
+                tws.RemoveAllWagons(trainId);
+                return Result.Success();
+            });
 
         return services;
     }

@@ -81,6 +81,13 @@ class JunctionDetail:
     rules: list[dict] = field(default_factory=list)
 
 
+@dataclass
+class WagonInfo:
+    wagon_id: str
+    blueprint_id: str
+    inventory_id: str
+
+
 class GameCrashedError(Exception):
     def __init__(self, exit_code: int | None, stderr: str = ""):
         self.exit_code = exit_code
@@ -369,6 +376,28 @@ class Game:
 
     def add_signal_rule(self, junction_id: str, rule: str) -> CommandResult:
         return self.send(f"add-signal-rule junction={junction_id} rule='{rule}'")
+
+    # -- Wagon wrappers --
+
+    def list_wagons(self, train_id: str) -> list[WagonInfo]:
+        result = self.send(f"list-wagons train={train_id}")
+        data = json.loads(result.output)
+        return [
+            WagonInfo(
+                wagon_id=w["wagonId"],
+                blueprint_id=w["blueprintId"],
+                inventory_id=w["inventoryId"],
+            )
+            for w in data["wagons"]
+        ]
+
+    def add_wagon(self, train_id: str, blueprint_id: str) -> str:
+        result = self.send(f"add-wagon train={train_id} blueprint={blueprint_id}")
+        data = json.loads(result.output)
+        return data["wagonId"]
+
+    def remove_wagon(self, train_id: str, index: int) -> CommandResult:
+        return self.send(f"remove-wagon train={train_id} index={index}")
 
     # -- Collision / projection wrappers --
 

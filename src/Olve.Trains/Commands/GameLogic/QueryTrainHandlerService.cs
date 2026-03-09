@@ -4,13 +4,15 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
+using Olve.Trains.Scenes.GameLogic.Trains.Wagons;
 
 namespace Olve.Trains.Commands.GameLogic;
 
 public class QueryTrainHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,
     TrainPositionService trainPositionService,
-    TrackSplineService trackSplineService) : CommandHandlerService(commandHandlerServiceCollection)
+    TrackSplineService trackSplineService,
+    TrainWagonService trainWagonService) : CommandHandlerService(commandHandlerServiceCollection)
 {
     private static readonly CommandArgument TrainArgument = new("train", "The train ID to query", true);
 
@@ -46,6 +48,10 @@ public class QueryTrainHandlerService(
             };
         }
 
+        var wagons = trainWagonService.GetWagons(trainId)
+            .Select(w => new { wagonId = w.Id.ToString(), blueprintId = w.BlueprintId.ToString() })
+            .ToArray();
+
         var json = JsonSerializer.Serialize(new
         {
             trainId = trainId.ToString(),
@@ -53,6 +59,7 @@ public class QueryTrainHandlerService(
             time = trackPosition.TrackPoint.Time,
             velocity = trackPosition.Velocity,
             position,
+            wagons,
         });
 
         return new CommandOutput(json);
