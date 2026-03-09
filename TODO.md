@@ -72,14 +72,6 @@
 
 ## Demo
 
-- [ ] CI/CD improvements epic (Tooling):
-  - [x] Add screenshot approval flow using GitHub Environment protection rules
-  - [x] Fix .gitattributes LFS pattern for reference screenshots in subdirectories
-  - [ ] Add Windows screenshot validation to CI (added then removed — needs revisiting)
-  - [x] Add nightly release builds
-  - [x] Add itch.io publishing pipeline
-  - [ ] Add Steam publishing pipeline
-
 - [ ] Industry epic (Feature) (see [docs/DESIGN_CARGO_SYSTEM.md](docs/DESIGN_CARGO_SYSTEM.md)):
   - [x] Add basic support for industries
   - [x] Add building for industries
@@ -90,6 +82,7 @@
     - [x] Add station-to-nearby-industries query
     - [x] Add station info panel service (click station → query industries → mount inventory rows)
   - [ ] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
+  - [ ] Add wagon mesh rendering (non-locomotive cars follow behind the locomotive along the track spline)
   - [ ] Add loading/unloading at stations (stations as access points to nearby building inventories)
   - [x] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
 - [ ] Resources epic (Feature):
@@ -101,16 +94,16 @@
   - [ ] Add variable-sized residential blueprints (bias toward medium)
   - [ ] Add 'buildings' layer to ORA map format (grey color)
   - [ ] Add deterministic algorithm to split ORA building blobs into variable-sized houses
-- [ ] Track rendering epic (Visual):
-  - [x] Improve rendering of tracks by procedurally generating the track mesh from the underlying spline
-  - [ ] Add sleepers/ties to track mesh generation
-  - [ ] Create and render procedurally generated station meshes
-  - [ ] Improve positioning of track signals based on track positioning
 - [ ] Shadow epic (Visual):
   - Description: Add shadow mapping to the game. Requires shader pipeline changes (removing geometry shaders, adding SDF grid), FBO infrastructure for the shadow depth pass, and receiver shader modifications to sample the shadow map.
   - [x] Remove terrain geometry shader — compute flat normals via `dFdx`/`dFdy` in fragment shader, render grid overlay as SDF in terrain fragment shader, delete wireframe shader files
   - [ ] Add shadow map generation — FBO wrapper, depth-only pixel format, depth-only shader, `ShadowMapService` that renders casters from light-space each frame
   - [ ] Add shadow map sampling to receiver shaders — terrain, default, and building vertex+fragment shaders pass light-space position and sample the shadow map to attenuate diffuse lighting
+- [ ] Track rendering epic (Visual):
+  - [x] Improve rendering of tracks by procedurally generating the track mesh from the underlying spline
+  - [ ] Add sleepers/ties to track mesh generation
+  - [ ] Create and render procedurally generated station meshes
+  - [ ] Improve positioning of track signals based on track positioning
 - [ ] GUI layout previewer (Tooling):
   - [ ] Standalone viewer that renders XML layouts via the existing GUI system
   - [ ] File watcher for live reload on XML changes
@@ -148,6 +141,13 @@
 
 ## Version 1.0
 
+- [ ] CI/CD improvements epic (Tooling):
+  - [x] Add screenshot approval flow using GitHub Environment protection rules
+  - [x] Fix .gitattributes LFS pattern for reference screenshots in subdirectories
+  - [ ] Add Windows screenshot validation to CI (added then removed — needs revisiting)
+  - [x] Add nightly release builds
+  - [x] Add itch.io publishing pipeline
+  - [ ] Add Steam publishing pipeline
 - [ ] Per-scene OTel metrics (Technical):
   - [ ] Add per-scene metrics breakdown (tagged by human-readable scene service identifier, possibly sampled)
 - [ ] Train routing decision (Feature):

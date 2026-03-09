@@ -65,6 +65,15 @@ public static class CameraRayExtensions
 
         var worldPosition = camera.View.Position + right * x + up * y;
 
+        // Slide origin along the ray direction so its Y matches the camera Y.
+        // This prevents XZ overshoot in heightmap raycasting when the origin
+        // is far above terrain (e.g. clicking near the top of the screen).
+        if (float.Abs(forward.Y) > 1e-6f)
+        {
+            var t = (camera.View.Position.Y - worldPosition.Y) / forward.Y;
+            worldPosition += forward * t;
+        }
+
         return new Ray3D<float>(worldPosition, forward);
     }
 }

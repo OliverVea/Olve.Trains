@@ -68,19 +68,12 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
         if (NormalizedPositionOverride is { } normalizedOverride)
         {
             State.NormalizedPosition = normalizedOverride;
-
-            // Also update pixel position so GUI collision matches the override
-            var windowSize = windowProvider.Value.Size;
-            State.Position = new Vector2D<float>(
-                (normalizedOverride.X / 2f + 0.5f) * windowSize.X,
-                (normalizedOverride.Y / 2f + 0.5f) * windowSize.Y);
-            State.Delta = Vector2D<float>.Zero;
         }
         else
         {
             State.NormalizedPosition = new Vector2D<float>(
                 position.X / windowProvider.Value.Size.X - 0.5f,
-                -(position.Y / windowProvider.Value.Size.Y - 0.5f)
+                position.Y / windowProvider.Value.Size.Y - 0.5f
             ) * 2f;
         }
         State.Scroll = _scroll;
