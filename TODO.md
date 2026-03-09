@@ -62,6 +62,19 @@
   - [x] Add debug collider wireframe renderer (priority ~5000, before GUI)
   - [x] Cache mouse ray hits per frame in CollisionSystem or TerrainRaycastService
   - [x] Update MeshRenderingService to accept Id<Mesh> (rendering integration)
+- [x] Industry epic (Feature) (see [docs/DESIGN_CARGO_SYSTEM.md](docs/DESIGN_CARGO_SYSTEM.md)):
+  - [x] Add basic support for industries
+  - [x] Add building for industries
+  - [x] Add CargoInventory data model (fixed capacity, optional cargo type filter, add/remove/query)
+  - [x] Add building inventories (per-building inventory filtered by recipe inputs/outputs)
+  - [x] Add station info panel (click station → show nearby industry inventories and transfer directions) (see [docs/DESIGN_STATION_INFO_PANEL.md](docs/DESIGN_STATION_INFO_PANEL.md))
+    - [x] Add station info panel and inventory row XML layouts
+    - [x] Add station-to-nearby-industries query
+    - [x] Add station info panel service (click station → query industries → mount inventory rows)
+  - [x] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
+  - [x] Add wagon mesh rendering (non-locomotive cars follow behind the locomotive along the track spline)
+  - [x] Add loading/unloading at stations (stations as access points to nearby building inventories)
+  - [x] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
 
 ## Bugs
 
@@ -75,19 +88,17 @@
 
 ## Demo
 
-- [ ] Industry epic (Feature) (see [docs/DESIGN_CARGO_SYSTEM.md](docs/DESIGN_CARGO_SYSTEM.md)):
-  - [x] Add basic support for industries
-  - [x] Add building for industries
-  - [x] Add CargoInventory data model (fixed capacity, optional cargo type filter, add/remove/query)
-  - [x] Add building inventories (per-building inventory filtered by recipe inputs/outputs)
-  - [x] Add station info panel (click station → show nearby industry inventories and transfer directions) (see [docs/DESIGN_STATION_INFO_PANEL.md](docs/DESIGN_STATION_INFO_PANEL.md))
-    - [x] Add station info panel and inventory row XML layouts
-    - [x] Add station-to-nearby-industries query
-    - [x] Add station info panel service (click station → query industries → mount inventory rows)
-  - [x] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
-  - [x] Add wagon mesh rendering (non-locomotive cars follow behind the locomotive along the track spline)
-  - [x] Add loading/unloading at stations (stations as access points to nearby building inventories)
-  - [x] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
+- [ ] Industry content epic (Feature):
+  - Description: The cargo system infrastructure is done. This epic adds the full set of industries, recipes, and cargo types needed for the game, plus the in-game industry builder tool so players can place industries from the toolbar.
+  - [ ] Design the full industry/cargo graph (what industries exist, what they consume/produce, production chains)
+  - [ ] Implement all industry types, recipes, and cargo types from the design
+  - [ ] Add industry builder tool (toolbar button → select industry type → click to place)
+  - [ ] Add industry info panel showing production status and inventory when clicking an industry
+- [ ] GUI clipping epic (Technical):
+  - Description: Add clipping rectangle support to the GUI rendering system. Elements can define a clip mask so children are only visible within the parent's bounds. Enables slide-in animations (e.g. a progress bar appearing from behind another element, rising into view) and scroll containers.
+  - [ ] Add clip rectangle property to GUI elements (inherited by children, intersected hierarchically)
+  - [ ] Implement scissor test or stencil-based clipping in the 2D rendering pass
+  - [ ] Add slide-in animation support using clip masks (e.g. inventory bar rising into view)
 - [ ] Resources epic (Feature):
   - [ ] Design resource system (discrete entities, field deposits, geometric resources; harvest range; production linking)
   - [ ] Implement resource system based on design
