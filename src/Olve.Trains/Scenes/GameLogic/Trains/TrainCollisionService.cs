@@ -23,7 +23,7 @@ public class TrainCollisionService(
 
     public Result Load()
     {
-        if (meshLoadingManager.LoadMesh(Meshes.SM_Veh_Bullet_01)
+        if (meshLoadingManager.LoadMesh(Meshes.SM_Veh_Freight_01)
             .TryPickProblems(out var problems, out var meshId))
         {
             return problems.Prepend("Failed to load train mesh for collision");
