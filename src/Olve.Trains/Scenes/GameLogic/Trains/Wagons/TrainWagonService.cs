@@ -49,11 +49,11 @@ public class TrainWagonService(WagonBlueprintService wagonBlueprintService)
         return Result.Success();
     }
 
-    public void RemoveAllWagons(Id<Train> trainId)
+    public Result RemoveAllWagons(Id<Train> trainId)
     {
         if (!_wagons.TryGetValue(trainId, out var list))
         {
-            return;
+            return Result.Success();
         }
 
         foreach (var wagon in list)
@@ -63,5 +63,7 @@ public class TrainWagonService(WagonBlueprintService wagonBlueprintService)
 
         list.Clear();
         _wagons.Remove(trainId);
+
+        return Result.Success();
     }
 }

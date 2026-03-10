@@ -31,8 +31,9 @@ public class TrainTrackHistoryService
         return _history.TryGetValue(trainId, out var list) ? list : [];
     }
 
-    public void RemoveHistory(Id<Train> trainId)
+    public Result RemoveHistory(Id<Train> trainId)
     {
         _history.Remove(trainId);
+        return Result.Success();
     }
 }

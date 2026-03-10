@@ -65,6 +65,30 @@ public class JunctionService(ILogger<JunctionService> logger, EntityStoreFactory
         return DeletionResult.Success();
     }
 
+    public Result OnTrackAdded(Id<Track> trackId, TrackService trackService)
+    {
+        if (!trackService.TryGetTrack(trackId, out var track))
+        {
+            return new ResultProblem("Track not found: '{0}'", trackId);
+        }
+
+        return Result.Concat(
+            AddJunctionConnection(track.Id, track.Start).ToEmptyResult(),
+            AddJunctionConnection(track.Id, track.End).ToEmptyResult());
+    }
+
+    public Result OnTrackRemoved(Id<Track> trackId, TrackService trackService)
+    {
+        if (!trackService.TryGetTrack(trackId, out var track))
+        {
+            return new ResultProblem("Track not found: '{0}'", trackId);
+        }
+
+        return Result.Concat(
+            RemoveJunctionConnection(track.Id, track.Start).MapToResult(),
+            RemoveJunctionConnection(track.Id, track.End).MapToResult());
+    }
+
     public bool TryGetJunctionId(TrackEndpoint trackEndpoint, out Id<Junction> junctionId)
     {
         return _junctionPositions.TryGetValue(ToTilePosition(trackEndpoint.Point), out junctionId);

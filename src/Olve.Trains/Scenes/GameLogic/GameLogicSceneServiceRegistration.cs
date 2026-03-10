@@ -112,31 +112,11 @@ public static class GameLogicSceneServiceRegistration
         // Scene Events
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
-            (TrackService ts, JunctionService js, Id<Track> trackId) =>
-            {
-                if (!ts.TryGetTrack(trackId, out var track))
-                {
-                    return new ResultProblem("Track not found: '{0}'", trackId);
-                }
-
-                return Result.Concat(
-                    js.AddJunctionConnection(track.Id, track.Start).ToEmptyResult(),
-                    js.AddJunctionConnection(track.Id, track.End).ToEmptyResult());
-            },
+            (JunctionService js, TrackService ts, Id<Track> trackId) => js.OnTrackAdded(trackId, ts),
             prefill: ts => ts.TrackIds);
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackRemoved,
-            (TrackService ts, JunctionService js, Id<Track> trackId) =>
-            {
-                if (!ts.TryGetTrack(trackId, out var track))
-                {
-                    return new ResultProblem("Track not found: '{0}'", trackId);
-                }
-
-                return Result.Concat(
-                    js.RemoveJunctionConnection(track.Id, track.Start).MapToResult(),
-                    js.RemoveJunctionConnection(track.Id, track.End).MapToResult());
-            });
+            (JunctionService js, TrackService ts, Id<Track> trackId) => js.OnTrackRemoved(trackId, ts));
         services.AddEventSceneService(sceneId,
             (JunctionService js) => js.OnJunctionConnectionsUpdated,
             (JunctionSignalService jss, Id<Junction> id) => jss.EvaluateSignal(id));
@@ -191,7 +171,7 @@ public static class GameLogicSceneServiceRegistration
             after: [new SceneServiceType<TrainMovementService>()],
             before: [new SceneServiceType<TrainJunctionCrossingService>()]);
 
-        // Wagon auto-attach: add 2 goods wagons when a train is created
+        // TODO: Remove auto-attach once train depot UI allows players to build trains manually
         services.AddEventSceneService(sceneId,
             (TrainService ts) => ts.OnTrainAdded,
             (TrainWagonService tws, Id<Train> trainId) =>
@@ -202,23 +182,12 @@ public static class GameLogicSceneServiceRegistration
             },
             prefill: ts => ts.TrainIds);
 
-        // Cascade delete: remove all wagons when a train is removed
         services.AddEventSceneService(sceneId,
             (TrainService ts) => ts.OnTrainRemoved,
-            (TrainWagonService tws, Id<Train> trainId) =>
-            {
-                tws.RemoveAllWagons(trainId);
-                return Result.Success();
-            });
-
-        // Clean up track history when a train is removed
+            (TrainWagonService tws, Id<Train> trainId) => tws.RemoveAllWagons(trainId));
         services.AddEventSceneService(sceneId,
             (TrainService ts) => ts.OnTrainRemoved,
-            (TrainTrackHistoryService tths, Id<Train> trainId) =>
-            {
-                tths.RemoveHistory(trainId);
-                return Result.Success();
-            });
+            (TrainTrackHistoryService tths, Id<Train> trainId) => tths.RemoveHistory(trainId));
 
         return services;
     }
