@@ -1,0 +1,77 @@
+# Done
+
+- [x] Signal logic epic (Feature):
+  - [x] Automatic junction and signal creation/removal based on track topology
+  - [x] Rule-based routing system (train, source, destination, distribution)
+  - [x] RoundRobin distribution and rule evaluation with train queuing
+  - [x] CLI commands for signal rule management (add-signal-rule, clear-signal-rules)
+  - [x] 3D signal rendering at junctions
+  - [x] Implement CardinalDirection matching in signal rules (source only — destination direction matching is a no-op stub)
+  - [x] Implement TrainGroup matching in signal rules
+  - [x] Add in-game GUI for viewing and editing signal rules on a selected junction
+- [x] Shader annotation system epic (Technical) (see [docs/DESIGN_SHADER_ANNOTATIONS.md](../DESIGN_SHADER_ANNOTATIONS.md)):
+  - [x] Add `// @implements(Interface.Property)` annotation parsing to `ShaderHelper`
+  - [x] Update `ProcessShaders` to generate explicit interface implementations from annotations (replace convention-based matching)
+  - [x] Annotate vertex/instance attributes in all shaders (`IWithPosition3D`, `IWithNormal3D`, etc.)
+  - [x] Annotate uniforms in all shaders (`ICameraPositionShader`, `IDaylightShader`, etc.)
+  - [x] Remove manual `ShaderExtensions/Shaders.cs` partial declarations
+  - [x] Remove convention-based `SemanticMap`/`NormalizeAttributeName` from pipeline
+- [x] Unit geometry (Technical):
+  - [x] Extract unit cube to `UnitCube` data class in `Olve.Engine3D/Rendering/Primitives/` with `RegisterUnitCube` extension on `RenderingManager3D`
+  - [x] Extract unit quad to `UnitQuad` in `Olve.Engine3D/Rendering/Primitives/`
+- [x] Unified renderer epic (Technical)
+- [x] OpenTelemetry metrics epic (Technical):
+  - [x] Add engine-level OTel metrics integration (frame time, render time, update time, entity counts, scene update/render duration, commands processed)
+  - [x] Add game-level OTel metrics (track count, train count, building count)
+- [x] Track creation epic (Feature):
+  - [x] Allow ghost preview during track creation
+  - [x] Disallow tracks with collisions with geometry, other tracks, and extreme curvature
+  - [x] Display ghost previews of disallowed tracks in red
+- [x] Deletion epic (Feature):
+  - [x] Add deletion tool
+  - [x] Allow deleting tracks
+  - [x] Allow deleting tracks and trains
+- [x] Building epic (Feature):
+  - [x] Add basic support for buildings
+  - [x] Add building validation and validation failure rendering
+  - [x] Validate collisions
+  - [x] Add station with station track
+  - [x] Add building models
+- [x] Rendering boilerplate reduction epic (Technical):
+  - [x] Extract mesh loading + index extraction into a shared helper (MeshRenderingService)
+  - [x] Extract repeated per-frame shader parameter application (camera + light) into a helper (MeshRenderingService.Update)
+- [x] Detached mode (Tooling):
+  - Description: For e.g. Agentic AI access to the game for debugging, we want to be able to run with --detached or -d. Then, we should be able to use the cli to interact with the game, enumerating options (for main menu it could be clicking buttons, for the game it could be listing and placing tracks, buildings, trains). We should also be able to take screenshots of the screen as .pngs.
+  - [x] Launch game in detached mode
+  - [x] Add argument to send command to detached game by id
+  - [x] Add a simple echo command
+  - [x] Add commands for navigating the main menu
+  - [x] Add support for taking screenshots of the current state of the game
+  - [x] Add predefined command handler argument parsers (e.g. TilePosition, Vector3, CardinalDirection)
+- [x] Collision system epic (Technical) (see [docs/DESIGN_COLLISION_SYSTEM.md](../DESIGN_COLLISION_SYSTEM.md)):
+  - Description: Centralized MeshManager (mesh registry with cached AABBs) and CollisionSystem (spatial queries with raycasting). First consumer: junction signals. Eventually all meshes go through MeshManager and rendering accepts mesh IDs.
+  - [x] Add MeshManager and MeshLoadingManager to engine
+  - [x] Add CollisionSystem with mesh colliders (AABB broad phase, ray-AABB intersection)
+  - [x] Register junction signal meshes and colliders
+  - [x] Add raycast query and wire to mouse click (log signal clicks)
+  - [x] Migrate building meshes to MeshManager + register building colliders
+  - [x] Migrate train meshes to MeshManager + register train colliders
+  - [x] Migrate track collision to CollisionSystem
+  - [x] Add terrain as a collision source
+  - [x] Generalize CollisionSystem with IColliderShape interface (GetAABB, TryRaycast)
+  - [x] Add debug collider wireframe renderer (priority ~5000, before GUI)
+  - [x] Cache mouse ray hits per frame in CollisionSystem or TerrainRaycastService
+  - [x] Update MeshRenderingService to accept Id<Mesh> (rendering integration)
+- [x] Industry epic (Feature) (see [docs/DESIGN_CARGO_SYSTEM.md](../DESIGN_CARGO_SYSTEM.md)):
+  - [x] Add basic support for industries
+  - [x] Add building for industries
+  - [x] Add CargoInventory data model (fixed capacity, optional cargo type filter, add/remove/query)
+  - [x] Add building inventories (per-building inventory filtered by recipe inputs/outputs)
+  - [x] Add station info panel (click station → show nearby industry inventories and transfer directions) (see [docs/DESIGN_STATION_INFO_PANEL.md](../DESIGN_STATION_INFO_PANEL.md))
+    - [x] Add station info panel and inventory row XML layouts
+    - [x] Add station-to-nearby-industries query
+    - [x] Add station info panel service (click station → query industries → mount inventory rows)
+  - [x] Add wagons and train inventories (wagon type with cargo filter, demo: one goods wagon per train)
+  - [x] Add wagon mesh rendering (non-locomotive cars follow behind the locomotive along the track spline)
+  - [x] Add loading/unloading at stations (stations as access points to nearby building inventories)
+  - [x] Add industry production ticking (primary industries produce, secondary consume inputs and produce outputs)
