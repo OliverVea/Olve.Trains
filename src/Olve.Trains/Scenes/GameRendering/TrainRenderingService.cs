@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic.Tracks;
@@ -11,10 +10,8 @@ namespace Olve.Trains.Scenes.GameRendering;
 
 public class TrainRenderingService(
     ILogger<TrainRenderingService> logger,
-    EventQueueFactory eventQueueFactory,
     MeshLoadingManager meshLoadingManager,
     MeshRenderingService meshRenderingService,
-    TrainService trainService,
     TrainPositionService trainPositionService,
     TrackSplineService trackSplineService,
     TrackRenderingService trackRenderingService)
@@ -23,9 +20,6 @@ public class TrainRenderingService(
     public int Priority => SceneServicePriority.FromDependencies([trackRenderingService, meshRenderingService]);
 
     private readonly Dictionary<Id<Train>, MeshRenderingService.MeshInstanceHandle> _instanceIds = new();
-
-    private readonly EventQueue<Id<Train>> _toAddQueue = eventQueueFactory.Create(trainService.OnTrainAdded);
-    private readonly EventQueue<Id<Train>> _toRemoveQueue = eventQueueFactory.Create(trainService.OnTrainRemoved);
 
     private MeshRenderingService.MeshGroupHandle _groupHandle;
 
@@ -45,21 +39,10 @@ public class TrainRenderingService(
 
         _groupHandle = groupHandle;
 
-        _toAddQueue.SetHandler(AddTrain).Init();
-        _toRemoveQueue.SetHandler(RemoveTrain).Init();
-
         return Result.Success();
     }
 
-    public Result Unload()
-    {
-        _toAddQueue.Cleanup();
-        _toRemoveQueue.Cleanup();
-
-        return Result.Success();
-    }
-
-    private Result AddTrain(Id<Train> trainId)
+    public Result AddTrain(Id<Train> trainId)
     {
         if (_instanceIds.ContainsKey(trainId))
         {
@@ -76,7 +59,7 @@ public class TrainRenderingService(
         return Result.Success();
     }
 
-    private Result RemoveTrain(Id<Train> trainId)
+    public Result RemoveTrain(Id<Train> trainId)
     {
         if (!_instanceIds.Remove(trainId, out var instanceHandle))
         {
@@ -88,9 +71,6 @@ public class TrainRenderingService(
 
     public Result Update(TimeSpan deltaTime)
     {
-        _toAddQueue.Update();
-        _toRemoveQueue.Update();
-
         foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
         {
             if (!_instanceIds.TryGetValue(trainId, out var instanceHandle))

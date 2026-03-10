@@ -108,6 +108,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<TrainService>();
         services.TryAddScoped<TrainWagonService>();
         services.TryAddScoped<WagonBlueprintService>();
+        services.TryAddScoped<WagonPositioningService>();
 
         // Scene Events
         services.AddEventSceneService(sceneId,

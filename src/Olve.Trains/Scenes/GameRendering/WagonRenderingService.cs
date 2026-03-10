@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Scenes;
-using Olve.Engine3D.Systems;
 using Olve.Generated.Meshes;
 using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic.Tracks;
@@ -12,31 +11,18 @@ namespace Olve.Trains.Scenes.GameRendering;
 
 public class WagonRenderingService(
     ILogger<WagonRenderingService> logger,
-    EventQueueFactory eventQueueFactory,
     MeshLoadingManager meshLoadingManager,
     MeshRenderingService meshRenderingService,
     TrainWagonService trainWagonService,
     TrainPositionService trainPositionService,
     TrackSplineService trackSplineService,
-    TrainTrackHistoryService trainTrackHistoryService,
-    WagonBlueprintService wagonBlueprintService,
+    WagonPositioningService wagonPositioningService,
     TrackRenderingService trackRenderingService)
     : ISceneService
 {
-    private const float Scale = TrainWorldMatrix.TrainScale;
-    private const float LocomotiveLength = 1.0f * Scale;
-    private const float WagonLength = 1.0f * Scale;
-    private const float CouplingGap = 0.1f * Scale;
-
     public int Priority => SceneServicePriority.FromDependencies([trackRenderingService, meshRenderingService]);
 
     private readonly Dictionary<Id<Wagon>, MeshRenderingService.MeshInstanceHandle> _instanceIds = new();
-
-    private readonly EventQueue<(Id<Train> TrainId, Wagon Wagon)> _toAddQueue =
-        eventQueueFactory.Create(trainWagonService.OnWagonAdded);
-
-    private readonly EventQueue<(Id<Train> TrainId, Wagon Wagon)> _toRemoveQueue =
-        eventQueueFactory.Create(trainWagonService.OnWagonRemoved);
 
     private MeshRenderingService.MeshGroupHandle _groupHandle;
 
@@ -56,21 +42,10 @@ public class WagonRenderingService(
 
         _groupHandle = groupHandle;
 
-        _toAddQueue.SetHandler(e => AddWagon(e.Wagon)).Init();
-        _toRemoveQueue.SetHandler(e => RemoveWagon(e.Wagon)).Init();
-
         return Result.Success();
     }
 
-    public Result Unload()
-    {
-        _toAddQueue.Cleanup();
-        _toRemoveQueue.Cleanup();
-
-        return Result.Success();
-    }
-
-    private Result AddWagon(Wagon wagon)
+    public Result AddWagon(Wagon wagon)
     {
         if (_instanceIds.ContainsKey(wagon.Id))
         {
@@ -87,7 +62,7 @@ public class WagonRenderingService(
         return Result.Success();
     }
 
-    private Result RemoveWagon(Wagon wagon)
+    public Result RemoveWagon(Wagon wagon)
     {
         if (!_instanceIds.Remove(wagon.Id, out var instanceHandle))
         {
@@ -99,48 +74,32 @@ public class WagonRenderingService(
 
     public Result Update(TimeSpan deltaTime)
     {
-        _toAddQueue.Update();
-        _toRemoveQueue.Update();
-
         foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
         {
-            var wagons = trainWagonService.GetWagons(trainId);
-            if (wagons.Count == 0) continue;
-
-            var cumulativeOffset = LocomotiveLength / 2f + CouplingGap;
-
-            for (var i = 0; i < wagons.Count; i++)
+            if (wagonPositioningService.GetWagonPositions(trainId, trackPosition)
+                .TryPickProblems(out var problems, out var wagonPositions))
             {
-                var wagon = wagons[i];
+                return problems.Prepend("Failed to get wagon positions for train '{0}'", trainId);
+            }
 
-                var wagonLength = WagonLength;
-                if (wagonBlueprintService.TryGet(wagon.BlueprintId, out var blueprint))
-                {
-                    wagonLength = blueprint.Length * Scale;
-                }
-
-                var offset = cumulativeOffset + wagonLength / 2f;
-
-                if (!_instanceIds.TryGetValue(wagon.Id, out var instanceHandle))
+            foreach (var wagonPos in wagonPositions)
+            {
+                if (!_instanceIds.TryGetValue(wagonPos.WagonId, out var instanceHandle))
                 {
                     logger.LogWarning(
                         "Did not find rendering instance for wagon with id '{WagonId}'. Enqueueing it for registration",
-                        wagon.Id);
-                    AddWagon(wagon);
-                    cumulativeOffset += wagonLength + CouplingGap;
-                    continue;
-                }
+                        wagonPos.WagonId);
 
-                if (ComputeWagonPosition(trainId, trackPosition, offset)
-                    .TryPickProblems(out var problems, out var wagonPos))
-                {
-                    return problems.Prepend("Failed to compute wagon position for wagon '{0}'", wagon.Id);
+                    var wagons = trainWagonService.GetWagons(trainId);
+                    var wagon = wagons.FirstOrDefault(w => w.Id == wagonPos.WagonId);
+                    if (wagon != default) AddWagon(wagon);
+                    continue;
                 }
 
                 if (trackSplineService.GetPosition(wagonPos.TrackId, wagonPos.Time)
                     .TryPickProblems(out problems, out var position))
                 {
-                    return problems.Prepend("Failed to sample position for wagon '{0}'", wagon.Id);
+                    return problems.Prepend("Failed to sample position for wagon '{0}'", wagonPos.WagonId);
                 }
 
                 var worldMatrix = TrainWorldMatrix.Compute(wagonPos.Velocity, position);
@@ -148,103 +107,11 @@ public class WagonRenderingService(
                 if (meshRenderingService.UpdateInstance(instanceHandle, worldMatrix)
                     .TryPickProblems(out problems))
                 {
-                    return problems.Prepend("Failed to update wagon instance for '{0}'", wagon.Id);
+                    return problems.Prepend("Failed to update wagon instance for '{0}'", wagonPos.WagonId);
                 }
-
-                cumulativeOffset += wagonLength + CouplingGap;
             }
         }
 
         return Result.Success();
-    }
-
-    private Result<(Id<Track> TrackId, float Time, float Velocity)> ComputeWagonPosition(
-        Id<Train> trainId,
-        TrainTrackPosition locoPosition,
-        float offset)
-    {
-        var trackId = locoPosition.TrackId;
-        var velocity = locoPosition.Velocity;
-
-        if (trackSplineService.GetLength(trackId).TryPickProblems(out var problems, out var trackLength))
-        {
-            return problems;
-        }
-
-        var locoArcDist = locoPosition.Time * trackLength;
-
-        float availableBehind;
-        if (velocity > 0)
-        {
-            availableBehind = locoArcDist;
-        }
-        else
-        {
-            availableBehind = trackLength - locoArcDist;
-        }
-
-        if (offset <= availableBehind)
-        {
-            float wagonTime;
-            if (velocity > 0)
-            {
-                wagonTime = (locoArcDist - offset) / trackLength;
-            }
-            else
-            {
-                wagonTime = (locoArcDist + offset) / trackLength;
-            }
-
-            return (trackId, wagonTime, velocity);
-        }
-
-        var overflow = offset - availableBehind;
-        var history = trainTrackHistoryService.GetHistory(trainId);
-
-        return WalkHistory(trackId, velocity, overflow, history);
-    }
-
-    private Result<(Id<Track> TrackId, float Time, float Velocity)> WalkHistory(
-        Id<Track> currentTrackId,
-        float currentVelocity,
-        float overflow,
-        IReadOnlyList<TrainTrackHistoryService.TrackHistoryEntry> history)
-    {
-        foreach (var entry in history)
-        {
-            if (trackSplineService.GetLength(entry.TrackId).TryPickProblems(out var problems, out var prevTrackLength))
-            {
-                return problems;
-            }
-
-            if (overflow <= prevTrackLength)
-            {
-                float wagonTime;
-                if (entry.Velocity > 0)
-                {
-                    wagonTime = (prevTrackLength - overflow) / prevTrackLength;
-                }
-                else
-                {
-                    wagonTime = overflow / prevTrackLength;
-                }
-
-                return (entry.TrackId, wagonTime, entry.Velocity);
-            }
-
-            overflow -= prevTrackLength;
-        }
-
-        // History exhausted or no history — clamp to the tail end of the known path
-        if (history.Count > 0)
-        {
-            var lastEntry = history[^1];
-            var clampTime = lastEntry.Velocity > 0 ? 0f : 1f;
-            return (lastEntry.TrackId, clampTime, lastEntry.Velocity);
-        }
-
-        // No history (train just placed) — clamp to current track endpoint
-        var clampToStart = currentVelocity > 0 ? 0f : 1f;
-        return (currentTrackId, clampToStart, currentVelocity);
     }
 }
