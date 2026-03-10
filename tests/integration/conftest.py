@@ -5,6 +5,7 @@ import logging
 import os
 import platform
 import queue
+import shutil
 import subprocess
 from datetime import date
 from pathlib import Path
@@ -182,6 +183,11 @@ class ScreenshotComparer:
             return
 
         if not ref.exists():
+            # Copy actual screenshot to diff dir so CI has something to inspect
+            self._diff_dir.mkdir(parents=True, exist_ok=True)
+            diff_path = self._diff_dir / f"{name}-actual.png"
+            shutil.copy2(actual, diff_path)
+            self._asserter.diffs.append((f"{name}-actual", diff_path))
             self._results.append((name, FileNotFoundError(
                 f"Reference screenshot not found: {ref}\n"
                 f"Run with --update-references to generate it."
