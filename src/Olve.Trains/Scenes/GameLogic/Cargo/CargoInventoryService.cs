@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Olve.Engine3D.Collections;
 using Olve.Engine3D.Systems;
 
 namespace Olve.Trains.Scenes.GameLogic.Cargo;
@@ -7,8 +8,7 @@ public class CargoInventoryService(EntityStoreFactory entityStoreFactory)
 {
     private readonly EntityStore<CargoInventory> _inventories = entityStoreFactory.Create<CargoInventory>();
 
-    private readonly Dictionary<Id<CargoInventory>,
-        Dictionary<(Id<CargoType> CargoTypeId, Id<CargoInventory> Origin), int>> _amounts = new();
+    private readonly Dictionary<Id<CargoInventory>, BoundedContainer<Id<CargoType>>> _containers = new();
 
     public Id<CargoInventory> CreateInventory(int capacity,
         ImmutableDictionary<Id<CargoType>, int>? allowedTypes = null)
@@ -16,154 +16,58 @@ public class CargoInventoryService(EntityStoreFactory entityStoreFactory)
         var id = Id.New<CargoInventory>();
         var inventory = new CargoInventory(id, capacity, allowedTypes);
         _inventories.TryAdd(inventory);
-        _amounts[id] = new Dictionary<(Id<CargoType>, Id<CargoInventory>), int>();
+        _containers[id] = new BoundedContainer<Id<CargoType>>(capacity, allowedTypes);
         return id;
     }
 
     public void RemoveInventory(Id<CargoInventory> id)
     {
         _inventories.Remove(id);
-        _amounts.Remove(id);
+        _containers.Remove(id);
     }
 
     public int GetAmount(Id<CargoInventory> id, Id<CargoType> cargoTypeId)
     {
-        if (!_amounts.TryGetValue(id, out var amounts)) return 0;
-
-        var total = 0;
-        foreach (var (key, amount) in amounts)
-        {
-            if (key.CargoTypeId == cargoTypeId) total += amount;
-        }
-
-        return total;
+        return _containers.TryGetValue(id, out var container) ? container.GetAmount(cargoTypeId) : 0;
     }
 
     public int GetTotalAmount(Id<CargoInventory> id)
     {
-        if (!_amounts.TryGetValue(id, out var amounts)) return 0;
-
-        var total = 0;
-        foreach (var amount in amounts.Values) total += amount;
-        return total;
+        return _containers.TryGetValue(id, out var container) ? container.GetTotalAmount() : 0;
     }
 
     public int GetRemainingCapacity(Id<CargoInventory> id)
     {
-        if (!_inventories.TryGet(id, out var inventory)) return 0;
-        return inventory.Capacity - GetTotalAmount(id);
+        return _containers.TryGetValue(id, out var container) ? container.GetRemainingCapacity() : 0;
     }
 
     public int GetRemainingCapacityForType(Id<CargoInventory> id, Id<CargoType> cargoTypeId)
     {
-        if (!_inventories.TryGet(id, out var inventory)) return 0;
-
-        var remainingTotal = inventory.Capacity - GetTotalAmount(id);
-
-        if (inventory.AllowedTypes is null) return remainingTotal;
-
-        if (!inventory.AllowedTypes.TryGetValue(cargoTypeId, out var perTypeMax)) return 0;
-
-        var currentOfType = GetAmount(id, cargoTypeId);
-        var remainingForType = perTypeMax - currentOfType;
-
-        return Math.Min(remainingTotal, remainingForType);
+        return _containers.TryGetValue(id, out var container) ? container.GetRemainingCapacityForKey(cargoTypeId) : 0;
     }
 
     public bool CanAccept(Id<CargoInventory> id, Id<CargoType> cargoTypeId)
     {
-        return _inventories.TryGet(id, out var inventory)
-               && (inventory.AllowedTypes is null
-                   || inventory.AllowedTypes.ContainsKey(cargoTypeId));
+        return _containers.TryGetValue(id, out var container) && container.CanAccept(cargoTypeId);
     }
 
-    public bool TryUpdateExact(Id<CargoInventory> id, Id<CargoType> cargoTypeId,
-        int delta, Id<CargoInventory> origin)
+    public bool TryUpdateExact(Id<CargoInventory> id, Id<CargoType> cargoTypeId, int delta)
     {
-        if (delta == 0
-            || !_amounts.TryGetValue(id, out var amounts)
-            || !_inventories.TryGet(id, out _))
-        {
-            return false;
-        }
-
-        var key = (cargoTypeId, origin);
-
-        if (delta > 0)
-        {
-            if (!CanAccept(id, cargoTypeId)) return false;
-            if (GetRemainingCapacityForType(id, cargoTypeId) < delta) return false;
-
-            amounts.TryGetValue(key, out var current);
-            amounts[key] = current + delta;
-        }
-        else
-        {
-            amounts.TryGetValue(key, out var current);
-            if (current + delta < 0) return false;
-
-            var newAmount = current + delta;
-            if (newAmount == 0)
-                amounts.Remove(key);
-            else
-                amounts[key] = newAmount;
-        }
-
-        return true;
+        return _containers.TryGetValue(id, out var container) && container.TryUpdateExact(cargoTypeId, delta);
     }
 
-    public IEnumerable<(Id<CargoType> CargoTypeId, Id<CargoInventory> Origin, int Amount)> GetEntries(Id<CargoInventory> id)
+    public int UpdateWithinCapacity(Id<CargoInventory> id, Id<CargoType> cargoTypeId, int delta)
     {
-        if (!_amounts.TryGetValue(id, out var amounts)) yield break;
-
-        foreach (var (key, amount) in amounts)
-        {
-            yield return (key.CargoTypeId, key.Origin, amount);
-        }
+        return _containers.TryGetValue(id, out var container) ? container.UpdateWithinCapacity(cargoTypeId, delta) : 0;
     }
 
-    public int UpdateWithinCapacity(Id<CargoInventory> id, Id<CargoType> cargoTypeId,
-        int delta, Id<CargoInventory> origin)
+    public IEnumerable<(Id<CargoType> CargoTypeId, int Amount)> GetAmounts(Id<CargoInventory> id)
     {
-        if (delta == 0
-            || !_amounts.TryGetValue(id, out var amounts)
-            || !_inventories.TryGet(id, out _))
+        if (!_containers.TryGetValue(id, out var container)) yield break;
+
+        foreach (var (cargoTypeId, amount) in container.GetEntries())
         {
-            return 0;
-        }
-
-        var key = (cargoTypeId, origin);
-
-        if (delta > 0)
-        {
-            if (!CanAccept(id, cargoTypeId)) return 0;
-            var maxAdd = GetRemainingCapacityForType(id, cargoTypeId);
-            var actualDelta = Math.Min(delta, maxAdd);
-            if (actualDelta <= 0)
-            {
-                return 0;
-            }
-
-            amounts.TryGetValue(key, out var current);
-            amounts[key] = current + actualDelta;
-            return actualDelta;
-        }
-        else
-        {
-            amounts.TryGetValue(key, out var current);
-            var actualDelta = Math.Max(delta, -current);
-            if (actualDelta == 0) return 0;
-
-            var newAmount = current + actualDelta;
-            if (newAmount == 0)
-            {
-                amounts.Remove(key);
-            }
-            else
-            {
-                amounts[key] = newAmount;
-            }
-            return actualDelta;
+            yield return (cargoTypeId, amount);
         }
     }
 }

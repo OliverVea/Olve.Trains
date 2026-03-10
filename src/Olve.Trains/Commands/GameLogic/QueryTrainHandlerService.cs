@@ -59,7 +59,7 @@ public class QueryTrainHandlerService(
                 if (wagonInventoryService.TryGetInventory(w.Id, out var inventoryId))
                 {
                     cargo = [];
-                    foreach (var (cargoTypeId, _, amount) in cargoInventoryService.GetEntries(inventoryId))
+                    foreach (var (cargoTypeId, amount) in cargoInventoryService.GetAmounts(inventoryId))
                     {
                         var cargoName = cargoTypeService.TryGetCargoType(cargoTypeId, out var cargoType)
                             ? cargoType.Name

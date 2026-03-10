@@ -85,6 +85,7 @@
 ## Tech Debt
 
 - [ ] Integration tests should use user-facing validated placement tools (e.g. select tool, click to place) instead of raw `place-track`/`place-building` commands. If validation logic breaks, raw commands bypass it silently — at least some tests should go through the full GUI placement flow to catch that.
+- [ ] Move `BoundedContainer<TKey>` from `Olve.Engine3D.Collections` to `Olve.Utilities.Collections` (it's a general-purpose data structure, not engine-specific)
 
 ## Demo
 

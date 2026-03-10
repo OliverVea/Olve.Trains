@@ -11,6 +11,7 @@ public class StationCargoTransferService(
     StationService stationService,
     WagonInventoryService wagonInventoryService,
     CargoInventoryService cargoInventoryService,
+    CargoTransferService cargoTransferService,
     CargoTransferPolicyService cargoTransferPolicyService) : ISceneService
 {
     private HashSet<(Id<Train>, Id<Track>)> _activeVisits = [];
@@ -37,9 +38,10 @@ public class StationCargoTransferService(
             var nearbyIndustries = stationService.GetNearbyIndustries(station.BuildingId).ToList();
             var wagonInventories = wagonInventoryService.GetTrainInventories(trainId).ToList();
 
+            // Phase 1: UNLOAD (wagon → industry where direction is In)
             foreach (var wagonInventoryId in wagonInventories)
             {
-                foreach (var (cargoTypeId, origin, amount) in cargoInventoryService.GetEntries(wagonInventoryId).ToList())
+                foreach (var (cargoTypeId, amount) in cargoInventoryService.GetAmounts(wagonInventoryId))
                 {
                     if (amount <= 0) continue;
 
@@ -49,15 +51,10 @@ public class StationCargoTransferService(
                         var direction = cargoTransferPolicyService.GetDirection(industry.InventoryId, cargoTypeId);
                         if (direction is not (TransferDirection.In or TransferDirection.Both)) continue;
 
-                        var transferred = cargoInventoryService.UpdateWithinCapacity(
-                            industry.InventoryId, cargoTypeId, remaining, wagonInventoryId);
-                        if (transferred > 0)
-                        {
-                            cargoInventoryService.UpdateWithinCapacity(
-                                wagonInventoryId, cargoTypeId, -transferred, origin);
-                            remaining -= transferred;
-                            if (remaining <= 0) break;
-                        }
+                        var transferred = cargoTransferService.Transfer(
+                            wagonInventoryId, industry.InventoryId, cargoTypeId, remaining);
+                        remaining -= transferred;
+                        if (remaining <= 0) break;
                     }
                 }
             }
@@ -76,15 +73,10 @@ public class StationCargoTransferService(
                     {
                         if (!cargoInventoryService.CanAccept(wagonInventoryId, cargoTypeId)) continue;
 
-                        var transferred = cargoInventoryService.UpdateWithinCapacity(
-                            wagonInventoryId, cargoTypeId, available, industry.InventoryId);
-                        if (transferred > 0)
-                        {
-                            cargoInventoryService.UpdateWithinCapacity(
-                                industry.InventoryId, cargoTypeId, -transferred, industry.InventoryId);
-                            available -= transferred;
-                            if (available <= 0) break;
-                        }
+                        var transferred = cargoTransferService.Transfer(
+                            industry.InventoryId, wagonInventoryId, cargoTypeId, available);
+                        available -= transferred;
+                        if (available <= 0) break;
                     }
                 }
             }

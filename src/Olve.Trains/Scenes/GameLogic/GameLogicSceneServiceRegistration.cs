@@ -77,6 +77,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<BuildingService>();
         services.TryAddScoped<BuildingValidationService>();
         services.TryAddScoped<CargoInventoryService>();
+        services.TryAddScoped<CargoTransferService>();
         services.TryAddScoped<CargoTransferPolicyService>();
         services.TryAddScoped<CargoTypeService>();
         services.TryAddScoped<ColliderDebugSettings>();
