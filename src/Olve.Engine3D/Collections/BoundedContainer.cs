@@ -13,6 +13,9 @@ public class BoundedContainer<TKey> where TKey : notnull
     public int Capacity { get; }
     public ImmutableDictionary<TKey, int>? PerKeyLimits { get; }
 
+    public IEnumerable<TKey> GetKeys() => _amounts.Keys;
+    public IEnumerable<(TKey, int)> GetAmounts() => _amounts.Select(x => (x.Key, x.Value));
+
     public BoundedContainer(int capacity, ImmutableDictionary<TKey, int>? perKeyLimits = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(capacity);

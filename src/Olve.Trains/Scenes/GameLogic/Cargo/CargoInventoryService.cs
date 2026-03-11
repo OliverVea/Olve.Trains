@@ -27,47 +27,26 @@ public class CargoInventoryService(EntityStoreFactory entityStoreFactory)
     }
 
     public int GetAmount(Id<CargoInventory> id, Id<CargoType> cargoTypeId)
-    {
-        return _containers.TryGetValue(id, out var container) ? container.GetAmount(cargoTypeId) : 0;
-    }
+        => _containers.TryGetValue(id, out var container) ? container.GetAmount(cargoTypeId) : 0;
 
     public int GetTotalAmount(Id<CargoInventory> id)
-    {
-        return _containers.TryGetValue(id, out var container) ? container.GetTotalAmount() : 0;
-    }
+        => _containers.TryGetValue(id, out var container)? container.GetTotalAmount() : 0;
 
     public int GetRemainingCapacity(Id<CargoInventory> id)
-    {
-        return _containers.TryGetValue(id, out var container) ? container.GetRemainingCapacity() : 0;
-    }
+        => _containers.TryGetValue(id, out var container) ? container.GetRemainingCapacity() : 0;
 
     public int GetRemainingCapacityForType(Id<CargoInventory> id, Id<CargoType> cargoTypeId)
-    {
-        return _containers.TryGetValue(id, out var container) ? container.GetRemainingCapacityForKey(cargoTypeId) : 0;
-    }
+        => _containers.TryGetValue(id, out var container) ? container.GetRemainingCapacityForKey(cargoTypeId) : 0;
 
     public bool CanAccept(Id<CargoInventory> id, Id<CargoType> cargoTypeId)
-    {
-        return _containers.TryGetValue(id, out var container) && container.CanAccept(cargoTypeId);
-    }
+        => _containers.TryGetValue(id, out var container) && container.CanAccept(cargoTypeId);
 
     public bool TryUpdateExact(Id<CargoInventory> id, Id<CargoType> cargoTypeId, int delta)
-    {
-        return _containers.TryGetValue(id, out var container) && container.TryUpdateExact(cargoTypeId, delta);
-    }
+        => _containers.TryGetValue(id, out var container) && container.TryUpdateExact(cargoTypeId, delta);
 
     public int UpdateWithinCapacity(Id<CargoInventory> id, Id<CargoType> cargoTypeId, int delta)
-    {
-        return _containers.TryGetValue(id, out var container) ? container.UpdateWithinCapacity(cargoTypeId, delta) : 0;
-    }
+        => _containers.TryGetValue(id, out var container) ? container.UpdateWithinCapacity(cargoTypeId, delta) : 0;
 
     public IEnumerable<(Id<CargoType> CargoTypeId, int Amount)> GetAmounts(Id<CargoInventory> id)
-    {
-        if (!_containers.TryGetValue(id, out var container)) yield break;
-
-        foreach (var (cargoTypeId, amount) in container.GetEntries())
-        {
-            yield return (cargoTypeId, amount);
-        }
-    }
+        => _containers.TryGetValue(id, out var container) ? container.GetAmounts() : [];
 }

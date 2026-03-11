@@ -1,8 +1,10 @@
+using Microsoft.Extensions.Logging;
+
 namespace Olve.Trains.Scenes.GameLogic.Cargo;
 
-public class CargoTransferService(CargoInventoryService cargoInventoryService)
+public class CargoTransferService(ILogger<CargoTransferService> logger, CargoInventoryService cargoInventoryService)
 {
-    public readonly record struct InventoryChange(
+    private readonly record struct InventoryChange(
         Id<CargoInventory> InventoryId,
         Id<CargoType> CargoTypeId,
         int Delta);
@@ -23,29 +25,10 @@ public class CargoTransferService(CargoInventoryService cargoInventoryService)
     }
 
     public bool CanExecuteRecipe(Id<CargoInventory> inventoryId, IndustryRecipe recipe)
-    {
-        foreach (var input in recipe.Inputs)
-        {
-            if (cargoInventoryService.GetAmount(inventoryId, input.CargoTypeId) < input.Amount)
-                return false;
-        }
-
-        foreach (var output in recipe.Outputs)
-        {
-            if (cargoInventoryService.GetRemainingCapacityForType(inventoryId, output.CargoTypeId) < output.Amount)
-                return false;
-        }
-
-        return true;
-    }
+        => CanApplyChanges(GetChangesForRecipe(inventoryId, recipe));
 
     public bool TryExecuteRecipe(Id<CargoInventory> inventoryId, IndustryRecipe recipe)
-    {
-        if (!CanExecuteRecipe(inventoryId, recipe)) return false;
-
-        var changes = GetChangesForRecipe(inventoryId, recipe);
-        return TryApplyChanges(changes);
-    }
+        => TryApplyChanges(GetChangesForRecipe(inventoryId, recipe));
 
     private static InventoryChange[] GetChangesForTransfer(Id<CargoInventory> from, Id<CargoInventory> to,
         Id<CargoType> cargoTypeId, int amount) =>
@@ -60,9 +43,8 @@ public class CargoTransferService(CargoInventoryService cargoInventoryService)
         ..recipe.Outputs.Select(output => new InventoryChange(inventoryId, output.CargoTypeId, output.Amount)),
     ];
 
-    private bool TryApplyChanges(InventoryChange[] changes)
+    private bool CanApplyChanges(InventoryChange[] changes)
     {
-        // Validate all changes first
         foreach (var change in changes)
         {
             if (change.Delta == 0) continue;
@@ -78,11 +60,23 @@ public class CargoTransferService(CargoInventoryService cargoInventoryService)
             }
         }
 
-        // Apply all changes
+        return true;
+    }
+
+    private bool TryApplyChanges(InventoryChange[] changes)
+    {
+        if (!CanApplyChanges(changes))
+        {
+            return false;
+        }
+
         foreach (var change in changes)
         {
             if (change.Delta == 0) continue;
-            cargoInventoryService.TryUpdateExact(change.InventoryId, change.CargoTypeId, change.Delta);
+            if (!cargoInventoryService.TryUpdateExact(change.InventoryId, change.CargoTypeId, change.Delta))
+            {
+                logger.LogError("Transfer could not be completed atomically due to failed update: {Change}", change);
+            }
         }
 
         return true;
