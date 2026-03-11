@@ -7,7 +7,6 @@ set -e
 #   ./scripts/integration-test.sh [options]
 #
 # Options:
-#   --s3                Upload screenshots to S3 and print presigned URLs
 #   --skip-build        Skip asset pipeline and build steps
 #   --windowing <mode>  Windowing mode: "native" or "xvfb" (default: xvfb)
 #   --resolution <WxH>  Screen resolution (default: 1920x1080)

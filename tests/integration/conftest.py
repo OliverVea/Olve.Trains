@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import json
 import logging
 import os
 import platform
 import queue
 import shutil
-import subprocess
 from datetime import date
 from pathlib import Path
 
@@ -58,12 +56,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--resolution",
         default="1920x1080",
         help="Screen resolution (default: 1920x1080)",
-    )
-    parser.addoption(
-        "--s3",
-        action="store_true",
-        default=False,
-        help="Upload screenshots to S3 after test run",
     )
     parser.addoption(
         "--pool-size",
@@ -151,13 +143,11 @@ def update_references(request: pytest.FixtureRequest) -> bool:
 
 
 class ScreenshotAsserter:
-    """Session-level screenshot tracker for S3 uploads."""
+    """Session-level screenshot state."""
 
     def __init__(self, reference_dir: Path, updating: bool):
         self.reference_dir = reference_dir
         self.updating = updating
-        self.screenshots: list[tuple[str, Path]] = []
-        self.diffs: list[tuple[str, Path]] = []
 
 
 class ScreenshotComparer:
@@ -176,7 +166,6 @@ class ScreenshotComparer:
         pixel_tolerance: int = 2,
     ) -> None:
         ref = self._asserter.reference_dir / f"{name}.png"
-        self._asserter.screenshots.append((name, actual))
 
         if self._asserter.updating:
             update_reference(actual, ref)
@@ -187,7 +176,6 @@ class ScreenshotComparer:
             self._diff_dir.mkdir(parents=True, exist_ok=True)
             diff_path = self._diff_dir / f"{name}-actual.png"
             shutil.copy2(actual, diff_path)
-            self._asserter.diffs.append((f"{name}-actual", diff_path))
             self._results.append((name, FileNotFoundError(
                 f"Reference screenshot not found: {ref}\n"
                 f"Run with --update-references to generate it."
@@ -202,7 +190,6 @@ class ScreenshotComparer:
             diff_output=diff_path,
         )
         if not result.passed and result.diff_image_path and result.diff_image_path.exists():
-            self._asserter.diffs.append((f"{name}-diff", result.diff_image_path))
             # Write metadata for CI to pick up
             sim_path = result.diff_image_path.parent / f"{name}-similarity.txt"
             sim_path.write_text(f"{result.similarity:.6f}")
@@ -223,17 +210,12 @@ class ScreenshotComparer:
             raise AssertionError("Screenshot mismatches:\n" + "\n".join(failures))
 
 
-_active_asserter: ScreenshotAsserter | None = None
-
-
 @pytest.fixture(scope="session")
 def _screenshot_session(
     reference_dir: Path,
     update_references: bool,
 ) -> ScreenshotAsserter:
-    global _active_asserter
-    _active_asserter = ScreenshotAsserter(reference_dir, update_references)
-    return _active_asserter
+    return ScreenshotAsserter(reference_dir, update_references)
 
 
 @pytest.fixture
@@ -244,68 +226,3 @@ def screenshots(_screenshot_session: ScreenshotAsserter, request: pytest.Fixture
     ts.assert_all()
 
 
-S3_BUCKET = "olve.trains"
-S3_KEY_PREFIX = "screenshots/integration-test"
-S3_REGION = "ap-southeast-2"
-
-
-def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    if not session.config.getoption("--s3"):
-        return
-
-    if _active_asserter is None:
-        return
-
-    uploads = _active_asserter.screenshots + _active_asserter.diffs
-    if not uploads:
-        return
-
-    _upload_to_s3(uploads)
-
-
-def _upload_to_s3(screenshots: list[tuple[str, Path]]) -> None:
-    import os
-
-    shlink_api_key = os.environ.get("SHLINK_API_KEY", "")
-    shlink_url = "https://s.ovhome.online"
-
-    print("\n\nUploading to S3...")
-    print("=" * 44)
-    print("Screenshots uploaded successfully!")
-
-    for name, path in screenshots:
-        s3_key = f"{S3_KEY_PREFIX}-{name}.png"
-        subprocess.run(
-            ["aws", "s3", "cp", str(path), f"s3://{S3_BUCKET}/{s3_key}", "--region", S3_REGION],
-            check=True,
-        )
-
-        result = subprocess.run(
-            ["aws", "s3", "presign", f"s3://{S3_BUCKET}/{s3_key}", "--region", S3_REGION, "--expires-in", "3600"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        url = result.stdout.strip()
-
-        if shlink_api_key:
-            try:
-                import urllib.request
-
-                req = urllib.request.Request(
-                    f"{shlink_url}/rest/v3/short-urls",
-                    data=json.dumps({"longUrl": url}).encode(),
-                    headers={
-                        "X-Api-Key": shlink_api_key,
-                        "Content-Type": "application/json",
-                    },
-                    method="POST",
-                )
-                with urllib.request.urlopen(req) as resp:
-                    url = json.loads(resp.read())["shortUrl"]
-            except Exception:
-                pass
-
-        print(f"  {name}: {url}")
-
-    print("=" * 44)
