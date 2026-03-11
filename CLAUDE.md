@@ -6,6 +6,11 @@
 
 **You must run the asset pipeline after modifying shaders or layouts.**
 
+**Native dependency:** The asset pipeline requires the Assimp library for mesh processing. Install it with:
+```bash
+sudo apt-get install -y libassimp-dev  # Linux
+```
+
 ```bash
 cd src/Olve.Trains.AssetPipeline
 dotnet run
@@ -126,9 +131,6 @@ bash scripts/integration-test.sh
 # Windows (must use native windowing)
 bash scripts/integration-test.sh --windowing native
 
-# Upload screenshots to S3 and print presigned URLs
-bash scripts/integration-test.sh --s3
-
 # Skip asset pipeline and build steps (if already built)
 bash scripts/integration-test.sh --skip-build
 
@@ -156,7 +158,7 @@ To ensure tests and reference screenshots are correct, follow this sequence:
    ```
 3. **Run tests** — validates screenshots against committed references
    ```bash
-   bash scripts/integration-test.sh --skip-build --s3
+   bash scripts/integration-test.sh --skip-build
    ```
 
 If assets changed (new meshes/textures added, S3 assets updated), you must regenerate references:
@@ -164,7 +166,7 @@ If assets changed (new meshes/textures added, S3 assets updated), you must regen
 1. Run asset pipeline with S3 (step 1 above)
 2. Build Release (step 2 above)
 3. **Update references**: `bash scripts/integration-test.sh --skip-build --update-references`
-4. **Verify**: `bash scripts/integration-test.sh --skip-build --s3`
+4. **Verify**: `bash scripts/integration-test.sh --skip-build`
 5. **Commit** the updated reference images in `tests/integration/reference/`
 
 **Reference screenshots are the source of truth.** They are generated on developer machines and committed to git (tracked via LFS). CI validates against them. If CI fails but local passes, the most likely cause is missing S3 assets — rerun the asset pipeline with `UseLocalAssets: false`.
@@ -222,7 +224,7 @@ When modifying shaders, layouts, or when S3 assets change:
 2. **Compile assets**: `cd src/Olve.Trains.AssetPipeline && dotnet run` (ensure `UseLocalAssets: false` for full S3 assets)
 3. **Build**: `dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release`
 4. **Update references if needed**: `bash scripts/integration-test.sh --skip-build --update-references`
-5. **Verify tests**: `bash scripts/integration-test.sh --skip-build --s3`
+5. **Verify tests**: `bash scripts/integration-test.sh --skip-build`
 
 ## Package Management
 
