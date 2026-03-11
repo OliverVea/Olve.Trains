@@ -286,6 +286,19 @@
   - [ ] Implement WebGPU rendering backend behind abstraction interfaces
   - [ ] Remove OpenGL backend
 
+- [ ] Centralized secrets management epic (Tooling):
+  - Description: Consolidate all secrets behind Authentik (authentik.ovhome.online) as the single identity provider. Two access patterns: (1) S3 assets migrate from AWS to MinIO at s3.ovhome.online — MinIO trusts Authentik as OIDC provider, so Authentik client credentials authenticate directly (no Vault lookup needed). (2) Other secrets (itch.io butler key) are stored in Vault at vault.ovhome.online — authenticate to Authentik via client credentials, exchange JWT for Vault access. OTel and VR screenshot review already use Authentik. End state: GitHub Actions stores only AUTHENTIK_CLIENT_ID and AUTHENTIK_CLIENT_SECRET; all other secrets come from MinIO (direct OIDC) or Vault (JWT auth).
+  - [ ] Set up MinIO at s3.ovhome.online with Authentik as OIDC identity provider
+  - [ ] Migrate game assets from AWS S3 (olve.trains bucket) to MinIO
+  - [ ] Update asset pipeline S3Options to support MinIO endpoint and OIDC token auth (replace AWS access key/secret)
+  - [ ] Set up Vault JWT auth backend trusting Authentik's OIDC discovery endpoint
+  - [ ] Create Authentik service accounts and OAuth2 providers for CI and dev machines
+  - [ ] Define Vault policies scoping secret access per role (ci, dev-machine)
+  - [ ] Store itch.io butler API key in Vault
+  - [ ] Update GitHub Actions workflows to authenticate via Authentik → MinIO (assets) and Authentik → Vault (butler key)
+  - [ ] Remove AWS S3 credentials from GitHub Actions secrets and local appsettings
+  - [ ] Update dev machine tooling to use Authentik client credentials for MinIO and Vault access
+
 - [ ] ? Web demo epic (Tooling) (see [docs/platform-strategy.md](docs/platform-strategy.md)):
   - Description: Distribute a playable demo in the browser. Depends on WebGPU migration. Multiple approaches possible — pick one when the time comes.
   - Options:
