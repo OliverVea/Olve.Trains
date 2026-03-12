@@ -5,6 +5,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameRendering;
 using Olve.Trains.Scenes.GameUI.GUI;
 using Olve.Trains.Shared.GUI;
+using Olve.Trains.Shared.Rendering;
 
 namespace Olve.Trains.Scenes.MainMenu;
 
@@ -14,20 +15,16 @@ public static class MainMenuSceneServiceRegistration
     {
         var sceneId = SceneIds.MainMenuScene;
 
-        // GL setup and clear
         services.AddSceneService<GLService>(sceneId);
         services.AddSceneService<RenderingManagerSceneService>(sceneId);
+        services.AddSceneService<SharedRenderingService>(sceneId);
 
-        // Shared GUI services (rendering, layout, text, input, etc.)
         services.AddGuiSceneServices(sceneId);
 
-        // Command processing
         services.AddSceneService<CommandProcessingService>(sceneId);
 
-        // Main menu command handlers
         services.AddSceneService<ActivateGuiHandlerService>(sceneId);
 
-        // Main menu-specific services
         services.AddSceneService<MainMenuService>(sceneId);
         services.AddSceneService<MainMenuStyleService>(sceneId);
 

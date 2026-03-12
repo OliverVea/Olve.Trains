@@ -14,7 +14,10 @@ public class RenderingManager(
     OpenGLShaderManager openGLShaderManager,
     ShaderEntityManager shaderEntityManager,
     GeometryManager geometryManager,
-    RenderingGroupManager groupManager)
+    RenderingGroupManager groupManager,
+    RenderPassManager passManager,
+    FramebufferManager framebufferManager,
+    ScreenPass screenPass)
 {
     private const int ErrorCounterThreshold = 20;
     private int _errorCounter;
@@ -22,90 +25,102 @@ public class RenderingManager(
     public Result RenderAll()
     {
         var gl = glProvider.Value;
-        var sortedGroups = groupManager.SortedGroups;
 
-        foreach (var group in sortedGroups)
+        foreach (var pass in passManager.GetOrderedPasses())
         {
-            if (group.IsDirty)
+            if (framebufferManager.Bind(pass.FramebufferId).TryPickProblems(out var fbProblems))
             {
-                RebuildInstanceBuffer(gl, group);
-                group.ClearDirty();
+                return fbProblems.Prepend("Failed to bind framebuffer for pass");
             }
 
-            var instanceCount = group.Instances.Count;
-            if (instanceCount == 0) continue;
+            pass.Clear.Apply(gl);
 
-            var shader = group.Shader;
-            if (shader.RenderingId == default) continue;
-
-            if (shaderEntityManager.GetRegistration(shader.RenderingId)
-                .TryPickProblems(out var problems, out var shaderRegistration))
+            foreach (var group in groupManager.GetGroupsForPass(pass.PassId))
             {
-                return problems.Prepend("Failed to get shader registration for '{0}'", shader.ShaderData.Name);
-            }
+                if (group.IsDirty)
+                {
+                    RebuildInstanceBuffer(gl, group);
+                    group.ClearDirty();
+                }
 
-            ApplyRenderState(gl, group.RenderState);
+                var instanceCount = group.Instances.Count;
+                if (instanceCount == 0) continue;
 
-            var shaderParameters = shader.MakeParameters();
-            if (openGLShaderManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, shaderParameters)
-                .TryPickProblems(out problems))
-            {
-                return problems.Prepend("Failed to load shader '{0}'", shader.ShaderData.Name);
-            }
+                var shader = group.Shader;
+                if (shader.RenderingId == default) continue;
 
-            if (group.GroupParameters is { } groupParams)
-            {
-                if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, groupParams.ToRenderingParameters())
+                if (shaderEntityManager.GetRegistration(shader.RenderingId)
+                    .TryPickProblems(out var problems, out var shaderRegistration))
+                {
+                    return problems.Prepend("Failed to get shader registration for '{0}'", shader.ShaderData.Name);
+                }
+
+                group.RenderState.Apply(gl);
+
+                var shaderParameters = shader.MakeParameters();
+                if (openGLShaderManager.LoadShaderInOpenGL(shaderRegistration.ShaderProgram, shaderParameters)
                     .TryPickProblems(out problems))
                 {
-                    return problems.Prepend("Failed to apply group parameters for shader '{0}'", shader.ShaderData.Name);
-                }
-            }
-
-            try
-            {
-                gl.BindVertexArray(group.VAO.Handle);
-
-                if (!geometryManager.TryGet(group.GeometryId, out var geoData))
-                {
-                    return new ResultProblem("Geometry '{0}' not found for group", group.GeometryId);
+                    return problems.Prepend("Failed to load shader '{0}'", shader.ShaderData.Name);
                 }
 
-                if (geoData.MeshEBO is { } ebo)
+                if (group.GroupParameters is { } groupParams)
                 {
-                    gl.DrawElementsInstanced(
-                        group.PrimitiveType,
-                        ebo.IndexCount,
-                        DrawElementsType.UnsignedInt,
-                        in Unsafe.NullRef<int>(),
-                        (uint)instanceCount);
-                }
-                else
-                {
-                    gl.DrawArraysInstanced(
-                        group.PrimitiveType,
-                        0,
-                        geoData.VertexCount,
-                        (uint)instanceCount);
+                    if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, groupParams.ToRenderingParameters())
+                        .TryPickProblems(out problems))
+                    {
+                        return problems.Prepend("Failed to apply group parameters for shader '{0}'", shader.ShaderData.Name);
+                    }
                 }
 
-                gl.BindVertexArray(0);
-            }
-            catch (Exception e)
-            {
-                return new ResultProblem(e, "Failed to render group");
-            }
-
-            if (group.GroupParameters is not null)
-            {
-                if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, shaderParameters)
-                    .TryPickProblems(out problems))
+                try
                 {
-                    return problems.Prepend("Failed to restore shader parameters for '{0}'", shader.ShaderData.Name);
+                    gl.BindVertexArray(group.VAO.Handle);
+
+                    if (!geometryManager.TryGet(group.GeometryId, out var geoData))
+                    {
+                        return new ResultProblem("Geometry '{0}' not found for group", group.GeometryId);
+                    }
+
+                    if (geoData.MeshEBO is { } ebo)
+                    {
+                        gl.DrawElementsInstanced(
+                            group.PrimitiveType,
+                            ebo.IndexCount,
+                            DrawElementsType.UnsignedInt,
+                            in Unsafe.NullRef<int>(),
+                            (uint)instanceCount);
+                    }
+                    else
+                    {
+                        gl.DrawArraysInstanced(
+                            group.PrimitiveType,
+                            0,
+                            geoData.VertexCount,
+                            (uint)instanceCount);
+                    }
+
+                    gl.BindVertexArray(0);
+                }
+                catch (Exception e)
+                {
+                    return new ResultProblem(e, "Failed to render group");
+                }
+
+                if (group.GroupParameters is not null)
+                {
+                    if (openGLShaderManager.ApplyParameters(shaderRegistration.ShaderProgram, shaderParameters)
+                        .TryPickProblems(out problems))
+                    {
+                        return problems.Prepend("Failed to restore shader parameters for '{0}'", shader.ShaderData.Name);
+                    }
                 }
             }
         }
 
+        screenPass.Blit(gl);
+
+        gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         gl.DepthMask(true);
         gl.Disable(GLEnum.Blend);
 
@@ -122,35 +137,6 @@ public class RenderingManager(
         }
 
         return Result.Success();
-    }
-
-    private static void ApplyRenderState(GL gl, RenderState state)
-    {
-        switch (state.Blend)
-        {
-            case BlendMode.None:
-                gl.Disable(GLEnum.Blend);
-                break;
-            case BlendMode.Alpha:
-                gl.Enable(GLEnum.Blend);
-                gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.OneMinusSrcAlpha);
-                break;
-            case BlendMode.Premultiplied:
-                gl.Enable(GLEnum.Blend);
-                gl.BlendFunc(GLEnum.One, GLEnum.OneMinusSrcAlpha);
-                break;
-            case BlendMode.Additive:
-                gl.Enable(GLEnum.Blend);
-                gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.One);
-                break;
-        }
-
-        gl.DepthMask(state.DepthWrite);
-
-        if (state.DepthTest)
-            gl.Enable(GLEnum.DepthTest);
-        else
-            gl.Disable(GLEnum.DepthTest);
     }
 
     private static void RebuildInstanceBuffer(GL gl, GroupData group)

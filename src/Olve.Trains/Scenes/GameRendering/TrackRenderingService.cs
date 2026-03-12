@@ -7,6 +7,7 @@ using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Tracks;
+using Olve.Trains.Shared.Rendering;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -18,7 +19,8 @@ public class TrackRenderingService(
     RenderingServiceHelper renderingServiceHelper,
     SceneLightService sceneLightService,
     TrackService trackService,
-    TerrainRenderingService terrainRenderingService) : ISceneService
+    TerrainRenderingService terrainRenderingService,
+    SharedRenderingService sharedRenderingService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
 
@@ -49,8 +51,8 @@ public class TrackRenderingService(
         }
 
         // Register group
-        if (renderingGroupManager.Register<Shaders.Track.Vertex, Shaders.Track.Instance>(
-                geometryId, _shader, _shader.BlendState)
+        if (renderingGroupManager.Register<Shaders.Track.Vertex, Shaders.Track.Instance, IDefaultFrameFormat>(
+                geometryId, _shader, sharedRenderingService.MainPass, _shader.BlendState)
             .TryPickProblems(out problems, out var groupId))
         {
             return problems.Prepend("Failed to register track group");
