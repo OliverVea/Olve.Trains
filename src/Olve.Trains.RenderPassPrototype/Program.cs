@@ -7,6 +7,7 @@ using Olve.Engine3D;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
+using Olve.Results;
 using Olve.Trains.RenderPassPrototype;
 using Olve.Utilities.Ids;
 using Olve.Generated.Shaders;
@@ -26,8 +27,13 @@ var screen = new ScreenPass();
 // Always loaded. Both game and GUI scenes depend on this, not on each other.
 // ════════════════════════════════════════════════════════════════════════════
 
-var (mainFb, mainColor, mainDepth) =
-    fbManager.CreateWithDepth<IDefaultFrameFormat, RGBA>(1920, 1080);
+if (fbManager.CreateWithDepth<IDefaultFrameFormat, RGBA>(1920, 1080)
+    .TryPickProblems(out var problems, out var mainFbResult))
+{
+    throw new Exception($"Failed to create main framebuffer: {problems}");
+}
+
+var (mainFb, mainColor, mainDepth) = mainFbResult;
 
 screen.SetSource(mainColor); // wire color output → screen
 
@@ -40,8 +46,13 @@ screen.SetSource(mainColor); // wire color output → screen
 // ════════════════════════════════════════════════════════════════════════════
 
 // Shadow map — depth-only framebuffer, game-owned
-var (shadowFb, shadowMap) =
-    fbManager.CreateWithDepth<IDepthFrameFormat>(4096, 4096);
+if (fbManager.CreateWithDepth<IDepthFrameFormat>(4096, 4096)
+    .TryPickProblems(out problems, out var shadowFbResult))
+{
+    throw new Exception($"Failed to create shadow framebuffer: {problems}");
+}
+
+var (shadowFb, shadowMap) = shadowFbResult;
 
 var shadowPass = passManager.Create(shadowFb, priority: 0, ClearFlags.Depth);
 
@@ -55,8 +66,12 @@ var defaultShader = new DefaultShader { ShadowMap = shadowMap };
 groupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance, IDepthFrameFormat>(
     meshGeometry, new DepthOnlyShader(), shadowPass, RenderState.Opaque);
 
-groupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance, IDefaultFrameFormat>(
-    meshGeometry, defaultShader, mainPass, RenderState.Opaque);
+if (groupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance, IDefaultFrameFormat>(
+    meshGeometry, defaultShader, mainPass, RenderState.Opaque)
+    .TryPickProblems(out problems, out var mainMeshGroup))
+{
+    throw new Exception($"Failed to register main mesh group: {problems}");
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // GuiSceneRenderService — owns GUI render pass
@@ -66,8 +81,55 @@ groupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance, IDefault
 
 var guiPass = passManager.Create(mainFb, priority: 20, ClearFlags.None);
 
-groupManager.Register<Shaders.TexturedRectangle.Vertex, Shaders.TexturedRectangle.Instance, IDefaultFrameFormat>(
-    quadGeometry, new GuiShader(), guiPass, RenderState.AlphaBlend);
+if (groupManager.Register<Shaders.TexturedRectangle.Vertex, Shaders.TexturedRectangle.Instance, IDefaultFrameFormat>(
+    quadGeometry, new GuiShader(), guiPass, RenderState.AlphaBlend)
+    .TryPickProblems(out problems, out var guiGroup))
+{
+    throw new Exception($"Failed to register gui group: {problems}");
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Render loop — iterate ordered passes, get groups per pass
+// ════════════════════════════════════════════════════════════════════════════
+
+foreach (var pass in passManager.GetOrderedPasses())
+{
+    // In real engine: bind framebuffer, apply clear flags
+    Console.WriteLine($"Pass priority={pass.Priority} clear={pass.Clear} fb={pass.FramebufferId}");
+
+    foreach (var group in groupManager.GetGroupsForPass(pass.PassId))
+    {
+        // In real engine: apply render state, load shader, bind geometry, draw instances
+        Console.WriteLine($"  Group shader={group.Shader.ShaderData.Name} sortKey={group.SortKey} primitive={group.PrimitiveType}");
+    }
+}
+
+// Blit to screen
+Console.WriteLine($"Screen blit source={screen.Source}");
+
+// ════════════════════════════════════════════════════════════════════════════
+// Cleanup — destroy groups, passes, framebuffers (reverse order of creation)
+// ════════════════════════════════════════════════════════════════════════════
+
+Console.WriteLine($"\nDestroy gui group: {groupManager.Destroy(guiGroup)}");
+Console.WriteLine($"Destroy gui pass: {passManager.Destroy(guiPass)}");
+
+Console.WriteLine($"Destroy main mesh group: {groupManager.Destroy(mainMeshGroup)}");
+Console.WriteLine($"Destroy main pass: {passManager.Destroy(mainPass)}");
+Console.WriteLine($"Destroy shadow pass: {passManager.Destroy(shadowPass)}");
+
+Console.WriteLine($"Destroy shadow fb: {fbManager.Destroy(shadowFb)}");
+Console.WriteLine($"Destroy main fb: {fbManager.Destroy(mainFb)}");
+
+// Double-destroy should return NotFound
+Console.WriteLine($"Double-destroy main fb: {fbManager.Destroy(mainFb)}");
+
+// ════════════════════════════════════════════════════════════════════════════
+// Validation — negative dimensions should fail
+// ════════════════════════════════════════════════════════════════════════════
+
+var invalidResult = fbManager.CreateWithDepth<IDefaultFrameFormat, RGBA>(-1, 0);
+Console.WriteLine($"\nInvalid dimensions result: failed={invalidResult.Failed}");
 
 // ════════════════════════════════════════════════════════════════════════════
 // Compile-time safety checks — uncomment any line to see a compile error

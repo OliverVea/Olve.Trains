@@ -1,3 +1,4 @@
+using Olve.Results;
 using Olve.Utilities.Ids;
 
 namespace Olve.Trains.RenderPassPrototype;
@@ -18,11 +19,18 @@ public enum ClearFlags
 }
 
 /// <summary>
+/// Info about a render pass, returned by <see cref="RenderPassManager.GetOrderedPasses"/>.
+/// Uses untyped Id since the render loop iterates all passes regardless of format.
+/// </summary>
+public record RenderPassInfo(Id PassId, Id FramebufferId, int Priority, ClearFlags Clear);
+
+/// <summary>
 /// Central registry for render passes. Owns per-frame execution order.
 /// </summary>
 public class RenderPassManager
 {
     private readonly Dictionary<Id, RenderPassEntry> _passes = new();
+    private List<RenderPassInfo>? _orderedCache;
 
     private record RenderPassEntry(Id FramebufferId, int Priority, ClearFlags Clear);
 
@@ -40,7 +48,42 @@ public class RenderPassManager
         var passId = Id.New<RenderPass<TFormat>>();
 
         _passes[passId.Value] = new RenderPassEntry(framebuffer.Value, priority, clear);
+        _orderedCache = null;
 
         return passId;
     }
+
+    // ── Destroy ──
+
+    public DeletionResult Destroy<TFormat>(Id<RenderPass<TFormat>> pass)
+        where TFormat : IFrameFormat
+    {
+        if (!_passes.Remove(pass.Value))
+            return DeletionResult.NotFound();
+
+        _orderedCache = null;
+        return DeletionResult.Success();
+    }
+
+    // ── Query ──
+
+    /// <summary>
+    /// Returns all passes sorted by priority (ascending). This is the per-frame execution order.
+    /// </summary>
+    public IReadOnlyList<RenderPassInfo> GetOrderedPasses()
+    {
+        if (_orderedCache is not null)
+            return _orderedCache;
+
+        _orderedCache = _passes
+            .Select(kvp => new RenderPassInfo(kvp.Key, kvp.Value.FramebufferId, kvp.Value.Priority, kvp.Value.Clear))
+            .OrderBy(p => p.Priority)
+            .ToList();
+
+        return _orderedCache;
+    }
+
+    public bool Exists<TFormat>(Id<RenderPass<TFormat>> pass)
+        where TFormat : IFrameFormat
+        => _passes.ContainsKey(pass.Value);
 }

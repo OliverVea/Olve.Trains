@@ -11,6 +11,11 @@ public class ScreenPass
 {
     private UntypedTextureId? _source;
 
+    /// <summary>
+    /// The color texture that will be blitted to the screen, or null if not yet wired.
+    /// </summary>
+    public UntypedTextureId? Source => _source;
+
     public void SetSource<TPixel>(TextureId<TPixel> colorTexture)
     {
         _source = colorTexture;
