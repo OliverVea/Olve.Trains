@@ -12,6 +12,7 @@ using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
+using Olve.Trains.Shared.Rendering;
 
 namespace Olve.Trains.Shared.GUI;
 
@@ -24,7 +25,8 @@ public class GuiRectangleRenderingService(
     Provider<LayoutContext> layoutContext,
     GuiElementService guiElementService,
     GuiLayoutService guiLayoutService,
-    GuiDepthService guiDepthService) : ISceneService
+    GuiDepthService guiDepthService,
+    SharedRenderingService sharedRenderingService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([guiLayoutService]);
 
@@ -58,8 +60,7 @@ public class GuiRectangleRenderingService(
         var quadVertices = new Shaders.TexturedRectangle.Vertex[UnitQuad.VertexCount];
         UnitQuad.Populate(quadVertices);
 
-        if (geometryManager.Register<Shaders.TexturedRectangle.Vertex>(quadVertices, ReadOnlySpan<uint>.Empty)
-            .TryPickProblems(out problems, out var geometryId))
+        if (geometryManager.Register(quadVertices, ReadOnlySpan<uint>.Empty).TryPickProblems(out problems, out var geometryId))
         {
             return problems.Prepend("Failed to register quad geometry");
         }
@@ -194,8 +195,8 @@ public class GuiRectangleRenderingService(
 
         var groupParameters = new Shaders.TexturedRectangle.EntityParameters(UTexture: typedTextureId);
 
-        if (renderingGroupManager.Register<Shaders.TexturedRectangle.Vertex, Shaders.TexturedRectangle.Instance>(
-                _quadGeometryId, _shader, GuiRenderState,
+        if (renderingGroupManager.Register<Shaders.TexturedRectangle.Vertex, Shaders.TexturedRectangle.Instance, IDefaultFrameFormat>(
+                _quadGeometryId, _shader, sharedRenderingService.GuiPass, GuiRenderState,
                 sortKey: GuiSortKey + key.Depth, groupParameters: groupParameters)
             .TryPickProblems(out _, out var groupId))
         {

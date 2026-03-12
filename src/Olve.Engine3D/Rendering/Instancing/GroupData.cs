@@ -1,6 +1,7 @@
 using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Parameters;
 using Olve.Engine3D.Rendering.Shaders;
+using Olve.Utilities.Ids;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.Instancing;
@@ -14,7 +15,8 @@ internal sealed class GroupData(
     int SortKey,
     PrimitiveType PrimitiveType,
     IShaderParameters? GroupParameters,
-    IInstanceStore Instances)
+    IInstanceStore Instances,
+    Id PassId)
 {
     public UntypedGeometryId GeometryId { get; } = GeometryId;
     public IShader Shader { get; } = Shader;
@@ -25,6 +27,7 @@ internal sealed class GroupData(
     public PrimitiveType PrimitiveType { get; } = PrimitiveType;
     public IShaderParameters? GroupParameters { get; set; } = GroupParameters;
     public IInstanceStore Instances { get; } = Instances;
+    public Id PassId { get; } = PassId;
     public bool IsDirty { get; private set; } = true;
 
     public void MarkDirty() => IsDirty = true;

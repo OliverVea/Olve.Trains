@@ -14,13 +14,10 @@ using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Utilities;
 using Olve.Generated.Shaders;
+using Olve.Trains.Shared.Rendering;
 
 namespace Olve.Trains.Shared.GUI;
 
-/// <summary>
-/// Renders text elements using MSDF font atlas rendering.
-/// Each text element maps to multiple glyph rendering instances.
-/// </summary>
 public class GuiTextRenderingService(
     ILogger<GuiTextRenderingService> logger,
     GeometryManager geometryManager,
@@ -30,7 +27,8 @@ public class GuiTextRenderingService(
     Provider<LayoutContext> layoutContext,
     GuiElementService guiElementService,
     GuiLayoutService guiLayoutService,
-    GuiDepthService guiDepthService) : ISceneService
+    GuiDepthService guiDepthService,
+    SharedRenderingService sharedRenderingService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([guiLayoutService]);
 
@@ -73,7 +71,7 @@ public class GuiTextRenderingService(
         var quadVertices = new Shaders.MsdfText.Vertex[UnitQuad.VertexCount];
         UnitQuad.Populate(quadVertices);
 
-        if (geometryManager.Register<Shaders.MsdfText.Vertex>(quadVertices, ReadOnlySpan<uint>.Empty)
+        if (geometryManager.Register(quadVertices, ReadOnlySpan<uint>.Empty)
             .TryPickProblems(out problems, out var geometryId))
         {
             return problems.Prepend("Failed to register text quad geometry");
@@ -347,8 +345,8 @@ public class GuiTextRenderingService(
             UFontAtlas: fontAtlasId,
             UFontWeight: fontWeight);
 
-        if (renderingGroupManager.Register<Shaders.MsdfText.Vertex, Shaders.MsdfText.Instance>(
-                _quadGeometryId, _shader, GuiRenderState,
+        if (renderingGroupManager.Register<Shaders.MsdfText.Vertex, Shaders.MsdfText.Instance, IDefaultFrameFormat>(
+                _quadGeometryId, _shader, sharedRenderingService.GuiPass, GuiRenderState,
                 sortKey: GuiSortKey + key.Depth, groupParameters: groupParameters)
             .TryPickProblems(out _, out var groupId))
         {

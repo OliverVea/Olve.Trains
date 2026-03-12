@@ -4,6 +4,7 @@ using Olve.Engine3D.Rendering.OpenGL.Handles;
 using Olve.Engine3D.Rendering.Parameters;
 using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Utilities;
+using Olve.Utilities.Ids;
 using Silk.NET.OpenGL;
 
 namespace Olve.Engine3D.Rendering.Instancing;
@@ -14,46 +15,35 @@ public class RenderingGroupManager(
     ShaderEntityManager shaderEntityManager)
 {
     private readonly Dictionary<UntypedGroupId, GroupData> _groups = new();
-    private readonly List<GroupData> _sortedGroups = [];
-    private bool _sortDirty;
+    private readonly Dictionary<Id, List<GroupData>> _groupsByPass = new();
 
-    internal IReadOnlyList<GroupData> SortedGroups
-    {
-        get
-        {
-            if (_sortDirty)
-            {
-                _sortedGroups.Sort((a, b) => a.SortKey.CompareTo(b.SortKey));
-                _sortDirty = false;
-            }
-
-            return _sortedGroups;
-        }
-    }
-
-    public Result<GroupId<TInstance>> Register<TVertex, TInstance>(
+    public Result<GroupId<TInstance>> Register<TVertex, TInstance, TFormat>(
         GeometryId<TVertex> geometryId,
-        IShader shader,
+        IShader<TFormat> shader,
+        Id<RenderPass<TFormat>> pass,
         RenderState renderState,
         PrimitiveType primitiveType = PrimitiveType.Triangles,
         int sortKey = 0,
         IShaderParameters? groupParameters = null)
         where TVertex : IVertexData
         where TInstance : IInstanceData<TVertex>
+        where TFormat : IFrameFormat
     {
-        return RegisterCore<TInstance>(geometryId, shader, renderState, primitiveType, sortKey, groupParameters);
+        return RegisterCore<TInstance>(geometryId, shader, pass.Value, renderState, primitiveType, sortKey, groupParameters);
     }
 
-    public Result<GroupId<TInstance>> RegisterDrawArrays<TInstance>(
+    public Result<GroupId<TInstance>> RegisterDrawArrays<TInstance, TFormat>(
         UntypedGeometryId geometryId,
-        IShader shader,
+        IShader<TFormat> shader,
+        Id<RenderPass<TFormat>> pass,
         RenderState renderState,
         PrimitiveType primitiveType = PrimitiveType.Triangles,
         int sortKey = 0,
         IShaderParameters? groupParameters = null)
         where TInstance : IInstanceData
+        where TFormat : IFrameFormat
     {
-        return RegisterCore<TInstance>(geometryId, shader, renderState, primitiveType, sortKey, groupParameters);
+        return RegisterCore<TInstance>(geometryId, shader, pass.Value, renderState, primitiveType, sortKey, groupParameters);
     }
 
     public Result Deregister(UntypedGroupId groupId)
@@ -63,7 +53,11 @@ public class RenderingGroupManager(
             return new ResultProblem("Group with id '{0}' is not registered", groupId);
         }
 
-        _sortedGroups.Remove(groupData);
+        if (_groupsByPass.TryGetValue(groupData.PassId, out var passList))
+        {
+            passList.Remove(groupData);
+            if (passList.Count == 0) _groupsByPass.Remove(groupData.PassId);
+        }
 
         var gl = glProvider.Value;
         gl.DeleteVertexArray(groupData.VAO.Handle);
@@ -88,9 +82,19 @@ public class RenderingGroupManager(
         return _groups.TryGetValue(groupId, out groupData!);
     }
 
+    internal IReadOnlyList<GroupData> GetGroupsForPass(Id passId)
+    {
+        if (!_groupsByPass.TryGetValue(passId, out var groups))
+            return [];
+
+        groups.Sort((a, b) => a.SortKey.CompareTo(b.SortKey));
+        return groups;
+    }
+
     private Result<GroupId<TInstance>> RegisterCore<TInstance>(
         UntypedGeometryId geometryId,
         IShader shader,
+        Id passId,
         RenderState renderState,
         PrimitiveType primitiveType,
         int sortKey,
@@ -147,11 +151,17 @@ public class RenderingGroupManager(
             SortKey: sortKey,
             PrimitiveType: primitiveType,
             GroupParameters: groupParameters,
-            Instances: new InstanceStore<TInstance>());
+            Instances: new InstanceStore<TInstance>(),
+            PassId: passId);
 
         _groups[groupId] = groupData;
-        _sortedGroups.Add(groupData);
-        _sortDirty = true;
+
+        if (!_groupsByPass.TryGetValue(passId, out var passList))
+        {
+            passList = [];
+            _groupsByPass[passId] = passList;
+        }
+        passList.Add(groupData);
 
         return groupId;
     }

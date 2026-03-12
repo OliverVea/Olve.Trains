@@ -8,7 +8,7 @@ using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Camera;
-using Silk.NET.Maths;
+using Olve.Trains.Shared.Rendering;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -20,7 +20,8 @@ public class FootprintRenderingService(
     RenderingInstanceManager renderingInstanceManager,
     TextureManager textureManager,
     TextureEntityManager textureEntityManager,
-    MeshRenderingService meshRenderingService)
+    MeshRenderingService meshRenderingService,
+    SharedRenderingService sharedRenderingService)
     : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([meshRenderingService]);
@@ -68,8 +69,7 @@ public class FootprintRenderingService(
             return problems.Prepend("Failed to load footprint shader");
         }
 
-        if (geometryManager.Register<Shaders.WorldRectangle.Vertex>(QuadVertices, QuadIndices)
-            .TryPickProblems(out problems, out var geometryId))
+        if (geometryManager.Register(QuadVertices, QuadIndices).TryPickProblems(out problems, out var geometryId))
         {
             return problems.Prepend("Failed to register footprint quad geometry");
         }
@@ -91,8 +91,8 @@ public class FootprintRenderingService(
         Vector4D<float> borderColor,
         Vector4D<float> borderRadius)
     {
-        if (renderingGroupManager.Register<Shaders.WorldRectangle.Vertex, Shaders.WorldRectangle.Instance>(
-                _quadGeometryId, _shader, RenderState.AlphaBlend)
+        if (renderingGroupManager.Register<Shaders.WorldRectangle.Vertex, Shaders.WorldRectangle.Instance, IDefaultFrameFormat>(
+                _quadGeometryId, _shader, sharedRenderingService.MainPass, RenderState.AlphaBlend)
             .TryPickProblems(out var problems, out var groupId))
         {
             return problems.Prepend("Failed to register footprint group");

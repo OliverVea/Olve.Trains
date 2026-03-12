@@ -7,6 +7,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Tracks;
+using Olve.Trains.Shared.Rendering;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.GameRendering;
@@ -17,7 +18,8 @@ public class TrackGhostRenderingService(
     RenderingInstanceManager renderingInstanceManager,
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
-    TerrainRenderingService terrainRenderingService) : ISceneService
+    TerrainRenderingService terrainRenderingService,
+    SharedRenderingService sharedRenderingService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
 
@@ -60,8 +62,8 @@ public class TrackGhostRenderingService(
             return problems.Prepend("Failed to register ghost geometry");
         }
 
-        if (renderingGroupManager.Register<Shaders.LineStrip.Vertex, Shaders.LineStrip.Instance>(
-                geometryId, _shader, RenderState.AlphaBlendNoDepth,
+        if (renderingGroupManager.Register<Shaders.LineStrip.Vertex, Shaders.LineStrip.Instance, IDefaultFrameFormat>(
+                geometryId, _shader, sharedRenderingService.MainPass, RenderState.AlphaBlendNoDepth,
                 PrimitiveType.LineStrip, groupParameters: groupParameters)
             .TryPickProblems(out problems, out var groupId))
         {

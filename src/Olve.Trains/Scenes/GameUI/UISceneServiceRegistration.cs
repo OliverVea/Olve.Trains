@@ -7,6 +7,7 @@ using Olve.Trains.Scenes.GameUI.GUI;
 using Olve.Trains.Scenes.GameUI.Indicators;
 using Olve.Trains.Scenes.GameUI.Tools;
 using Olve.Trains.Shared.GUI;
+using Olve.Trains.Shared.Rendering;
 
 namespace Olve.Trains.Scenes.GameUI;
 
@@ -16,16 +17,13 @@ public static class UISceneServiceRegistration
     {
         var sceneId = SceneIds.GameUIScene;
 
-        // Unified rendering manager (calls RenderAll for this scene's groups)
         services.AddSceneService<RenderingManagerSceneService>(sceneId);
+        services.AddSceneService<SharedRenderingService>(sceneId);
 
-        // Shared GUI services (rendering, layout, text, input, etc.)
         services.AddGuiSceneServices(sceneId);
 
-        // Mouse raycasting (per-frame hit cache)
         services.AddSceneService<MouseRaycastService>(sceneId);
 
-        // Tool / indicator services
         services.AddSceneService<TrackArrowIndicatorService>(sceneId);
         services.AddSceneService<TrackPlacingToolService>(sceneId);
         services.AddSceneService<TrainPlacingToolService>(sceneId);
@@ -43,10 +41,8 @@ public static class UISceneServiceRegistration
 
         services.AddSceneService<ScreenshotService>(sceneId);
 
-        // Game-specific GUI services
         services.AddSceneService<GameStyleService>(sceneId);
 
-        // Non-scene singletons
         services.TryAddScoped<ToolManagementService>();
 
         return services;

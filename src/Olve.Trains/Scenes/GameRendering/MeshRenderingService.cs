@@ -11,6 +11,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Light;
+using Olve.Trains.Shared.Rendering;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -25,7 +26,8 @@ public class MeshRenderingService(
     TextureLoadingManager textureLoadingManager,
     TextureEntityManager textureEntityManager,
     TextureManager textureManager,
-    TerrainRenderingService terrainRenderingService)
+    TerrainRenderingService terrainRenderingService,
+    SharedRenderingService sharedRenderingService)
     : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
@@ -126,8 +128,8 @@ public class MeshRenderingService(
             };
         }
 
-        if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
-                geometryId, _shader, renderState ?? RenderState.Opaque, groupParameters: groupParameters)
+        if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance, IDefaultFrameFormat>(
+                geometryId, _shader, sharedRenderingService.MainPass, renderState ?? RenderState.Opaque, groupParameters: groupParameters)
             .TryPickProblems(out problems, out var groupId))
         {
             return problems.Prepend("Failed to register mesh rendering group");
