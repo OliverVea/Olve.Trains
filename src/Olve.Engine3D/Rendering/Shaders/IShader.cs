@@ -11,3 +11,5 @@ public interface IShader
 
     RenderingParameters MakeParameters();
 }
+
+public interface IShader<TFormat> : IShader where TFormat : IFrameFormat;

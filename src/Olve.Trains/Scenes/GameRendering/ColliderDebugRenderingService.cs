@@ -10,6 +10,7 @@ using Olve.Engine3D.Systems;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Collision;
+using Olve.Trains.Shared.Rendering;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 
@@ -24,7 +25,8 @@ public class ColliderDebugRenderingService(
     EventQueueFactory eventQueueFactory,
     CollisionSystem collisionSystem,
     ColliderDebugSettings settings,
-    KeyboardManager keyboardManager)
+    KeyboardManager keyboardManager,
+    SharedRenderingService sharedRenderingService)
     : ISceneService
 {
     public int Priority => 5000;
@@ -79,8 +81,8 @@ public class ColliderDebugRenderingService(
         _cubeGeometryId = geometryId;
 
         // White group for AABBs
-        if (renderingGroupManager.Register<Shaders.LineStrip.Vertex, Shaders.LineStrip.Instance>(
-                _cubeGeometryId, _shader, RenderState.AlphaBlendNoDepth,
+        if (renderingGroupManager.Register<Shaders.LineStrip.Vertex, Shaders.LineStrip.Instance, IDefaultFrameFormat>(
+                _cubeGeometryId, _shader, sharedRenderingService.MainPass, RenderState.AlphaBlendNoDepth,
                 PrimitiveType.Lines,
                 groupParameters: new Shaders.LineStrip.EntityParameters(
                     UColorOverride: new Vector3D<float>(1f, 1f, 1f),
@@ -94,8 +96,8 @@ public class ColliderDebugRenderingService(
         _whiteGroupId = whiteGroup;
 
         // Green group for OBBs
-        if (renderingGroupManager.Register<Shaders.LineStrip.Vertex, Shaders.LineStrip.Instance>(
-                _cubeGeometryId, _shader, RenderState.AlphaBlendNoDepth,
+        if (renderingGroupManager.Register<Shaders.LineStrip.Vertex, Shaders.LineStrip.Instance, IDefaultFrameFormat>(
+                _cubeGeometryId, _shader, sharedRenderingService.MainPass, RenderState.AlphaBlendNoDepth,
                 PrimitiveType.Lines,
                 groupParameters: new Shaders.LineStrip.EntityParameters(
                     UColorOverride: new Vector3D<float>(0f, 1f, 0f),

@@ -11,6 +11,7 @@ using Olve.Generated.Meshes;
 using Olve.Generated.Shaders;
 using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic.Camera;
+using Olve.Trains.Shared.Rendering;
 
 namespace Olve.Trains.Scenes.GameUI.Indicators;
 
@@ -22,7 +23,8 @@ public class TrackArrowIndicatorService(
     RenderingInstanceManager renderingInstanceManager,
     RenderingServiceHelper renderingServiceHelper,
     TextureLoadingManager textureLoadingManager,
-    TextureEntityManager textureEntityManager) : ISceneService
+    TextureEntityManager textureEntityManager,
+    SharedRenderingService sharedRenderingService) : ISceneService
 {
     private float _scale = 1f;
 
@@ -87,8 +89,8 @@ public class TrackArrowIndicatorService(
         }
 
         // Register group
-        if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance>(
-                geometryId, _shader, RenderState.Opaque)
+        if (renderingGroupManager.Register<Shaders.Default.Vertex, Shaders.Default.Instance, IDefaultFrameFormat>(
+                geometryId, _shader, sharedRenderingService.MainPass, RenderState.Opaque)
             .TryPickProblems(out problems, out var groupId))
         {
             return problems.Prepend("Failed to register arrow group");

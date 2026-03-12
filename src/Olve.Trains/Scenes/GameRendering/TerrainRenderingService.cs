@@ -8,6 +8,7 @@ using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Terrain;
+using Olve.Trains.Shared.Rendering;
 using Silk.NET.OpenGL;
 
 namespace Olve.Trains.Scenes.GameRendering;
@@ -22,7 +23,8 @@ public class TerrainRenderingService(
     RenderingServiceHelper renderingServiceHelper,
     CameraSceneService cameraSceneService,
     TerrainHighlightSettings terrainHighlightSettings,
-    SceneLightService sceneLightService) : ISceneService
+    SceneLightService sceneLightService,
+    SharedRenderingService sharedRenderingService) : ISceneService
 {
     private readonly Shaders.Terrain _terrainShader = new();
 
@@ -80,8 +82,8 @@ public class TerrainRenderingService(
         }
 
         // Register group
-        if (renderingGroupManager.RegisterDrawArrays<Shaders.Terrain.Instance>(
-                geometryId, _terrainShader, _terrainShader.BlendState)
+        if (renderingGroupManager.RegisterDrawArrays<Shaders.Terrain.Instance, IDefaultFrameFormat>(
+                geometryId, _terrainShader, sharedRenderingService.MainPass, _terrainShader.BlendState)
             .TryPickProblems(out var groupProblems, out var groupId))
         {
             return groupProblems.Prepend("Failed to register terrain group");

@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Olve.Trains.RenderPassPrototype/Olve.Trains.RenderPassPrototype.csproj" />
     <Project Path="src/Olve.Trains/Olve.Trains.csproj" />
     <Project Path="src/Olve.Engine3D/Olve.Engine3D.csproj" />
     <Project Path="src/Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj" />

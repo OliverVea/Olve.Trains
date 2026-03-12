@@ -6,6 +6,7 @@ using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Trains.Scenes.GameLogic.Trains.Wagons;
+using Olve.Trains.Shared.Rendering;
 
 namespace Olve.Trains.Scenes.GameRendering;
 
@@ -21,6 +22,7 @@ public static class GameRenderingSceneServiceRegistration
         var sceneId = SceneIds.GameRenderingScene;
 
         services.AddSceneService<GLService>(sceneId);
+        services.AddSceneService<SharedRenderingService>(sceneId);
         services.AddSceneService<RenderingManagerSceneService>(sceneId);
         services.AddSceneService<TerrainRenderingService>(sceneId);
         services.AddSceneService<MeshRenderingService>(sceneId);

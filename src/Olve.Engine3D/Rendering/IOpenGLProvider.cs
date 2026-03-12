@@ -34,6 +34,9 @@ public static class OpenGLServiceRegistration
         services.TryAddScoped<MeshManager>();
         services.TryAddScoped<MeshLoadingManager>();
         services.TryAddScoped<CollisionSystem>();
+        services.TryAddScoped<FramebufferManager>();
+        services.TryAddScoped<RenderPassManager>();
+        services.TryAddScoped<ScreenPass>();
         return services;
     }
 }
