@@ -303,6 +303,50 @@ public class FramebufferManager(Provider<GL> glProvider)
         return false;
     }
 
+    public bool TryGetSize(Id framebufferId, out int width, out int height)
+    {
+        if (_framebuffers.TryGetValue(framebufferId, out var entry))
+        {
+            width = entry.Width;
+            height = entry.Height;
+            return true;
+        }
+
+        width = 0;
+        height = 0;
+        return false;
+    }
+
+    public readonly record struct FramebufferAttachmentInfo(uint GlHandle, int Index, bool IsDepth);
+
+    public readonly record struct FramebufferInfo(
+        uint FboHandle, int Width, int Height,
+        IReadOnlyList<FramebufferAttachmentInfo> Attachments);
+
+    public IReadOnlyList<FramebufferInfo> GetAllFramebuffers()
+    {
+        var result = new List<FramebufferInfo>();
+
+        foreach (var entry in _framebuffers.Values)
+        {
+            var attachments = new List<FramebufferAttachmentInfo>();
+
+            for (var i = 0; i < entry.ColorAttachments.Count; i++)
+            {
+                attachments.Add(new FramebufferAttachmentInfo(entry.ColorAttachments[i].GlHandle, i, false));
+            }
+
+            if (entry.DepthAttachment is { } depth)
+            {
+                attachments.Add(new FramebufferAttachmentInfo(depth.GlHandle, attachments.Count, true));
+            }
+
+            result.Add(new FramebufferInfo(entry.FboHandle, entry.Width, entry.Height, attachments));
+        }
+
+        return result;
+    }
+
     private Result AllocateFbo(FramebufferEntry entry)
     {
         entry.FboHandle = glProvider.Value.GenFramebuffer();
@@ -367,12 +411,16 @@ public class FramebufferManager(Provider<GL> glProvider)
                 depthAttachment.PixelFormat,
                 depthAttachment.PixelType,
                 in Unsafe.NullRef<byte>());
-            var clampToEdge = (int)GLEnum.ClampToEdge;
-            gl.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, in clampToEdge);
-            gl.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, in clampToEdge);
+            var clampToBorder = (int)GLEnum.ClampToBorder;
+            gl.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapS, in clampToBorder);
+            gl.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureWrapT, in clampToBorder);
+            Span<float> borderColor = [1f, 1f, 1f, 1f];
+            gl.TexParameter(TextureTarget.Texture2D, GLEnum.TextureBorderColor, borderColor);
             var nearest = (int)GLEnum.Nearest;
             gl.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMinFilter, in nearest);
             gl.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureMagFilter, in nearest);
+            var none = (int)GLEnum.None;
+            gl.TexParameterI(TextureTarget.Texture2D, GLEnum.TextureCompareMode, in none);
             gl.BindTexture(TextureTarget.Texture2D, 0);
 
             depthAttachment.GlHandle = handle;

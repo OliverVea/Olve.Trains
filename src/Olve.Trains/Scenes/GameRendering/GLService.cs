@@ -17,7 +17,8 @@ public class GLService(
     FramebufferManager framebufferManager,
     RenderPassManager renderPassManager,
     ScreenPassManager screenPassManager,
-    ScreenResizedEvent screenResizedEvent) : ISceneService
+    ScreenResizedEvent screenResizedEvent,
+    ScreenshotManager screenshotManager) : ISceneService
 {
     public int Priority => -10;
 
@@ -58,6 +59,8 @@ public class GLService(
         _clearPass = clearPass;
 
         screenResizedEvent.OnWindowResize.Subscribe(OnWindowResize);
+
+        screenshotManager.FramebufferManager = framebufferManager;
 
         return Result.Success();
     }

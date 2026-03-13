@@ -91,7 +91,7 @@ def test_track_loop(
 
     # -- Time-of-day screenshots --
 
-    for time_str, label in [("7:30", "0730"), ("11:30", "1130"), ("22:30", "2230")]:
+    for time_str, label in [("9:00", "0900"), ("14:30", "1430"), ("22:30", "2230")]:
         game.set_time(time_str)
         game.step(2)
 

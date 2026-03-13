@@ -2,6 +2,7 @@
 
 in vec3 FragPos;
 in vec3 FragNormal;
+in vec4 FragPosLightSpace;
 
 out vec4 FragColor;
 
@@ -24,18 +25,44 @@ uniform vec3 directionalLight1Dir;
 // @implements(IDaylightShader.DirectionalLight1Intensity)
 uniform float directionalLight1Intensity;
 
+// @implements(IShadowShader.ShadowMap)
+// @pixelType(Depth)
+uniform sampler2D shadowMap;
+
 uniform vec3 uColor;
+
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm)
+{
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    if (projCoords.z > 1.0)
+        return 0.0;
+
+    float currentDepth = projCoords.z;
+
+    vec3 lightDir = normalize(-directionalLight0Dir);
+    float bias = max(0.005 * (1.0 - dot(norm, lightDir)), 0.001);
+
+    float storedDepth = texture(shadowMap, projCoords.xy).r;
+    float shadow = currentDepth - bias > storedDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
 
 void main()
 {
     vec3 norm = normalize(FragNormal);
 
-    // Directional light 0 (sun)
+    // Shadow
+    float shadow = ShadowCalculation(FragPosLightSpace, norm);
+
+    // Directional light 0 (sun) — attenuated by shadow
     vec3 lightDir0 = normalize(-directionalLight0Dir);
     float diff0 = max(dot(norm, lightDir0), 0.0);
-    vec3 diffuse0 = diff0 * directionalLight0Color * directionalLight0Intensity;
+    vec3 diffuse0 = diff0 * directionalLight0Color * directionalLight0Intensity * (1.0 - shadow);
 
-    // Directional light 1 (moon)
+    // Directional light 1 (moon) — not shadowed
     vec3 lightDir1 = normalize(-directionalLight1Dir);
     float diff1 = max(dot(norm, lightDir1), 0.0);
     vec3 diffuse1 = diff1 * directionalLight1Color * directionalLight1Intensity;

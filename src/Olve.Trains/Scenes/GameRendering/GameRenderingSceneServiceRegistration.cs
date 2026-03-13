@@ -24,6 +24,7 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<GLService>(sceneId);
         services.AddSceneService<SharedRenderingService>(sceneId);
         services.AddSceneService<RenderingManagerSceneService>(sceneId);
+        services.AddSceneService<ShadowMapService>(sceneId);
         services.AddSceneService<TerrainRenderingService>(sceneId);
         services.AddSceneService<MeshRenderingService>(sceneId);
         services.AddEventSceneService(sceneId,

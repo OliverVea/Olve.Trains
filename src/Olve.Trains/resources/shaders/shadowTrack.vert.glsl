@@ -3,30 +3,22 @@
 // Per-vertex attributes (from template mesh, divisor=0)
 // @implements(IWithPosition3D.Position)
 layout(location = 0) in vec3 aPosition;  // x,y = profile offset; z = spline parameter t (0..1)
-// @implements(IWithNormal3D.Normal)
-layout(location = 1) in vec3 aNormal;    // local-space normal of the profile
+layout(location = 1) in vec3 aNormal;
 
 // Per-instance attributes (Hermite control points, divisor=1)
 // @instanced
-layout(location = 2) in vec3 iP0;       // start position
+layout(location = 2) in vec3 iP0;
 // @instanced
-layout(location = 3) in vec3 iP1;       // end position
+layout(location = 3) in vec3 iP1;
 // @instanced
-layout(location = 4) in vec3 iT0;       // start tangent
+layout(location = 4) in vec3 iT0;
 // @instanced
-layout(location = 5) in vec3 iT1;       // end tangent
+layout(location = 5) in vec3 iT1;
 
 // @implements(ICameraPositionShader.View)
 uniform mat4 view;
 // @implements(ICameraPositionShader.Projection)
 uniform mat4 projection;
-
-// @implements(IShadowShader.LightSpaceMatrix)
-uniform mat4 lightSpaceMatrix;
-
-out vec3 FragPos;
-out vec3 FragNormal;
-out vec4 FragPosLightSpace;
 
 void main()
 {
@@ -55,13 +47,6 @@ void main()
 
     // Offset template profile vertex into world space
     vec3 worldPos = pos + aPosition.x * binormal + aPosition.y * normal;
-
-    // Rotate normal into world frame
-    vec3 worldNormal = normalize(aNormal.x * binormal + aNormal.y * normal + aNormal.z * tangent);
-
-    FragPos = worldPos;
-    FragNormal = worldNormal;
-    FragPosLightSpace = lightSpaceMatrix * vec4(worldPos, 1.0);
 
     gl_Position = projection * view * vec4(worldPos, 1.0);
 }

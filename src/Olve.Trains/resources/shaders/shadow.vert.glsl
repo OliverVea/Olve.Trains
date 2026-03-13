@@ -2,7 +2,6 @@
 
 // @implements(IWithPosition3D.Position)
 layout (location = 0) in vec3 position;
-// @implements(IWithNormal3D.Normal)
 layout (location = 1) in vec3 normal;
 // @implements(IWithTexCoords2D.TexCoords)
 layout (location = 2) in vec2 texCoords;
@@ -16,21 +15,7 @@ uniform mat4 view;
 // @implements(ICameraPositionShader.Projection)
 uniform mat4 projection;
 
-// @implements(IShadowShader.LightSpaceMatrix)
-uniform mat4 lightSpaceMatrix;
-
-out vec3 FragPos;
-out vec3 FragNormal;
-out vec2 TexCoords;
-out vec4 FragPosLightSpace;
-
 void main()
 {
-    vec4 worldPos = iWorld * vec4(position, 1.0);
-    FragPos = worldPos.xyz;
-    FragNormal = mat3(transpose(inverse(iWorld))) * normal;
-    TexCoords = texCoords;
-    FragPosLightSpace = lightSpaceMatrix * worldPos;
-
-    gl_Position = projection * view * worldPos;
+    gl_Position = projection * view * iWorld * vec4(position, 1.0);
 }

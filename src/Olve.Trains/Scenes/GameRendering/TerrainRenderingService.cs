@@ -24,11 +24,12 @@ public class TerrainRenderingService(
     CameraSceneService cameraSceneService,
     TerrainHighlightSettings terrainHighlightSettings,
     SceneLightService sceneLightService,
+    ShadowMapService shadowMapService,
     SharedRenderingService sharedRenderingService) : ISceneService
 {
     private readonly Shaders.Terrain _terrainShader = new();
 
-    public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, sceneLightService]);
+    public int Priority => SceneServicePriority.FromDependencies([cameraSceneService, terrainService, sceneLightService, shadowMapService]);
 
     public Result Load()
     {
@@ -71,8 +72,12 @@ public class TerrainRenderingService(
             return textureProblems.Prepend("Failed to register heightmap texture with OpenGL");
         }
 
-        _terrainShader.GridSize = new Vector2D<int>(heightmap.Width, heightmap.Length);
+        var gridSize = new Vector2D<int>(heightmap.Width, heightmap.Length);
+        _terrainShader.GridSize = gridSize;
         _terrainShader.HeightMap = heightmapTextureId;
+
+        // Configure shadow terrain shader with the same heightmap data
+        shadowMapService.ConfigureTerrainShadowShader(heightmapTextureId, gridSize);
 
         // Register draw-arrays geometry (no vertex data — terrain uses gl_VertexID)
         if (geometryManager.RegisterDrawArrays(vertexCount)
@@ -81,7 +86,7 @@ public class TerrainRenderingService(
             return geoProblems.Prepend("Failed to register terrain geometry");
         }
 
-        // Register group
+        // Register main group
         if (renderingGroupManager.RegisterDrawArrays<Shaders.Terrain.Instance, IDefaultFrameFormat>(
                 geometryId, _terrainShader, sharedRenderingService.MainPass, _terrainShader.BlendState)
             .TryPickProblems(out var groupProblems, out var groupId))
@@ -96,6 +101,19 @@ public class TerrainRenderingService(
             return instanceProblems.Prepend("Failed to add terrain instance");
         }
 
+        // Register shadow group using the same geometry
+        if (shadowMapService.RegisterTerrainShadowGroup(geometryId)
+            .TryPickProblems(out var shadowProblems, out var shadowGroup))
+        {
+            return shadowProblems.Prepend("Failed to register terrain shadow group");
+        }
+
+        if (shadowMapService.AddInstance(shadowGroup, new Shaders.Terrain.Instance(Matrix4X4<float>.Identity))
+            .TryPickProblems(out shadowProblems, out _))
+        {
+            return shadowProblems.Prepend("Failed to add terrain shadow instance");
+        }
+
         return Result.Success();
     }
 
@@ -105,6 +123,7 @@ public class TerrainRenderingService(
         sceneLightService.ApplyShaderParameters(_terrainShader);
         cameraSceneService.ApplyCameraPositionParameters(_terrainShader);
         cameraSceneService.ApplyCameraDirectionParameters(_terrainShader);
+        shadowMapService.ApplyShaderParameters(_terrainShader);
 
         _terrainShader.MousePosition = null;
         _terrainShader.MouseRadius = null;

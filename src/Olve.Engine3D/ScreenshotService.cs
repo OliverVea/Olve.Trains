@@ -15,8 +15,8 @@ public class ScreenshotService(KeyboardManager keyboardManager, ScreenshotManage
         if (keyboardManager.State.IsKeyPressed(Key.F12))
         {
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-            var path = ScreenshotsFolder / $"screenshot-{timestamp}.png";
-            screenshotManager.RequestScreenshot(path);
+            var folder = ScreenshotsFolder / timestamp;
+            screenshotManager.RequestFramebufferDump(folder);
         }
 
         return Pass.Pass;

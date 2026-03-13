@@ -18,6 +18,7 @@ namespace Olve.Trains.Scenes.GameRendering;
 public class MeshRenderingService(
     CameraSceneService cameraSceneService,
     SceneLightService sceneLightService,
+    ShadowMapService shadowMapService,
     RenderingServiceHelper renderingServiceHelper,
     GeometryManager geometryManager,
     RenderingGroupManager renderingGroupManager,
@@ -30,13 +31,17 @@ public class MeshRenderingService(
     SharedRenderingService sharedRenderingService)
     : ISceneService
 {
-    public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
+    public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService, shadowMapService]);
 
-    public readonly record struct MeshGroupHandle(GroupId<Shaders.Default.Instance> GroupId);
+    public readonly record struct MeshGroupHandle(
+        GroupId<Shaders.Default.Instance> GroupId,
+        ShadowMapService.ShadowGroupHandle<Shaders.Default.Instance> ShadowGroupId);
 
     public readonly record struct MeshInstanceHandle(
         GroupId<Shaders.Default.Instance> GroupId,
-        Id<Shaders.Default.Instance> InstanceId);
+        Id<Shaders.Default.Instance> InstanceId,
+        ShadowMapService.ShadowGroupHandle<Shaders.Default.Instance> ShadowGroupId,
+        Id<Shaders.Default.Instance> ShadowInstanceId);
 
     private readonly Shaders.Default _shader = new()
     {
@@ -135,7 +140,14 @@ public class MeshRenderingService(
             return problems.Prepend("Failed to register mesh rendering group");
         }
 
-        return new MeshGroupHandle(groupId);
+        // Register shadow group using the same geometry
+        if (shadowMapService.RegisterDefaultShadowGroup(geometryId)
+            .TryPickProblems(out problems, out var shadowGroup))
+        {
+            return problems.Prepend("Failed to register mesh shadow group");
+        }
+
+        return new MeshGroupHandle(groupId, shadowGroup);
     }
 
     public Result DeregisterMeshGroup(MeshGroupHandle group)
@@ -150,24 +162,45 @@ public class MeshRenderingService(
 
     public Result<MeshInstanceHandle> AddInstance(MeshGroupHandle group, Matrix4X4<float> worldMatrix)
     {
-        if (renderingInstanceManager.Add(group.GroupId, new Shaders.Default.Instance(worldMatrix))
+        var instance = new Shaders.Default.Instance(worldMatrix);
+
+        if (renderingInstanceManager.Add(group.GroupId, instance)
             .TryPickProblems(out var problems, out var instanceId))
         {
             return problems.Prepend("Failed to add mesh instance");
         }
 
-        return new MeshInstanceHandle(group.GroupId, instanceId);
+        if (shadowMapService.AddInstance(group.ShadowGroupId, instance)
+            .TryPickProblems(out problems, out var shadowInstanceId))
+        {
+            return problems.Prepend("Failed to add mesh shadow instance");
+        }
+
+        return new MeshInstanceHandle(group.GroupId, instanceId, group.ShadowGroupId, shadowInstanceId);
     }
 
     public Result UpdateInstance(MeshInstanceHandle instance, Matrix4X4<float> worldMatrix)
     {
-        return renderingInstanceManager.Update(
-            instance.GroupId, instance.InstanceId, new Shaders.Default.Instance(worldMatrix));
+        var data = new Shaders.Default.Instance(worldMatrix);
+
+        if (renderingInstanceManager.Update(instance.GroupId, instance.InstanceId, data)
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
+        return shadowMapService.UpdateInstance(instance.ShadowGroupId, instance.ShadowInstanceId, data);
     }
 
     public Result RemoveInstance(MeshInstanceHandle instance)
     {
-        return renderingInstanceManager.Remove(instance.GroupId, instance.InstanceId);
+        if (renderingInstanceManager.Remove(instance.GroupId, instance.InstanceId)
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
+        return shadowMapService.RemoveInstance(instance.ShadowGroupId, instance.ShadowInstanceId);
     }
 
     public Result Update(TimeSpan deltaTime)
@@ -175,6 +208,7 @@ public class MeshRenderingService(
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         cameraSceneService.ApplyCameraDirectionParameters(_shader);
         sceneLightService.ApplyShaderParameters(_shader);
+        shadowMapService.ApplyShaderParameters(_shader);
 
         return Result.Success();
     }

@@ -1,4 +1,5 @@
 using Olve.Engine3D.Light;
+using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 using Olve.Trains.Scenes.GameLogic.ShaderExtensions;

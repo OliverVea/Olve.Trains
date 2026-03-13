@@ -45,6 +45,15 @@ public class TextureEntityManager(TextureManager textureManager, OpenGLTextureMa
         return DeletionResult.Success();
     }
 
+    /// <summary>
+    /// Registers a texture that was created externally (e.g. a framebuffer attachment)
+    /// so it can be bound as a sampler uniform in shaders.
+    /// </summary>
+    public void RegisterHandle(UntypedTextureId textureId, Texture2D texture)
+    {
+        _registrations[textureId] = texture;
+    }
+
     public bool TryGetRegistration(UntypedTextureId textureId, out Texture2D openGlTexture)
     {
         return _registrations.TryGetValue(textureId, out openGlTexture);

@@ -18,11 +18,12 @@ public class TrackRenderingService(
     CameraSceneService cameraSceneService,
     RenderingServiceHelper renderingServiceHelper,
     SceneLightService sceneLightService,
+    ShadowMapService shadowMapService,
     TrackService trackService,
     TerrainRenderingService terrainRenderingService,
     SharedRenderingService sharedRenderingService) : ISceneService
 {
-    public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService]);
+    public int Priority => SceneServicePriority.FromDependencies([terrainRenderingService, shadowMapService]);
 
     private readonly Shaders.Track _shader = new()
     {
@@ -31,7 +32,9 @@ public class TrackRenderingService(
     };
 
     private readonly Dictionary<Id<Track>, Id<Shaders.Track.Instance>> _trackInstanceIds = new();
+    private readonly Dictionary<Id<Track>, Id<Shaders.Track.Instance>> _shadowInstanceIds = new();
     private GroupId<Shaders.Track.Instance> _groupId = null!;
+    private ShadowMapService.ShadowGroupHandle<Shaders.Track.Instance> _shadowGroupId;
 
     public Result Load()
     {
@@ -49,7 +52,7 @@ public class TrackRenderingService(
             return problems.Prepend("Failed to register track geometry");
         }
 
-        // Register group
+        // Register main group
         if (renderingGroupManager.Register<Shaders.Track.Vertex, Shaders.Track.Instance, IDefaultFrameFormat>(
                 geometryId, _shader, sharedRenderingService.MainPass, _shader.BlendState)
             .TryPickProblems(out problems, out var groupId))
@@ -58,6 +61,15 @@ public class TrackRenderingService(
         }
 
         _groupId = groupId;
+
+        // Register shadow group
+        if (shadowMapService.RegisterTrackShadowGroup(geometryId)
+            .TryPickProblems(out problems, out var shadowGroup))
+        {
+            return problems.Prepend("Failed to register track shadow group");
+        }
+
+        _shadowGroupId = shadowGroup;
 
         return Result.Success();
     }
@@ -79,23 +91,44 @@ public class TrackRenderingService(
 
         _trackInstanceIds[trackId] = instanceId;
 
+        // Mirror to shadow group
+        if (shadowMapService.AddInstance(_shadowGroupId, instance)
+            .TryPickProblems(out problems, out var shadowInstanceId))
+        {
+            return problems.Prepend("Failed to add track shadow instance for '{0}'", trackId);
+        }
+
+        _shadowInstanceIds[trackId] = shadowInstanceId;
+
         return Result.Success();
     }
 
     public Result Unregister(Id<Track> trackId)
     {
-        if (!_trackInstanceIds.Remove(trackId, out var instanceId))
+        if (_trackInstanceIds.Remove(trackId, out var instanceId))
         {
-            return Result.Success();
+            if (renderingInstanceManager.Remove(_groupId, instanceId).TryPickProblems(out var problems))
+            {
+                return problems;
+            }
         }
 
-        return renderingInstanceManager.Remove(_groupId, instanceId);
+        if (_shadowInstanceIds.Remove(trackId, out var shadowInstanceId))
+        {
+            if (shadowMapService.RemoveInstance(_shadowGroupId, shadowInstanceId).TryPickProblems(out var problems))
+            {
+                return problems;
+            }
+        }
+
+        return Result.Success();
     }
 
     public Result Update(TimeSpan deltaTime)
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         sceneLightService.ApplyShaderParameters(_shader);
+        shadowMapService.ApplyShaderParameters(_shader);
 
         return Result.Success();
     }

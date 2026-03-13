@@ -13,7 +13,11 @@ uniform mat4 view;
 // @implements(ICameraPositionShader.Projection)
 uniform mat4 projection;
 
+// @implements(IShadowShader.LightSpaceMatrix)
+uniform mat4 lightSpaceMatrix;
+
 out vec3 FragPos;
+out vec4 FragPosLightSpace;
 
 void main()
 {
@@ -64,6 +68,7 @@ void main()
 
     vec4 worldPos = iWorld * vec4(pos, 1.0);
     FragPos = worldPos.xyz;
+    FragPosLightSpace = lightSpaceMatrix * worldPos;
 
     gl_Position = projection * view * worldPos;
 }

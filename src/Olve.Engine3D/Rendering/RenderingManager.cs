@@ -3,7 +3,6 @@ using Olve.Engine3D.Rendering.EntityManagers;
 using Olve.Engine3D.Rendering.Geometry;
 using Olve.Engine3D.Rendering.Instancing;
 using Olve.Engine3D.Rendering.OpenGL;
-using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Utilities;
 using Silk.NET.OpenGL;
 
@@ -31,6 +30,11 @@ public class RenderingManager(
             if (framebufferManager.Bind(pass.FramebufferId).TryPickProblems(out var fbProblems))
             {
                 return fbProblems.Prepend("Failed to bind framebuffer for pass");
+            }
+
+            if (framebufferManager.TryGetSize(pass.FramebufferId, out var fbWidth, out var fbHeight))
+            {
+                gl.Viewport(0, 0, (uint)fbWidth, (uint)fbHeight);
             }
 
             pass.Clear.Apply(gl);
