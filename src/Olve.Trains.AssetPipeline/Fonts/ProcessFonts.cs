@@ -99,11 +99,8 @@ public class ProcessFonts(
                         {
                             "Atlas", new ScriptObject
                             {
-                                { "DistanceRange", atlasResult.DistanceRange },
-                                { "DistanceRangeMiddle", atlasResult.DistanceRange / 2 },
-                                { "GlyphSize", fontOptions.Value.GlyphSize },
                                 {
-                                    "Path", new ScriptObject
+                                    "Texture", new ScriptObject
                                     {
                                         { "Name", $"{fontName}-atlas" },
                                         { "Path", $"fonts/{fontName}-atlas.texture" }
@@ -116,9 +113,12 @@ public class ProcessFonts(
                                         { "Y", atlasResult.Height }
                                     }
                                 },
-                                { "Type", "MSDF" }
                             }
                         },
+                        { "FontAtlasType", "MSDF" },
+                        { "DistanceRange", atlasResult.DistanceRange },
+                        { "DistanceRangeMiddle", atlasResult.DistanceRange / 2 },
+                        { "GlyphSize", fontOptions.Value.GlyphSize },
                         { "Glyphs", glyphScriptObjects },
                         {
                             "Metrics", new ScriptObject

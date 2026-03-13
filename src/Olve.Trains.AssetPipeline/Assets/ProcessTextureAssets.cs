@@ -21,7 +21,18 @@ public class ProcessTextureAssets(
 
         pathProvider.TexturesOutputFolder.EnsurePathExists();
 
-        var texturesResult = textureFileReader.LoadTextures(request.AssetFiles);
+        // Exclude PNGs that have a companion .json (those are texture atlas assets)
+        var jsonNames = request.AssetFiles
+            .Where(f => f.Extension.Equals(".json", StringComparison.OrdinalIgnoreCase))
+            .Select(f => System.IO.Path.GetFileNameWithoutExtension(f.Name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var standaloneTextures = request.AssetFiles
+            .Where(f => !f.Extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
+                        || !jsonNames.Contains(System.IO.Path.GetFileNameWithoutExtension(f.Name)))
+            .ToList();
+
+        var texturesResult = textureFileReader.LoadTextures(standaloneTextures);
         if (texturesResult.TryPickProblems(out var problems, out var textureAssets))
         {
             return problems.Prepend("Failed to load textures");

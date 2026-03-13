@@ -10,7 +10,8 @@ public class PathProvider(
     IOptions<TerrainOptions> terrainOptions,
     IOptions<ShaderOptions> shaderOptions,
     IOptions<LayoutOptions> layoutOptions,
-    IOptions<FontOptions> fontOptions)
+    IOptions<FontOptions> fontOptions,
+    IOptions<TextureAtlasOptions> textureAtlasOptions)
 {
     // AKA Temp
     public IPath BuildPath => Paths.Path.Create(buildOptions.Value.BuildDirectory);
@@ -41,4 +42,5 @@ public class PathProvider(
     public IPath ShadersOutputFolder => OutputPath / shaderOptions.Value.OutputFolder;
     public IPath LayoutsOutputFolder => OutputPath / layoutOptions.Value.OutputFolder;
     public IPath FontsOutputFolder => OutputPath / fontOptions.Value.OutputFolder;
+    public IPath TextureAtlasesOutputFolder => OutputPath / textureAtlasOptions.Value.OutputFolder;
 }

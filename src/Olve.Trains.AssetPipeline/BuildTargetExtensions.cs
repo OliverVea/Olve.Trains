@@ -3,5 +3,5 @@
 public static class BuildTargetExtensions
 {
     public static bool RequiresS3Resources(this BuildTargets targets)
-        => (targets & (BuildTargets.Meshes | BuildTargets.Textures | BuildTargets.Terrains | BuildTargets.Fonts)) != 0;
+        => (targets & (BuildTargets.Meshes | BuildTargets.Textures | BuildTargets.Terrains | BuildTargets.Fonts | BuildTargets.TextureAtlases)) != 0;
 }

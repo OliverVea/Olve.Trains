@@ -12,6 +12,7 @@ public class ProcessAssets(
     ProcessMeshAssets processMeshAssets,
     ProcessTextureAssets processTextureAssets,
     ProcessTerrainAssets processTerrainAssets,
+    ProcessTextureAtlasAssets processTextureAtlasAssets,
     Fonts.ProcessFonts processFonts,
     TextureFileReader textureFileReader,
     AssetWriter assetWriter)
@@ -20,7 +21,8 @@ public class ProcessAssets(
     public record Response(IReadOnlyList<Asset<MeshData>> MeshAssets,
         IReadOnlyList<Asset<TextureData<RGBA>>> TextureAssets,
         IReadOnlyList<Asset<TerrainData>> TerrainAssets,
-        IReadOnlyList<IPath> FontFiles);
+        IReadOnlyList<IPath> FontFiles,
+        IReadOnlyList<IPath> TextureAtlasFiles);
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
@@ -30,6 +32,7 @@ public class ProcessAssets(
         IReadOnlyList<Asset<TextureData<RGBA>>> textureAssets = [];
         IReadOnlyList<Asset<TerrainData>> terrainAssets = [];
         IReadOnlyList<IPath> fontFiles = [];
+        IReadOnlyList<IPath> textureAtlasFiles = [];
 
         if (request.Targets.HasFlag(BuildTargets.Meshes))
         {
@@ -65,6 +68,18 @@ public class ProcessAssets(
             }
 
             terrainAssets = terrains;
+        }
+
+        if (request.Targets.HasFlag(BuildTargets.TextureAtlases))
+        {
+            ProcessTextureAtlasAssets.Request atlasRequest = new(request.AssetFiles);
+            var atlasResponse = await processTextureAtlasAssets.ExecuteAsync(atlasRequest, ct);
+            if (atlasResponse.TryPickProblems(out var atlasProblems, out var atlases))
+            {
+                return atlasProblems.Prepend("Failed to process texture atlas assets");
+            }
+
+            textureAtlasFiles = atlases.GeneratedFiles;
         }
 
         if (request.Targets.HasFlag(BuildTargets.Fonts))
@@ -125,12 +140,13 @@ public class ProcessAssets(
         }
 
         logger.LogInformation(
-            "Processed {MeshCount} mesh(es), {TextureCount} texture(s), {TerrainCount} terrain(s), and {FontCount} font(s) successfully!",
+            "Processed {MeshCount} mesh(es), {TextureCount} texture(s), {TerrainCount} terrain(s), {FontCount} font(s), and {AtlasCount} texture atlas(es) successfully!",
             meshAssets.Count,
             textureAssets.Count,
             terrainAssets.Count,
-            fontFiles.Count);
+            fontFiles.Count,
+            textureAtlasFiles.Count);
 
-        return new Response(meshAssets, textureAssets, terrainAssets, fontFiles);
+        return new Response(meshAssets, textureAssets, terrainAssets, fontFiles, textureAtlasFiles);
     }
 }
