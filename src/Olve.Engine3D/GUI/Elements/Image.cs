@@ -29,8 +29,9 @@ public class Image : GuiElement, IRenderableAsRectangle
 
             if (SourceRect is { } rect && TextureSize is { } size)
             {
-                uvMin = new Vector2D<float>(rect.Origin.X / size.X, rect.Origin.Y / size.Y);
-                uvMax = new Vector2D<float>((rect.Origin.X + rect.Size.X) / size.X, (rect.Origin.Y + rect.Size.Y) / size.Y);
+                // Flip Y: atlas pixel coords have Y=0 at top, OpenGL UVs have Y=0 at bottom
+                uvMin = new Vector2D<float>(rect.Origin.X / size.X, 1f - (rect.Origin.Y + rect.Size.Y) / size.Y);
+                uvMax = new Vector2D<float>((rect.Origin.X + rect.Size.X) / size.X, 1f - rect.Origin.Y / size.Y);
             }
 
             return new()
