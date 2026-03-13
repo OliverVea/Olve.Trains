@@ -44,14 +44,14 @@ public class ShadowMapService(
 
     private Id<Framebuffer<IShadowFrameFormat>> _framebufferId;
     private Id<RenderPass<IShadowFrameFormat>> _passId;
-    private TextureId<Depth> _shadowMapTexture = null!;
+    private TextureId<Rg32f> _shadowMapTexture = null!;
 
     private readonly Shaders.Shadow _shadowShader = new();
     private readonly Shaders.ShadowTerrain _shadowTerrainShader = new();
     private readonly Shaders.ShadowTrack _shadowTrackShader = new();
 
     public Matrix4X4<float> LightSpaceMatrix { get; private set; } = Matrix4X4<float>.Identity;
-    public TextureId<Depth> ShadowMapTexture => _shadowMapTexture;
+    public TextureId<Rg32f> ShadowMapTexture => _shadowMapTexture;
 
     // Camera frustum corners in shadow map UV space [0,1], updated each frame for debug overlay
     // [0..3] = corners at Y=MinCasterHeight, [4..7] = corners at Y=MaxCasterHeight
@@ -65,14 +65,14 @@ public class ShadowMapService(
 
     public Result Load()
     {
-        // Create depth-only FBO
-        if (framebufferManager.CreateWithDepth<IShadowFrameFormat>(ShadowMapSize, ShadowMapSize)
+        // Create color+depth FBO for VSM (RG32F stores depth moments)
+        if (framebufferManager.CreateWithDepth<IShadowFrameFormat, Rg32f>(ShadowMapSize, ShadowMapSize)
             .TryPickProblems(out var problems, out var fbResult))
         {
             return problems.Prepend("Failed to create shadow map framebuffer");
         }
 
-        (_framebufferId, _shadowMapTexture) = fbResult;
+        (_framebufferId, _shadowMapTexture, _) = fbResult;
 
         // Register the depth texture in the texture entity manager so receiver shaders can sample it
         if (framebufferManager.TryGetTextureHandle(_shadowMapTexture, out var glHandle))
@@ -83,7 +83,9 @@ public class ShadowMapService(
         }
 
         // Create shadow pass (between clear=-100 and main=0)
-        if (renderPassManager.Create(_framebufferId, priority: -50, ClearFlags.Depth)
+        // Clear color (1,1,1,1) ensures unrendered areas read as max depth = no shadow
+        if (renderPassManager.Create(_framebufferId, priority: -50, ClearFlags.ColorDepth,
+                clearColor: new Vector4D<float>(1f, 1f, 1f, 1f))
             .TryPickProblems(out problems, out var passId))
         {
             return problems.Prepend("Failed to create shadow render pass");
@@ -106,7 +108,7 @@ public class ShadowMapService(
         {
             screenshotManager.RegisterTarget("shadow-map",
                 new ScreenshotManager.ScreenshotTarget(fboHandle, ShadowMapSize, ShadowMapSize,
-                    IsDepth: true, DebugOverlay: DrawFrustumOverlay));
+                    IsDepth: false, DebugOverlay: DrawFrustumOverlay));
         }
 
         return Result.Success();

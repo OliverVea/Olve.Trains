@@ -26,14 +26,14 @@
 - [ ] Resources epic (Feature):
   - [ ] Design resource system (discrete entities, field deposits, geometric resources; harvest range; production linking)
   - [ ] Implement resource system based on design
-- [ ] Shadow epic (Visual):
+- [x] Shadow epic (Visual):
   - Description: Add shadow mapping to the game. Requires shader pipeline changes (removing geometry shaders, adding SDF grid), FBO infrastructure for the shadow depth pass, and receiver shader modifications to sample the shadow map.
   - [x] Remove terrain geometry shader — compute flat normals via `dFdx`/`dFdy` in fragment shader, render grid overlay as SDF in terrain fragment shader, delete wireframe shader files
   - [x] Add shadow map generation — FBO wrapper, depth-only pixel format, depth-only shader, `ShadowMapService` that renders casters from light-space each frame
   - [x] Add shadow map sampling to receiver shaders — terrain, default, and building vertex+fragment shaders pass light-space position and sample the shadow map to attenuate diffuse lighting
   - [x] Fit shadow map to camera frustum — compute light-space ortho bounds from camera view-projection instead of the full terrain AABB, so the shadow map resolution is spent on visible geometry
   - [x] Add PCF shadow softening — re-add percentage-closer filtering for soft shadow edges
-  - [ ] Switch to Variance Shadow Maps (VSM) — store depth + depth² in RG32F, use Chebyshev's inequality for smooth filterable shadows, add optional Gaussian blur pass
+  - [x] Switch to Variance Shadow Maps (VSM) — store depth + depth² in RG32F, use Chebyshev's inequality for smooth filterable shadows, add optional Gaussian blur pass
 
 ### Gameplay mechanics (build after core systems are validated)
 

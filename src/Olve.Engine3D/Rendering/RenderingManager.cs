@@ -37,7 +37,17 @@ public class RenderingManager(
                 gl.Viewport(0, 0, (uint)fbWidth, (uint)fbHeight);
             }
 
+            if (pass.ClearColor is { } clearColor)
+            {
+                gl.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
+            }
+
             pass.Clear.Apply(gl);
+
+            if (pass.ClearColor is not null)
+            {
+                gl.ClearColor(0f, 0f, 0f, 1f);
+            }
 
             foreach (var group in groupManager.GetGroupsForPass(pass.PassId))
             {

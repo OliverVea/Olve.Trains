@@ -30,38 +30,41 @@ uniform vec3 mousePosition;
 uniform float mouseRadius;
 
 // @implements(IShadowShader.ShadowMap)
-// @pixelType(Depth)
+// @pixelType(Rg32f)
 uniform sampler2D shadowMap;
 
 out vec4 FragColor;
 
-float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm)
+float ShadowCalculation(vec4 fragPosLightSpace)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0)
+    // Outside shadow map — no shadow
+    if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0
+        || projCoords.y < 0.0 || projCoords.y > 1.0)
         return 0.0;
 
     float currentDepth = projCoords.z;
 
-    vec3 lightDir = normalize(-directionalLight0Dir);
-    float bias = max(0.005 * (1.0 - dot(norm, lightDir)), 0.001);
+    // Sample depth moments from VSM
+    vec2 moments = texture(shadowMap, projCoords.xy).rg;
 
-    // 5x5 PCF
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for (int x = -2; x <= 2; x++)
-    {
-        for (int y = -2; y <= 2; y++)
-        {
-            float depth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
-            shadow += currentDepth - bias > depth ? 1.0 : 0.0;
-        }
-    }
-    shadow /= 25.0;
+    // Fully lit if closer than mean depth
+    if (currentDepth <= moments.x)
+        return 0.0;
 
-    return shadow;
+    // Chebyshev's inequality
+    float variance = moments.y - moments.x * moments.x;
+    variance = max(variance, 0.00002);
+
+    float d = currentDepth - moments.x;
+    float pMax = variance / (variance + d * d);
+
+    // Light bleeding reduction
+    pMax = smoothstep(0.3, 1.0, pMax);
+
+    return 1.0 - pMax;
 }
 
 void main()
@@ -71,8 +74,8 @@ void main()
     // Ensure normal points upward (screen-space winding may flip it)
     if (norm.y < 0.0) norm = -norm;
 
-    // Shadow
-    float shadow = ShadowCalculation(FragPosLightSpace, norm);
+    // Shadow (VSM)
+    float shadow = ShadowCalculation(FragPosLightSpace);
 
     // Directional light 0 (sun) — attenuated by shadow
     vec3 lightDir0 = normalize(-directionalLight0Dir);

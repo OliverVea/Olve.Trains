@@ -533,6 +533,9 @@ public class FramebufferManager(Provider<GL> glProvider)
         if (typeof(T) == typeof(float))
             return (InternalFormat.R32f, PixelFormat.Red, PixelType.Float);
 
+        if (typeof(T) == typeof(Textures.Rg32f))
+            return (InternalFormat.RG32f, PixelFormat.RG, PixelType.Float);
+
         return (InternalFormat.Rgba8, PixelFormat.Rgba, PixelType.UnsignedByte);
     }
 }
