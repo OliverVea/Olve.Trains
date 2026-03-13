@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------
 // |                                                                                                |
 // |               WARNING: This is a generated file. Do not modify it manually.                    |
 // |                                                                                                |
@@ -18,15 +18,15 @@ public static partial class Fonts
 {
     public static FontData {{Font.Name}} { get; } = new()
     {
-        Atlas = new FontAtlasData
+        Atlas = new TextureAtlasData<RGB>
         {
-            DistanceRange = {{ Font.Atlas.DistanceRange }},
-            DistanceRangeMiddle = {{ Font.Atlas.DistanceRangeMiddle }},
-            GlyphSize = {{ Font.Atlas.GlyphSize }},
-            FontAtlas = new AssetPath<TextureData<RGB>>("{{ Font.Atlas.Path.Name }}", "{{ Font.Atlas.Path.Path }}"),
-            FontAtlasSize = new Vector2D<int>({{ Font.Atlas.Size.X }}, {{ Font.Atlas.Size.Y }}),
-            FontAtlasType = FontAtlasType.{{ Font.Atlas.Type }},
+            Texture = new AssetPath<TextureData<RGB>>("{{ Font.Atlas.Path.Name }}", "{{ Font.Atlas.Path.Path }}"),
+            Size = new Vector2D<int>({{ Font.Atlas.Size.X }}, {{ Font.Atlas.Size.Y }}),
         },
+        FontAtlasType = FontAtlasType.{{ Font.Atlas.Type }},
+        DistanceRange = {{ Font.Atlas.DistanceRange }},
+        DistanceRangeMiddle = {{ Font.Atlas.DistanceRangeMiddle }},
+        GlyphSize = {{ Font.Atlas.GlyphSize }},
         Metrics = new FontMetricsData()
         {
             Ascender = {{ Font.Metrics.Ascender }}f,

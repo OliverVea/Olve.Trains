@@ -29,7 +29,7 @@ public static class TextLayoutEngine
     {
         var glyphs = new List<GlyphLayout>();
         var scale = fontSize / font.Metrics.EmSize;
-        var atlasSize = font.Atlas.FontAtlasSize.As<float>();
+        var atlasSize = font.Atlas.Size.As<float>();
         float cursorX = 0f;
 
         foreach (var rune in text.EnumerateRunes())

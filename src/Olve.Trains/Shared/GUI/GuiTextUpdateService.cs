@@ -114,7 +114,7 @@ public class GuiTextUpdateService(
             guiLayoutService.SetNodeBox(addedEvent.NodeId, layoutBox);
         }
 
-        if (textureLoadingManager.LoadTexture(font.Atlas.FontAtlas)
+        if (textureLoadingManager.LoadTexture(font.Atlas.Texture)
             .TryPickProblems(out var problems, out var textureId))
         {
             return problems.Prepend("Failed to load font atlas for text element: {0}", addedEvent.NodeId);
