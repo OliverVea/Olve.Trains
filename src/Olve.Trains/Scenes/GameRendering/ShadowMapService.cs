@@ -28,7 +28,7 @@ public class ShadowMapService(
     ScreenshotManager screenshotManager,
     ILogger<ShadowMapService> logger) : ISceneService
 {
-    public const int ShadowMapSize = 1024;
+    public const int ShadowMapSize = 2048;
 
     /// <summary>
     /// Maximum world-space height that shadow casters can reach (terrain + tallest building).
