@@ -1,0 +1,29 @@
+// --------------------------------------------------------------------------------------------------
+// |                                                                                                |
+// |               WARNING: This is a generated file. Do not modify it manually.                    |
+// |                                                                                                |
+// --------------------------------------------------------------------------------------------------
+// ReSharper disable InconsistentNaming
+using Olve.Engine3D;
+using Olve.Engine3D.Assets;
+using Olve.Engine3D.Assets.Entities;
+using Silk.NET.Maths;
+
+// ReSharper disable once CheckNamespace
+namespace {{ Namespace }};
+
+public static partial class {{ Atlas.ClassName }}
+{
+    public static TextureAtlasData<RGBA> Atlas { get; } = new()
+    {
+        Texture = new AssetPath<TextureData<RGBA>>("{{ Atlas.Texture.Name }}", "{{ Atlas.Texture.Path }}"),
+        Size = new Vector2D<int>({{ Atlas.Size.X }}, {{ Atlas.Size.Y }}),
+    };
+{{ for sprite in Atlas.Sprites }}
+    public static Rectangle<float> {{ sprite.Name }} { get; } = new({{ sprite.X }}f, {{ sprite.Y }}f, {{ sprite.W }}f, {{ sprite.H }}f);
+{{ end }}
+    public static (string Name, Rectangle<float> Region)[] All { get; } =
+    [{{ for sprite in Atlas.Sprites }}
+        ("{{ sprite.Name }}", {{ sprite.Name }}),{{ end }}
+    ];
+}

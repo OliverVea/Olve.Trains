@@ -20,13 +20,13 @@ public static partial class Fonts
     {
         Atlas = new TextureAtlasData<RGB>
         {
-            Texture = new AssetPath<TextureData<RGB>>("{{ Font.Atlas.Path.Name }}", "{{ Font.Atlas.Path.Path }}"),
+            Texture = new AssetPath<TextureData<RGB>>("{{ Font.Atlas.Texture.Name }}", "{{ Font.Atlas.Texture.Path }}"),
             Size = new Vector2D<int>({{ Font.Atlas.Size.X }}, {{ Font.Atlas.Size.Y }}),
         },
-        FontAtlasType = FontAtlasType.{{ Font.Atlas.Type }},
-        DistanceRange = {{ Font.Atlas.DistanceRange }},
-        DistanceRangeMiddle = {{ Font.Atlas.DistanceRangeMiddle }},
-        GlyphSize = {{ Font.Atlas.GlyphSize }},
+        FontAtlasType = FontAtlasType.{{ Font.FontAtlasType }},
+        DistanceRange = {{ Font.DistanceRange }},
+        DistanceRangeMiddle = {{ Font.DistanceRangeMiddle }},
+        GlyphSize = {{ Font.GlyphSize }},
         Metrics = new FontMetricsData()
         {
             Ascender = {{ Font.Metrics.Ascender }}f,

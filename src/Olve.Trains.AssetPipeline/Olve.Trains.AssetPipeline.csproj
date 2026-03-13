@@ -50,6 +50,9 @@
         <None Update="templates\FontClass.scriban">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="templates\TextureAtlasClass.scriban">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>

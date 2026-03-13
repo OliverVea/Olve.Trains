@@ -16,6 +16,7 @@ public static class ServiceExtensions
         AddOptions<ShaderOptions>(services, configuration);
         AddOptions<TerrainOptions>(services, configuration);
         AddOptions<TextureOptions>(services, configuration);
+        AddOptions<TextureAtlasOptions>(services, configuration);
 
         return services;
     }
