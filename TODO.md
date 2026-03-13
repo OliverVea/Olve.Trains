@@ -31,7 +31,7 @@
   - [x] Remove terrain geometry shader — compute flat normals via `dFdx`/`dFdy` in fragment shader, render grid overlay as SDF in terrain fragment shader, delete wireframe shader files
   - [x] Add shadow map generation — FBO wrapper, depth-only pixel format, depth-only shader, `ShadowMapService` that renders casters from light-space each frame
   - [x] Add shadow map sampling to receiver shaders — terrain, default, and building vertex+fragment shaders pass light-space position and sample the shadow map to attenuate diffuse lighting
-  - [ ] Fit shadow map to camera frustum — compute light-space ortho bounds from camera view-projection instead of the full terrain AABB, so the shadow map resolution is spent on visible geometry
+  - [x] Fit shadow map to camera frustum — compute light-space ortho bounds from camera view-projection instead of the full terrain AABB, so the shadow map resolution is spent on visible geometry
   - [ ] Add PCF shadow softening — re-add percentage-closer filtering for soft shadow edges
 
 ### Gameplay mechanics (build after core systems are validated)

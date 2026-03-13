@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Geometry;
 using Olve.Engine3D.Rendering.Instancing;
@@ -7,6 +8,7 @@ using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Rendering.Textures;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
+using Olve.Trains.Scenes.GameLogic.Camera;
 using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
 using Olve.Trains.Scenes.GameLogic.Terrain;
@@ -22,11 +24,23 @@ public class ShadowMapService(
     TextureEntityManager textureEntityManager,
     SceneLightService sceneLightService,
     TerrainService terrainService,
+    CameraSceneService cameraSceneService,
+    ScreenshotManager screenshotManager,
     ILogger<ShadowMapService> logger) : ISceneService
 {
-    public const int ShadowMapSize = 2048;
+    public const int ShadowMapSize = 1024;
 
-    public int Priority => SceneServicePriority.FromDependencies([sceneLightService, terrainService]);
+    /// <summary>
+    /// Maximum world-space height that shadow casters can reach (terrain + tallest building).
+    /// </summary>
+    private const float MaxCasterHeight = 3f;
+
+    /// <summary>
+    /// Minimum world-space height for the shadow volume (below terrain).
+    /// </summary>
+    private const float MinCasterHeight = -1f;
+
+    public int Priority => SceneServicePriority.FromDependencies([sceneLightService, terrainService, cameraSceneService]);
 
     private Id<Framebuffer<IShadowFrameFormat>> _framebufferId;
     private Id<RenderPass<IShadowFrameFormat>> _passId;
@@ -38,6 +52,10 @@ public class ShadowMapService(
 
     public Matrix4X4<float> LightSpaceMatrix { get; private set; } = Matrix4X4<float>.Identity;
     public TextureId<Depth> ShadowMapTexture => _shadowMapTexture;
+
+    // Camera frustum corners in shadow map UV space [0,1], updated each frame for debug overlay
+    // [0..3] = corners at Y=MinCasterHeight, [4..7] = corners at Y=MaxCasterHeight
+    private readonly Vector2D<float>[] _frustumUvCorners = new Vector2D<float>[8];
 
     // ── Shadow group handles ──────────────────────────────────────────
     public readonly record struct ShadowGroupHandle<TInstance>(GroupId<TInstance> GroupId)
@@ -83,16 +101,24 @@ public class ShadowMapService(
             return problems.Prepend("Failed to load shadow shaders");
         }
 
+        // Register shadow map as a named screenshot target
+        if (framebufferManager.TryGetFboHandle(_framebufferId.Value, out var fboHandle))
+        {
+            screenshotManager.RegisterTarget("shadow-map",
+                new ScreenshotManager.ScreenshotTarget(fboHandle, ShadowMapSize, ShadowMapSize,
+                    IsDepth: true, DebugOverlay: DrawFrustumOverlay));
+        }
+
         return Result.Success();
     }
-
-    private int _debugFrameCount;
 
     public Result Update(TimeSpan deltaTime)
     {
         var lightView = ComputeLightView();
         var lightProjection = ComputeLightProjection(lightView);
         LightSpaceMatrix = lightView * lightProjection;
+
+        ComputeFrustumUvCorners();
 
         // Push light-space view/projection to shadow shaders.
         // The shadow shaders use the same view/projection uniform names as the main shaders,
@@ -106,23 +132,12 @@ public class ShadowMapService(
         _shadowTrackShader.View = lightView;
         _shadowTrackShader.Projection = lightProjection;
 
-        _debugFrameCount++;
-        if (_debugFrameCount % 300 == 1)
-        {
-            var sunDir = sceneLightService.SunDirection;
-            logger.LogInformation(
-                "Shadow debug: sunDir=({SunX:F2},{SunY:F2},{SunZ:F2}) passExists={PassExists} " +
-                "lightView.M41={LvM41:F2} lightView.M42={LvM42:F2} lightView.M43={LvM43:F2}",
-                sunDir.X, sunDir.Y, sunDir.Z,
-                renderPassManager.Exists(_passId),
-                lightView.M41, lightView.M42, lightView.M43);
-        }
-
         return Result.Success();
     }
 
     public Result Unload()
     {
+        screenshotManager.UnregisterTarget("shadow-map");
         renderPassManager.Destroy(_passId);
         framebufferManager.Delete(_framebufferId);
 
@@ -180,18 +195,10 @@ public class ShadowMapService(
 
     // ── Shadow instance management ────────────────────────────────────
 
-    private int _instanceCount;
-
     public Result<Id<TInstance>> AddInstance<TInstance>(
         ShadowGroupHandle<TInstance> handle, TInstance instance)
         where TInstance : IInstanceData
     {
-        _instanceCount++;
-        if (_instanceCount <= 10)
-        {
-            logger.LogInformation("Shadow instance added (#{Count}): groupId={GroupId}", _instanceCount, handle.GroupId);
-        }
-
         return renderingInstanceManager.Add(handle.GroupId, instance);
     }
 
@@ -247,54 +254,99 @@ public class ShadowMapService(
 
     private Matrix4X4<float> ComputeLightProjection(Matrix4X4<float> lightView)
     {
+        // Intersect the 4 camera frustum depth-edges with Y=MinCasterHeight and Y=MaxCasterHeight
+        // to get 8 world-space points, then transform directly to light space.
+        // This avoids an intermediate world-space AABB which wastes resolution when
+        // the camera diamond is rotated relative to the light.
+        var viewProjection = cameraSceneService.ViewMatrix * cameraSceneService.ProjectionMatrix;
+        if (!Matrix4X4.Invert(viewProjection, out var invViewProjection))
+        {
+            invViewProjection = Matrix4X4<float>.Identity;
+        }
+
+        // 4 near corners (z=-1) and 4 far corners (z=1) in NDC, paired by screen position
+        Span<Vector3D<float>> nearNdc =
+        [
+            new(-1, -1, -1), new(1, -1, -1), new(-1, 1, -1), new(1, 1, -1),
+        ];
+        Span<Vector3D<float>> farNdc =
+        [
+            new(-1, -1, 1), new(1, -1, 1), new(-1, 1, 1), new(1, 1, 1),
+        ];
+
         var terrain = terrainService.Terrain;
         var w = (float)terrain.Heightmap.Width;
         var l = (float)terrain.Heightmap.Length;
 
-        // Transform scene AABB corners to light space to find tight ortho bounds
-        Span<Vector3D<float>> corners =
-        [
-            new(0, -1, 0),
-            new(w, -1, 0),
-            new(0, 5, 0),
-            new(w, 5, 0),
-            new(0, -1, l),
-            new(w, -1, l),
-            new(0, 5, l),
-            new(w, 5, l),
-        ];
+        var minLX = float.MaxValue;
+        var maxLX = float.MinValue;
+        var minLY = float.MaxValue;
+        var maxLY = float.MinValue;
+        var minLZ = float.MaxValue;
+        var maxLZ = float.MinValue;
 
-        var minX = float.MaxValue;
-        var maxX = float.MinValue;
-        var minY = float.MaxValue;
-        var maxY = float.MinValue;
-        var minZ = float.MaxValue;
-        var maxZ = float.MinValue;
-
-        foreach (var corner in corners)
+        for (var i = 0; i < 4; i++)
         {
-            var lightSpaceCorner = Vector3D.Transform(corner, lightView);
-            minX = float.Min(minX, lightSpaceCorner.X);
-            maxX = float.Max(maxX, lightSpaceCorner.X);
-            minY = float.Min(minY, lightSpaceCorner.Y);
-            maxY = float.Max(maxY, lightSpaceCorner.Y);
-            minZ = float.Min(minZ, lightSpaceCorner.Z);
-            maxZ = float.Max(maxZ, lightSpaceCorner.Z);
+            var nearWorld = Vector3D.Transform(nearNdc[i], invViewProjection);
+            var farWorld = Vector3D.Transform(farNdc[i], invViewProjection);
+            var dir = farWorld - nearWorld;
+
+            // Skip near-horizontal edges (shouldn't happen with isometric camera)
+            if (float.Abs(dir.Y) < 1e-6f) continue;
+
+            foreach (var targetY in new[] { MinCasterHeight, MaxCasterHeight })
+            {
+                var t = (targetY - nearWorld.Y) / dir.Y;
+                t = float.Clamp(t, 0f, 1f);
+                var hit = nearWorld + dir * t;
+
+                // Clamp to terrain bounds
+                hit.X = float.Clamp(hit.X, 0f, w);
+                hit.Z = float.Clamp(hit.Z, 0f, l);
+
+                // Transform directly to light space
+                var ls = Vector3D.Transform(hit, lightView);
+                minLX = float.Min(minLX, ls.X);
+                maxLX = float.Max(maxLX, ls.X);
+                minLY = float.Min(minLY, ls.Y);
+                maxLY = float.Max(maxLY, ls.Y);
+                minLZ = float.Min(minLZ, ls.Z);
+                maxLZ = float.Max(maxLZ, ls.Z);
+            }
         }
 
-        // Pad slightly to avoid edge clipping
-        const float pad = 5f;
-        var left = minX - pad;
-        var right = maxX + pad;
-        var bottom = minY - pad;
-        var top = maxY + pad;
-        var near = minZ - pad;
-        var far = maxZ + pad;
+        // 10% padding for off-screen shadow casters
+        var lxPad = (maxLX - minLX) * 0.1f;
+        var lyPad = (maxLY - minLY) * 0.1f;
+        minLX -= lxPad;
+        maxLX += lxPad;
+        minLY -= lyPad;
+        maxLY += lyPad;
+
+        // Snap ortho bounds to shadow map texel grid to prevent shadow swimming.
+        // When the camera moves, the shadow map shifts by sub-texel amounts causing
+        // shadows to jitter between texels. Rounding to texel increments fixes this.
+        var texelSizeX = (maxLX - minLX) / ShadowMapSize;
+        var texelSizeY = (maxLY - minLY) / ShadowMapSize;
+        minLX = float.Floor(minLX / texelSizeX) * texelSizeX;
+        maxLX = float.Floor(maxLX / texelSizeX) * texelSizeX;
+        minLY = float.Floor(minLY / texelSizeY) * texelSizeY;
+        maxLY = float.Floor(maxLY / texelSizeY) * texelSizeY;
+
+        // Small Z pad to ensure casters aren't clipped at the depth extremes
+        const float zPad = 5f;
 
         // Build orthographic matrix for OpenGL NDC [-1,1] with right-handed view space.
         // Silk.NET's CreateLookAt is right-handed: objects in front have negative Z.
         // Negate M33 and M43 so closer-to-light objects get smaller depth values,
         // which is required for the shadow comparison (currentDepth > storedDepth → shadow).
+        var left = minLX;
+        var right = maxLX;
+        var bottom = minLY;
+        var top = maxLY;
+        var near = minLZ - zPad;
+        var far = maxLZ + zPad;
+
         return new Matrix4X4<float>(
             2f / (right - left), 0, 0, 0,
             0, 2f / (top - bottom), 0, 0,
@@ -303,6 +355,138 @@ public class ShadowMapService(
             -(top + bottom) / (top - bottom),
             (far + near) / (far - near),
             1f);
+    }
+
+    // ── Debug overlay ──────────────────────────────────────────────────
+
+    private void ComputeFrustumUvCorners()
+    {
+        // Intersect the 4 camera frustum depth-edges with Y=MinCasterHeight and Y=MaxCasterHeight,
+        // then project to shadow map UV space for the debug overlay.
+        var viewProjection = cameraSceneService.ViewMatrix * cameraSceneService.ProjectionMatrix;
+        if (!Matrix4X4.Invert(viewProjection, out var invViewProjection))
+            return;
+
+        Span<Vector3D<float>> nearNdc =
+        [
+            new(-1, -1, -1), new(1, -1, -1), new(1, 1, -1), new(-1, 1, -1),
+        ];
+        Span<Vector3D<float>> farNdc =
+        [
+            new(-1, -1, 1), new(1, -1, 1), new(1, 1, 1), new(-1, 1, 1),
+        ];
+
+        var heights = new[] { MinCasterHeight, MaxCasterHeight };
+
+        for (var i = 0; i < 4; i++)
+        {
+            var nearWorld = Vector3D.Transform(nearNdc[i], invViewProjection);
+            var farWorld = Vector3D.Transform(farNdc[i], invViewProjection);
+            var dir = farWorld - nearWorld;
+
+            for (var h = 0; h < 2; h++)
+            {
+                var t = float.Abs(dir.Y) > 1e-6f
+                    ? (heights[h] - nearWorld.Y) / dir.Y
+                    : 0f;
+                t = float.Clamp(t, 0f, 1f);
+                var worldHit = nearWorld + dir * t;
+
+                // Transform to light clip space via LightSpaceMatrix, then to UV [0,1].
+                // Y is flipped because the depth image is vertically flipped (OpenGL reads bottom-up).
+                var clip = Vector3D.Transform(worldHit, LightSpaceMatrix);
+                _frustumUvCorners[h * 4 + i] = new Vector2D<float>(clip.X * 0.5f + 0.5f, 0.5f - clip.Y * 0.5f);
+            }
+        }
+    }
+
+    private void DrawFrustumOverlay(byte[] pixels, int width, int height)
+    {
+        // Draw AABB of all frustum points in red — shows total wasted shadow map space
+        var uMin = _frustumUvCorners[0];
+        var uMax = _frustumUvCorners[0];
+        foreach (var c in _frustumUvCorners)
+        {
+            uMin = new Vector2D<float>(float.Min(uMin.X, c.X), float.Min(uMin.Y, c.Y));
+            uMax = new Vector2D<float>(float.Max(uMax.X, c.X), float.Max(uMax.Y, c.Y));
+        }
+
+        var ax = (int)(uMin.X * width);
+        var ay = (int)(uMin.Y * height);
+        var bx = (int)(uMax.X * width);
+        var by = (int)(uMax.Y * height);
+        DrawLine(pixels, width, height, ax, ay, bx, ay, 255, 80, 80);
+        DrawLine(pixels, width, height, bx, ay, bx, by, 255, 80, 80);
+        DrawLine(pixels, width, height, bx, by, ax, by, 255, 80, 80);
+        DrawLine(pixels, width, height, ax, by, ax, ay, 255, 80, 80);
+
+        // Bottom quad (Y=MinCasterHeight) in green
+        for (var i = 0; i < 4; i++)
+        {
+            var a = _frustumUvCorners[i];
+            var b = _frustumUvCorners[(i + 1) % 4];
+            DrawLine(pixels, width, height,
+                (int)(a.X * width), (int)(a.Y * height),
+                (int)(b.X * width), (int)(b.Y * height),
+                80, 255, 80);
+        }
+
+        // Top quad (Y=MaxCasterHeight) in yellow
+        for (var i = 0; i < 4; i++)
+        {
+            var a = _frustumUvCorners[4 + i];
+            var b = _frustumUvCorners[4 + (i + 1) % 4];
+            DrawLine(pixels, width, height,
+                (int)(a.X * width), (int)(a.Y * height),
+                (int)(b.X * width), (int)(b.Y * height),
+                255, 255, 0);
+        }
+
+        // Vertical connecting lines in cyan
+        for (var i = 0; i < 4; i++)
+        {
+            var lo = _frustumUvCorners[i];
+            var hi = _frustumUvCorners[4 + i];
+            DrawLine(pixels, width, height,
+                (int)(lo.X * width), (int)(lo.Y * height),
+                (int)(hi.X * width), (int)(hi.Y * height),
+                0, 255, 255);
+        }
+    }
+
+    private static void DrawLine(byte[] pixels, int width, int height,
+        int x0, int y0, int x1, int y1, byte r, byte g, byte b)
+    {
+        // Bresenham's line algorithm
+        var dx = int.Abs(x1 - x0);
+        var dy = -int.Abs(y1 - y0);
+        var sx = x0 < x1 ? 1 : -1;
+        var sy = y0 < y1 ? 1 : -1;
+        var err = dx + dy;
+
+        while (true)
+        {
+            // Draw a 3px thick point for visibility
+            for (var oy = -1; oy <= 1; oy++)
+            for (var ox = -1; ox <= 1; ox++)
+            {
+                var px = x0 + ox;
+                var py = y0 + oy;
+                if (px >= 0 && px < width && py >= 0 && py < height)
+                {
+                    var idx = (py * width + px) * 4;
+                    pixels[idx + 0] = r;
+                    pixels[idx + 1] = g;
+                    pixels[idx + 2] = b;
+                    pixels[idx + 3] = 255;
+                }
+            }
+
+            if (x0 == x1 && y0 == y1) break;
+            var e2 = 2 * err;
+            if (e2 >= dy) { err += dy; x0 += sx; }
+            if (e2 <= dx) { err += dx; y0 += sy; }
+        }
     }
 
 }

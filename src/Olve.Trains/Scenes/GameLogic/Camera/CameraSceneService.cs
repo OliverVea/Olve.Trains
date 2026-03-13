@@ -26,6 +26,9 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
     private Matrix4X4<float> _projectionMatrix;
     private Vector3D<float> _cameraViewDirection;
 
+    public Matrix4X4<float> ViewMatrix => _viewMatrix;
+    public Matrix4X4<float> ProjectionMatrix => _projectionMatrix;
+
     public Result Load()
     {
         _cameraController = IsometricOrthographicCameraController.Create(

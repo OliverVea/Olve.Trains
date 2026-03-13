@@ -286,10 +286,15 @@ class Game:
         result = self.send(f"query-building building={building_id}")
         return json.loads(result.output)
 
-    def screenshot(self, path: str | Path) -> Path:
+    def screenshot(self, path: str | Path, *, target: str | None = None, debug: bool = False) -> Path:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        self.send(f"screenshot path={path}")
+        cmd = f"screenshot path={path}"
+        if target is not None:
+            cmd += f" target={target}"
+        if debug:
+            cmd += " debug=true"
+        self.send(cmd)
         self.step(2)
         if not path.exists():
             raise FileNotFoundError(f"Screenshot not created: {path}")

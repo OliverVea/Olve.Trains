@@ -97,3 +97,6 @@ def test_track_loop(
 
         path = game.screenshot(game.temp_dir / f"{label}.png")
         screenshots.compare(path, f"track-loop-{label}")
+
+        shadow_path = game.screenshot(game.temp_dir / f"{label}-shadow.png", target="shadow-map", debug=True)
+        screenshots.compare(shadow_path, f"track-loop-{label}-shadow")

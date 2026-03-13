@@ -14,10 +14,16 @@ public class ScreenshotManager
     private readonly Provider<GL> _glProvider;
     private readonly Provider<IWindow> _windowProvider;
     private readonly ILogger<ScreenshotManager> _logger;
-    private readonly ConcurrentQueue<IPath> _pendingScreenshots = new();
+    private readonly ConcurrentQueue<PendingScreenshot> _pendingScreenshots = new();
     private readonly ConcurrentQueue<IPath> _pendingFramebufferDumps = new();
+    private readonly Dictionary<string, ScreenshotTarget> _targets = new();
 
     public FramebufferManager? FramebufferManager { get; set; }
+
+    public readonly record struct ScreenshotTarget(
+        uint FboHandle, int Width, int Height, bool IsDepth,
+        Action<byte[], int, int>? DebugOverlay = null);
+    private readonly record struct PendingScreenshot(IPath OutputPath, string? TargetName, bool Debug);
 
     public ScreenshotManager(
         Provider<GL> glProvider,
@@ -32,14 +38,27 @@ public class ScreenshotManager
         afterRenderEvent.AfterRender.Subscribe(CaptureIfRequested);
     }
 
-    public void RequestScreenshot(IPath outputPath)
+    public void RegisterTarget(string name, ScreenshotTarget target)
     {
-        _pendingScreenshots.Enqueue(outputPath);
-        _logger.LogDebug("Screenshot requested: {Path}", outputPath.Path);
+        _targets[name] = target;
+        _logger.LogDebug("Screenshot target registered: {Name}", name);
     }
 
-    public void RequestScreenshot(string outputPath) =>
-        RequestScreenshot(Path.Create(ExpandTilde(outputPath)));
+    public void UnregisterTarget(string name)
+    {
+        _targets.Remove(name);
+    }
+
+    public IReadOnlyCollection<string> TargetNames => _targets.Keys;
+
+    public void RequestScreenshot(IPath outputPath, string? targetName = null, bool debug = false)
+    {
+        _pendingScreenshots.Enqueue(new PendingScreenshot(outputPath, targetName, debug));
+        _logger.LogDebug("Screenshot requested: {Path} (target={Target}, debug={Debug})", outputPath.Path, targetName ?? "screen", debug);
+    }
+
+    public void RequestScreenshot(string outputPath, string? targetName = null, bool debug = false) =>
+        RequestScreenshot(Path.Create(ExpandTilde(outputPath)), targetName, debug);
 
     public void RequestFramebufferDump(IPath outputFolder)
     {
@@ -56,15 +75,44 @@ public class ScreenshotManager
 
     private void CaptureIfRequested()
     {
-        while (_pendingScreenshots.TryDequeue(out var outputPath))
+        while (_pendingScreenshots.TryDequeue(out var pending))
         {
-            CaptureScreenshot(outputPath);
+            if (pending.TargetName is null)
+            {
+                CaptureScreenshot(pending.OutputPath);
+            }
+            else if (_targets.TryGetValue(pending.TargetName, out var target))
+            {
+                CaptureTarget(target, pending.OutputPath, pending.Debug);
+            }
+            else
+            {
+                _logger.LogWarning("Unknown screenshot target: {Target}", pending.TargetName);
+            }
         }
 
         while (_pendingFramebufferDumps.TryDequeue(out var outputFolder))
         {
             DumpAllFramebuffers(outputFolder);
         }
+    }
+
+    private void CaptureTarget(ScreenshotTarget target, IPath outputPath, bool debug)
+    {
+        var gl = _glProvider.Value;
+        gl.BindFramebuffer(FramebufferTarget.ReadFramebuffer, target.FboHandle);
+
+        if (target.IsDepth)
+        {
+            CaptureDepthAttachment(gl, target.Width, target.Height, outputPath,
+                debug ? target.DebugOverlay : null);
+        }
+        else
+        {
+            CaptureColorAttachment(gl, target.Width, target.Height, outputPath);
+        }
+
+        gl.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
     }
 
     private void DumpAllFramebuffers(IPath outputFolder)
@@ -125,7 +173,8 @@ public class ScreenshotManager
         });
     }
 
-    private void CaptureDepthAttachment(GL gl, int width, int height, IPath outputPath)
+    private void CaptureDepthAttachment(GL gl, int width, int height, IPath outputPath,
+        Action<byte[], int, int>? debugOverlay = null)
     {
         var floatCount = width * height;
         BufferHelper.WithSpan<float>(floatCount, depthFloats =>
@@ -157,6 +206,7 @@ public class ScreenshotManager
             }
 
             FlipVertically(pixels, width, height);
+            debugOverlay?.Invoke(pixels, width, height);
             WritePng(pixels, width, height, outputPath);
         });
     }
