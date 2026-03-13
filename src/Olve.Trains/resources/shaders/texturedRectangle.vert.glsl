@@ -16,6 +16,10 @@ layout(location = 4) in vec4 iBorderWidthPx;  // left, top, right, bottom
 layout(location = 5) in vec4 iBorderColor;    // RGBA
 // @instanced
 layout(location = 6) in vec4 iBorderRadiusPx; // topLeft, topRight, bottomRight, bottomLeft
+// @instanced
+layout(location = 7) in vec2 iUvMin;          // atlas UV min
+// @instanced
+layout(location = 8) in vec2 iUvMax;          // atlas UV max
 
 out VS_OUT {
     vec2 texCoord;
@@ -43,8 +47,9 @@ void main()
     gl_Position = vec4(ndc, 0.0, 1.0);
 
     // Pass data to fragment shader
-    // Flip Y for texture coordinates (OpenGL has Y=0 at bottom, screen has Y=0 at top)
-    vs_out.texCoord = vec2(aPosition.x, 1.0 - aPosition.y);
+    // Interpolate UVs within atlas region (flip Y for OpenGL)
+    vec2 uv = vec2(aPosition.x, 1.0 - aPosition.y);
+    vs_out.texCoord = mix(iUvMin, iUvMax, uv);
     vs_out.tint = iTint;
     vs_out.fragPosPx = aPosition * iSizePx; // Position within the box
     vs_out.boxSizePx = iSizePx;

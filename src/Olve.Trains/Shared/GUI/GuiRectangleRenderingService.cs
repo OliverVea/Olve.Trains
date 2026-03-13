@@ -149,7 +149,9 @@ public class GuiRectangleRenderingService(
             iTint: Vector4D<float>.One,
             iBorderWidthPx: Vector4D<float>.Zero,
             iBorderColor: Vector4D<float>.Zero,
-            iBorderRadiusPx: Vector4D<float>.Zero);
+            iBorderRadiusPx: Vector4D<float>.Zero,
+            iUvMin: Vector2D<float>.Zero,
+            iUvMax: Vector2D<float>.One);
 
         if (renderingInstanceManager.Add(groupId, initialInstance)
             .TryPickProblems(out var addProblems, out var instanceId))
@@ -244,7 +246,9 @@ public class GuiRectangleRenderingService(
             iTint: rectData.Color.ToVector(),
             iBorderWidthPx: borderWidthPx,
             iBorderColor: border.Color.ToVector(),
-            iBorderRadiusPx: borderRadiusPx);
+            iBorderRadiusPx: borderRadiusPx,
+            iUvMin: rectData.UvMin,
+            iUvMax: rectData.UvMax);
 
         return true;
     }
