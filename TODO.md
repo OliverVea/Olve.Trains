@@ -32,7 +32,8 @@
   - [x] Add shadow map generation — FBO wrapper, depth-only pixel format, depth-only shader, `ShadowMapService` that renders casters from light-space each frame
   - [x] Add shadow map sampling to receiver shaders — terrain, default, and building vertex+fragment shaders pass light-space position and sample the shadow map to attenuate diffuse lighting
   - [x] Fit shadow map to camera frustum — compute light-space ortho bounds from camera view-projection instead of the full terrain AABB, so the shadow map resolution is spent on visible geometry
-  - [ ] Add PCF shadow softening — re-add percentage-closer filtering for soft shadow edges
+  - [x] Add PCF shadow softening — re-add percentage-closer filtering for soft shadow edges
+  - [ ] Switch to Variance Shadow Maps (VSM) — store depth + depth² in RG32F, use Chebyshev's inequality for smooth filterable shadows, add optional Gaussian blur pass
 
 ### Gameplay mechanics (build after core systems are validated)
 
