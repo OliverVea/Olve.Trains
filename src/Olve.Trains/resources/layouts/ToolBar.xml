@@ -10,7 +10,13 @@
         <Box id="PlaceStation" Style="MenuButtonStyle" Interactive="true">
             <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconStation" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
         </Box>
-        <Box id="PlaceIndustry" Style="MenuButtonStyle" Interactive="true">
+        <Box id="PlaceHouse" Style="MenuButtonStyle" Interactive="true">
+            <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconHouse" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
+        </Box>
+        <Box id="PlaceForester" Style="MenuButtonStyle" Interactive="true">
+            <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconForester" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
+        </Box>
+        <Box id="PlaceSawmill" Style="MenuButtonStyle" Interactive="true">
             <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconLumbermill" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
         </Box>
         <Box id="Delete" Style="MenuButtonStyle" Interactive="true">

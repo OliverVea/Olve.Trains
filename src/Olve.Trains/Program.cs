@@ -134,7 +134,7 @@ public static class Program
         {
             foreach (var problem in problems)
             {
-                Console.Error.WriteLine(problem.ToDebugString());
+                await Console.Error.WriteLineAsync(problem.ToDebugString());
             }
 
             return 1;
@@ -152,7 +152,7 @@ public static class Program
 
         foreach (var error in response.Errors)
         {
-            Console.Error.WriteLine(error);
+            await Console.Error.WriteLineAsync(error);
         }
 
         return 1;
