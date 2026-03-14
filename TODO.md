@@ -96,6 +96,14 @@
   - [ ] Add skybox rendering (cubemap or gradient shader, drawn behind all geometry)
   - [ ] Add perspective camera mode that follows a selected train along its track spline
   - [ ] Add UI toggle to enter/exit train perspective (keybind or button when selecting a train)
+- [ ] Biome map epic (Feature):
+  - Description: Drive environmental object placement from biome layers in the terrain ORA file. The ORA parsing infrastructure already exists (Olve.OpenRaster, TerrainFileReader, HeightmapLayerParser). Add new named layers (e.g. "forest") that encode density/probability per tile. Placement samples the density map with a threshold and a deterministic seed (from ORA metadata or hashed map name) so generation is reproducible. Replaces the current hardcoded random tree scattering in TerrainService.
+  - [ ] Extract a seed from the ORA file (metadata field or hashed map name) and pass it through to placement
+  - [ ] Add density map layer parser and extract biome layers (e.g. "forest") from the terrain ORA file alongside the heightmap
+  - [ ] Add biome map service that provides per-position density lookups by layer name
+  - [ ] Drive tree placement from a "forest" density layer (threshold + sampling rate)
+  - [ ] Add mushroom environmental object placed in forests above a secondary density threshold
+  - [ ] Remove hardcoded tree placement from TerrainService in favour of biome-driven placement
 - [ ] Terrain epic (Visual):
   - [ ] Add bumpy terrain using low-res noise texture for low-poly smooth height variation
 - [ ] Toolbar icons epic (Visual):
