@@ -125,6 +125,26 @@ public class CollisionSystem
         return hits;
     }
 
+    public IEnumerable<OverlapHit> QueryOverlapAABB(AABB queryAABB, IReadOnlySet<Id<ColliderGroup>>? allowedColliderGroups = null)
+    {
+        var hits = new List<OverlapHit>();
+
+        foreach (var (colliderId, entry) in _colliders)
+        {
+            if (entry.WorldAABB.Intersects(queryAABB))
+            {
+                if (!allowedColliderGroups?.Contains(entry.Group) == true)
+                {
+                    continue;
+                }
+
+                hits.Add(new OverlapHit(colliderId, entry.Group));
+            }
+        }
+
+        return hits;
+    }
+
     private static bool TryHit(
         Ray3D<float> ray,
         Id<Collider> colliderId,

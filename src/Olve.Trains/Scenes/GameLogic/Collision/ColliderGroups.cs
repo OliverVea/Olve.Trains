@@ -9,4 +9,5 @@ public static class ColliderGroups
     public static readonly Id<ColliderGroup> Train = Id.FromName<ColliderGroup>("Train");
     public static readonly Id<ColliderGroup> Track = Id.FromName<ColliderGroup>("Track");
     public static readonly Id<ColliderGroup> Terrain = Id.FromName<ColliderGroup>("Terrain");
+    public static readonly Id<ColliderGroup> Environment = Id.FromName<ColliderGroup>("Environment");
 }

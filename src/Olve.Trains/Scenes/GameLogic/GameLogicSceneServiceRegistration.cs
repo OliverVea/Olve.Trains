@@ -85,6 +85,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<CargoTypeService>();
         services.TryAddScoped<ColliderDebugSettings>();
         services.TryAddScoped<EnvironmentalObjectBlueprintService>();
+        services.TryAddScoped<EnvironmentalObjectCollisionService>();
         services.TryAddScoped<EnvironmentalObjectService>();
         services.TryAddScoped<GridService>();
         services.TryAddScoped<IndustryBlueprintService>();
@@ -161,6 +162,13 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (EnvironmentalObjectBlueprintService ebs) => ebs.OnBlueprintRemoved,
             (EnvironmentalObjectService eos, Id<EnvironmentalObjectBlueprint> id) => eos.DeleteObjectsWithBlueprint(id));
+        services.AddEventSceneService(sceneId,
+            (EnvironmentalObjectService eos) => eos.OnObjectAdded,
+            (EnvironmentalObjectCollisionService eocs, Id<EnvironmentalObject> id) => eocs.Register(id),
+            prefill: eos => eos.ObjectIds);
+        services.AddEventSceneService(sceneId,
+            (EnvironmentalObjectService eos) => eos.OnObjectRemoved,
+            (EnvironmentalObjectCollisionService eocs, Id<EnvironmentalObject> id) => eocs.Unregister(id));
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
             (TrackCollisionService tcs, Id<Track> id) => tcs.Register(id),
