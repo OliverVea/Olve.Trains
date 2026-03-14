@@ -9,6 +9,7 @@ using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Cargo;
 using Olve.Trains.Commands.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Camera;
+using Olve.Trains.Scenes.GameLogic.Environment;
 using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Light;
@@ -37,6 +38,8 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<CameraSceneService>(sceneId);
         services.AddSceneService<ClearJunctionSignalRulesHandlerService>(sceneId);
         services.AddSceneService<ClickHandlerService>(sceneId);
+
+        services.AddSceneService<EnvironmentalObjectBlueprintLibraryService>(sceneId);
 
         services.AddSceneService<DayTimeSteppingService>(sceneId);
         services.AddSceneService<DeleteTrackHandlerService>(sceneId);
@@ -81,6 +84,8 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<CargoTransferPolicyService>();
         services.TryAddScoped<CargoTypeService>();
         services.TryAddScoped<ColliderDebugSettings>();
+        services.TryAddScoped<EnvironmentalObjectBlueprintService>();
+        services.TryAddScoped<EnvironmentalObjectService>();
         services.TryAddScoped<GridService>();
         services.TryAddScoped<IndustryBlueprintService>();
         services.TryAddScoped<IndustryRecipeService>();
@@ -153,6 +158,9 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (BuildingBlueprintService blueprintService) => blueprintService.OnBlueprintRemoved,
             (BuildingService buildingService, Id<BuildingBlueprint> id) => buildingService.DeleteBuildingsWithBlueprint(id));
+        services.AddEventSceneService(sceneId,
+            (EnvironmentalObjectBlueprintService ebs) => ebs.OnBlueprintRemoved,
+            (EnvironmentalObjectService eos, Id<EnvironmentalObjectBlueprint> id) => eos.DeleteObjectsWithBlueprint(id));
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
             (TrackCollisionService tcs, Id<Track> id) => tcs.Register(id),

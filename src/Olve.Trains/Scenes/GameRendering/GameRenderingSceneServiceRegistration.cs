@@ -3,6 +3,7 @@ using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Commands.GameRendering;
 using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Environment;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Trains.Scenes.GameLogic.Trains.Wagons;
@@ -16,6 +17,7 @@ public static class GameRenderingSceneServiceRegistration
     private static readonly ISceneServiceType[] BeforeTrainRendering = [new SceneServiceType<TrainRenderingService>()];
     private static readonly ISceneServiceType[] BeforeWagonRendering = [new SceneServiceType<WagonRenderingService>()];
     private static readonly ISceneServiceType[] BeforeBuildingRendering = [new SceneServiceType<BuildingRenderingService>()];
+    private static readonly ISceneServiceType[] BeforeEnvironmentalObjectRendering = [new SceneServiceType<EnvironmentalObjectRenderingService>()];
 
     public static IServiceCollection AddGameRenderingSceneServices(this IServiceCollection services)
     {
@@ -72,6 +74,16 @@ public static class GameRenderingSceneServiceRegistration
             before: BeforeBuildingRendering);
         services.AddSceneService<FootprintRenderingService>(sceneId);
         services.AddSceneService<BuildingRenderingService>(sceneId);
+        services.AddEventSceneService(sceneId,
+            (EnvironmentalObjectService eos) => eos.OnObjectAdded,
+            (EnvironmentalObjectRenderingService eors, Id<EnvironmentalObject> id) => eors.Register(id),
+            prefill: eos => eos.ObjectIds,
+            before: BeforeEnvironmentalObjectRendering);
+        services.AddEventSceneService(sceneId,
+            (EnvironmentalObjectService eos) => eos.OnObjectRemoved,
+            (EnvironmentalObjectRenderingService eors, Id<EnvironmentalObject> id) => eors.Unregister(id),
+            before: BeforeEnvironmentalObjectRendering);
+        services.AddSceneService<EnvironmentalObjectRenderingService>(sceneId);
         services.AddSceneService<ColliderDebugRenderingService>(sceneId);
         services.AddSceneService<ToggleColliderDebugHandlerService>(sceneId);
 
