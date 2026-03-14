@@ -6,12 +6,16 @@ public class WagonBlueprintLibraryService(WagonBlueprintService wagonBlueprintSe
 {
     public Result Load()
     {
-        wagonBlueprintService.Register(new WagonBlueprint(
-            WagonBlueprintCatalog.GoodsWagon,
-            "Goods Wagon",
-            Capacity: 10,
-            AllowedTypes: null,
-            Length: 1.0f));
+        if (wagonBlueprintService.Register(new WagonBlueprint(
+                WagonBlueprintCatalog.GoodsWagon,
+                "Goods Wagon",
+                Capacity: 10,
+                AllowedTypes: null,
+                Length: 1.0f))
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
 
         return Result.Success();
     }

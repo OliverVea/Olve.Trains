@@ -83,7 +83,10 @@ public sealed class ResidencePlacingToolService(
             return Result.Success();
         }
 
-        buildingService.AddBuilding(BuildingBlueprintCatalog.Residential, position);
+        if (buildingService.AddBuilding(BuildingBlueprintCatalog.Residential, position).TryPickProblems(out var addProblems))
+        {
+            return addProblems;
+        }
 
         return Result.Success();
     }

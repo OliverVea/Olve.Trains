@@ -61,7 +61,11 @@ public class PlaceBuildingHandlerService(
         }
 
         BuildingPosition position = new(tilePosition, direction);
-        var buildingId = buildingService.AddBuilding(blueprintId, position);
+
+        if (buildingService.AddBuilding(blueprintId, position).TryPickProblems(out var addProblems, out var buildingId))
+        {
+            return addProblems;
+        }
 
         logger.LogInformation("Placed {Type} building '{BuildingId}' at {Position}", blueprint.Description, buildingId, tilePosition);
         return new CommandOutput($"Placed {blueprint.Description} building: {buildingId}");

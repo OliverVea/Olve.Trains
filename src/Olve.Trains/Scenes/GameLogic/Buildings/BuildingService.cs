@@ -9,12 +9,14 @@ namespace Olve.Trains.Scenes.GameLogic.Buildings;
 public class BuildingService
 {
     private readonly ILogger<BuildingService> _logger;
+    private readonly BuildingBlueprintService _blueprintService;
     private readonly EntityStore<Building> _buildings;
     private readonly EntityStoreIndex<Building, Id<BuildingBlueprint>> _buildingsByBlueprint;
 
-    public BuildingService(ILogger<BuildingService> logger, EntityStoreFactory entityStoreFactory)
+    public BuildingService(ILogger<BuildingService> logger, BuildingBlueprintService blueprintService, EntityStoreFactory entityStoreFactory)
     {
         _logger = logger;
+        _blueprintService = blueprintService;
         _buildings = entityStoreFactory.Create<Building>();
         _buildingsByBlueprint = _buildings.CreateIndex(x => x.BlueprintId);
     }
@@ -22,19 +24,22 @@ public class BuildingService
     public Event<Id<Building>> OnBuildingAdded => _buildings.OnAdded;
     public Event<Id<Building>> OnBuildingRemoved => _buildings.OnRemoved;
 
-    public Id<Building> AddBuilding(Id<BuildingBlueprint> blueprintId, BuildingPosition position)
+    public Result<Id<Building>> AddBuilding(Id<BuildingBlueprint> blueprintId, BuildingPosition position)
     {
+        if (!_blueprintService.TryGetBlueprint(blueprintId, out _))
+        {
+            return new ResultProblem("Building blueprint '{0}' not found", blueprintId);
+        }
+
         Building building = new(Id.New<Building>(), blueprintId, position);
 
         if (!_buildings.TryAdd(building))
         {
-            _logger.LogWarning("Failed to add building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
+            return new ResultProblem("Failed to add building '{0}' with blueprint '{1}'", building.Id, blueprintId);
         }
-        else
-        {
-            _logger.LogInformation("Added building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
-            if (EngineMetrics.IsEnabled) GameMetrics.BuildingCount.Add(1);
-        }
+
+        _logger.LogInformation("Added building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
+        if (EngineMetrics.IsEnabled) GameMetrics.BuildingCount.Add(1);
 
         return building.Id;
     }

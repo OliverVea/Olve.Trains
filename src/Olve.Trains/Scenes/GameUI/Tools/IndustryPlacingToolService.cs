@@ -99,7 +99,10 @@ public sealed class IndustryPlacingToolService(
             return Result.Success();
         }
 
-        buildingService.AddBuilding(CurrentBlueprintId, position);
+        if (buildingService.AddBuilding(CurrentBlueprintId, position).TryPickProblems(out var addProblems))
+        {
+            return addProblems;
+        }
 
         return Result.Success();
     }

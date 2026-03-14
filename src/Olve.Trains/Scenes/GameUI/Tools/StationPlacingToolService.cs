@@ -83,7 +83,10 @@ public sealed class StationPlacingToolService(
             return Result.Success();
         }
 
-        buildingService.AddBuilding(BuildingBlueprintCatalog.Station, position);
+        if (buildingService.AddBuilding(BuildingBlueprintCatalog.Station, position).TryPickProblems(out var addProblems))
+        {
+            return addProblems;
+        }
 
         return Result.Success();
     }

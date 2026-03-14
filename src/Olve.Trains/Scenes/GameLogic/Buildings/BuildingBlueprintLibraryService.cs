@@ -17,27 +17,82 @@ public class BuildingBlueprintLibraryService(
 {
     public Result Load()
     {
-        buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Station, "Station", new TileFootprint(4, 2, 2));
+        return Result.Concat(
+            LoadStation(),
+            LoadResidential(),
+            LoadForest(),
+            LoadMine(),
+            LoadSawmill());
+    }
+
+    private Result LoadStation()
+    {
+        if (buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Station, "Station", new TileFootprint(4, 2, 2))
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
         stationBlueprintService.SetProperties(BuildingBlueprintCatalog.Station, new StationProperties(Range: 5));
         buildingMeshBlueprintService.SetProperties(BuildingBlueprintCatalog.Station,
             new BuildingMeshProperties(Meshes.SM_Bld_Station_Small_01, Matrix4X4.CreateTranslation(0f, 0f, 0.1f)));
 
-        buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Residential, "Residential", new TileFootprint(1, 1, 1));
+        return Result.Success();
+    }
+
+    private Result LoadResidential()
+    {
+        if (buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Residential, "Residential", new TileFootprint(1, 1, 1))
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
         residenceBlueprintService.SetProperties(BuildingBlueprintCatalog.Residential, new ResidenceProperties(Capacity: 4));
         buildingMeshBlueprintService.SetProperties(BuildingBlueprintCatalog.Residential,
             new BuildingMeshProperties(Meshes.apartment_small_mesh, Matrix4X4<float>.Identity));
 
-        buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Forest, "Forest", new TileFootprint(2, 1, 2));
+        return Result.Success();
+    }
+
+    private Result LoadForest()
+    {
+        if (buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Forest, "Forest", new TileFootprint(2, 1, 2))
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
         industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Forest,
             new IndustryProperties(IndustryRecipeCatalog.Forest, Capacity: 10,
                 new Dictionary<Id<CargoType>, int> { [CargoTypeCatalog.Wood] = 10 }.ToImmutableDictionary()));
 
-        buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Mine, "Mine", new TileFootprint(2, 1, 2));
+        return Result.Success();
+    }
+
+    private Result LoadMine()
+    {
+        if (buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Mine, "Mine", new TileFootprint(2, 1, 2))
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
         industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Mine,
             new IndustryProperties(IndustryRecipeCatalog.Mine, Capacity: 10,
                 new Dictionary<Id<CargoType>, int> { [CargoTypeCatalog.Coal] = 10 }.ToImmutableDictionary()));
 
-        buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Sawmill, "Sawmill", new TileFootprint(3, 1, 2));
+        return Result.Success();
+    }
+
+    private Result LoadSawmill()
+    {
+        if (buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Sawmill, "Sawmill", new TileFootprint(3, 1, 2))
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
         industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Sawmill,
             new IndustryProperties(IndustryRecipeCatalog.Sawmill, Capacity: 20,
                 new Dictionary<Id<CargoType>, int>

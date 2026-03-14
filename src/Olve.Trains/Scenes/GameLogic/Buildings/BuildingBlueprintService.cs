@@ -9,23 +9,17 @@ public class BuildingBlueprintService(ILogger<BuildingBlueprintService> logger, 
     public Event<Id<BuildingBlueprint>> OnBlueprintAdded => _blueprints.OnAdded;
     public Event<Id<BuildingBlueprint>> OnBlueprintRemoved => _blueprints.OnRemoved;
 
-    public Id<BuildingBlueprint> AddBlueprint(string description, TileFootprint footprint)
-        => AddBlueprint(Id.New<BuildingBlueprint>(), description, footprint);
-
-    public Id<BuildingBlueprint> AddBlueprint(Id<BuildingBlueprint> id, string description, TileFootprint footprint)
+    public Result AddBlueprint(Id<BuildingBlueprint> id, string description, TileFootprint footprint)
     {
         BuildingBlueprint blueprint = new(id, description, footprint);
 
         if (!_blueprints.TryAdd(blueprint))
         {
-            logger.LogWarning("Failed to add blueprint {BlueprintId} '{Description}'", blueprint.Id, description);
-        }
-        else
-        {
-            logger.LogDebug("Added blueprint {BlueprintId} '{Description}' ({Footprint})", blueprint.Id, description, footprint);
+            return new ResultProblem("Failed to add building blueprint '{0}' '{1}'", blueprint.Id, description);
         }
 
-        return blueprint.Id;
+        logger.LogDebug("Added blueprint {BlueprintId} '{Description}' ({Footprint})", blueprint.Id, description, footprint);
+        return Result.Success();
     }
 
     public DeletionResult DeleteBlueprint(Id<BuildingBlueprint> blueprintId)
