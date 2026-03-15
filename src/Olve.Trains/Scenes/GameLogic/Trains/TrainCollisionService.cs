@@ -18,6 +18,7 @@ public class TrainCollisionService(
     public int Priority => SceneServicePriority.FromDependencies([trackSplineService, trainPositionService]);
 
     private readonly Dictionary<Id<Train>, Id<Collider>> _colliders = new();
+    private readonly Dictionary<Id<Collider>, Id<Train>> _reverseColliders = new();
     private BoxColliderShape? _shape;
     private Vector3D<float> _centerOffset;
 
@@ -53,6 +54,7 @@ public class TrainCollisionService(
         var colliderId = collisionSystem.Register(_shape!, ColliderGroups.Train, centerMatrix);
 
         _colliders[trainId] = colliderId;
+        _reverseColliders[colliderId] = trainId;
         return Result.Success();
     }
 
@@ -63,8 +65,12 @@ public class TrainCollisionService(
             return Result.Success();
         }
 
+        _reverseColliders.Remove(colliderId);
         return collisionSystem.Unregister(colliderId).MapToResult();
     }
+
+    public bool TryGetTrainId(Id<Collider> colliderId, out Id<Train> trainId) =>
+        _reverseColliders.TryGetValue(colliderId, out trainId);
 
     public Result Update(TimeSpan deltaTime)
     {

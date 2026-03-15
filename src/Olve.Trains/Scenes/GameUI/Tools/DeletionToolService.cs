@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
-using Olve.Engine3D;
 using Olve.Engine3D.Input;
+using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
+using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
@@ -13,20 +15,18 @@ namespace Olve.Trains.Scenes.GameUI.Tools;
 public class DeletionToolService(
     MouseRaycastService mouseRaycastService,
     ToolManagementService toolManagementService,
-    TrackSplineService trackSplineService,
     TrackService trackService,
+    TrackCollisionService trackCollisionService,
     TrainService trainService,
-    TrainPositionService trainPositionService,
+    TrainCollisionService trainCollisionService,
     BuildingService buildingService,
-    BuildingBlueprintService buildingBlueprintService,
+    BuildingCollisionService buildingCollisionService,
+    StationService stationService,
     MouseManager mouseManager,
     ILogger<DeletionToolService> logger,
     TerrainHighlightSettings terrainHighlightSettings) : BaseToolService<DeletionToolService.State>(toolManagementService, new State())
 {
     public record State(bool ActivatedThisFrame = false);
-
-    private const float SnappingDistance = 1.0f;
-    private const float TrainDetectionDistance = 1.5f;
 
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Delete Entities");
@@ -52,124 +52,104 @@ public class DeletionToolService(
 
     protected override Result OnSelectedUpdate(TimeSpan deltaTime)
     {
-        if (mouseRaycastService.TerrainIntersection is not { } terrainIntersection)
-        {
-            return Result.Success();
-        }
-
         if (!ToolState.ActivatedThisFrame)
         {
             return Result.Success();
         }
 
-        // Priority: Train > Building > Track
-
-        // 1. Check for trains near the cursor
-        if (TryDeleteNearestTrain(terrainIntersection))
+        foreach (var hit in mouseRaycastService.Hits)
         {
-            return Result.Success();
-        }
+            if (hit.Group == ColliderGroups.Terrain)
+            {
+                continue;
+            }
 
-        // 2. Check for buildings at the tile position
-        if (mouseRaycastService.TerrainIntersectionTile is { } tilePosition
-            && TryDeleteBuildingAtTile(tilePosition))
-        {
-            return Result.Success();
+            if (TryDeleteFromHit(hit))
+            {
+                return Result.Success();
+            }
         }
-
-        // 3. Check for tracks near the cursor
-        TryDeleteNearestTrack(terrainIntersection);
 
         return Result.Success();
     }
 
-    private bool TryDeleteNearestTrain(Vector3D<float> position)
+    private bool TryDeleteFromHit(RaycastHit hit)
     {
-        Id<Train>? closestTrainId = null;
-        var closestDistanceSq = TrainDetectionDistance * TrainDetectionDistance;
-
-        foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
+        if (hit.Group == ColliderGroups.Train)
         {
-            if (trackSplineService.GetPoint(trackPosition.TrackPoint.TrackId, trackPosition.TrackPoint.Time)
-                .TryPickProblems(out _, out var worldPosition))
-            {
-                continue;
-            }
-
-            var distanceSq = (worldPosition - position).LengthSquared;
-            if (distanceSq < closestDistanceSq)
-            {
-                closestDistanceSq = distanceSq;
-                closestTrainId = trainId;
-            }
+            return TryDeleteTrain(hit.ColliderId);
         }
 
-        if (closestTrainId is not { } id)
+        if (hit.Group == ColliderGroups.Building)
         {
-            return false;
+            return TryDeleteBuilding(hit.ColliderId);
         }
 
-        var result = trainService.DeleteTrain(id);
-        if (result.TryPickProblems(out var problems))
+        if (hit.Group == ColliderGroups.Track)
         {
-            logger.LogWarning("Failed to delete train {TrainId}: {Problems}", id, problems);
-            return false;
-        }
-
-        logger.LogInformation("Deleted train {TrainId}", id);
-        return true;
-    }
-
-    private bool TryDeleteBuildingAtTile(TilePosition tilePosition)
-    {
-        foreach (var building in buildingService.Buildings)
-        {
-            if (!buildingBlueprintService.TryGetBlueprint(building.BlueprintId, out var blueprint))
-            {
-                continue;
-            }
-
-            var (minX, minZ, maxX, maxZ) = BuildingValidationService.GetBounds(building.Position, blueprint.Footprint);
-
-            if (tilePosition.X >= minX && tilePosition.X <= maxX
-                && tilePosition.Z >= minZ && tilePosition.Z <= maxZ)
-            {
-                var result = buildingService.DeleteBuilding(building.Id);
-                if (result.TryPickProblems(out var problems))
-                {
-                    logger.LogWarning("Failed to delete building {BuildingId}: {Problems}", building.Id, problems);
-                    return false;
-                }
-
-                logger.LogInformation("Deleted building {BuildingId}", building.Id);
-                return true;
-            }
+            return TryDeleteTrack(hit.ColliderId);
         }
 
         return false;
     }
 
-    private bool TryDeleteNearestTrack(Vector3D<float> position)
+    private bool TryDeleteTrain(Id<Collider> colliderId)
     {
-        if (trackSplineService.GetClosestTrackPoint(position, SnappingDistance, out var closestTrackPoint)
-            .TryPickProblems(out _, out var foundClosestPoint))
+        if (!trainCollisionService.TryGetTrainId(colliderId, out var trainId))
         {
             return false;
         }
 
-        if (!foundClosestPoint)
-        {
-            return false;
-        }
-
-        var result = trackService.DeleteTrack(closestTrackPoint.TrackId);
+        var result = trainService.DeleteTrain(trainId);
         if (result.TryPickProblems(out var problems))
         {
-            logger.LogWarning("Failed to delete track {TrackId}: {Problems}", closestTrackPoint.TrackId, problems);
+            logger.LogWarning("Failed to delete train {TrainId}: {Problems}", trainId, problems);
             return false;
         }
 
-        logger.LogInformation("Deleted track {TrackId}", closestTrackPoint.TrackId);
+        logger.LogInformation("Deleted train {TrainId}", trainId);
+        return true;
+    }
+
+    private bool TryDeleteBuilding(Id<Collider> colliderId)
+    {
+        if (!buildingCollisionService.TryGetBuildingId(colliderId, out var buildingId))
+        {
+            return false;
+        }
+
+        if (!stationService.CanDeleteStationForBuilding(buildingId))
+        {
+            logger.LogWarning("Cannot delete building {BuildingId}: station track is occupied", buildingId);
+            return false;
+        }
+
+        var result = buildingService.DeleteBuilding(buildingId);
+        if (result.TryPickProblems(out var problems))
+        {
+            logger.LogWarning("Failed to delete building {BuildingId}: {Problems}", buildingId, problems);
+            return false;
+        }
+
+        logger.LogInformation("Deleted building {BuildingId}", buildingId);
+        return true;
+    }
+
+    private bool TryDeleteTrack(Id<Collider> colliderId)
+    {
+        if (!trackCollisionService.TryGetTrackId(colliderId, out var trackId))
+        {
+            return false;
+        }
+
+        var result = trackService.DeleteTrack(trackId);
+        if (result.TryPickProblems(out var problems))
+        {
+            logger.LogWarning("Failed to delete track {TrackId}: {Problems}", trackId, problems);
+            return false;
+        }
+
+        logger.LogInformation("Deleted track {TrackId}", trackId);
         return true;
     }
 }

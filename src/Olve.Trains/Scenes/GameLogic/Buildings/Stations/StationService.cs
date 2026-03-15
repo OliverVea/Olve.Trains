@@ -57,13 +57,24 @@ public class StationService(ILogger<StationService> logger, StationBlueprintServ
         return true;
     }
 
+    public bool CanDeleteStationForBuilding(Id<Building> buildingId)
+    {
+        return !_stations.TryGetValue(buildingId, out var station) || trackService.CanDeleteTrack(station.TrackId);
+    }
+
     public Result DeleteStationForBuilding(Id<Building> buildingId)
     {
-        if (!_stations.Remove(buildingId, out var station))
+        if (!_stations.TryGetValue(buildingId, out var station))
         {
             return Result.Success();
         }
 
+        if (!trackService.CanDeleteTrack(station.TrackId))
+        {
+            return new ResultProblem("Cannot delete station for building '{0}': its track is occupied", buildingId);
+        }
+
+        _stations.Remove(buildingId);
         _stationsByTrack.Remove(station.TrackId);
         trackService.DeleteTrack(station.TrackId);
         StationDeleted.Invoke(buildingId);
