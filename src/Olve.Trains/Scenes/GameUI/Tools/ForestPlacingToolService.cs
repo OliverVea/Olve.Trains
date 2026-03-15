@@ -6,16 +6,16 @@ using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.Tools;
 
-public sealed class ResidencePlacingToolService(
+public sealed class ForestPlacingToolService(
     ToolManagementService toolManagementService,
     BuildingPlacementToolService buildingPlacementToolService,
     MouseRaycastService mouseRaycastService,
     MouseManager mouseManager,
     KeyboardManager keyboardManager)
-    : BaseToolService<ResidencePlacingToolService.PlacingState>(toolManagementService, new PlacingState())
+    : BaseToolService<ForestPlacingToolService.PlacingState>(toolManagementService, new PlacingState())
 {
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
-    protected override Tool Tool => new(ToolId, "Place Residences");
+    protected override Tool Tool => new(ToolId, "Place Foresters");
 
     public record PlacingState(CardinalDirection CardinalDirection = CardinalDirection.North);
 
@@ -23,7 +23,7 @@ public sealed class ResidencePlacingToolService(
 
     public override Result Load()
     {
-        _previewId = buildingPlacementToolService.Register(BuildingBlueprintCatalog.Residential);
+        _previewId = buildingPlacementToolService.Register(BuildingBlueprintCatalog.Forest);
         return base.Load();
     }
 

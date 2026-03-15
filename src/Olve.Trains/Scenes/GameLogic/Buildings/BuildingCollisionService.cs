@@ -33,13 +33,12 @@ public class BuildingCollisionService(
             return new ResultProblem("Blueprint not found: '{0}'", building.BlueprintId);
         }
 
-        if (!buildingMeshBlueprintService.TryGetProperties(building.BlueprintId, out var meshProps)
-            || meshProps.MeshPath is not { } meshPath)
+        if (!buildingMeshBlueprintService.TryGetProperties(building.BlueprintId, out var meshProps))
         {
             return Result.Success();
         }
 
-        if (meshLoadingManager.LoadMesh(meshPath)
+        if (meshLoadingManager.LoadMesh(meshProps.MeshPath)
             .TryPickProblems(out var problems, out var meshId))
         {
             return problems.Prepend("Failed to load building mesh for collision");

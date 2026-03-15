@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Meshes;
+using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
@@ -35,7 +36,8 @@ public class BuildingBlueprintLibraryService(
 
         stationBlueprintService.SetProperties(BuildingBlueprintCatalog.Station, new StationProperties(Range: 5));
         buildingMeshBlueprintService.SetProperties(BuildingBlueprintCatalog.Station,
-            new BuildingMeshProperties(Meshes.SM_Bld_Station_Small_01, Matrix4X4.CreateTranslation(0f, 0f, 0.1f)));
+            new BuildingMeshProperties(Meshes.SM_Bld_Station_Small_01, Textures.SimpleTrains_Texture_01,
+                Matrix4X4.CreateTranslation(0f, 0f, 0.1f)));
 
         return Result.Success();
     }
@@ -50,7 +52,8 @@ public class BuildingBlueprintLibraryService(
 
         residenceBlueprintService.SetProperties(BuildingBlueprintCatalog.Residential, new ResidenceProperties(Capacity: 4));
         buildingMeshBlueprintService.SetProperties(BuildingBlueprintCatalog.Residential,
-            new BuildingMeshProperties(Meshes.apartment_small_mesh, Matrix4X4<float>.Identity));
+            new BuildingMeshProperties(Meshes.apartment_small_mesh, Textures.Building01a,
+                Matrix4X4<float>.Identity));
 
         return Result.Success();
     }

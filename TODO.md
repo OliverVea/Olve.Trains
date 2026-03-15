@@ -7,6 +7,8 @@
 - [ ] Integration tests should use user-facing validated placement tools (e.g. select tool, click to place) instead of raw `place-track`/`place-building` commands. If validation logic breaks, raw commands bypass it silently — at least some tests should go through the full GUI placement flow to catch that.
 - [ ] Move `BoundedContainer<TKey>` from `Olve.Engine3D.Collections` to `Olve.Utilities.Collections` (it's a general-purpose data structure, not engine-specific)
 - [ ] Move entity counting metrics into `EntityStore` — services like `BuildingService` manually call `GameMetrics.BuildingCount.Add(1/-1)` on add/remove; this should be handled automatically by `EntityStore` so all entity types get metrics for free
+- [ ] Station ghost track preview (with per-component parameters) — ghost preview for station tracks when placing stations
+- [ ] Remove `TerrainHighlightSettings` shared-settings pattern — replace with a more explicit service-based approach
 
 ## Demo
 

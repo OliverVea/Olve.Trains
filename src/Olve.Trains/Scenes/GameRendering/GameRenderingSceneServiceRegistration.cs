@@ -74,6 +74,7 @@ public static class GameRenderingSceneServiceRegistration
             before: BeforeBuildingRendering);
         services.AddSceneService<FootprintRenderingService>(sceneId);
         services.AddSceneService<BuildingRenderingService>(sceneId);
+        services.AddSceneService<BuildingGhostPreviewService>(sceneId);
         services.AddEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectAdded,
             (EnvironmentalObjectRenderingService eors, Id<EnvironmentalObject> id) => eors.Register(id),

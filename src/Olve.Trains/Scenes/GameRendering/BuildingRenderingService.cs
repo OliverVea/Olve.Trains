@@ -3,10 +3,8 @@ using Olve.Engine3D.Assets;
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Rendering.Primitives;
-using Olve.Engine3D.Rendering.Shaders;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
-using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
@@ -41,12 +39,8 @@ public class BuildingRenderingService(
     private readonly Dictionary<Id<BuildingBlueprint>, BlueprintRenderInfo> _blueprintRenderInfos = new();
     private readonly Dictionary<Id<Building>, MeshRenderingService.MeshInstanceHandle> _instanceIds = new();
     private readonly Dictionary<Id<Building>, FootprintRenderingService.FootprintInstanceHandle> _footprintInstanceIds = new();
-    private readonly Dictionary<Id<Building>, MeshRenderingService.MeshInstanceHandle> _ghostInstanceIds = new();
-
     private Shaders.Default.Vertex[] _cubeVertices = null!;
     private uint[] _cubeIndices = null!;
-
-    private MeshRenderingService.MeshGroupHandle _ghostGroupHandle;
 
     public Result Load()
     {
@@ -54,21 +48,6 @@ public class BuildingRenderingService(
         UnitCube.Populate(_cubeVertices);
         _cubeIndices = new uint[UnitCube.IndexCount];
         UnitCube.GetIndices(_cubeIndices);
-
-        if (meshRenderingService.RegisterMeshGroup(
-                _cubeVertices, _cubeIndices,
-                renderState: RenderState.AlphaBlend,
-                parameters: new Shaders.Default.EntityParameters(
-                    UColor: new Vector3D<float>(0.7f, 0.7f, 0.7f),
-                    UOpacity: 0.5f,
-                    UColorOverride: new Vector3D<float>(0, 0, 0),
-                    UColorMix: 0f))
-            .TryPickProblems(out var problems, out var ghostGroupHandle))
-        {
-            return problems.Prepend("Failed to register ghost building mesh group");
-        }
-
-        _ghostGroupHandle = ghostGroupHandle;
 
         return Result.Success();
     }
@@ -126,57 +105,6 @@ public class BuildingRenderingService(
         return Result.Success();
     }
 
-    public Result RegisterGhost(
-        Id<Building> ghostId,
-        BuildingPosition position,
-        TileFootprint footprint)
-    {
-        var ghostScale = new Vector3D<float>(footprint.Width, footprint.Height, footprint.Depth);
-        var worldMatrix = buildingPositionService.ComputeFootprintWorldMatrix(footprint, position, ghostScale);
-
-        if (meshRenderingService.AddInstance(_ghostGroupHandle, worldMatrix)
-            .TryPickProblems(out var problems, out var instanceHandle))
-        {
-            return problems.Prepend("Failed to add ghost building instance for '{0}'", ghostId);
-        }
-
-        _ghostInstanceIds[ghostId] = instanceHandle;
-
-        return Result.Success();
-    }
-
-    public Result UpdateGhost(
-        Id<Building> ghostId,
-        BuildingPosition position,
-        TileFootprint footprint)
-    {
-        if (!_ghostInstanceIds.TryGetValue(ghostId, out var instanceHandle))
-        {
-            return new ResultProblem("Could not find ghost instance for building '{0}'", ghostId);
-        }
-
-        var ghostScale = new Vector3D<float>(footprint.Width, footprint.Height, footprint.Depth);
-        var worldMatrix = buildingPositionService.ComputeFootprintWorldMatrix(footprint, position, ghostScale);
-
-        if (meshRenderingService.UpdateInstance(instanceHandle, worldMatrix)
-            .TryPickProblems(out var problems))
-        {
-            return problems.Prepend("Failed to update ghost building instance for '{0}'", ghostId);
-        }
-
-        return Result.Success();
-    }
-
-    public void SetGhostAppearance(float opacity, Vector3D<float>? colorOverride = null, float colorMix = 0f)
-    {
-        meshRenderingService.UpdateGroupParameters(_ghostGroupHandle,
-            new Shaders.Default.EntityParameters(
-                UColor: new Vector3D<float>(0.7f, 0.7f, 0.7f),
-                UOpacity: opacity,
-                UColorOverride: colorOverride ?? new Vector3D<float>(0, 0, 0),
-                UColorMix: colorMix));
-    }
-
     public Result Unregister(Id<Building> buildingId)
     {
         var found = false;
@@ -196,16 +124,6 @@ public class BuildingRenderingService(
             if (footprintRenderingService.RemoveInstance(footprintHandle).TryPickProblems(out var problems))
             {
                 return problems.Prepend("Failed to remove footprint instance for '{0}'", buildingId);
-            }
-
-            found = true;
-        }
-
-        if (_ghostInstanceIds.Remove(buildingId, out var ghostHandle))
-        {
-            if (meshRenderingService.RemoveInstance(ghostHandle).TryPickProblems(out var problems))
-            {
-                return problems.Prepend("Failed to remove ghost instance for '{0}'", buildingId);
             }
 
             found = true;
@@ -233,15 +151,14 @@ public class BuildingRenderingService(
 
         Result<MeshRenderingService.MeshGroupHandle> meshGroupResult;
 
-        if (buildingMeshBlueprintService.TryGetProperties(blueprintId, out var meshProps)
-            && meshProps.MeshPath is { } meshPath)
+        if (buildingMeshBlueprintService.TryGetProperties(blueprintId, out var meshProps))
         {
-            if (meshLoadingManager.LoadMesh(meshPath).TryPickProblems(out var loadProblems, out var meshId))
+            if (meshLoadingManager.LoadMesh(meshProps.MeshPath).TryPickProblems(out var loadProblems, out var meshId))
             {
                 return loadProblems.Prepend("Failed to load mesh for blueprint '{0}'", blueprintId);
             }
 
-            meshGroupResult = meshRenderingService.RegisterMeshGroup(meshId, GetTextureForBlueprint(blueprintId));
+            meshGroupResult = meshRenderingService.RegisterMeshGroup(meshId, meshProps.TexturePath);
         }
         else
         {
@@ -272,13 +189,6 @@ public class BuildingRenderingService(
         _blueprintRenderInfos[blueprintId] = info;
 
         return info;
-    }
-
-    private static AssetPath<TextureData<RGBA>>? GetTextureForBlueprint(Id<BuildingBlueprint> blueprintId)
-    {
-        if (blueprintId == BuildingBlueprintCatalog.Station) return Textures.SimpleTrains_Texture_01;
-        if (blueprintId == BuildingBlueprintCatalog.Residential) return Textures.Building01a;
-        return null;
     }
 
     private Vector3D<float> ComputeFootprintColor(Id<BuildingBlueprint> blueprintId)

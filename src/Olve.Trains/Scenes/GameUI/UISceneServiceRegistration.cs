@@ -27,9 +27,11 @@ public static class UISceneServiceRegistration
         services.AddSceneService<TrackArrowIndicatorService>(sceneId);
         services.AddSceneService<TrackPlacingToolService>(sceneId);
         services.AddSceneService<TrainPlacingToolService>(sceneId);
+        services.TryAddScoped<BuildingPlacementToolService>();
         services.AddSceneService<StationPlacingToolService>(sceneId);
         services.AddSceneService<ResidencePlacingToolService>(sceneId);
-        services.AddSceneService<IndustryPlacingToolService>(sceneId);
+        services.AddSceneService<ForestPlacingToolService>(sceneId);
+        services.AddSceneService<SawmillPlacingToolService>(sceneId);
         services.AddSceneService<DeletionToolService>(sceneId);
         services.AddSceneService<SelectToolHandlerService>(sceneId);
         services.AddSceneService<ToolBarService>(sceneId);

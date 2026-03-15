@@ -2,58 +2,56 @@ using Olve.Engine3D;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings;
-using Olve.Trains.Scenes.GameLogic.Terrain;
-using Olve.Trains.Scenes.GameRendering;
 using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.Tools;
 
 public sealed class StationPlacingToolService(
-    MouseRaycastService mouseRaycastService,
     ToolManagementService toolManagementService,
-    BuildingRenderingService buildingRenderingService,
-    BuildingBlueprintService buildingBlueprintService,
-    BuildingValidationService buildingValidationService,
-    BuildingService buildingService,
+    BuildingPlacementToolService buildingPlacementToolService,
+    MouseRaycastService mouseRaycastService,
     MouseManager mouseManager,
-    KeyboardManager keyboardManager,
-    TerrainHighlightSettings terrainHighlightSettings) : BaseToolService<StationPlacingToolService.State>(toolManagementService, new State())
+    KeyboardManager keyboardManager)
+    : BaseToolService<StationPlacingToolService.PlacingState>(toolManagementService, new PlacingState())
 {
-    public record State(bool ActivatedThisFrame = false, CardinalDirection CardinalDirection = CardinalDirection.North);
-
     public static Id<Tool> ToolId { get; } = Id.New<Tool>();
     protected override Tool Tool => new(ToolId, "Place Stations");
 
-    private readonly Id<Building> _ghostBuildingId = Id.New<Building>();
-    private bool _ghostRegistered;
+    public record PlacingState(CardinalDirection CardinalDirection = CardinalDirection.North);
 
-    public override Result Unload()
+    private Id<BuildingPreview> _previewId;
+
+    public override Result Load()
     {
-        UnregisterGhost();
-        return Result.Success();
+        _previewId = buildingPlacementToolService.Register(BuildingBlueprintCatalog.Station);
+        return base.Load();
     }
 
-    protected override State OnToolSelected(State toolState)
+    protected override PlacingState OnToolSelected(PlacingState toolState)
     {
-        terrainHighlightSettings.ShowGrid = true;
+        buildingPlacementToolService.Update(_previewId, s => s with { Show = true });
         return toolState;
     }
 
-    protected override State OnToolDeselected(State toolState)
+    protected override PlacingState OnToolDeselected(PlacingState toolState)
     {
-        terrainHighlightSettings.ShowGrid = false;
-        UnregisterGhost();
+        buildingPlacementToolService.Update(_previewId, s => s with { Show = false });
         return toolState;
     }
 
     protected override Result<Pass> OnSelectedInput(TimeSpan deltaTime)
     {
-        var activatedThisFrame = mouseManager.State.IsButtonPressed(MouseButton.Left);
-        ToolState = ToolState with { ActivatedThisFrame = activatedThisFrame };
+        if (mouseManager.State.IsButtonPressed(MouseButton.Left))
+        {
+            buildingPlacementToolService.TryPlace(_previewId);
+        }
 
         if (keyboardManager.State.IsKeyPressed(Key.R))
         {
-            ToolState = ToolState with { CardinalDirection = ToolState.CardinalDirection.RotateCounterClockwise() };
+            base.ToolState = base.ToolState with
+            {
+                CardinalDirection = base.ToolState.CardinalDirection.RotateCounterClockwise(),
+            };
         }
 
         return Pass.Pass;
@@ -61,66 +59,19 @@ public sealed class StationPlacingToolService(
 
     protected override Result OnSelectedUpdate(TimeSpan deltaTime)
     {
-        if (mouseRaycastService.TerrainIntersectionTile is not { } tilePosition)
+        if (mouseRaycastService.TerrainIntersectionTile is { } tilePosition)
         {
-            UnregisterGhost();
-            return Result.Success();
+            buildingPlacementToolService.Update(_previewId, s => s with
+            {
+                Show = true,
+                Position = new BuildingPosition(tilePosition, base.ToolState.CardinalDirection),
+            });
         }
-
-        BuildingPosition position = new(tilePosition, ToolState.CardinalDirection);
-
-        if (!buildingBlueprintService.TryGetBlueprint(BuildingBlueprintCatalog.Station, out var blueprint))
+        else
         {
-            return new ResultProblem("Station blueprint not found");
-        }
-
-        var isValid = buildingValidationService.IsValid(position, blueprint.Footprint);
-
-        UpdateGhost(position, blueprint.Footprint, isValid);
-
-        if (!ToolState.ActivatedThisFrame || !isValid)
-        {
-            return Result.Success();
-        }
-
-        if (buildingService.AddBuilding(BuildingBlueprintCatalog.Station, position).TryPickProblems(out var addProblems))
-        {
-            return addProblems;
+            buildingPlacementToolService.Update(_previewId, s => s with { Show = false });
         }
 
         return Result.Success();
-    }
-
-    private void UpdateGhost(BuildingPosition position, TileFootprint footprint, bool isValid)
-    {
-        if (isValid)
-        {
-            buildingRenderingService.SetGhostAppearance(0.5f);
-        }
-        else
-        {
-            buildingRenderingService.SetGhostAppearance(0.7f, new Vector3D<float>(1, 0, 0), 1.0f);
-        }
-
-        if (_ghostRegistered)
-        {
-            buildingRenderingService.UpdateGhost(_ghostBuildingId, position, footprint);
-        }
-        else
-        {
-            buildingRenderingService.RegisterGhost(_ghostBuildingId, position, footprint);
-            _ghostRegistered = true;
-        }
-    }
-
-    private void UnregisterGhost()
-    {
-        if (!_ghostRegistered)
-        {
-            return;
-        }
-
-        buildingRenderingService.Unregister(_ghostBuildingId);
-        _ghostRegistered = false;
     }
 }

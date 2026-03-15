@@ -26,7 +26,9 @@ public class ToolBarService(
         (ToolBar.PlaceTrack, TrackPlacingToolService.ToolId),
         (ToolBar.PlaceStation, StationPlacingToolService.ToolId),
         (ToolBar.PlaceTrain, TrainPlacingToolService.ToolId),
-        (ToolBar.PlaceForester, IndustryPlacingToolService.ToolId),
+        (ToolBar.PlaceHouse, ResidencePlacingToolService.ToolId),
+        (ToolBar.PlaceForester, ForestPlacingToolService.ToolId),
+        (ToolBar.PlaceSawmill, SawmillPlacingToolService.ToolId),
         (ToolBar.Delete, DeletionToolService.ToolId)
     ];
 
