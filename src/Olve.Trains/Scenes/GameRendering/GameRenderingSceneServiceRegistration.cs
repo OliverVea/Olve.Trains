@@ -29,7 +29,7 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<ShadowMapService>(sceneId);
         services.AddSceneService<TerrainRenderingService>(sceneId);
         services.AddSceneService<MeshRenderingService>(sceneId);
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
             (TrackRenderingService trs, Id<Track> trackId) =>
             {
@@ -63,7 +63,7 @@ public static class GameRenderingSceneServiceRegistration
             before: BeforeWagonRendering);
         services.AddSceneService<WagonRenderingService>(sceneId);
         services.AddSceneService<JunctionSignalRenderingService>(sceneId);
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
             (BuildingRenderingService brs, Id<Building> id) => brs.Register(id),
             prefill: bs => bs.BuildingIds,
@@ -75,7 +75,7 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<FootprintRenderingService>(sceneId);
         services.AddSceneService<BuildingRenderingService>(sceneId);
         services.AddSceneService<BuildingGhostPreviewService>(sceneId);
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectAdded,
             (EnvironmentalObjectRenderingService eors, Id<EnvironmentalObject> id) => eors.Register(id),
             prefill: eos => eos.ObjectIds,

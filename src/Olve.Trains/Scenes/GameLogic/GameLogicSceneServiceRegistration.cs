@@ -118,11 +118,11 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<WagonPositioningService>();
 
         // Scene Events
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
             (JunctionService js, TrackService ts, Id<Track> trackId) => js.OnTrackAdded(trackId, ts),
             prefill: ts => ts.TrackIds);
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackRemoved,
             (JunctionService js, TrackService ts, Id<Track> trackId) => js.OnTrackRemoved(trackId, ts));
         services.AddEventSceneService(sceneId,
@@ -135,21 +135,21 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (JunctionSignalService jss) => jss.OnJunctionRemoved,
             (JunctionSignalCollisionService jscs, Id<Junction> id) => jscs.Unregister(id));
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (StationService ss, Id<Building> id) => ss.CreateStationForBuilding(id),
+            (StationService ss, Id<Building> id) => ss.CreateStationForBuilding(id).ToEmptyResult(),
             prefill: bs => bs.BuildingIds);
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
             (StationService ss, Id<Building> id) => ss.DeleteStationForBuilding(id));
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (IndustryService ist, Id<Building> id) => ist.CreateIndustryForBuilding(id),
+            (IndustryService ist, Id<Building> id) => ist.CreateIndustryForBuilding(id).ToEmptyResult(),
             prefill: bs => bs.BuildingIds);
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
             (IndustryService ist, Id<Building> id) => ist.RemoveIndustryForBuilding(id));
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
             (BuildingCollisionService bcs, Id<Building> id) => bcs.Register(id),
             prefill: bs => bs.BuildingIds);
@@ -162,14 +162,14 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (EnvironmentalObjectBlueprintService ebs) => ebs.OnBlueprintRemoved,
             (EnvironmentalObjectService eos, Id<EnvironmentalObjectBlueprint> id) => eos.DeleteObjectsWithBlueprint(id));
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectAdded,
             (EnvironmentalObjectCollisionService eocs, Id<EnvironmentalObject> id) => eocs.Register(id),
             prefill: eos => eos.ObjectIds);
         services.AddEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectRemoved,
             (EnvironmentalObjectCollisionService eocs, Id<EnvironmentalObject> id) => eocs.Unregister(id));
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
             (TrackCollisionService tcs, Id<Track> id) => tcs.Register(id),
             prefill: ts => ts.TrackIds);

@@ -150,5 +150,83 @@ public static class SceneServiceRegistration
 
             return services;
         }
+
+        public IServiceCollection AddImmediateEventSceneService<TEventSource, TEvent>(
+            Id<IScene> sceneId,
+            Func<TEventSource, Event<TEvent>> eventSelector,
+            Func<TEvent, Result> handler,
+            Func<TEventSource, IEnumerable<TEvent>>? prefill = null,
+            ISceneServiceType[]? after = null, ISceneServiceType[]? before = null)
+            where TEventSource : notnull
+        {
+            services.AddKeyedScoped<ISceneService>(sceneId, (sp, _) =>
+            {
+                var eventSource = sp.GetRequiredService<TEventSource>();
+                var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+                Func<IEnumerable<TEvent>>? prefillFunc = prefill is not null ? () => prefill(eventSource) : null;
+                return new ImmediateEventSceneService<TEvent>(
+                    eventSelector(eventSource),
+                    handler,
+                    prefillFunc,
+                    loggerFactory.CreateLogger<ImmediateEventSceneService<TEvent>>(),
+                    ResolvePriority(sp, after, before));
+            });
+
+            return services;
+        }
+
+        public IServiceCollection AddImmediateEventSceneService<TEventSource, THandler, TEvent>(
+            Id<IScene> sceneId,
+            Func<TEventSource, Event<TEvent>> eventSelector,
+            Func<THandler, TEvent, Result> handler,
+            Func<TEventSource, IEnumerable<TEvent>>? prefill = null,
+            ISceneServiceType[]? after = null, ISceneServiceType[]? before = null)
+            where TEventSource : notnull
+            where THandler : notnull
+        {
+            services.AddKeyedScoped<ISceneService>(sceneId, (sp, _) =>
+            {
+                var eventSource = sp.GetRequiredService<TEventSource>();
+                var handlerService = sp.GetRequiredService<THandler>();
+                var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+                Func<IEnumerable<TEvent>>? prefillFunc = prefill is not null ? () => prefill(eventSource) : null;
+                return new ImmediateEventSceneService<TEvent>(
+                    eventSelector(eventSource),
+                    item => handler(handlerService, item),
+                    prefillFunc,
+                    loggerFactory.CreateLogger<ImmediateEventSceneService<TEvent>>(),
+                    ResolvePriority(sp, after, before));
+            });
+
+            return services;
+        }
+
+        public IServiceCollection AddImmediateEventSceneService<TEventSource, THandler1, THandler2, TEvent>(
+            Id<IScene> sceneId,
+            Func<TEventSource, Event<TEvent>> eventSelector,
+            Func<THandler1, THandler2, TEvent, Result> handler,
+            Func<TEventSource, IEnumerable<TEvent>>? prefill = null,
+            ISceneServiceType[]? after = null, ISceneServiceType[]? before = null)
+            where TEventSource : notnull
+            where THandler1 : notnull
+            where THandler2 : notnull
+        {
+            services.AddKeyedScoped<ISceneService>(sceneId, (sp, _) =>
+            {
+                var eventSource = sp.GetRequiredService<TEventSource>();
+                var handler1 = sp.GetRequiredService<THandler1>();
+                var handler2 = sp.GetRequiredService<THandler2>();
+                var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+                Func<IEnumerable<TEvent>>? prefillFunc = prefill is not null ? () => prefill(eventSource) : null;
+                return new ImmediateEventSceneService<TEvent>(
+                    eventSelector(eventSource),
+                    item => handler(handler1, handler2, item),
+                    prefillFunc,
+                    loggerFactory.CreateLogger<ImmediateEventSceneService<TEvent>>(),
+                    ResolvePriority(sp, after, before));
+            });
+
+            return services;
+        }
     }
 }
