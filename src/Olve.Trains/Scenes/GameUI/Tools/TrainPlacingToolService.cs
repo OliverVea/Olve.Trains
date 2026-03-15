@@ -104,7 +104,7 @@ public class TrainPlacingToolService(
 
         if (ToolState.ActivatedThisFrame)
         {
-            var velocity = ToolState.Forward ? 6f : -6f;
+            var velocity = ToolState.Forward ? 2.4f : -2.4f;
             var trainTrackPosition = new TrainTrackPosition(closestTrackPoint, velocity);
 
             if (trainService.AddTrain("Train :D").TryPickProblems(out problems, out var trainId)

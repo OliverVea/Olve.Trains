@@ -6,7 +6,7 @@ namespace Olve.Trains.Scenes.GameLogic.Time;
 public class DayTimeSteppingService(DayTimeManager dayTimeManager, DeltaTimeService deltaTimeService) : ISceneService
 {
     private static readonly DayTime DayStart = new(5, 30);
-    private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(6);
+    private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(15);
 
     public Result Load()
     {

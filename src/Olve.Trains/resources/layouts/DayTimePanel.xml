@@ -4,6 +4,6 @@
         <Text Content='"Time of Day:"' Style="InfoTextMedium" />
         <Slider Id="TimeSlider" MinValue="0" MaxValue="24" Value="5.5f" Step="0.25f" Weight="1" Height="20" />
         <Text Id="TimeScaleLabel" Content='"Speed: 1x"' Style="InfoTextMedium" />
-        <Slider Id="TimeScaleSlider" MinValue="-3" MaxValue="3" Value="0" Step="1" Weight="1" Height="20" />
+        <Slider Id="TimeScaleSlider" MinValue="0" MaxValue="8" Value="4" Step="1" Weight="1" Height="20" />
     </Box>
 </Box>

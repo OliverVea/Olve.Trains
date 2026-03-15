@@ -6,10 +6,10 @@ import pytest
 from game import Game
 
 
-# DayTimeSteppingService sets DayDuration = 6 minutes (360 seconds).
+# DayTimeSteppingService sets DayDuration = 15 minutes (900 seconds).
 # ManualStepper uses FrameTime = 1/60 seconds.
-# Game hours per frame at 1x speed = (1/60) / 360 * 24 = 1/900 hours.
-HOURS_PER_FRAME = 1.0 / 900.0
+# Game hours per frame at 1x speed = (1/60) / 900 * 24 = 1/2250 hours.
+HOURS_PER_FRAME = 1.0 / 2250.0
 FRAMES = 100
 TOLERANCE = 0.002  # ~1.7 frames of error margin
 
