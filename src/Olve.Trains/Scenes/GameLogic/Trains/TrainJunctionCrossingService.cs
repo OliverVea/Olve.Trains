@@ -21,7 +21,7 @@ public class TrainJunctionCrossingService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         _suspended.Clear();
 

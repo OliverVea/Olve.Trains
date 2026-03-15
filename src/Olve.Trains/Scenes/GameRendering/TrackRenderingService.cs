@@ -124,7 +124,7 @@ public class TrackRenderingService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         sceneLightService.ApplyShaderParameters(_shader);

@@ -35,7 +35,7 @@ public class MouseManager(Provider<IInputContext> inputContextProvider, Provider
         _scroll = scrollWheel.Y;
     }
 
-    public Result Input(TimeSpan _)
+    public Result Input()
     {
         State.Set(_pressedButtons, _releasedButtons);
 

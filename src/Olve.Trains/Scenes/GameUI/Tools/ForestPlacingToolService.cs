@@ -39,7 +39,7 @@ public sealed class ForestPlacingToolService(
         return toolState;
     }
 
-    protected override Result<Pass> OnSelectedInput(TimeSpan deltaTime)
+    protected override Result<Pass> OnSelectedInput()
     {
         if (mouseManager.State.IsButtonPressed(MouseButton.Left))
         {
@@ -57,7 +57,7 @@ public sealed class ForestPlacingToolService(
         return Pass.Pass;
     }
 
-    protected override Result OnSelectedUpdate(TimeSpan deltaTime)
+    protected override Result OnSelectedUpdate()
     {
         if (mouseRaycastService.TerrainIntersectionTile is { } tilePosition)
         {

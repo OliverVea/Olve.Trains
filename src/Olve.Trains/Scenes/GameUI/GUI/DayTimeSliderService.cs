@@ -10,6 +10,7 @@ namespace Olve.Trains.Scenes.GameUI.GUI;
 
 public class DayTimeSliderService(
     DayTimeManager dayTimeManager,
+    DeltaTimeService deltaTimeService,
     GuiElementService guiElementService,
     GuiSliderService guiSliderService,
     GuiAnchorService guiAnchorService) : ISceneService
@@ -30,6 +31,7 @@ public class DayTimeSliderService(
         guiSliderService.OnValueChanged.Subscribe(OnSliderValueChanged);
 
         Panel.TimeSlider.Thumb.StyleKey = new StyleKey(nameof(Styles.SliderThumbStyle));
+        Panel.TimeScaleSlider.Thumb.StyleKey = new StyleKey(nameof(Styles.SliderThumbStyle));
 
         return guiElementService
             .RegisterElementAndChildren(_anchorId, Panel.Root)
@@ -45,7 +47,7 @@ public class DayTimeSliderService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         Panel.TimeSlider.Value = dayTimeManager.CurrentTime.Value;
 
@@ -54,11 +56,18 @@ public class DayTimeSliderService(
 
     private void OnSliderValueChanged(GuiSliderService.SliderValueChangedMessage message)
     {
-        if (message.SliderId != Panel.TimeSlider.Id)
+        if (message.SliderId == Panel.TimeSlider.Id)
         {
-            return;
+            dayTimeManager.CurrentTime = new DayTime(message.NewValue);
         }
+        else if (message.SliderId == Panel.TimeScaleSlider.Id)
+        {
+            var step = message.NewValue;
+            var timeScale = step <= -3 ? 0f : MathF.Pow(1.5f, step);
+            deltaTimeService.TimeScale = timeScale;
 
-        dayTimeManager.CurrentTime = new DayTime(message.NewValue);
+            var label = timeScale == 0f ? "Speed: 0x" : $"Speed: {timeScale:G3}x";
+            Panel.TimeScaleLabel.Content = label;
+        }
     }
 }

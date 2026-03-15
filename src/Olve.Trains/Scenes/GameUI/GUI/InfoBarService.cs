@@ -13,7 +13,8 @@ public class InfoBarService(
     GuiElementService guiElementService,
     GuiActivationService guiActivationService,
     GuiAnchorService guiAnchorService,
-    BurgerMenuService burgerMenuService) : ISceneService
+    BurgerMenuService burgerMenuService,
+    DeltaTimeService deltaTimeService) : ISceneService
 {
 
     public int Priority => 100;
@@ -50,8 +51,10 @@ public class InfoBarService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
+        var deltaTime = deltaTimeService.RawDeltaTime;
+
         var dayTime = dayTimeManager.CurrentTime;
         InfoBar.Clock.Content = $"{dayTime.Hours:D2} : {dayTime.Minutes:D2}";
 

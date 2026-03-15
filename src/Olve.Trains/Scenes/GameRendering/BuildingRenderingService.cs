@@ -137,7 +137,7 @@ public class BuildingRenderingService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         return Result.Success();
     }

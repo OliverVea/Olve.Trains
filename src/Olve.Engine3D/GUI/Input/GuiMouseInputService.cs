@@ -25,7 +25,7 @@ public class GuiMouseInputService(
 
     public int Priority => -100;
 
-    public Result<Pass> Input(TimeSpan deltaTime)
+    public Result<Pass> Input()
     {
         var mousePos = GetMousePositionInPx();
 

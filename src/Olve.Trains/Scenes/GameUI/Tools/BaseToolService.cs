@@ -12,9 +12,9 @@ public abstract class BaseToolService<TToolState>(
 
     protected virtual TToolState OnToolSelected(TToolState toolState) => toolState;
     protected virtual TToolState OnToolDeselected(TToolState toolState) => toolState;
-    protected virtual Result<Pass> OnSelectedInput(TimeSpan deltaTime) => Pass.Pass;
-    protected virtual Result OnSelectedUpdate(TimeSpan deltaTime) => Result.Success();
-    protected virtual Result OnSelectedRender(TimeSpan deltaTime) => Result.Success();
+    protected virtual Result<Pass> OnSelectedInput() => Pass.Pass;
+    protected virtual Result OnSelectedUpdate() => Result.Success();
+    protected virtual Result OnSelectedRender() => Result.Success();
 
     public virtual Result Load()
     {
@@ -38,14 +38,14 @@ public abstract class BaseToolService<TToolState>(
         return Result.Success();
     }
 
-    public virtual Result<Pass> Input(TimeSpan deltaTime)
-        => toolManagementService.ActiveToolId != Tool.Id ? Pass.Pass : OnSelectedInput(deltaTime);
+    public virtual Result<Pass> Input()
+        => toolManagementService.ActiveToolId != Tool.Id ? Pass.Pass : OnSelectedInput();
 
-    public virtual Result Update(TimeSpan deltaTime)
-        => toolManagementService.ActiveToolId != Tool.Id ? Result.Success() : OnSelectedUpdate(deltaTime);
+    public virtual Result Update()
+        => toolManagementService.ActiveToolId != Tool.Id ? Result.Success() : OnSelectedUpdate();
 
-    public virtual Result Render(TimeSpan deltaTime)
-        => toolManagementService.ActiveToolId != Tool.Id ? Result.Success() : OnSelectedRender(deltaTime);
+    public virtual Result Render()
+        => toolManagementService.ActiveToolId != Tool.Id ? Result.Success() : OnSelectedRender();
 
     private void OnActiveToolChanged(ToolManagementService.ActiveToolChangedMessage activeToolChangedMessage)
     {

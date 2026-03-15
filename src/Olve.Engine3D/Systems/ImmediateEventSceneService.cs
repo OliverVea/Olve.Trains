@@ -41,7 +41,7 @@ public sealed class ImmediateEventSceneService<T>(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime) => Result.Success();
+    public Result Update() => Result.Success();
 
     private void OnEvent(T item)
     {

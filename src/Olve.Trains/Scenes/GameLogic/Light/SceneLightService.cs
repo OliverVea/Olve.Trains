@@ -29,7 +29,7 @@ public class SceneLightService(DayTimeManager dayTimeManager, DaylightManager da
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         if (daylightManager.Sample(_sunId, dayTimeManager.CurrentTime).TryPickProblems(out var problems, out var sunValue)
             || daylightManager.Sample(_moonId, dayTimeManager.CurrentTime).TryPickProblems(out problems, out var moonValue))

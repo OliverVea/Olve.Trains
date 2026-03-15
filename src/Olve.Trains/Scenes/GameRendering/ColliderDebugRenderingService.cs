@@ -117,7 +117,7 @@ public class ColliderDebugRenderingService(
         return Result.Success();
     }
 
-    public Result<Pass> Input(TimeSpan deltaTime)
+    public Result<Pass> Input()
     {
         if (keyboardManager.State.IsKeyPressed(Key.F3))
         {
@@ -127,7 +127,7 @@ public class ColliderDebugRenderingService(
         return Pass.Pass;
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
 

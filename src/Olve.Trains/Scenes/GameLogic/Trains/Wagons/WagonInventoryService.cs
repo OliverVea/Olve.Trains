@@ -44,7 +44,7 @@ public class WagonInventoryService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         return Result.Concat(
             _addedQueue?.Update() ?? Result.Success(),

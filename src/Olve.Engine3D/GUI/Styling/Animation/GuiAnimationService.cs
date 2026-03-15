@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
+using Olve.Engine3D.Time;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI.Styling.Animation;
@@ -12,7 +13,8 @@ public class GuiAnimationService(
     EventQueueFactory eventQueueFactory,
     GuiElementService guiElementService,
     GuiStyleRegistry guiStyleRegistry,
-    GuiNodeStateService guiNodeStateService) : ISceneService
+    GuiNodeStateService guiNodeStateService,
+    DeltaTimeService deltaTimeService) : ISceneService
 {
 
     public readonly record struct GuiStateWeightsChangedMessage(Id<GuiNode> NodeId, StateWeights Weights);
@@ -46,7 +48,7 @@ public class GuiAnimationService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         if (_guiNodeStateChangedQueue
             .Update()
@@ -55,7 +57,7 @@ public class GuiAnimationService(
             return problems;
         }
 
-        return UpdateAnimationWeights(deltaTime);
+        return UpdateAnimationWeights(deltaTimeService.RawDeltaTime);
     }
 
     private Result OnStateChanged(GuiNodeStateService.GuiNodeStateChanged message)

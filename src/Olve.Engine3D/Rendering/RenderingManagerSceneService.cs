@@ -10,7 +10,7 @@ public class RenderingManagerSceneService(RenderingManager renderingManager) : I
 {
     public int Priority => int.MaxValue;
 
-    public Result Render(TimeSpan deltaTime)
+    public Result Render()
     {
         return renderingManager.RenderAll();
     }

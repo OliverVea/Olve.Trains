@@ -4,6 +4,7 @@ using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Events;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Time;
 using Olve.Engine3D.TimeStepping;
 using Olve.Engine3D.Utilities;
 using Olve.Utilities.Ids;
@@ -21,6 +22,7 @@ public class GameManager(
     KeyboardManager keyboardManager,
     MouseManager mouseManager,
     SceneManager sceneManager,
+    DeltaTimeService deltaTimeService,
     AfterRenderEvent afterRenderEvent,
     GameClosingEvent gameClosingEvent,
     CommandPipeServer? commandPipeServer = null)
@@ -93,30 +95,32 @@ public class GameManager(
     {
         if (MetricsEnabled) _frameSw.Restart();
 
-        if (Update(deltaTime).TryPickProblems(out var problems))
+        deltaTimeService.SetFrameDelta(deltaTime);
+
+        if (Update().TryPickProblems(out var problems))
         {
             _result = problems;
             Stop();
         }
     }
 
-    private Result Update(TimeSpan deltaTime)
+    private Result Update()
     {
         Stopwatch? inputSw = MetricsEnabled ? Stopwatch.StartNew() : null;
 
-        var keyboardInputResult = keyboardManager.Input(deltaTime);
+        var keyboardInputResult = keyboardManager.Input();
         if (keyboardInputResult.TryPickProblems(out var problems))
         {
             return problems.Prepend("Got problem while processing input for KeyboardManager");
         }
 
-        var mouseInputResult = mouseManager.Input(deltaTime);
+        var mouseInputResult = mouseManager.Input();
         if (mouseInputResult.TryPickProblems(out problems))
         {
             return problems.Prepend("Got problem while processing input for MouseManager");
         }
 
-        var sceneInputResult = sceneManager.Input(deltaTime);
+        var sceneInputResult = sceneManager.Input();
         if (sceneInputResult.TryPickProblems(out problems))
         {
             return problems.Prepend("Got problem while processing input for SceneManager");
@@ -130,7 +134,7 @@ public class GameManager(
 
         Stopwatch? updateSw = MetricsEnabled ? Stopwatch.StartNew() : null;
 
-        var sceneUpdateResult = sceneManager.Update(deltaTime);
+        var sceneUpdateResult = sceneManager.Update();
         if (sceneUpdateResult.TryPickProblems(out problems))
         {
             return problems.Prepend("Got problem while updating SceneManager");
@@ -147,7 +151,7 @@ public class GameManager(
 
     private void OnRender(TimeSpan deltaTime)
     {
-        if (Render(deltaTime).TryPickProblems(out var problems))
+        if (Render().TryPickProblems(out var problems))
         {
             _result = problems;
             Stop();
@@ -160,11 +164,11 @@ public class GameManager(
         }
     }
 
-    private Result Render(TimeSpan deltaTime)
+    private Result Render()
     {
         Stopwatch? renderSw = MetricsEnabled ? Stopwatch.StartNew() : null;
 
-        var result = sceneManager.Render(deltaTime);
+        var result = sceneManager.Render();
         afterRenderEvent.AfterRender.Invoke();
 
         if (renderSw is not null)

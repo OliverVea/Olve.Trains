@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
+using Olve.Engine3D.Time;
 using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
@@ -8,12 +9,15 @@ namespace Olve.Trains.Scenes.GameLogic.Trains;
 
 public class TrainMovementService(ILogger<TrainMovementService> logger,
     TrainPositionService trainPositionService,
-    TrackSplineService trackSplineService) : ISceneService
+    TrackSplineService trackSplineService,
+    DeltaTimeService deltaTimeService) : ISceneService
 {
     public Event<Id<Train>> OnTrainReachedTrackEnd { get; } = new();
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
+        var deltaTime = deltaTimeService.ScaledDeltaTime;
+
         foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
         {
             var result = UpdateTrackPosition(trainId, deltaTime, trackPosition);

@@ -132,7 +132,7 @@ public class TrackGhostRenderingService(
             geometryManager.Deregister(entry.GeometryId));
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
 

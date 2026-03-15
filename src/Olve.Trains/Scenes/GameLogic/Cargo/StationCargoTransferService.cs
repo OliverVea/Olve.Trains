@@ -16,7 +16,7 @@ public class StationCargoTransferService(
 {
     private HashSet<(Id<Train>, Id<Track>)> _activeVisits = [];
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         var currentVisits = new HashSet<(Id<Train>, Id<Track>)>();
 

@@ -10,7 +10,7 @@ public class ScreenshotService(KeyboardManager keyboardManager, ScreenshotManage
 
     public int Priority => int.MaxValue;
 
-    public Result<Pass> Input(TimeSpan deltaTime)
+    public Result<Pass> Input()
     {
         if (keyboardManager.State.IsKeyPressed(Key.F12))
         {

@@ -1,4 +1,5 @@
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Time;
 using Olve.Trains.Scenes.GameLogic.Cargo;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings.Industries;
@@ -6,12 +7,15 @@ namespace Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 public class IndustryProductionService(
     IndustryService industryService,
     IndustryRecipeService industryRecipeService,
-    RecipeTransactionService recipeTransactionService) : ISceneService
+    RecipeTransactionService recipeTransactionService,
+    DeltaTimeService deltaTimeService) : ISceneService
 {
     private readonly Dictionary<(Id<Industry>, Id<IndustryRecipe>), TimeSpan> _accumulators = new();
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
+        var deltaTime = deltaTimeService.ScaledDeltaTime;
+
         foreach (var industry in industryService.Industries)
         {
             if (!industryRecipeService.TryGetRecipe(industry.RecipeId, out var recipe))

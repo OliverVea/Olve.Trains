@@ -17,7 +17,7 @@ public sealed class EventSceneService<T>(EventQueue<T> queue, Func<IEnumerable<T
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         var result = queue.Update();
         return propagateFailedUpdate ? result : Result.Success();

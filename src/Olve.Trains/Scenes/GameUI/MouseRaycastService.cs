@@ -35,7 +35,7 @@ public class MouseRaycastService(
 
     public IEnumerable<RaycastHit> Hits => _hits.Where(hit => collisionSystem.ColliderExists(hit.ColliderId));
 
-    public Result<Pass> Input(TimeSpan deltaTime)
+    public Result<Pass> Input()
     {
         var mouseCoordinates = mouseManager.State.NormalizedPosition;
 
@@ -53,7 +53,7 @@ public class MouseRaycastService(
         return Pass.Pass;
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         TerrainIntersection = null;
 

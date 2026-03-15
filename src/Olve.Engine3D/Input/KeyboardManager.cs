@@ -21,7 +21,7 @@ public class KeyboardManager(Provider<IInputContext> inputContextProvider)
         return Result.Success();
     }
 
-    public Result Input(TimeSpan _)
+    public Result Input()
     {
         State.Set(_pressedKeys, _releasedKeys);
 

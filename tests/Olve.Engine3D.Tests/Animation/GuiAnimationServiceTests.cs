@@ -7,6 +7,7 @@ using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.GUI.Styling.Animation;
 using Olve.Engine3D.Systems;
+using Olve.Engine3D.Time;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Tests.Animation;
@@ -22,6 +23,7 @@ public class GuiAnimationServiceTests
         services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
         services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.AddSingleton<EventQueueFactory>();
+        services.AddSingleton<DeltaTimeService>();
         services.AddGuiServices();
 
         var root = services.BuildServiceProvider();
@@ -62,6 +64,7 @@ public class GuiAnimationServiceTests
         var sut = sp.GetRequiredService<GuiAnimationService>();
         var stateService = sp.GetRequiredService<GuiNodeStateService>();
         var styleRegistry = sp.GetRequiredService<GuiStyleRegistry>();
+        var deltaTimeService = sp.GetRequiredService<DeltaTimeService>();
 
         styleRegistry.Register(new GuiElementStyling<Box>
         {
@@ -80,7 +83,8 @@ public class GuiAnimationServiceTests
 
         // Gain focus, advance 20ms (In animation partially completes)
         stateService.SetState(nodeId, GuiNodeState.Focused);
-        sut.Update(TimeSpan.FromMilliseconds(20));
+        deltaTimeService.SetFrameDelta(TimeSpan.FromMilliseconds(20));
+        sut.Update();
 
         // Lose focus before In completes — this should cancel In and start Out
         stateService.SetState(nodeId, GuiNodeState.None);
@@ -100,8 +104,10 @@ public class GuiAnimationServiceTests
         }
 
         sut.GuiStateWeightsChanged.Subscribe(Capture);
-        sut.Update(TimeSpan.FromMilliseconds(20));
-        sut.Update(TimeSpan.FromMilliseconds(20));
+        deltaTimeService.SetFrameDelta(TimeSpan.FromMilliseconds(20));
+        sut.Update();
+        deltaTimeService.SetFrameDelta(TimeSpan.FromMilliseconds(20));
+        sut.Update();
         sut.GuiStateWeightsChanged.Unsubscribe(Capture);
 
         // Assert: after focus loss, weight should be decreasing toward 0 (Out animation),

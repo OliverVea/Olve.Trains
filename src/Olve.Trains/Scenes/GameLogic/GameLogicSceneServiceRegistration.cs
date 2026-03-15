@@ -54,12 +54,14 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<ProjectToScreenHandlerService>(sceneId);
         services.AddSceneService<QueryBuildingHandlerService>(sceneId);
         services.AddSceneService<QueryJunctionHandlerService>(sceneId);
+        services.AddSceneService<QueryTimeHandlerService>(sceneId);
         services.AddSceneService<QueryTrainHandlerService>(sceneId);
         services.AddSceneService<RaycastHandlerService>(sceneId);
         services.AddSceneService<RemoveWagonHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetCameraHandlerService>(sceneId);
         services.AddSceneService<SetMouseHandlerService>(sceneId);
+        services.AddSceneService<SetSpeedHandlerService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);
 
         services.AddSceneService<TerrainService>(sceneId);

@@ -292,7 +292,7 @@ public class SceneManager(
         return _orderedCache;
     }
 
-    public Result Input(TimeSpan gameTime)
+    public Result Input()
     {
         foreach (var scene in GetOrderedScenes())
         {
@@ -301,7 +301,7 @@ public class SceneManager(
                 continue;
             }
 
-            var inputResult = scene.Input(gameTime);
+            var inputResult = scene.Input();
             if (inputResult.TryPickProblems(out var problems, out var passInput))
             {
                 return problems.Prepend("Got problem while updating scene input for scene '{0}'", scene.Id);
@@ -316,7 +316,7 @@ public class SceneManager(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan gameTime)
+    public Result Update()
     {
         foreach (var scene in GetOrderedScenes())
         {
@@ -327,7 +327,7 @@ public class SceneManager(
 
             Stopwatch? sw = EngineMetrics.IsEnabled ? Stopwatch.StartNew() : null;
 
-            var updateResult = scene.Update(gameTime);
+            var updateResult = scene.Update();
             if (updateResult.TryPickProblems(out var problems))
             {
                 return problems.Prepend("Got problem while updating scene for scene '{0}'", scene.Id);
@@ -344,7 +344,7 @@ public class SceneManager(
         return Result.Success();
     }
 
-    public Result Render(TimeSpan deltaTime)
+    public Result Render()
     {
         foreach (var scene in GetOrderedScenes())
         {
@@ -355,7 +355,7 @@ public class SceneManager(
 
             Stopwatch? sw = EngineMetrics.IsEnabled ? Stopwatch.StartNew() : null;
 
-            var renderResult = scene.Render(deltaTime);
+            var renderResult = scene.Render();
             if (renderResult.TryPickProblems(out var problems))
             {
                 return problems.Prepend("Got problem while rendering scene for scene '{0}'", scene.Id);

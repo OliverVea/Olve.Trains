@@ -61,6 +61,7 @@ public class GuiSliderServiceTests
             elementService, depthService, focusService, stateService);
 
         var sliderService = new GuiSliderService(
+            NullLogger<GuiSliderService>.Instance,
             elementService, mouseInputService, layoutService,
             mouseManager, layoutContextProvider);
 
@@ -151,10 +152,10 @@ public class GuiSliderServiceTests
             new HashSet<MouseButton>());
 
         // GuiMouseInputService.Input detects hit and fires OnPressedNode
-        h.MouseInputService.Input(TimeSpan.Zero);
+        h.MouseInputService.Input();
 
         // GuiSliderService.Input processes the drag
-        h.SliderService.Input(TimeSpan.Zero);
+        h.SliderService.Input();
     }
 
     private static void SimulateMouseMove(TestHarness h, float x, float y)
@@ -165,8 +166,8 @@ public class GuiSliderServiceTests
             new HashSet<MouseButton>(),
             new HashSet<MouseButton>());
 
-        h.MouseInputService.Input(TimeSpan.Zero);
-        h.SliderService.Input(TimeSpan.Zero);
+        h.MouseInputService.Input();
+        h.SliderService.Input();
     }
 
     private static void SimulateMouseRelease(TestHarness h, float x, float y)
@@ -176,8 +177,8 @@ public class GuiSliderServiceTests
             new HashSet<MouseButton>(),
             new HashSet<MouseButton> { MouseButton.Left });
 
-        h.MouseInputService.Input(TimeSpan.Zero);
-        h.SliderService.Input(TimeSpan.Zero);
+        h.MouseInputService.Input();
+        h.SliderService.Input();
     }
 
     [Test, NotInParallel]

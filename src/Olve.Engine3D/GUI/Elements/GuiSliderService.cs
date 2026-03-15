@@ -48,7 +48,7 @@ public class GuiSliderService(
         return Result.Success();
     }
 
-    public Result<Pass> Input(TimeSpan deltaTime)
+    public Result<Pass> Input()
     {
         UpdateDirtySliders();
 
@@ -132,7 +132,10 @@ public class GuiSliderService(
         _thumbNodeToSlider[thumbNodeId] = slider;
         _trackNodeToSlider[trackNodeId] = slider;
 
-        UpdateThumbPosition(slider, args.RegistrationId);
+        // Mark dirty so UpdateDirtySliders retries on subsequent frames
+        // if layout isn't ready yet (UpdateThumbPosition returns early when
+        // track width is zero).
+        slider.IsValueDirty = true;
     }
 
     private void OnElementRemoved(GuiElementArgs args)
@@ -186,14 +189,15 @@ public class GuiSliderService(
                 continue;
             }
 
-            slider.IsValueDirty = false;
-
             if (!guiElementService.TryGetElementIds(thumbNodeId, out _, out var registrationId))
             {
                 continue;
             }
 
-            UpdateThumbPosition(slider, registrationId);
+            if (UpdateThumbPosition(slider, registrationId))
+            {
+                slider.IsValueDirty = false;
+            }
         }
     }
 
@@ -218,11 +222,12 @@ public class GuiSliderService(
         OnValueChanged.Invoke(new SliderValueChangedMessage(slider.Id, oldValue, slider.Value));
     }
 
-    private void UpdateThumbPosition(Slider slider, Id<GuiElementRegistrations> registrationId)
+    /// <returns>true if the thumb position was successfully set, false if layout wasn't ready.</returns>
+    private bool UpdateThumbPosition(Slider slider, Id<GuiElementRegistrations> registrationId)
     {
         if (!guiElementService.TryGetGuiNodeId(slider.Thumb.Id, registrationId, out var thumbNodeId))
         {
-            return;
+            return false;
         }
 
         var range = slider.MaxValue - slider.MinValue;
@@ -231,12 +236,12 @@ public class GuiSliderService(
         // We need the track's computed width to calculate the margin.
         if (!guiElementService.TryGetGuiNodeId(slider.Track.Id, registrationId, out var trackNodeId))
         {
-            return;
+            return false;
         }
 
         if (!guiLayoutService.TryGetBoxPosition(trackNodeId, out var trackBox))
         {
-            return;
+            return false;
         }
 
         var trackWidthPx = trackBox.Size.X;
@@ -245,7 +250,7 @@ public class GuiSliderService(
 
         if (usableWidthPx.Value <= 0)
         {
-            return;
+            return false;
         }
 
         var marginLeftPx = new Px((int)(t * usableWidthPx.Value));
@@ -256,7 +261,7 @@ public class GuiSliderService(
         var thumbLayout = slider.Thumb.LayoutBox;
         if (thumbLayout is null)
         {
-            return;
+            return false;
         }
 
         var updatedLayout = thumbLayout.Value with
@@ -268,5 +273,6 @@ public class GuiSliderService(
         };
 
         guiLayoutService.SetNodeBox(thumbNodeId, updatedLayout);
+        return true;
     }
 }

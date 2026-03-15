@@ -29,8 +29,6 @@ public class DayTimeManager
 
         var deltaGameHours = timeSpan.TotalHours / DayLength.TotalHours * 24.0;
 
-        _totalGameHours += deltaGameHours;
-
         var newValue = CurrentTime.Value + (float)deltaGameHours;
         while (newValue >= 24f)
         {

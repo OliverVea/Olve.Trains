@@ -7,13 +7,14 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Input.InputSchemes;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Time;
 using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.GameLogic.ShaderExtensions;
 using Silk.NET.Windowing;
 
 namespace Olve.Trains.Scenes.GameLogic.Camera;
 
-public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent) : ISceneService
+public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent, DeltaTimeService deltaTimeService) : ISceneService
 {
     private IsometricOrthographicCameraController _cameraController = null!;
 
@@ -58,7 +59,7 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
 
     CameraMovementInput _movementInput;
 
-    public Result<Pass> Input(TimeSpan deltaTime)
+    public Result<Pass> Input()
     {
         _movementInput = new CameraMovementInput();
 
@@ -70,8 +71,9 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
         return Pass.Pass;
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
+        var deltaTime = deltaTimeService.RawDeltaTime;
         _cameraController.Move(_movementInput.Direction, deltaTime);
         _cameraController.Zoom(_movementInput.Zoom, deltaTime);
 

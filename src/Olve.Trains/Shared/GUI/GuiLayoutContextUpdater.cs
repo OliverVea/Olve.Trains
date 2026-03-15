@@ -31,7 +31,7 @@ public class GuiLayoutContextUpdater(ILogger<GuiLayoutContextUpdater> logger,
 
     private void OnScreenResized(Vector2D<int> size) => _screenResized = true;
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         if (!_screenResized) return Result.Success();
         _screenResized = false;

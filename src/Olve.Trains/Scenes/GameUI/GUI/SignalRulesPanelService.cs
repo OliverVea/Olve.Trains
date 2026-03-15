@@ -51,7 +51,7 @@ public class SignalRulesPanelService(
         return Result.Success();
     }
 
-    public Result<Pass> Input(TimeSpan deltaTime)
+    public Result<Pass> Input()
     {
         _clickedThisFrame = mouseManager.State.IsButtonPressed(MouseButton.Left);
         return Pass.Pass;
@@ -91,7 +91,7 @@ public class SignalRulesPanelService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         if (_clickedThisFrame)
         {

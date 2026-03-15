@@ -72,7 +72,7 @@ public class TrainCollisionService(
     public bool TryGetTrainId(Id<Collider> colliderId, out Id<Train> trainId) =>
         _reverseColliders.TryGetValue(colliderId, out trainId);
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
         {

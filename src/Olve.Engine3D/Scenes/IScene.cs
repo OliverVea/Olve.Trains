@@ -10,9 +10,9 @@ public interface IScene
     SceneState State { get; set; }
     Result Load();
     Result Unload();
-    Result Update(TimeSpan deltaTime);
-    Result<Pass> Input(TimeSpan deltaTime);
-    Result Render(TimeSpan deltaTime);
+    Result Update();
+    Result<Pass> Input();
+    Result Render();
     Id<IScene> Id { get; }
     SceneLayer Layer { get; }
     int LayerOrder { get; }

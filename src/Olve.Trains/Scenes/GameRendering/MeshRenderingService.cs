@@ -203,7 +203,7 @@ public class MeshRenderingService(
         return shadowMapService.RemoveInstance(instance.ShadowGroupId, instance.ShadowInstanceId);
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         cameraSceneService.ApplyCameraDirectionParameters(_shader);

@@ -29,7 +29,7 @@ public class GuiLayoutUpdateService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         return Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update, guiLayoutService.ComputeLayout);
     }

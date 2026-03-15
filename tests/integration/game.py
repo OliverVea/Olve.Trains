@@ -314,6 +314,19 @@ class Game:
     def set_time(self, time: str) -> CommandResult:
         return self.send(f"set-time time={time}")
 
+    def set_speed(self, scale: float) -> CommandResult:
+        return self.send(f"set-speed scale={scale}")
+
+    def query_time(self) -> dict:
+        result = self.send("query-time")
+        data = json.loads(result.output)
+        return {
+            "value": float(data["value"]),
+            "hours": int(data["hours"]),
+            "minutes": int(data["minutes"]),
+            "timeScale": float(data["timeScale"]),
+        }
+
     def activate_gui(self, id: str) -> CommandResult:
         return self.send(f"activate-gui id={id}")
 

@@ -43,14 +43,14 @@ public class DeletionToolService(
         return toolState;
     }
 
-    protected override Result<Pass> OnSelectedInput(TimeSpan deltaTime)
+    protected override Result<Pass> OnSelectedInput()
     {
         var activatedThisFrame = mouseManager.State.IsButtonPressed(MouseButton.Left);
         ToolState = ToolState with { ActivatedThisFrame = activatedThisFrame };
         return Pass.Pass;
     }
 
-    protected override Result OnSelectedUpdate(TimeSpan deltaTime)
+    protected override Result OnSelectedUpdate()
     {
         if (!ToolState.ActivatedThisFrame)
         {

@@ -117,7 +117,7 @@ public class TerrainRenderingService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         // Update shader uniforms so RenderAll() picks them up via MakeParameters()
         sceneLightService.ApplyShaderParameters(_terrainShader);

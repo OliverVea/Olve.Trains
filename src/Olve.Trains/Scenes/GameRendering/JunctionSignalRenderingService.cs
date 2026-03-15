@@ -106,7 +106,7 @@ public class JunctionSignalRenderingService(
         return meshRenderingService.RemoveInstance(instanceHandle);
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         _junctionSignalRemovedQueue.Update();
         _junctionSignalAddedQueue.Update();

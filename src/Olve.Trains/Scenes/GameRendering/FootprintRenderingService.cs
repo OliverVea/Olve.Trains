@@ -157,7 +157,7 @@ public class FootprintRenderingService(
         return renderingInstanceManager.Remove(handle.GroupId, handle.InstanceId);
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         cameraSceneService.ApplyCameraPositionParameters(_shader);
         return Result.Success();

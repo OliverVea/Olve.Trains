@@ -114,7 +114,7 @@ public class ShadowMapService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         var lightView = ComputeLightView();
         var lightProjection = ComputeLightProjection(lightView);

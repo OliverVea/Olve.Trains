@@ -57,11 +57,11 @@ public sealed class Scene(
         return Result.Success();
     }
 
-    public Result<Pass> Input(TimeSpan deltaTime)
+    public Result<Pass> Input()
     {
         foreach (var sceneService in _sceneServices)
         {
-            var result = sceneService.Input(deltaTime);
+            var result = sceneService.Input();
             if (result.TryPickProblems(out var problems, out var pass))
             {
                 return problems;
@@ -76,7 +76,7 @@ public sealed class Scene(
         return Result<Pass>.Success(Pass.Pass);
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         for (var i = 0; i < _sceneServices.Length; i++)
         {
@@ -85,7 +85,7 @@ public sealed class Scene(
                 break;
             }
 
-            _serviceResults[i] = _sceneServices[i].Update(deltaTime);
+            _serviceResults[i] = _sceneServices[i].Update();
         }
 
         if (_serviceResults.TryPickProblems(out var problems))
@@ -96,7 +96,7 @@ public sealed class Scene(
         return Result.Success();
     }
 
-    public Result Render(TimeSpan deltaTime)
+    public Result Render()
     {
         for (var i = 0; i < _sceneServices.Length; i++)
         {
@@ -105,7 +105,7 @@ public sealed class Scene(
                 break;
             }
 
-            _serviceResults[i] = _sceneServices[i].Render(deltaTime);
+            _serviceResults[i] = _sceneServices[i].Render();
         }
 
         if (_serviceResults.TryPickProblems(out var problems))

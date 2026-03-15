@@ -40,6 +40,7 @@ public static class GameServiceRegistration
         services.AddSingleton<SceneManager>();
         services.AddSingleton<KeyboardManager>();
         services.AddSingleton<MouseManager>();
+        services.AddSingleton<DeltaTimeService>();
         services.AddSingleton<DayTimeManager>();
         services.AddSingleton<DaylightManager>();
         services.AddSingleton<ScreenResizedEvent>();

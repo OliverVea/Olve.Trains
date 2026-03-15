@@ -11,7 +11,7 @@ public class CommandProcessingService(
 {
     public int Priority => -1000;
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         while (commandQueue.TryDequeue(out var pendingCommand))
         {

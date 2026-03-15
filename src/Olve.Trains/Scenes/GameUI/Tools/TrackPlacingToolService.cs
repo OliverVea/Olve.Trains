@@ -75,7 +75,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
         return toolState;
     }
 
-    protected override Result<Pass> OnSelectedInput(TimeSpan deltaTime)
+    protected override Result<Pass> OnSelectedInput()
     {
         var activatedThisFrame =  mouseManager.State.IsButtonPressed(MouseButton.Left);
         ToolState = ToolState with { ActivatedThisFrame = activatedThisFrame };
@@ -92,7 +92,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
         return Pass.Pass;
     }
 
-    protected override Result OnSelectedUpdate(TimeSpan deltaTime)
+    protected override Result OnSelectedUpdate()
     {
 
         if (mouseRaycastService.TerrainIntersectionTileCenter is not { } terrainIntersectionTileCenter)

@@ -72,7 +72,7 @@ public class WagonRenderingService(
         return meshRenderingService.RemoveInstance(instanceHandle);
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
         {

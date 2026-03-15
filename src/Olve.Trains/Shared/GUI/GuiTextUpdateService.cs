@@ -51,7 +51,7 @@ public class GuiTextUpdateService(
         return Result.Success();
     }
 
-    public Result Update(TimeSpan deltaTime)
+    public Result Update()
     {
         if (Result.Chain(_elementAddedQueue.Update, _elementRemovedQueue.Update)
             .TryPickProblems(out var problems))
