@@ -7,7 +7,7 @@ public class DayTimeSteppingService(DayTimeManager dayTimeManager) : ISceneServi
 {
     private static readonly DayTime DayStart = new(5, 30);
     private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(6);
-    
+
     public Result Load()
     {
         dayTimeManager.CurrentTime = DayStart;

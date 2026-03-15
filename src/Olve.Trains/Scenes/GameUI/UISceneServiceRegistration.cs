@@ -34,6 +34,7 @@ public static class UISceneServiceRegistration
         services.AddSceneService<SelectToolHandlerService>(sceneId);
         services.AddSceneService<ToolBarService>(sceneId);
         services.AddSceneService<InfoBarService>(sceneId);
+        services.AddSceneService<DayTimeSliderService>(sceneId);
         services.AddSceneService<BurgerMenuService>(sceneId);
         services.AddSceneService<SignalRulesPanelService>(sceneId);
         services.AddSceneService<StationInfoPanelService>(sceneId);

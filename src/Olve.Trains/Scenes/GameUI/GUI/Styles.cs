@@ -384,6 +384,26 @@ public static class Styles
         }
     };
 
+    public static readonly GuiElementStyling<Box> SliderThumbStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(SliderThumbStyle)),
+        StateTransitions = ButtonTransitions,
+        OnStateChanged = (box, weights) =>
+        {
+            var pressed = weights[GuiNodeState.Pressed];
+            var focused = weights[GuiNodeState.Focused];
+
+            box.BackgroundColor = Lerp(
+                new RGBA(0.8f, 0.8f, 0.8f, 1f),
+                new RGBA(1f, 1f, 1f, 1f),
+                focused);
+            box.BackgroundColor = Lerp(
+                box.BackgroundColor.Value,
+                new RGBA(0.6f, 0.6f, 0.6f, 1f),
+                pressed);
+        }
+    };
+
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
     private static RGBA Lerp(RGBA a, RGBA b, float t)

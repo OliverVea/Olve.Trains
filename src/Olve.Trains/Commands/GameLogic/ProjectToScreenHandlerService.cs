@@ -44,6 +44,11 @@ public class ProjectToScreenHandlerService(
         var halfWidth = camera.Projection.OrthographicSize * camera.Projection.AspectRatio;
         var halfHeight = camera.Projection.OrthographicSize;
 
+        if (halfWidth is 0 or float.NaN || halfHeight is 0 or float.NaN)
+        {
+            return new ResultProblem("Camera projection has invalid dimensions (halfWidth={0}, halfHeight={1})", halfWidth, halfHeight);
+        }
+
         var offset = worldPos - camera.View.Position;
         var screenX = Vector3D.Dot(offset, right) / halfWidth;
         var screenY = Vector3D.Dot(offset, up) / halfHeight;

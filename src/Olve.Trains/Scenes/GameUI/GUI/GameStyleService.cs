@@ -22,7 +22,8 @@ public class GameStyleService(
         Styles.StationPanelHeaderStyle, Styles.StationPanelSubHeaderStyle,
         Styles.StationPanelInfoTextStyle, Styles.StationPanelContainerStyle,
         Styles.InventoryRowStyle, Styles.InventoryRowDirectionStyle,
-        Styles.InventoryRowTextStyle, Styles.InventoryRowAmountStyle
+        Styles.InventoryRowTextStyle, Styles.InventoryRowAmountStyle,
+        Styles.SliderThumbStyle
     ];
 
     public Result Load()

@@ -23,6 +23,11 @@ public class ClickHandlerService(
             return problems;
         }
 
+        if (float.IsNaN(pos.X) || float.IsNaN(pos.Y))
+        {
+            return new ResultProblem("Click position contains NaN ({0}, {1})", pos.X, pos.Y);
+        }
+
         mouseManager.NormalizedPositionOverride = pos;
         mouseManager.SimulateClick(MouseButton.Left);
 

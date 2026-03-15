@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Olve.Trains (Full)" type="DotNetProject" factoryName=".NET Project">
-    <option name="EXE_PATH" value="$PROJECT_DIR$/src/Olve.Trains/bin/Debug/net10.0/On Track To Grow" />
+    <option name="EXE_PATH" value="$PROJECT_DIR$/src/Olve.Trains/bin/Debug/net10.0/On Track To Grow.exe" />
     <option name="PROGRAM_PARAMETERS" value="" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/Olve.Trains/bin/Debug/net10.0" />
     <option name="PASS_PARENT_ENVS" value="1" />

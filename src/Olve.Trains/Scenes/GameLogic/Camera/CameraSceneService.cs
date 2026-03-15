@@ -31,11 +31,20 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
 
     public Result Load()
     {
+        var windowSize = new Vector2D<float>(windowProvider.Value.Size.X, windowProvider.Value.Size.Y);
+
         _cameraController = IsometricOrthographicCameraController.Create(
-            new Vector2D<float>(windowProvider.Value.Size.X, windowProvider.Value.Size.Y),
+            windowSize,
             new Vector3D<float>(0, 0, 0),
             new Vector3D<float>(0.701f, -1, 0.701f),
             40f);
+
+        // Guard against NaN AspectRatio when window size is (0, 0) during scene reload
+        if (float.IsNaN(_cameraController.Camera.Projection.AspectRatio)
+            || _cameraController.Camera.Projection.AspectRatio <= 0)
+        {
+            _cameraController.Camera.Projection.AspectRatio = 1f;
+        }
 
         screenResizedEvent.OnWindowResize.Subscribe(OnWindowResize);
         return Result.Success();

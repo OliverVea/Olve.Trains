@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Root" Vertical="true" Align="Align.Stretch" Justify="Justify.Center" Width="200">
+    <Box Vertical="true" Align="Align.Stretch" BackgroundColor="new Olve.Engine3D.RGBA(0.15f, 0.15f, 0.15f, 0.85f)" BorderRadius="6" Padding="8" Gap="4" MarginRight="4">
+        <Text Content='"Time of Day:"' Style="InfoTextMedium" />
+        <Slider Id="TimeSlider" MinValue="0" MaxValue="24" Value="5.5f" Step="0.25f" Weight="1" Height="20" />
+    </Box>
+</Box>
