@@ -23,9 +23,9 @@ public static partial class Layouts
             Id = Id.FromName<GuiElement>("{{ node.ElementId }}"),{{ if node.StyleKey }}
             StyleKey = new StyleKey("{{ node.StyleKey }}"),{{ end }}{{ for property in node.Properties }}
             {{ property.Name }} = {{ property.Value}},{{end}}
-            Children = [{{ for child in node.Children }}
+            {{ if node.Children.size > 0 }}Children = [{{ for child in node.Children }}
                 {{child}},{{end}}
-            ]
+            ]{{end}}
         };
 {{ end }}
         return new {{ ClassName }}({{FixedIds}}[{{ElementList}}]);

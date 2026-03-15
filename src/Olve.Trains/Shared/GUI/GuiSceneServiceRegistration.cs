@@ -77,6 +77,7 @@ public static class GuiSceneServiceRegistration
                 sas.ApplyStateWeights(msg), after: AfterAnimation);
 
         AddGuiSceneService<GuiAnimationService>(services, sceneId);
+        AddGuiSceneService<GuiSliderService>(services, sceneId);
         AddGuiSceneService<GuiMouseInputService>(services, sceneId);
 
         // Non-scene singletons needed by GUI services
