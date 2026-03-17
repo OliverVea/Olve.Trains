@@ -14,15 +14,10 @@
 
 ### Core infrastructure (build first — other features depend on these)
 
-- [ ] GUI clipping epic (Technical):
-  - Description: Add clipping rectangle support to the GUI rendering system. Elements can define a clip mask so children are only visible within the parent's bounds. Enables slide-in animations (e.g. a progress bar appearing from behind another element, rising into view) and scroll containers. Needed by depot UI and info panels.
-  - [ ] Add clip rectangle property to GUI elements (inherited by children, intersected hierarchically)
-  - [ ] Implement scissor test or stencil-based clipping in the 2D rendering pass
-  - [ ] Add slide-in animation support using clip masks (e.g. inventory bar rising into view)
 - [ ] GUI widgets epic (Technical):
   - Description: Add standard interactive widget types to the engine-level GUI system (Olve.Engine3D). These are needed for both in-game UI (options menus, depot builder, city info panels) and debug tooling. Each widget is a GuiElement subclass composed from existing primitives (Box), with a corresponding engine service for interaction logic.
-  - [ ] Add Slider widget (track + thumb, value from min/max, drag-to-set via mouse polling)
-  - [ ] Add Checkbox widget (box + checkmark, toggle on click)
+  - [x] Add Slider widget (track + thumb, value from min/max, drag-to-set via mouse polling)
+  - [x] Add Checkbox widget (box + checkmark, toggle on click)
   - [ ] Add Radio Button widget (group of options, single selection)
   - [ ] Add Dropdown widget (collapsed box that expands to show options, single selection)
 - [ ] Train depot epic (Feature):
@@ -118,6 +113,11 @@
   - Description: Current toolbar icons are placeholder quality. Generate icons from the underlying 3D models (render model to texture) for a consistent, polished look.
   - [ ] Investigate rendering models to texture for icon generation
   - [ ] Generate toolbar icons from 3D models
+- [ ] GUI clipping epic (Technical):
+  - Description: Add clipping rectangle support to the GUI rendering system. Elements can define a clip mask so children are only visible within the parent's bounds. Enables slide-in animations (e.g. a progress bar appearing from behind another element, rising into view) and scroll containers. Needed by depot UI and info panels.
+  - [ ] Add clip rectangle property to GUI elements (inherited by children, intersected hierarchically)
+  - [ ] Implement scissor test or stencil-based clipping in the 2D rendering pass
+  - [ ] Add slide-in animation support using clip masks (e.g. inventory bar rising into view)
 - [ ] Main menu improvements (Visual):
   - [x] Add FPS counter to the info bar (right subsection, left of main menu button)
   - [x] Make main menu into burger button, trigger menu in middle of game with main menu button as only option for now

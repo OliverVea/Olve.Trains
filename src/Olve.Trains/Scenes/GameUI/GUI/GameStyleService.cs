@@ -23,7 +23,8 @@ public class GameStyleService(
         Styles.StationPanelInfoTextStyle, Styles.StationPanelContainerStyle,
         Styles.InventoryRowStyle, Styles.InventoryRowDirectionStyle,
         Styles.InventoryRowTextStyle, Styles.InventoryRowAmountStyle,
-        Styles.SliderThumbStyle
+        Styles.SliderThumbStyle,
+        Styles.CheckboxBackgroundStyle
     ];
 
     public Result Load()

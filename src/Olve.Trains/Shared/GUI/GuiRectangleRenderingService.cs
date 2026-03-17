@@ -26,6 +26,7 @@ public class GuiRectangleRenderingService(
     GuiElementService guiElementService,
     GuiLayoutService guiLayoutService,
     GuiDepthService guiDepthService,
+    GuiNodeStateService guiNodeStateService,
     SharedRenderingService sharedRenderingService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([guiLayoutService]);
@@ -221,6 +222,12 @@ public class GuiRectangleRenderingService(
             element is not IRenderableAsRectangle renderableAsRectangle)
         {
             return false;
+        }
+
+        if (guiNodeStateService.TryGetState(nodeId, out var state) && !state.HasFlag(GuiNodeState.Show))
+        {
+            instance = default;
+            return true;
         }
 
         var rectData = renderableAsRectangle.TexturedRectangleData;

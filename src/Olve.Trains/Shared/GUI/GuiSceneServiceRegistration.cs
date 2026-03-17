@@ -78,6 +78,7 @@ public static class GuiSceneServiceRegistration
 
         AddGuiSceneService<GuiAnimationService>(services, sceneId);
         AddGuiSceneService<GuiSliderService>(services, sceneId);
+        AddGuiSceneService<GuiCheckboxService>(services, sceneId);
         AddGuiSceneService<GuiMouseInputService>(services, sceneId);
 
         // Non-scene singletons needed by GUI services
