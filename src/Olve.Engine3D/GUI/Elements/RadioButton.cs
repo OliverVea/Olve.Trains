@@ -1,25 +1,28 @@
 using Olve.Engine3D.GUI.Layout;
+using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.GUI.Elements;
 
-public class Checkbox : GuiElement
+public class RadioButton : GuiElement
 {
     public Box Background { get; }
     public Box Indicator { get; }
 
-    private bool _isChecked;
-    public bool IsChecked
+    public required Id<RadioButtonGroup> Group { get; init; }
+
+    private bool _isSelected;
+    public bool IsSelected
     {
-        get => _isChecked;
+        get => _isSelected;
         set
         {
-            if (_isChecked == value) return;
-            _isChecked = value;
-            IsCheckedDirty = true;
+            if (_isSelected == value) return;
+            _isSelected = value;
+            IsSelectedDirty = true;
         }
     }
 
-    internal bool IsCheckedDirty { get; set; }
+    internal bool IsSelectedDirty { get; set; }
 
     public int Size { get; set; } = 20;
     public float Weight { get; set; }
@@ -32,37 +35,36 @@ public class Checkbox : GuiElement
     public float? MarginHorizontal { get; set; }
 
     public RGBA BackgroundColor { get; init; } = new(0.3f, 0.3f, 0.3f, 1f);
-    public float BackgroundBorderRadius { get; init; } = 4f;
 
     public int IndicatorSize { get; init; } = 12;
     public RGBA IndicatorColor { get; init; } = new(0.8f, 0.8f, 0.8f, 1f);
 
-    public Checkbox()
+    public RadioButton()
     {
         Interactive = false;
 
         Indicator = new Box
         {
             Id = Olve.Utilities.Ids.Id.New<GuiElement>(),
-            Name = "Checkbox/Indicator",
+            Name = "RadioButton/Indicator",
             Interactive = false,
             InheritParentState = false,
             Width = IndicatorSize,
             Height = IndicatorSize,
             BackgroundColor = IndicatorColor,
-            BorderRadius = 2f,
+            BorderRadius = IndicatorSize / 2f,
         };
 
         Background = new Box
         {
             Id = Olve.Utilities.Ids.Id.New<GuiElement>(),
-            Name = "Checkbox/Background",
+            Name = "RadioButton/Background",
             Interactive = true,
             InheritParentState = false,
             Width = Size,
             Height = Size,
             BackgroundColor = BackgroundColor,
-            BorderRadius = BackgroundBorderRadius,
+            BorderRadius = Size / 2f,
             Justify = Justify.Center,
             Align = Align.Center,
             Children = [Indicator],

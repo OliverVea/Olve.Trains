@@ -27,6 +27,7 @@ public static class GuiServiceRegistration
         services.TryAddScoped<GuiMouseInputService>();
         services.TryAddScoped<GuiSliderService>();
         services.TryAddScoped<GuiCheckboxService>();
+        services.TryAddScoped<GuiRadioButtonService>();
         return services;
     }
 }

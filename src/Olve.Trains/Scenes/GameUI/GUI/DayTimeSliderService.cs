@@ -19,8 +19,6 @@ public class DayTimeSliderService(
     GuiAnchorService guiAnchorService,
     KeyboardManager keyboardManager) : ISceneService
 {
-    // Index:  0      1      2     3    4  5  6  7   8
-    // Scale: (removed 0) 1/8  1/4   1/2    1  2  4  8  16
     private static readonly float[] ScaleSteps = [0.125f, 0.25f, 0.5f, 1f, 2f, 4f, 8f, 16f];
     private static readonly string[] ScaleLabels = ["Speed: 1/8x", "Speed: 1/4x", "Speed: 1/2x", "Speed: 1x", "Speed: 2x", "Speed: 4x", "Speed: 8x", "Speed: 16x"];
 
@@ -64,7 +62,7 @@ public class DayTimeSliderService(
         if (keyboardManager.State.IsKeyPressed(Key.P))
         {
             Panel.TimePassingCheckbox.IsChecked = !Panel.TimePassingCheckbox.IsChecked;
-            ApplyCheckboxState();
+            ApplyTimeState();
         }
 
         return Pass.Pass;
@@ -85,40 +83,30 @@ public class DayTimeSliderService(
         }
         else if (message.SliderId == Panel.TimeScaleSlider.Id)
         {
-            var index = (int)MathF.Round(message.NewValue) - 1;
-            index = int.Clamp(index, 0, ScaleSteps.Length - 1);
-
-            ApplyTimeScale(index);
+            ApplyTimeState();
         }
     }
 
     private void OnCheckboxValueChanged(GuiCheckboxService.CheckboxValueChangedMessage message)
     {
-        if (message.CheckboxId != Panel.TimePassingCheckbox.Id)
+        if (message.CheckboxId == Panel.TimePassingCheckbox.Id)
         {
-            return;
+            ApplyTimeState();
         }
-
-        ApplyCheckboxState();
     }
 
-    private void ApplyCheckboxState()
+    private void ApplyTimeState()
     {
-        if (Panel.TimePassingCheckbox.IsChecked)
-        {
-            var index = (int)MathF.Round(Panel.TimeScaleSlider.Value) - 1;
-            index = int.Clamp(index, 0, ScaleSteps.Length - 1);
-            ApplyTimeScale(index);
-        }
-        else
+        if (!Panel.TimePassingCheckbox.IsChecked)
         {
             deltaTimeService.TimeScale = 0f;
             Panel.TimeScaleLabel.Content = "Paused";
+            return;
         }
-    }
 
-    private void ApplyTimeScale(int index)
-    {
+        var index = (int)MathF.Round(Panel.TimeScaleSlider.Value) - 1;
+        index = int.Clamp(index, 0, ScaleSteps.Length - 1);
+
         deltaTimeService.TimeScale = ScaleSteps[index];
         Panel.TimeScaleLabel.Content = ScaleLabels[index];
     }

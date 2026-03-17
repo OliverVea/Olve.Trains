@@ -18,7 +18,7 @@
   - Description: Add standard interactive widget types to the engine-level GUI system (Olve.Engine3D). These are needed for both in-game UI (options menus, depot builder, city info panels) and debug tooling. Each widget is a GuiElement subclass composed from existing primitives (Box), with a corresponding engine service for interaction logic.
   - [x] Add Slider widget (track + thumb, value from min/max, drag-to-set via mouse polling)
   - [x] Add Checkbox widget (box + checkmark, toggle on click)
-  - [ ] Add Radio Button widget (group of options, single selection)
+  - [x] Add Radio Button widget (group of options, single selection)
   - [ ] Add Dropdown widget (collapsed box that expands to show options, single selection)
 - [ ] Train depot epic (Feature):
   - Description: Train depots are buildings where players build and customize trains. Place them like a station, click it to open a train builder UI. Players choose a locomotive, add/remove/reorder wagons, and deploy the train onto the depot's track. Replaces the current auto-spawn with 2 goods wagons.
