@@ -14,7 +14,7 @@
 
 ### Core infrastructure (build first — other features depend on these)
 
-- [ ] GUI widgets epic (Technical):
+- [x] GUI widgets epic (Technical):
   - Description: Add standard interactive widget types to the engine-level GUI system (Olve.Engine3D). These are needed for both in-game UI (options menus, depot builder, city info panels) and debug tooling. Each widget is a GuiElement subclass composed from existing primitives (Box), with a corresponding engine service for interaction logic.
   - [x] Add Slider widget (track + thumb, value from min/max, drag-to-set via mouse polling)
   - [x] Add Checkbox widget (box + checkmark, toggle on click)
