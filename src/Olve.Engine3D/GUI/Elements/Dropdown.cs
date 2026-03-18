@@ -20,30 +20,17 @@ public class Dropdown : GuiElement
         }
     }
 
-    private int _selectedIndex = -1;
     public int SelectedIndex
     {
-        get => _selectedIndex;
+        get;
         set
         {
             var clamped = value < 0 || Options.Length == 0 ? -1 : int.Clamp(value, 0, Options.Length - 1);
-            if (_selectedIndex == clamped) return;
-            _selectedIndex = clamped;
+            if (field == clamped) return;
+            field = clamped;
             IsSelectedIndexDirty = true;
         }
-    }
-
-    private bool _isExpanded;
-    public bool IsExpanded
-    {
-        get => _isExpanded;
-        set
-        {
-            if (_isExpanded == value) return;
-            _isExpanded = value;
-            IsExpandedDirty = true;
-        }
-    }
+    } = -1;
 
     internal bool IsSelectedIndexDirty { get; set; }
     internal bool IsExpandedDirty { get; set; }

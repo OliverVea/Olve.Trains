@@ -159,9 +159,15 @@ public class GuiLayoutService(
         var rootNodeIds = guiNodeService.GetRootNodes();
         var results = new List<Result>();
 
+        // Partition into screen anchors (no reference) and relative anchors (has reference).
+        // Screen anchors are computed first so relative anchors can read their reference node's layout.
+        // TODO: This assumes relative anchors only reference nodes from screen-anchored trees.
+        //       If relative-to-relative chaining is needed, a topological sort would be required.
+        var screenAnchored = new List<(Id<GuiNode> NodeId, GuiAnchor Anchor)>();
+        var relativeAnchored = new List<(Id<GuiNode> NodeId, GuiAnchor Anchor)>();
+
         foreach (var rootNodeId in rootNodeIds)
         {
-            // Get the anchor for this root node
             if (!guiNodeService.TryGetParent(rootNodeId, out var parentUnion)
                 || !parentUnion.TryGetT1(out var anchorId, out _))
             {
@@ -175,7 +181,24 @@ public class GuiLayoutService(
                 continue;
             }
 
-            results.Add(ComputeLayoutFor(rootNodeId, anchor));
+            if (anchor.ReferenceNode.HasValue)
+            {
+                relativeAnchored.Add((rootNodeId, anchor));
+            }
+            else
+            {
+                screenAnchored.Add((rootNodeId, anchor));
+            }
+        }
+
+        foreach (var (nodeId, anchor) in screenAnchored)
+        {
+            results.Add(ComputeLayoutFor(nodeId, anchor));
+        }
+
+        foreach (var (nodeId, anchor) in relativeAnchored)
+        {
+            results.Add(ComputeLayoutFor(nodeId, anchor));
         }
 
         if (results.TryPickProblems(out var problems))
@@ -197,7 +220,24 @@ public class GuiLayoutService(
 
         // Calculate ghost box bounds based on anchor position and growth direction
         var screenSize = LayoutContext.DesignSize;
-        var ghostBox = CalculateGhostBox(anchor, screenSize);
+
+        BoxBounds ghostBox;
+        if (anchor.ReferenceNode is { } referenceNodeId)
+        {
+            if (!TryCalculateRelativeGhostBox(anchor, referenceNodeId, screenSize, out var relativeGhostBox))
+            {
+                logger.LogWarning(
+                    "Reference node '{ReferenceNode}' for anchor '{AnchorId}' has no computed layout — skipping",
+                    referenceNodeId, anchor.Id);
+                return Result.Success();
+            }
+
+            ghostBox = relativeGhostBox;
+        }
+        else
+        {
+            ghostBox = CalculateGhostBox(anchor, screenSize);
+        }
 
         // Temporarily set ghost box size constraints on root
         ref var root = ref CollectionsMarshal.AsSpan(_layoutData)[nodeIndex];
@@ -707,6 +747,54 @@ public class GuiLayoutService(
         return new BoxBounds(ghostPosition, ghostSize);
     }
 
+    private bool TryCalculateRelativeGhostBox(
+        GuiAnchor anchor,
+        Id<GuiNode> referenceNodeId,
+        Vector2D<Dp> screenSize,
+        out BoxBounds ghostBox)
+    {
+        ghostBox = default;
+
+        if (!_nodeIndexById.TryGetValue(referenceNodeId, out var refIndex))
+        {
+            return false;
+        }
+
+        var refLayout = _layoutData[refIndex];
+        if (refLayout.Position is not { } refPos
+            || refLayout.Width is not { } refWidth
+            || refLayout.Height is not { } refHeight)
+        {
+            return false;
+        }
+
+        // Resolve anchor point from the reference element's box
+        var anchorNormalized = anchor.Position.ToNormalized();
+        var anchorPosDp = new Vector2D<Dp>(
+            refPos.X + anchorNormalized.X * refWidth,
+            refPos.Y + anchorNormalized.Y * refHeight
+        );
+
+        // Ghost box extends from anchor point to screen edge (same logic as screen anchors)
+        var (xStart, width) = anchor.Growth.Horizontal switch
+        {
+            HorizontalGrowth.Left => (Dp.Zero, anchorPosDp.X),
+            HorizontalGrowth.Right => (anchorPosDp.X, screenSize.X - anchorPosDp.X),
+            HorizontalGrowth.Both => (Dp.Zero, screenSize.X),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var (yStart, height) = anchor.Growth.Vertical switch
+        {
+            VerticalGrowth.Up => (Dp.Zero, anchorPosDp.Y),
+            VerticalGrowth.Down => (anchorPosDp.Y, screenSize.Y - anchorPosDp.Y),
+            VerticalGrowth.Both => (Dp.Zero, screenSize.Y),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        ghostBox = new BoxBounds(new Vector2D<Dp>(xStart, yStart), new Vector2D<Dp>(width, height));
+        return true;
+    }
 
     public void SetDirty()
     {

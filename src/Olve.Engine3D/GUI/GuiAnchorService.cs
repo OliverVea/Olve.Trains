@@ -19,6 +19,21 @@ public class GuiAnchorService(ILogger<GuiAnchorService> logger)
         return anchorId;
     }
 
+    public Result<Id<GuiAnchor>> RegisterAnchor(
+        Id<GuiNode> referenceNode,
+        AnchorPosition position,
+        GrowthDirection growth,
+        int depth = 0)
+    {
+        var anchorId = Id.New<GuiAnchor>();
+        var anchor = new GuiAnchor(anchorId, position, growth, depth, referenceNode);
+        _anchors[anchorId] = anchor;
+        logger.LogDebug(
+            "Registered relative anchor '{AnchorId}' referencing node '{ReferenceNode}' at position ({HPos}, {VPos}) with growth ({HGrowth}, {VGrowth}). Total anchors: {Count}",
+            anchorId, referenceNode, position.Horizontal, position.Vertical, growth.Horizontal, growth.Vertical, _anchors.Count);
+        return anchorId;
+    }
+
     public bool TryGetAnchor(Id<GuiAnchor> anchorId, out GuiAnchor anchor)
         => _anchors.TryGetValue(anchorId, out anchor);
 
