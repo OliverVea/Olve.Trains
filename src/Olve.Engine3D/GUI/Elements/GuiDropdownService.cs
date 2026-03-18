@@ -11,7 +11,8 @@ public class GuiDropdownService(
     ILogger<GuiDropdownService> logger,
     GuiElementService guiElementService,
     GuiActivationService guiActivationService,
-    GuiNodeStateService guiNodeStateService) : ISceneService
+    GuiNodeStateService guiNodeStateService,
+    GuiMouseInputService guiMouseInputService) : ISceneService
 {
     public int Priority => 0;
 
@@ -26,12 +27,14 @@ public class GuiDropdownService(
 
     private readonly Dictionary<Id<GuiNode>, Dropdown> _buttonNodeToDropdown = new();
     private readonly Dictionary<Id<GuiNode>, (Dropdown Dropdown, int OptionIndex)> _optionNodeToDropdown = new();
+    private readonly HashSet<Dropdown> _expandedDropdowns = new();
 
     public Result Load()
     {
         guiElementService.OnAdded.Subscribe(OnElementAdded);
         guiElementService.OnRemoved.Subscribe(OnElementRemoved);
         guiActivationService.GuiElementActivated.Subscribe(OnElementActivated);
+        guiMouseInputService.OnPressedNode.Subscribe(OnNodePressed);
         return Result.Success();
     }
 
@@ -40,6 +43,7 @@ public class GuiDropdownService(
         guiElementService.OnAdded.Unsubscribe(OnElementAdded);
         guiElementService.OnRemoved.Unsubscribe(OnElementRemoved);
         guiActivationService.GuiElementActivated.Unsubscribe(OnElementActivated);
+        guiMouseInputService.OnPressedNode.Unsubscribe(OnNodePressed);
         return Result.Success();
     }
 
@@ -69,12 +73,16 @@ public class GuiDropdownService(
 
         _buttonNodeToDropdown[buttonNodeId] = dropdown;
 
-        // Register option box node mappings
+        // Enable button
+        guiNodeStateService.UpdateState(buttonNodeId, state => state | GuiNodeState.Show | GuiNodeState.Enabled);
+
+        // Register option box node mappings and enable them
         for (var i = 0; i < dropdown.OptionBoxes.Count; i++)
         {
             if (guiElementService.TryGetGuiNodeId(dropdown.OptionBoxes[i].Id, args.RegistrationId, out var optionNodeId))
             {
                 _optionNodeToDropdown[optionNodeId] = (dropdown, i);
+                guiNodeStateService.UpdateState(optionNodeId, state => state | GuiNodeState.Show | GuiNodeState.Enabled);
             }
         }
 
@@ -100,12 +108,39 @@ public class GuiDropdownService(
         }
     }
 
+    private void OnNodePressed(Id<GuiNode> nodeId)
+    {
+        // Check if click is outside all expanded dropdowns
+        var clickedDropdown = _buttonNodeToDropdown.GetValueOrDefault(nodeId);
+        var clickedOption = _optionNodeToDropdown.ContainsKey(nodeId);
+
+        if (clickedDropdown == null && !clickedOption)
+        {
+            // Clicked outside - collapse all expanded dropdowns
+            foreach (var expanded in _expandedDropdowns.ToList())
+            {
+                expanded.IsExpanded = false;
+                _expandedDropdowns.Remove(expanded);
+            }
+        }
+    }
+
     private void OnElementActivated(GuiActivationService.GuiElementActivatedMessage message)
     {
         // Check if button was clicked
         if (_buttonNodeToDropdown.TryGetValue(message.NodeId, out var dropdown))
         {
             dropdown.IsExpanded = !dropdown.IsExpanded;
+
+            if (dropdown.IsExpanded)
+            {
+                _expandedDropdowns.Add(dropdown);
+            }
+            else
+            {
+                _expandedDropdowns.Remove(dropdown);
+            }
+
             logger.LogDebug("Dropdown {DropdownId} expanded={IsExpanded}", dropdown.Id, dropdown.IsExpanded);
             return;
         }
@@ -124,6 +159,7 @@ public class GuiDropdownService(
 
         clickedDropdown.SelectedIndex = optionIndex;
         clickedDropdown.IsExpanded = false;
+        _expandedDropdowns.Remove(clickedDropdown);
 
         var newText = optionIndex >= 0 && optionIndex < clickedDropdown.Options.Length
             ? clickedDropdown.Options[optionIndex]
