@@ -1,23 +1,18 @@
 using Olve.Engine3D.GUI.Layout;
+using Olve.Engine3D.GUI.Styling;
 
 namespace Olve.Engine3D.GUI.Elements;
 
 public class Dropdown : GuiElement
 {
-    public Box Button { get; }
-    public Text ButtonLabel { get; }
-    public Box OptionsContainer { get; }
-    public List<Box> OptionBoxes { get; } = [];
+    public Box Background { get; }
+    public Text Label { get; }
 
     private string[] _options = [];
     public required string[] Options
     {
         get => _options;
-        init
-        {
-            _options = value;
-            BuildOptionElements();
-        }
+        init => _options = value;
     }
 
     public int SelectedIndex
@@ -33,10 +28,9 @@ public class Dropdown : GuiElement
     } = -1;
 
     internal bool IsSelectedIndexDirty { get; set; }
-    internal bool IsExpandedDirty { get; set; }
 
     public int? Width { get; set; }
-    public int? Height { get; set; }
+    public int? Height { get; set; } = 30;
     public float Weight { get; set; }
     public float Margin { get; set; }
     public float? MarginBottom { get; set; }
@@ -46,18 +40,12 @@ public class Dropdown : GuiElement
     public float? MarginVertical { get; set; }
     public float? MarginHorizontal { get; set; }
 
-    public int ButtonHeight { get; init; } = 30;
-    public RGBA ButtonBackgroundColor { get; init; } = new(0.3f, 0.3f, 0.3f, 1f);
-    public float ButtonBorderRadius { get; init; } = 4f;
+    public RGBA BackgroundColor { get; init; } = new(0.3f, 0.3f, 0.3f, 1f);
+    public float BorderRadius { get; init; } = 4f;
+    public float PaddingHorizontal { get; init; } = 8f;
 
-    public RGBA ButtonLabelColor { get; init; } = new(0.9f, 0.9f, 0.9f, 1f);
-    public float ButtonLabelFontSize { get; init; } = 14f;
-
-    public int OptionHeight { get; init; } = 26;
-    public RGBA OptionBackgroundColor { get; init; } = new(0.25f, 0.25f, 0.25f, 1f);
-
-    public RGBA OptionLabelColor { get; init; } = new(0.85f, 0.85f, 0.85f, 1f);
-    public float OptionLabelFontSize { get; init; } = 12f;
+    public RGBA LabelColor { get; init; } = new(0.9f, 0.9f, 0.9f, 1f);
+    public float LabelFontSize { get; init; } = 14f;
 
     public string PlaceholderText { get; init; } = "Select...";
 
@@ -65,90 +53,33 @@ public class Dropdown : GuiElement
     {
         Interactive = false;
 
-        ButtonLabel = new Text
+        Label = new Text
         {
             Id = Olve.Utilities.Ids.Id.New<GuiElement>(),
-            Name = "Dropdown/Button/Label",
+            Name = "Dropdown/Label",
             Interactive = false,
             Content = PlaceholderText,
-            Color = ButtonLabelColor,
-            FontSize = ButtonLabelFontSize,
+            Color = LabelColor,
+            FontSize = LabelFontSize,
             Align = Align.Start,
         };
 
-        Button = new Box
+        Background = new Box
         {
             Id = Olve.Utilities.Ids.Id.New<GuiElement>(),
-            Name = "Dropdown/Button",
+            Name = "Dropdown/Background",
             Interactive = true,
             InheritParentState = false,
-            Height = ButtonHeight,
-            Weight = 1f,
-            BackgroundColor = ButtonBackgroundColor,
-            BorderRadius = ButtonBorderRadius,
+            StyleKey = new StyleKey("DropdownStyle"),
+            BackgroundColor = BackgroundColor,
+            BorderRadius = BorderRadius,
+            PaddingHorizontal = PaddingHorizontal,
             Justify = Justify.Start,
             Align = Align.Center,
-            PaddingHorizontal = 8f,
-            Children = [ButtonLabel],
+            Children = [Label],
         };
 
-        OptionsContainer = new Box
-        {
-            Id = Olve.Utilities.Ids.Id.New<GuiElement>(),
-            Name = "Dropdown/OptionsContainer",
-            Interactive = false,
-            InheritParentState = false,
-            Weight = 0f,
-            BackgroundColor = new RGBA(0f, 0f, 0f, 0f),
-            Vertical = true,
-            Justify = Justify.Start,
-            Align = Align.Stretch,
-            Children = [],
-        };
-
-        Children = [Button, OptionsContainer];
-    }
-
-    private void BuildOptionElements()
-    {
-        OptionBoxes.Clear();
-        var optionElements = new List<GuiElement>();
-
-        for (var i = 0; i < Options.Length; i++)
-        {
-            var optionText = Options[i];
-
-            var label = new Text
-            {
-                Id = Olve.Utilities.Ids.Id.New<GuiElement>(),
-                Name = $"Dropdown/Option{i}/Label",
-                Interactive = false,
-                Content = optionText,
-                Color = OptionLabelColor,
-                FontSize = OptionLabelFontSize,
-                Align = Align.Start,
-            };
-
-            var optionBox = new Box
-            {
-                Id = Olve.Utilities.Ids.Id.New<GuiElement>(),
-                Name = $"Dropdown/Option{i}",
-                Interactive = true,
-                InheritParentState = false,
-                Height = OptionHeight,
-                Weight = 0f,
-                BackgroundColor = OptionBackgroundColor,
-                Justify = Justify.Start,
-                Align = Align.Center,
-                PaddingHorizontal = 8f,
-                Children = [label],
-            };
-
-            optionElements.Add(optionBox);
-            OptionBoxes.Add(optionBox);
-        }
-
-        OptionsContainer.Children = optionElements.ToArray();
+        Children = [Background];
     }
 
     public override LayoutBox? LayoutBox => new LayoutBox
@@ -157,9 +88,9 @@ public class Dropdown : GuiElement
             PreferredWidth: Dp.FromNullable(Width),
             PreferredHeight: Dp.FromNullable(Height),
             ResizingWeight: Weight),
-        LayoutAxis = UIAxis.Y,
+        LayoutAxis = UIAxis.X,
         Justify = Justify.Start,
-        Align = Align.Stretch,
+        Align = Align.Center,
         Margin = new Thickness(
             new Dp(MarginLeft ?? MarginHorizontal ?? Margin),
             new Dp(MarginTop ?? MarginVertical ?? Margin),

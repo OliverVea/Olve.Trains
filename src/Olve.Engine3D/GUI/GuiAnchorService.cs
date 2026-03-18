@@ -37,6 +37,23 @@ public class GuiAnchorService(ILogger<GuiAnchorService> logger)
     public bool TryGetAnchor(Id<GuiAnchor> anchorId, out GuiAnchor anchor)
         => _anchors.TryGetValue(anchorId, out anchor);
 
+    public Result UpdateAnchor(Id<GuiAnchor> anchorId, GuiAnchor anchor)
+    {
+        if (anchor.Id != anchorId)
+        {
+            return new ResultProblem("Anchor ID mismatch: expected '{0}', got '{1}'", anchorId, anchor.Id);
+        }
+
+        if (!_anchors.ContainsKey(anchorId))
+        {
+            return new ResultProblem("Anchor '{0}' not found", anchorId);
+        }
+
+        _anchors[anchorId] = anchor;
+        logger.LogDebug("Updated anchor '{AnchorId}'. Total anchors: {Count}", anchorId, _anchors.Count);
+        return Result.Success();
+    }
+
     public void UnregisterAnchor(Id<GuiAnchor> anchorId)
     {
         if (_anchors.Remove(anchorId))

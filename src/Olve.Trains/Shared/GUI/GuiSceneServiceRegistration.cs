@@ -79,6 +79,7 @@ public static class GuiSceneServiceRegistration
         AddGuiSceneService<GuiAnimationService>(services, sceneId);
         AddGuiSceneService<GuiSliderService>(services, sceneId);
         AddGuiSceneService<GuiCheckboxService>(services, sceneId);
+        AddGuiSceneService<GuiDropdownService>(services, sceneId);
         AddGuiSceneService<GuiRadioButtonService>(services, sceneId);
         AddGuiSceneService<GuiMouseInputService>(services, sceneId);
 

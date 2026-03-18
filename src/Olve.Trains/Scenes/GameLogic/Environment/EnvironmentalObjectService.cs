@@ -47,7 +47,7 @@ public class EnvironmentalObjectService
             return new ResultProblem("Failed to add environmental object '{0}' with blueprint '{1}'", obj.Id, blueprintId);
         }
 
-        _logger.LogInformation("Added environmental object {ObjectId} with blueprint {BlueprintId} at {Position}", obj.Id, blueprintId, position);
+        _logger.LogDebug("Added environmental object {ObjectId} with blueprint {BlueprintId} at {Position}", obj.Id, blueprintId, position);
         return obj.Id;
     }
 

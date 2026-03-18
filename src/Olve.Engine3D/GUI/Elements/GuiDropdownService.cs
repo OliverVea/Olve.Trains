@@ -11,8 +11,9 @@ public class GuiDropdownService(
     ILogger<GuiDropdownService> logger,
     GuiElementService guiElementService,
     GuiActivationService guiActivationService,
-    GuiNodeStateService guiNodeStateService,
-    GuiMouseInputService guiMouseInputService) : ISceneService
+    GuiMouseInputService guiMouseInputService,
+    GuiAnchorService guiAnchorService,
+    GuiLayoutService guiLayoutService) : ISceneService
 {
     public int Priority => 0;
 
@@ -25,16 +26,71 @@ public class GuiDropdownService(
 
     public Event<DropdownValueChangedMessage> OnValueChanged { get; } = new();
 
-    private readonly Dictionary<Id<GuiNode>, Dropdown> _buttonNodeToDropdown = new();
-    private readonly Dictionary<Id<GuiNode>, (Dropdown Dropdown, int OptionIndex)> _optionNodeToDropdown = new();
-    private readonly HashSet<Dropdown> _expandedDropdowns = new();
+    private readonly Dictionary<Id<GuiNode>, Dropdown> _dropdownNodes = new();
+    private Dropdown? _expandedDropdown;
+
+    private Id<GuiAnchor> _overlayAnchorId;
+    private Id<GuiElementRegistrations> _overlayRegistrationId;
+    private Id<GuiNode> _overlayNodeId;
+
+    private Id<GuiAnchor> _optionsPanelAnchorId;
+    private Id<GuiElementRegistrations> _optionsPanelRegistrationId;
+    private Id<GuiNode> _optionsPanelNodeId;
+    private Box _optionsPanelBox = null!;
+    private Box _overlayBox = null!;
+
+    private bool _panelRegistered;
 
     public Result Load()
     {
+        // Create anchors up front (lightweight, no visible elements yet)
+
+        // Fullscreen overlay anchor (depth 0, behind the options panel)
+        if (guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight, depth: 0)
+            .TryPickProblems(out var problems, out _overlayAnchorId))
+        {
+            return problems.Prepend("Failed to register overlay anchor");
+        }
+
+        // Options panel anchor (depth 1, above the overlay)
+        if (guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight, depth: 1)
+            .TryPickProblems(out problems, out _optionsPanelAnchorId))
+        {
+            return problems.Prepend("Failed to register options panel anchor");
+        }
+
+        // Prepare element definitions but don't register them yet
+        _overlayBox = new Box
+        {
+            Id = Id.New<GuiElement>(),
+            Name = "Dropdown/Overlay",
+            Interactive = true,
+            InheritParentState = false,
+            Weight = 1f,
+            BackgroundColor = new RGBA(0f, 0f, 0f, 0f),
+        };
+
+        _optionsPanelBox = new Box
+        {
+            Id = Id.New<GuiElement>(),
+            Name = "Dropdown/SharedOptionsPanel",
+            Interactive = true,
+            InheritParentState = false,
+            Width = 200,
+            Height = 200,
+            Weight = 0f,
+            BackgroundColor = new RGBA(0.25f, 0.25f, 0.25f, 1f),
+            Vertical = true,
+            Justify = Justify.Start,
+            Align = Align.Stretch,
+            Children = [],
+        };
+
         guiElementService.OnAdded.Subscribe(OnElementAdded);
         guiElementService.OnRemoved.Subscribe(OnElementRemoved);
         guiActivationService.GuiElementActivated.Subscribe(OnElementActivated);
         guiMouseInputService.OnPressedNode.Subscribe(OnNodePressed);
+
         return Result.Success();
     }
 
@@ -65,153 +121,158 @@ public class GuiDropdownService(
             return;
         }
 
-        if (!guiElementService.TryGetGuiNodeId(dropdown.Button.Id, args.RegistrationId, out var buttonNodeId))
+        if (!guiElementService.TryGetGuiNodeId(dropdown.Background.Id, args.RegistrationId, out var bgNodeId))
         {
-            logger.LogWarning("Could not resolve button node for dropdown {DropdownId}", dropdown.Id);
+            logger.LogWarning("Could not resolve background node for dropdown {DropdownId}", dropdown.Id);
             return;
         }
 
-        _buttonNodeToDropdown[buttonNodeId] = dropdown;
-
-        // Enable button
-        guiNodeStateService.UpdateState(buttonNodeId, state => state | GuiNodeState.Show | GuiNodeState.Enabled);
-
-        // Register option box node mappings and enable them
-        for (var i = 0; i < dropdown.OptionBoxes.Count; i++)
-        {
-            if (guiElementService.TryGetGuiNodeId(dropdown.OptionBoxes[i].Id, args.RegistrationId, out var optionNodeId))
-            {
-                _optionNodeToDropdown[optionNodeId] = (dropdown, i);
-                guiNodeStateService.UpdateState(optionNodeId, state => state | GuiNodeState.Show | GuiNodeState.Enabled);
-            }
-        }
-
-        // Mark state as dirty to initialize
+        logger.LogDebug("Mapped background node {BgNodeId} for dropdown {DropdownId}", bgNodeId, dropdown.Id);
+        _dropdownNodes[bgNodeId] = dropdown;
         dropdown.IsSelectedIndexDirty = true;
-        dropdown.IsExpandedDirty = true;
     }
 
     private void OnElementRemoved(GuiElementArgs args)
     {
-        if (_buttonNodeToDropdown.Remove(args.NodeId, out var dropdown))
+        if (_dropdownNodes.Remove(args.NodeId, out var dropdown))
         {
-            // Clean up option node mappings
-            var optionNodesToRemove = _optionNodeToDropdown
-                .Where(kvp => kvp.Value.Dropdown == dropdown)
-                .Select(kvp => kvp.Key)
-                .ToList();
-
-            foreach (var optionNode in optionNodesToRemove)
+            if (_expandedDropdown == dropdown)
             {
-                _optionNodeToDropdown.Remove(optionNode);
+                _expandedDropdown = null;
+                CollapsePanel();
             }
         }
     }
 
     private void OnNodePressed(Id<GuiNode> nodeId)
     {
-        // Check if click is outside all expanded dropdowns
-        var clickedDropdown = _buttonNodeToDropdown.GetValueOrDefault(nodeId);
-        var clickedOption = _optionNodeToDropdown.ContainsKey(nodeId);
-
-        if (clickedDropdown == null && !clickedOption)
+        if (_dropdownNodes.ContainsKey(nodeId))
         {
-            // Clicked outside - collapse all expanded dropdowns
-            foreach (var expanded in _expandedDropdowns.ToList())
-            {
-                expanded.IsExpanded = false;
-                _expandedDropdowns.Remove(expanded);
-            }
+            return;
+        }
+
+        if (nodeId == _optionsPanelNodeId)
+        {
+            return;
+        }
+
+        // Clicked overlay or any other node — collapse
+        if (_expandedDropdown != null)
+        {
+            _expandedDropdown = null;
+            CollapsePanel();
         }
     }
 
     private void OnElementActivated(GuiActivationService.GuiElementActivatedMessage message)
     {
-        // Check if button was clicked
-        if (_buttonNodeToDropdown.TryGetValue(message.NodeId, out var dropdown))
-        {
-            dropdown.IsExpanded = !dropdown.IsExpanded;
-
-            if (dropdown.IsExpanded)
-            {
-                _expandedDropdowns.Add(dropdown);
-            }
-            else
-            {
-                _expandedDropdowns.Remove(dropdown);
-            }
-
-            logger.LogDebug("Dropdown {DropdownId} expanded={IsExpanded}", dropdown.Id, dropdown.IsExpanded);
-            return;
-        }
-
-        // Check if option was clicked
-        if (!_optionNodeToDropdown.TryGetValue(message.NodeId, out var optionInfo))
+        if (!_dropdownNodes.TryGetValue(message.NodeId, out var dropdown))
         {
             return;
         }
 
-        var (clickedDropdown, optionIndex) = optionInfo;
-        var oldIndex = clickedDropdown.SelectedIndex;
-        var oldText = oldIndex >= 0 && oldIndex < clickedDropdown.Options.Length
-            ? clickedDropdown.Options[oldIndex]
-            : null;
+        var expanding = _expandedDropdown != dropdown;
 
-        clickedDropdown.SelectedIndex = optionIndex;
-        clickedDropdown.IsExpanded = false;
-        _expandedDropdowns.Remove(clickedDropdown);
+        if (_expandedDropdown != null && _expandedDropdown != dropdown)
+        {
+            _expandedDropdown = null;
+        }
 
-        var newText = optionIndex >= 0 && optionIndex < clickedDropdown.Options.Length
-            ? clickedDropdown.Options[optionIndex]
-            : null;
+        if (expanding)
+        {
+            _expandedDropdown = dropdown;
+            ShowPanelBelow(message.NodeId, dropdown);
+        }
+        else
+        {
+            _expandedDropdown = null;
+            CollapsePanel();
+        }
 
-        logger.LogDebug("Dropdown {DropdownId} option {OptionIndex} selected", clickedDropdown.Id, optionIndex);
-        OnValueChanged.Invoke(new DropdownValueChangedMessage(
-            clickedDropdown.Id,
-            oldIndex,
-            optionIndex,
-            oldText,
-            newText));
+        logger.LogDebug("Dropdown {DropdownId} expanding={Expanding}", dropdown.Id, expanding);
+    }
+
+    private void ShowPanelBelow(Id<GuiNode> dropdownNodeId, Dropdown dropdown)
+    {
+        // Position the options panel anchor below the dropdown
+        var updatedAnchor = new GuiAnchor(
+            _optionsPanelAnchorId,
+            AnchorPosition.BottomLeft,
+            GrowthDirection.DownRight,
+            Depth: 1,
+            dropdownNodeId);
+
+        if (guiAnchorService.UpdateAnchor(_optionsPanelAnchorId, updatedAnchor).TryPickProblems(out var problems))
+        {
+            logger.LogWarning("Failed to update options panel anchor: {Problems}", problems);
+            return;
+        }
+
+        // Register elements if not already registered
+        if (!_panelRegistered)
+        {
+            if (guiElementService.RegisterElementAndChildren(_overlayAnchorId, _overlayBox)
+                .TryPickProblems(out problems, out _overlayRegistrationId))
+            {
+                logger.LogWarning("Failed to register overlay element: {Problems}", problems);
+                return;
+            }
+
+            if (!guiElementService.TryGetGuiNodeId(_overlayBox.Id, _overlayRegistrationId, out _overlayNodeId))
+            {
+                logger.LogWarning("Failed to resolve overlay node ID");
+                return;
+            }
+
+            if (guiElementService.RegisterElementAndChildren(_optionsPanelAnchorId, _optionsPanelBox)
+                .TryPickProblems(out problems, out _optionsPanelRegistrationId))
+            {
+                logger.LogWarning("Failed to register options panel element: {Problems}", problems);
+                return;
+            }
+
+            if (!guiElementService.TryGetGuiNodeId(_optionsPanelBox.Id, _optionsPanelRegistrationId, out _optionsPanelNodeId))
+            {
+                logger.LogWarning("Failed to resolve options panel node ID");
+                return;
+            }
+
+            _panelRegistered = true;
+        }
+
+        guiLayoutService.SetDirty();
+    }
+
+    private void CollapsePanel()
+    {
+        if (!_panelRegistered)
+        {
+            return;
+        }
+
+        guiElementService.UnregisterElementAndChildren(_optionsPanelRegistrationId);
+        guiElementService.UnregisterElementAndChildren(_overlayRegistrationId);
+        _panelRegistered = false;
     }
 
     private void UpdateDirtyDropdowns()
     {
-        foreach (var (_, dropdown) in _buttonNodeToDropdown)
+        foreach (var (_, dropdown) in _dropdownNodes)
         {
             if (dropdown.IsSelectedIndexDirty)
             {
-                UpdateButtonLabel(dropdown);
+                UpdateLabel(dropdown);
                 dropdown.IsSelectedIndexDirty = false;
-            }
-
-            if (dropdown.IsExpandedDirty)
-            {
-                UpdateOptionsContainerVisibility(dropdown);
-                dropdown.IsExpandedDirty = false;
             }
         }
     }
 
-    private void UpdateButtonLabel(Dropdown dropdown)
+    private void UpdateLabel(Dropdown dropdown)
     {
         var text = dropdown.SelectedIndex >= 0 && dropdown.SelectedIndex < dropdown.Options.Length
             ? dropdown.Options[dropdown.SelectedIndex]
             : dropdown.PlaceholderText;
 
-        dropdown.ButtonLabel.Content = text;
-    }
-
-    private void UpdateOptionsContainerVisibility(Dropdown dropdown)
-    {
-        if (!guiElementService.TryGetAnyGuiNodeId(dropdown.OptionsContainer.Id, out var containerNodeId))
-        {
-            logger.LogWarning("Could not resolve options container node for dropdown {DropdownId}", dropdown.Id);
-            return;
-        }
-
-        guiNodeStateService.UpdateState(containerNodeId, state =>
-            dropdown.IsExpanded
-                ? state | GuiNodeState.Show
-                : state & ~GuiNodeState.Show);
+        dropdown.Label.Content = text;
     }
 }

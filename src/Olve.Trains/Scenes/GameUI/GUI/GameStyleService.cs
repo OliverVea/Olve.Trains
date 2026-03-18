@@ -24,7 +24,8 @@ public class GameStyleService(
         Styles.InventoryRowStyle, Styles.InventoryRowDirectionStyle,
         Styles.InventoryRowTextStyle, Styles.InventoryRowAmountStyle,
         Styles.SliderThumbStyle,
-        Styles.CheckboxBackgroundStyle
+        Styles.CheckboxBackgroundStyle,
+        Styles.DropdownStyle
     ];
 
     public Result Load()

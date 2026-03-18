@@ -11,6 +11,6 @@
         <Box MarginTop="8">
             <Text Content='"Sky Color:"' Style="InfoTextMedium" />
         </Box>
-        <Dropdown Id="SkyColorDropdown" Options='new string[] { "Dawn", "Day", "Dusk", "Night", "Sunset" }' Width="184" ButtonHeight="24" OptionHeight="22" />
+        <Dropdown Id="SkyColorDropdown" Options='new string[] { "Dawn", "Day", "Dusk", "Night", "Sunset" }' Width="184" Height="24" />
     </Box>
 </Box>

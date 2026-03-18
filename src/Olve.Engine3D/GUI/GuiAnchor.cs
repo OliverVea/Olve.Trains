@@ -8,4 +8,5 @@ public readonly record struct GuiAnchor(
     Id<GuiAnchor> Id,
     AnchorPosition Position,
     GrowthDirection Growth,
-    int Depth = 0) : IHasId<Id<GuiAnchor>>;
+    int Depth = 0,
+    Id<GuiNode>? ReferenceNode = null) : IHasId<Id<GuiAnchor>>;
