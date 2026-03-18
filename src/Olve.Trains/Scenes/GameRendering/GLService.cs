@@ -80,4 +80,10 @@ public class GLService(
         framebufferManager.Resize(_framebufferId, size.X, size.Y);
         screenPassManager.Resize(size.X, size.Y);
     }
+
+    public Result SetClearColor(Color color)
+    {
+        var colorVec = new Vector4D<float>(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+        return renderPassManager.UpdateClearColor(_clearPass, colorVec);
+    }
 }

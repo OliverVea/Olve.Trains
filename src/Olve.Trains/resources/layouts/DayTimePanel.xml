@@ -8,5 +8,9 @@
             <Text Id="TimeScaleLabel" Content='"Speed: 1x"' Style="InfoTextMedium" />
         </Box>
         <Slider Id="TimeScaleSlider" MinValue="1" MaxValue="8" Value="4" Step="1" Weight="1" Height="20" />
+        <Box MarginTop="8">
+            <Text Content='"Sky Color:"' Style="InfoTextMedium" />
+        </Box>
+        <Dropdown Id="SkyColorDropdown" Options='new string[] { "Dawn", "Day", "Dusk", "Night", "Sunset" }' Width="184" ButtonHeight="24" OptionHeight="22" />
     </Box>
 </Box>

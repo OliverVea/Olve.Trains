@@ -1,3 +1,4 @@
+using System.Drawing;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Layout;
@@ -6,6 +7,7 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 using Olve.Generated.Layouts;
+using Olve.Trains.Scenes.GameRendering;
 using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.GUI;
@@ -16,8 +18,10 @@ public class DayTimeSliderService(
     GuiElementService guiElementService,
     GuiSliderService guiSliderService,
     GuiCheckboxService guiCheckboxService,
+    GuiDropdownService guiDropdownService,
     GuiAnchorService guiAnchorService,
-    KeyboardManager keyboardManager) : ISceneService
+    KeyboardManager keyboardManager,
+    GLService glService) : ISceneService
 {
     private static readonly float[] ScaleSteps = [0.125f, 0.25f, 0.5f, 1f, 2f, 4f, 8f, 16f];
     private static readonly string[] ScaleLabels = ["Speed: 1/8x", "Speed: 1/4x", "Speed: 1/2x", "Speed: 1x", "Speed: 2x", "Speed: 4x", "Speed: 8x", "Speed: 16x"];
@@ -37,6 +41,7 @@ public class DayTimeSliderService(
 
         guiSliderService.OnValueChanged.Subscribe(OnSliderValueChanged);
         guiCheckboxService.OnValueChanged.Subscribe(OnCheckboxValueChanged);
+        guiDropdownService.OnValueChanged.Subscribe(OnDropdownValueChanged);
 
         Panel.TimeSlider.Thumb.StyleKey = new StyleKey(nameof(Styles.SliderThumbStyle));
         Panel.TimeScaleSlider.Thumb.StyleKey = new StyleKey(nameof(Styles.SliderThumbStyle));
@@ -51,6 +56,7 @@ public class DayTimeSliderService(
     {
         guiSliderService.OnValueChanged.Unsubscribe(OnSliderValueChanged);
         guiCheckboxService.OnValueChanged.Unsubscribe(OnCheckboxValueChanged);
+        guiDropdownService.OnValueChanged.Unsubscribe(OnDropdownValueChanged);
         guiElementService.UnregisterElementAndChildren(_registrationId);
         guiAnchorService.UnregisterAnchor(_anchorId);
 
@@ -109,5 +115,22 @@ public class DayTimeSliderService(
 
         deltaTimeService.TimeScale = ScaleSteps[index];
         Panel.TimeScaleLabel.Content = ScaleLabels[index];
+    }
+
+    private void OnDropdownValueChanged(GuiDropdownService.DropdownValueChangedMessage message)
+    {
+        if (message.DropdownId != Panel.SkyColorDropdown.Id) return;
+
+        var color = message.NewSelectedIndex switch
+        {
+            0 => Color.FromArgb(255, 255, 200, 150), // Dawn - warm orange/pink
+            1 => Color.CornflowerBlue,                // Day - clear blue
+            2 => Color.FromArgb(255, 220, 140, 100),  // Dusk - deeper orange/red
+            3 => Color.FromArgb(255, 20, 20, 40),     // Night - dark blue
+            4 => Color.FromArgb(255, 240, 120, 80),   // Sunset - vivid orange/red
+            _ => Color.CornflowerBlue
+        };
+
+        glService.SetClearColor(color);
     }
 }

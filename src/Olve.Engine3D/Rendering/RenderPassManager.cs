@@ -51,4 +51,18 @@ public class RenderPassManager
     public bool Exists<TFormat>(Id<RenderPass<TFormat>> passId)
         where TFormat : IFrameFormat
         => _passes.ContainsKey(passId.Value);
+
+    public Result UpdateClearColor<TFormat>(Id<RenderPass<TFormat>> passId, Vector4D<float>? clearColor)
+        where TFormat : IFrameFormat
+    {
+        if (!_passes.TryGetValue(passId.Value, out var entry))
+        {
+            return new ResultProblem("Render pass {0} not found", passId);
+        }
+
+        _passes[passId.Value] = entry with { ClearColor = clearColor };
+        _orderedCache = null;
+
+        return Result.Success();
+    }
 }
