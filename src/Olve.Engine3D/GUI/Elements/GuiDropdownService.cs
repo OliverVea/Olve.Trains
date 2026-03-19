@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
+using Olve.Engine3D.GUI.Styling;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Systems;
 using Olve.Utilities.Ids;
@@ -11,6 +12,7 @@ public class GuiDropdownService(
     ILogger<GuiDropdownService> logger,
     GuiElementService guiElementService,
     GuiActivationService guiActivationService,
+    GuiNodeStateService guiNodeStateService,
     GuiMouseInputService guiMouseInputService,
     GuiAnchorService guiAnchorService,
     GuiLayoutService guiLayoutService) : ISceneService
@@ -26,30 +28,55 @@ public class GuiDropdownService(
 
     public Event<DropdownValueChangedMessage> OnValueChanged { get; } = new();
 
+    private const int MaxOptions = 20;
+
     private readonly Dictionary<Id<GuiNode>, Dropdown> _dropdownNodes = new();
+    private readonly Dictionary<Id<GuiNode>, int> _optionNodeToIndex = new();
     private Dropdown? _expandedDropdown;
 
     private Id<GuiAnchor> _overlayAnchorId;
-    private Id<GuiElementRegistrations> _overlayRegistrationId;
     private Id<GuiNode> _overlayNodeId;
 
     private Id<GuiAnchor> _optionsPanelAnchorId;
     private Id<GuiElementRegistrations> _optionsPanelRegistrationId;
     private Id<GuiNode> _optionsPanelNodeId;
+    private Box _optionsPanelRoot = null!;
     private Box _optionsPanelBox = null!;
-    private Box _overlayBox = null!;
 
-    private bool _panelRegistered;
+    // Pool of pre-registered option slots
+    private readonly record struct OptionSlot(Box Box, Text Label, Id<GuiNode> BoxNodeId, Id<GuiNode> LabelNodeId);
+    private readonly List<OptionSlot> _optionSlots = new();
+    // Each entry holds (dividerWrapperNodeId, dividerLineNodeId)
+    private readonly List<(Id<GuiNode> Wrapper, Id<GuiNode> Line)> _dividerNodes = new();
 
     public Result Load()
     {
-        // Create anchors up front (lightweight, no visible elements yet)
-
         // Fullscreen overlay anchor (depth 0, behind the options panel)
         if (guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight, depth: 0)
             .TryPickProblems(out var problems, out _overlayAnchorId))
         {
             return problems.Prepend("Failed to register overlay anchor");
+        }
+
+        var overlayBox = new Box
+        {
+            Id = Id.FromName<GuiElement>("Dropdown/Overlay"),
+            Name = "Dropdown/Overlay",
+            Interactive = true,
+            InheritParentState = false,
+            Weight = 1f,
+            BackgroundColor = new RGBA(0f, 0f, 0f, 0f),
+        };
+
+        if (guiElementService.RegisterElementAndChildren(_overlayAnchorId, overlayBox)
+            .TryPickProblems(out problems, out _))
+        {
+            return problems.Prepend("Failed to register overlay element");
+        }
+
+        if (!guiElementService.TryGetAnyGuiNodeId(overlayBox.Id, out _overlayNodeId))
+        {
+            return new ResultProblem("Failed to resolve overlay node ID");
         }
 
         // Options panel anchor (depth 1, above the overlay)
@@ -59,16 +86,47 @@ public class GuiDropdownService(
             return problems.Prepend("Failed to register options panel anchor");
         }
 
-        // Prepare element definitions but don't register them yet
-        _overlayBox = new Box
+        // Build pool of option slot elements: [divider0, option0, divider1, option1, ...]
+        // Divider before each option except the first
+        var poolChildren = new List<GuiElement>();
+        var optionBoxes = new List<(Box box, Text label)>();
+
+        for (var i = 0; i < MaxOptions; i++)
         {
-            Id = Id.New<GuiElement>(),
-            Name = "Dropdown/Overlay",
-            Interactive = true,
-            InheritParentState = false,
-            Weight = 1f,
-            BackgroundColor = new RGBA(0f, 0f, 0f, 0f),
-        };
+            if (i > 0)
+            {
+                poolChildren.Add(new Divider(marginHorizontal: 6f, color: new RGBA(1f, 0.4f, 0.7f, 0.5f))
+                {
+                    Id = Id.New<GuiElement>(),
+                    Name = $"Dropdown/Pool/Divider/{i}",
+                });
+            }
+
+            var label = new Text
+            {
+                Id = Id.New<GuiElement>(),
+                Name = $"Dropdown/Pool/Option/{i}/Label",
+                Interactive = false,
+                Content = string.Empty,
+            };
+
+            var optionBox = new Box
+            {
+                Id = Id.New<GuiElement>(),
+                Name = $"Dropdown/Pool/Option/{i}",
+                Interactive = true,
+                InheritParentState = false,
+                StyleKey = new StyleKey("DropdownOptionStyle"),
+                PaddingHorizontal = 8f,
+                PaddingVertical = 4f,
+                Align = Align.Center,
+                Justify = Justify.Start,
+                Children = [label],
+            };
+
+            poolChildren.Add(optionBox);
+            optionBoxes.Add((optionBox, label));
+        }
 
         _optionsPanelBox = new Box
         {
@@ -76,15 +134,74 @@ public class GuiDropdownService(
             Name = "Dropdown/SharedOptionsPanel",
             Interactive = true,
             InheritParentState = false,
-            Width = 200,
-            Height = 200,
             Weight = 0f,
             BackgroundColor = new RGBA(0.25f, 0.25f, 0.25f, 1f),
             Vertical = true,
             Justify = Justify.Start,
             Align = Align.Stretch,
-            Children = [],
+            Children = poolChildren.ToArray(),
         };
+
+        _optionsPanelRoot = new Box
+        {
+            Id = Id.New<GuiElement>(),
+            Name = "Dropdown/SharedOptionsPanelRoot",
+            Interactive = false,
+            InheritParentState = false,
+            Justify = Justify.Start,
+            Align = Align.Start,
+            Children = [_optionsPanelBox],
+        };
+
+        if (guiElementService.RegisterElementAndChildren(_optionsPanelAnchorId, _optionsPanelRoot)
+            .TryPickProblems(out problems, out _optionsPanelRegistrationId))
+        {
+            return problems.Prepend("Failed to register options panel element");
+        }
+
+        if (!guiElementService.TryGetGuiNodeId(_optionsPanelBox.Id, _optionsPanelRegistrationId, out _optionsPanelNodeId))
+        {
+            return new ResultProblem("Failed to resolve options panel node ID");
+        }
+
+        // Resolve node IDs for all pool slots (box + label)
+        foreach (var (box, label) in optionBoxes)
+        {
+            if (!guiElementService.TryGetGuiNodeId(box.Id, _optionsPanelRegistrationId, out var boxNodeId))
+            {
+                return new ResultProblem("Failed to resolve pool option node ID for '{0}'", box.Name);
+            }
+
+            if (!guiElementService.TryGetGuiNodeId(label.Id, _optionsPanelRegistrationId, out var labelNodeId))
+            {
+                return new ResultProblem("Failed to resolve pool option label node ID for '{0}'", label.Name);
+            }
+
+            _optionSlots.Add(new OptionSlot(box, label, boxNodeId, labelNodeId));
+        }
+
+        // Resolve node IDs for dividers (wrapper + line child)
+        foreach (var child in poolChildren)
+        {
+            if (child is not Divider divider)
+                continue;
+
+            if (!guiElementService.TryGetGuiNodeId(divider.Id, _optionsPanelRegistrationId, out var wrapperNodeId))
+            {
+                return new ResultProblem("Failed to resolve pool divider node ID for '{0}'", divider.Name);
+            }
+
+            if (!guiElementService.TryGetGuiNodeId(divider.Line.Id, _optionsPanelRegistrationId, out var lineNodeId))
+            {
+                return new ResultProblem("Failed to resolve pool divider line node ID for '{0}'", divider.Name);
+            }
+
+            _dividerNodes.Add((wrapperNodeId, lineNodeId));
+        }
+
+        // Hide everything immediately
+        HideAllPoolSlots();
+        HidePanel();
 
         guiElementService.OnAdded.Subscribe(OnElementAdded);
         guiElementService.OnRemoved.Subscribe(OnElementRemoved);
@@ -129,6 +246,7 @@ public class GuiDropdownService(
 
         logger.LogDebug("Mapped background node {BgNodeId} for dropdown {DropdownId}", bgNodeId, dropdown.Id);
         _dropdownNodes[bgNodeId] = dropdown;
+        _dropdownNodes[args.NodeId] = dropdown; // Also map the Dropdown wrapper node for activate-gui
         dropdown.IsSelectedIndexDirty = true;
     }
 
@@ -151,7 +269,7 @@ public class GuiDropdownService(
             return;
         }
 
-        if (nodeId == _optionsPanelNodeId)
+        if (nodeId == _optionsPanelNodeId || _optionNodeToIndex.ContainsKey(nodeId))
         {
             return;
         }
@@ -166,6 +284,26 @@ public class GuiDropdownService(
 
     private void OnElementActivated(GuiActivationService.GuiElementActivatedMessage message)
     {
+        // Check if an option was clicked
+        if (_optionNodeToIndex.TryGetValue(message.NodeId, out var optionIndex) && _expandedDropdown is { } active)
+        {
+            var oldIndex = active.SelectedIndex;
+            var oldText = oldIndex >= 0 && oldIndex < active.Options.Length ? active.Options[oldIndex] : null;
+
+            active.SelectedIndex = optionIndex;
+
+            var newText = active.SelectedIndex >= 0 && active.SelectedIndex < active.Options.Length
+                ? active.Options[active.SelectedIndex]
+                : null;
+
+            OnValueChanged.Invoke(new DropdownValueChangedMessage(active.Id, oldIndex, active.SelectedIndex, oldText, newText));
+            logger.LogDebug("Dropdown {DropdownId} selected option {Index}: {Text}", active.Id, optionIndex, newText);
+
+            _expandedDropdown = null;
+            CollapsePanel();
+            return;
+        }
+
         if (!_dropdownNodes.TryGetValue(message.NodeId, out var dropdown))
         {
             return;
@@ -176,6 +314,7 @@ public class GuiDropdownService(
         if (_expandedDropdown != null && _expandedDropdown != dropdown)
         {
             _expandedDropdown = null;
+            CollapsePanel();
         }
 
         if (expanding)
@@ -208,51 +347,93 @@ public class GuiDropdownService(
             return;
         }
 
-        // Register elements if not already registered
-        if (!_panelRegistered)
+        var optionCount = int.Min(dropdown.Options.Length, MaxOptions);
+
+        // Update pool slots: show active options, hide excess
+        _optionNodeToIndex.Clear();
+
+        for (var i = 0; i < _optionSlots.Count; i++)
         {
-            if (guiElementService.RegisterElementAndChildren(_overlayAnchorId, _overlayBox)
-                .TryPickProblems(out problems, out _overlayRegistrationId))
-            {
-                logger.LogWarning("Failed to register overlay element: {Problems}", problems);
-                return;
-            }
+            var slot = _optionSlots[i];
 
-            if (!guiElementService.TryGetGuiNodeId(_overlayBox.Id, _overlayRegistrationId, out _overlayNodeId))
+            if (i < optionCount)
             {
-                logger.LogWarning("Failed to resolve overlay node ID");
-                return;
-            }
+                // Configure and show this slot
+                slot.Label.Content = dropdown.Options[i];
+                slot.Label.Color = dropdown.LabelColor;
+                slot.Label.FontSize = dropdown.LabelFontSize;
+                slot.Box.PaddingHorizontal = dropdown.PaddingHorizontal;
 
-            if (guiElementService.RegisterElementAndChildren(_optionsPanelAnchorId, _optionsPanelBox)
-                .TryPickProblems(out problems, out _optionsPanelRegistrationId))
+                guiNodeStateService.UpdateState(slot.BoxNodeId, state => state | GuiNodeState.Show);
+                guiNodeStateService.UpdateState(slot.LabelNodeId, state => state | GuiNodeState.Show);
+                _optionNodeToIndex[slot.BoxNodeId] = i;
+            }
+            else
             {
-                logger.LogWarning("Failed to register options panel element: {Problems}", problems);
-                return;
+                // Hide unused slot
+                guiNodeStateService.UpdateState(slot.BoxNodeId, state => state & ~GuiNodeState.Show);
+                guiNodeStateService.UpdateState(slot.LabelNodeId, state => state & ~GuiNodeState.Show);
             }
-
-            if (!guiElementService.TryGetGuiNodeId(_optionsPanelBox.Id, _optionsPanelRegistrationId, out _optionsPanelNodeId))
-            {
-                logger.LogWarning("Failed to resolve options panel node ID");
-                return;
-            }
-
-            _panelRegistered = true;
         }
 
+        // Show/hide dividers: divider[i] is between option[i] and option[i+1]
+        for (var i = 0; i < _dividerNodes.Count; i++)
+        {
+            var (wrapper, line) = _dividerNodes[i];
+
+            // Divider i is before option i+1, so show if option i+1 is visible
+            if (i + 1 < optionCount)
+            {
+                guiNodeStateService.UpdateState(wrapper, state => state | GuiNodeState.Show);
+                guiNodeStateService.UpdateState(line, state => state | GuiNodeState.Show);
+            }
+            else
+            {
+                guiNodeStateService.UpdateState(wrapper, state => state & ~GuiNodeState.Show);
+                guiNodeStateService.UpdateState(line, state => state & ~GuiNodeState.Show);
+            }
+        }
+
+        // Update panel width and push to layout system
+        _optionsPanelBox.Width = dropdown.Width;
+        _optionsPanelBox.Height = null;
+
+        if (_optionsPanelBox.LayoutBox is { } panelLayoutBox)
+        {
+            guiLayoutService.SetNodeBox(_optionsPanelNodeId, panelLayoutBox);
+        }
+
+        // Show overlay and panel
+        guiNodeStateService.UpdateState(_overlayNodeId, state => state | GuiNodeState.Show);
+        guiNodeStateService.UpdateState(_optionsPanelNodeId, state => state | GuiNodeState.Show);
         guiLayoutService.SetDirty();
     }
 
     private void CollapsePanel()
     {
-        if (!_panelRegistered)
+        HidePanel();
+    }
+
+    private void HideAllPoolSlots()
+    {
+        foreach (var slot in _optionSlots)
         {
-            return;
+            guiNodeStateService.UpdateState(slot.BoxNodeId, state => state & ~GuiNodeState.Show);
+            guiNodeStateService.UpdateState(slot.LabelNodeId, state => state & ~GuiNodeState.Show);
         }
 
-        guiElementService.UnregisterElementAndChildren(_optionsPanelRegistrationId);
-        guiElementService.UnregisterElementAndChildren(_overlayRegistrationId);
-        _panelRegistered = false;
+        foreach (var (wrapper, line) in _dividerNodes)
+        {
+            guiNodeStateService.UpdateState(wrapper, state => state & ~GuiNodeState.Show);
+            guiNodeStateService.UpdateState(line, state => state & ~GuiNodeState.Show);
+        }
+    }
+
+    private void HidePanel()
+    {
+        HideAllPoolSlots();
+        guiNodeStateService.UpdateState(_optionsPanelNodeId, state => state & ~GuiNodeState.Show);
+        guiNodeStateService.UpdateState(_overlayNodeId, state => state & ~GuiNodeState.Show);
     }
 
     private void UpdateDirtyDropdowns()

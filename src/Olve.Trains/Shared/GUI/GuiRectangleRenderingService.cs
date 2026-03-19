@@ -217,17 +217,18 @@ public class GuiRectangleRenderingService(
     {
         instance = default;
 
+        // Check Show state first — hidden nodes should produce a zeroed instance
+        // without requiring a layout position, so they aren't deregistered.
+        if (guiNodeStateService.TryGetState(nodeId, out var state) && !state.HasFlag(GuiNodeState.Show))
+        {
+            return true;
+        }
+
         if (!guiLayoutService.TryGetBoxPosition(nodeId, out var boxPosition) ||
             !guiElementService.TryGetElement(nodeId, out var element) ||
             element is not IRenderableAsRectangle renderableAsRectangle)
         {
             return false;
-        }
-
-        if (guiNodeStateService.TryGetState(nodeId, out var state) && !state.HasFlag(GuiNodeState.Show))
-        {
-            instance = default;
-            return true;
         }
 
         var rectData = renderableAsRectangle.TexturedRectangleData;

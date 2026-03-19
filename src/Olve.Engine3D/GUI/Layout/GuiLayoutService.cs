@@ -10,6 +10,7 @@ namespace Olve.Engine3D.GUI.Layout;
 public class GuiLayoutService(
     ILogger<GuiLayoutService> logger,
     GuiNodeService guiNodeService,
+    GuiNodeStateService guiNodeStateService,
     GuiAnchorService guiAnchorService,
     Provider<LayoutContext> layoutContextProvider) : ISceneService
 {
@@ -317,6 +318,9 @@ public class GuiLayoutService(
         {
             foreach (var childId in children)
             {
+                if (!IsNodeShown(childId))
+                    continue;
+
                 if (!_nodeIndexById.TryGetValue(childId, out var childIndex))
                 {
                     problem = new ResultProblem("Could not find node box spec for node with id '{0}'", childId);
@@ -408,12 +412,16 @@ public class GuiLayoutService(
         if (!guiNodeService.TryGetChildren(parent.NodeId, out var childIds) || childIds.Count == 0)
             return true;
 
-        var childIndices = new int[childIds.Count];
-        for (var i = 0; i < childIds.Count; i++)
+        var visibleChildIds = childIds.Where(IsNodeShown).ToList();
+        if (visibleChildIds.Count == 0)
+            return true;
+
+        var childIndices = new int[visibleChildIds.Count];
+        for (var i = 0; i < visibleChildIds.Count; i++)
         {
-            if (!_nodeIndexById.TryGetValue(childIds[i], out var ci))
+            if (!_nodeIndexById.TryGetValue(visibleChildIds[i], out var ci))
             {
-                problem = new ResultProblem("Could not find node box spec for node with id '{0}'", childIds[i]);
+                problem = new ResultProblem("Could not find node box spec for node with id '{0}'", visibleChildIds[i]);
                 return false;
             }
 
@@ -625,6 +633,12 @@ public class GuiLayoutService(
             return true;
         }
 
+        var visibleChildIds = childIds.Where(IsNodeShown).ToList();
+        if (visibleChildIds.Count == 0)
+        {
+            return true;
+        }
+
         var axis = self.LayoutBox.LayoutAxis;
         var gap = self.LayoutBox.GetGapForAxis(axis);
 
@@ -636,7 +650,7 @@ public class GuiLayoutService(
 
         // First pass: calculate total children size along main axis for Justify
         var totalChildrenMainSize = Dp.Zero;
-        foreach (var childId in childIds)
+        foreach (var childId in visibleChildIds)
         {
             if (!_nodeIndexById.TryGetValue(childId, out var ci))
             {
@@ -653,7 +667,7 @@ public class GuiLayoutService(
             totalChildrenMainSize += outerSize;
         }
 
-        totalChildrenMainSize += GetGapCount(childIds.Count) * gap;
+        totalChildrenMainSize += GetGapCount(visibleChildIds.Count) * gap;
 
         // Calculate Justify offsets
         var remainingSpace = mainAxisContentSize - totalChildrenMainSize;
@@ -661,7 +675,7 @@ public class GuiLayoutService(
         {
             Justify.Center => (remainingSpace / 2f, Dp.Zero),
             Justify.End => (remainingSpace, Dp.Zero),
-            Justify.SpaceBetween when childIds.Count > 1 => (Dp.Zero, remainingSpace / (childIds.Count - 1)),
+            Justify.SpaceBetween when visibleChildIds.Count > 1 => (Dp.Zero, remainingSpace / (visibleChildIds.Count - 1)),
             _ => (Dp.Zero, Dp.Zero), // Start
         };
 
@@ -671,7 +685,7 @@ public class GuiLayoutService(
             : new Vector2D<Dp>(contentOrigin.X, contentOrigin.Y + mainAxisOffset);
 
         // Second pass: position children with Align
-        foreach (var childId in childIds)
+        foreach (var childId in visibleChildIds)
         {
             var ci = _nodeIndexById[childId];
             ref var child = ref CollectionsMarshal.AsSpan(_layoutData)[ci];
@@ -712,6 +726,9 @@ public class GuiLayoutService(
 
         return true;
     }
+
+    private bool IsNodeShown(Id<GuiNode> nodeId)
+        => !guiNodeStateService.TryGetState(nodeId, out var state) || state.HasFlag(GuiNodeState.Show);
 
     private static Dp GetDimensionFromChildren(Dp gap, int childCount, Dp childContentSize)
         => GetGapCount(childCount) * gap + childContentSize;

@@ -28,6 +28,7 @@ public class GuiTextRenderingService(
     GuiElementService guiElementService,
     GuiLayoutService guiLayoutService,
     GuiDepthService guiDepthService,
+    GuiNodeStateService guiNodeStateService,
     SharedRenderingService sharedRenderingService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([guiLayoutService]);
@@ -360,6 +361,13 @@ public class GuiTextRenderingService(
 
     private bool TryUpdateTextGlyphs(Id<GuiNode> nodeId, TextInstanceData instanceData)
     {
+        // Hidden nodes should produce zeroed instances without requiring a layout position,
+        // so they aren't deregistered from the rendering system.
+        if (guiNodeStateService.TryGetState(nodeId, out var state) && !state.HasFlag(GuiNodeState.Show))
+        {
+            return TryZeroOutGlyphs(instanceData);
+        }
+
         if (!guiLayoutService.TryGetBoxPosition(nodeId, out var boxPosition) ||
             !guiElementService.TryGetElement(nodeId, out var element) ||
             element is not IRenderableAsText textElement)
@@ -396,6 +404,23 @@ public class GuiTextRenderingService(
                 iUvMax: glyphLayout.UvMax);
 
             if (renderingInstanceManager.Update(groupId, glyphId, glyphInstance)
+                .TryPickProblems(out var problems))
+            {
+                _updateProblems.AddRange(problems);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool TryZeroOutGlyphs(TextInstanceData instanceData)
+    {
+        var groupId = _textGroups[instanceData.GroupKey];
+
+        foreach (var glyphId in instanceData.GlyphInstanceIds)
+        {
+            if (renderingInstanceManager.Update(groupId, glyphId, default)
                 .TryPickProblems(out var problems))
             {
                 _updateProblems.AddRange(problems);
