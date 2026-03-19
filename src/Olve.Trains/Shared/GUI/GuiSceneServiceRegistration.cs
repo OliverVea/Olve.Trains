@@ -31,16 +31,22 @@ public static class GuiSceneServiceRegistration
         AddGuiSceneService<GuiDepthService>(services, sceneId);
         AddGuiSceneService<GuiLayoutService>(services, sceneId);
 
-        // GuiStateListener events — all run before GuiAnimationService (which reads state)
-        services.AddEventSceneService(sceneId,
+        // GuiStateListener events — immediate so state is set synchronously during registration
+        services.AddImmediateEventSceneService(sceneId,
             (GuiElementService es) => es.OnAdded,
             (GuiNodeStateService ss, GuiElementArgs a) =>
-                ss.UpdateState(a.NodeId, s => s | GuiNodeState.Show | GuiNodeState.Enabled),
+            {
+                ss.UpdateState(a.NodeId, s => s | GuiNodeState.Show | GuiNodeState.Enabled);
+                return Result.Success();
+            },
             before: BeforeAnimation);
-        services.AddEventSceneService(sceneId,
+        services.AddImmediateEventSceneService(sceneId,
             (GuiElementService es) => es.OnRemoved,
             (GuiNodeStateService ss, GuiElementArgs a) =>
-                ss.UpdateState(a.NodeId, s => s & ~GuiNodeState.All),
+            {
+                ss.UpdateState(a.NodeId, s => s & ~GuiNodeState.All);
+                return Result.Success();
+            },
             before: BeforeAnimation);
         services.AddEventSceneService(sceneId,
             (GuiNodeService ns) => ns.OnEnabled,

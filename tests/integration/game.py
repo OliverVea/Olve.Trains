@@ -247,6 +247,15 @@ class Game:
 
         return result
 
+    def assert_no_errors(self) -> None:
+        """Assert that the game stderr log contains no 'fail:' lines."""
+        self._game_stderr_file.flush()
+        text = self._game_stderr_path.read_text(errors="replace")
+        fail_lines = [line for line in text.splitlines() if " fail: " in line]
+        assert not fail_lines, (
+            f"Game produced {len(fail_lines)} error(s):\n" + "\n".join(fail_lines)
+        )
+
     # -- Typed command wrappers --
 
     def place_track(
@@ -329,6 +338,10 @@ class Game:
 
     def activate_gui(self, id: str) -> CommandResult:
         return self.send(f"activate-gui id={id}")
+
+    def query_gui(self, id: str) -> dict:
+        result = self.send(f"query-gui id={id}")
+        return json.loads(result.output)
 
     def select_tool(self, name: str) -> CommandResult:
         return self.send(f"select-tool name='{name}'")

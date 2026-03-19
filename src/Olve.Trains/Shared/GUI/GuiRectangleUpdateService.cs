@@ -82,10 +82,6 @@ public class GuiRectangleUpdateService(
     private Result OnGuiElementRemoved(GuiElementArgs removedEvent)
     {
         return rectangleRenderingService.DeregisterTexturedRectangle(removedEvent.NodeId)
-#if DEBUG
-            .MapToResult(allowNotFound: false);
-#else
             .MapToResult(allowNotFound: true);
-#endif
     }
 }

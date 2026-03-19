@@ -406,6 +406,26 @@ public static class Styles
         }
     };
 
+    public static readonly GuiElementStyling<Box> DropdownOptionStyle = new()
+    {
+        StyleKey = new StyleKey(nameof(DropdownOptionStyle)),
+        StateTransitions = ButtonTransitions,
+        OnStateChanged = (box, weights) =>
+        {
+            var focused = weights[GuiNodeState.Focused];
+            var pressed = weights[GuiNodeState.Pressed];
+
+            box.BackgroundColor = Lerp(
+                new RGBA(0.25f, 0.25f, 0.25f, 1f),
+                new RGBA(0.35f, 0.35f, 0.35f, 1f),
+                focused);
+            box.BackgroundColor = Lerp(
+                box.BackgroundColor.Value,
+                new RGBA(0.2f, 0.2f, 0.2f, 1f),
+                pressed);
+        }
+    };
+
     public static readonly GuiElementStyling<Box> CheckboxBackgroundStyle = new()
     {
         StyleKey = new StyleKey(nameof(CheckboxBackgroundStyle)),
