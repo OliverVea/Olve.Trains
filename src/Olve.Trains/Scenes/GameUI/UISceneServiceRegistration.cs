@@ -46,8 +46,6 @@ public static class UISceneServiceRegistration
 
         services.AddSceneService<ScreenshotService>(sceneId);
 
-        services.AddSceneService<GameStyleService>(sceneId);
-
         services.TryAddScoped<ToolManagementService>();
 
         return services;

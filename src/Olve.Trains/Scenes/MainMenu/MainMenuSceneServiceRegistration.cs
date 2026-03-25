@@ -26,7 +26,6 @@ public static class MainMenuSceneServiceRegistration
         services.AddSceneService<ActivateGuiHandlerService>(sceneId);
 
         services.AddSceneService<MainMenuService>(sceneId);
-        services.AddSceneService<MainMenuStyleService>(sceneId);
 
         return services;
     }

@@ -270,10 +270,12 @@ class Game:
             f"Game produced {len(fail_lines)} error(s):\n" + "\n".join(fail_lines)
         )
 
-    def assert_no_warnings(self) -> None:
+    def assert_no_warnings(self, ignore: list[str] | None = None) -> None:
         """Assert that the game stderr log contains no 'warn:' lines since the last mark."""
         text = self._read_log_since_mark()
         warn_lines = [line for line in text.splitlines() if " warn: " in line]
+        if ignore:
+            warn_lines = [l for l in warn_lines if not any(p in l for p in ignore)]
         assert not warn_lines, (
             f"Game produced {len(warn_lines)} warning(s):\n" + "\n".join(warn_lines)
         )

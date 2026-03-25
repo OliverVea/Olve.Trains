@@ -1,13 +1,9 @@
 using Olve.Engine3D.GUI.Styling;
-using Olve.Engine3D.Scenes;
 
 namespace Olve.Trains.Scenes.GameUI.GUI;
 
-public class GameStyleService(
-    GuiStyleRegistry styleRegistry) : ISceneService
+public static class GameStyleRegistration
 {
-    public int Priority => int.MinValue;
-
     private static readonly IGuiElementStyling[] GameStyles =
     [
         Styles.MenuButtonStyle, Styles.MenuBarBackground,
@@ -30,23 +26,11 @@ public class GameStyleService(
         Styles.DropdownOptionStyle
     ];
 
-    public Result Load()
+    public static void RegisterAllStyles(GuiStyleRegistry registry)
     {
         foreach (var style in GameStyles)
         {
-            styleRegistry.Register(style);
+            registry.Register(style);
         }
-
-        return Result.Success();
-    }
-
-    public Result Unload()
-    {
-        foreach (var style in GameStyles)
-        {
-            styleRegistry.Unregister(style);
-        }
-
-        return Result.Success();
     }
 }

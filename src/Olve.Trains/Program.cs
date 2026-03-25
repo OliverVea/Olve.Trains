@@ -6,7 +6,9 @@ using Olve.Engine3D.Commands;
 using Olve.Engine3D.Input;
 using Olve.Engine3D.Logging;
 using Olve.Engine3D.Utilities;
+using Olve.Engine3D.GUI.Styling;
 using Olve.Trains.Commands;
+using Olve.Trains.Scenes.GameUI.GUI;
 using Olve.Trains.Shared.Telemetry;
 using Silk.NET.Windowing;
 
@@ -66,6 +68,10 @@ public static class Program
             ValidateOnBuild = true,
             ValidateScopes = true,
         });
+
+        // Register GUI styles (singleton registry, available to all scenes)
+        GameStyleRegistration.RegisterAllStyles(
+            serviceProvider.GetRequiredService<GuiStyleRegistry>());
 
         // Register global command handlers
         var collection = serviceProvider.GetRequiredService<CommandHandlerServiceCollection>();
