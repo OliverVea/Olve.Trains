@@ -135,6 +135,11 @@ public class GuiLayoutService(
     {
         foreach (var layoutData in _layoutData)
         {
+            if (!IsNodeShown(layoutData.NodeId))
+            {
+                continue;
+            }
+
             if (layoutData.Width is not { } dpWidth
                 || layoutData.Height is not { } dpHeight
                 || layoutData.Position is not { } dpPosition)
@@ -207,9 +212,37 @@ public class GuiLayoutService(
             return problems;
         }
 
+        ClearHiddenNodeLayoutData();
+
         _isDirty = false;
 
         return Result.Success();
+    }
+
+    private void ClearHiddenNodeLayoutData()
+    {
+        for (var i = 0; i < _layoutData.Count; i++)
+        {
+            var data = _layoutData[i];
+            if (IsNodeShown(data.NodeId))
+            {
+                continue;
+            }
+
+            if (data.Width is not null || data.Height is not null || data.Position is not null)
+            {
+                logger.LogWarning(
+                    "Hidden node '{NodeId}' had non-null layout data (Width={Width}, Height={Height}, Position={Position}) — layout computation should skip hidden nodes",
+                    data.NodeId, data.Width, data.Height, data.Position);
+
+                _layoutData[i] = data with
+                {
+                    Width = null,
+                    Height = null,
+                    Position = null,
+                };
+            }
+        }
     }
 
     private Result ComputeLayoutFor(Id<GuiNode> rootNode, GuiAnchor anchor)
@@ -217,6 +250,11 @@ public class GuiLayoutService(
         if (!_nodeIndexById.TryGetValue(rootNode, out var nodeIndex))
         {
             return new ResultProblem("Could not find node box spec for node with id '{0}'", rootNode);
+        }
+
+        if (!IsNodeShown(rootNode))
+        {
+            return Result.Success();
         }
 
         // Calculate ghost box bounds based on anchor position and growth direction

@@ -19,6 +19,9 @@
         <Box id="PlaceSawmill" Style="MenuButtonStyle" Interactive="true">
             <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconLumbermill" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
         </Box>
+        <Box id="PlaceDepot" Style="MenuButtonStyle" Interactive="true">
+            <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconStation" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
+        </Box>
         <Box id="Delete" Style="MenuButtonStyle" Interactive="true">
             <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconDelete" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
         </Box>

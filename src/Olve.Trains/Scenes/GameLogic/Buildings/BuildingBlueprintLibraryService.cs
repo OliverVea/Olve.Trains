@@ -4,6 +4,7 @@ using Olve.Generated.Meshes;
 using Olve.Generated.Textures;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
+using Olve.Trains.Scenes.GameLogic.Buildings.Depots;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Cargo;
 
@@ -14,6 +15,7 @@ public class BuildingBlueprintLibraryService(
     StationBlueprintService stationBlueprintService,
     ResidenceBlueprintService residenceBlueprintService,
     IndustryBlueprintService industryBlueprintService,
+    DepotBlueprintService depotBlueprintService,
     BuildingMeshBlueprintService buildingMeshBlueprintService) : ISceneService
 {
     public Result Load()
@@ -23,7 +25,8 @@ public class BuildingBlueprintLibraryService(
             LoadResidential(),
             LoadForest(),
             LoadMine(),
-            LoadSawmill());
+            LoadSawmill(),
+            LoadDepot());
     }
 
     private Result LoadStation()
@@ -107,6 +110,22 @@ public class BuildingBlueprintLibraryService(
         return Result.Success();
     }
 
+    private Result LoadDepot()
+    {
+        if (buildingBlueprintService.AddBlueprint(BuildingBlueprintCatalog.Depot, "Depot", new TileFootprint(4, 2, 2))
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
+        depotBlueprintService.SetProperties(BuildingBlueprintCatalog.Depot, new DepotProperties());
+        buildingMeshBlueprintService.SetProperties(BuildingBlueprintCatalog.Depot,
+            new BuildingMeshProperties(Meshes.SM_Bld_Station_Small_02, Textures.SimpleTrains_Texture_01,
+                Matrix4X4.CreateTranslation(0f, 0f, 0.1f)));
+
+        return Result.Success();
+    }
+
     public Result Unload()
     {
         stationBlueprintService.ClearProperties(BuildingBlueprintCatalog.Station);
@@ -116,12 +135,15 @@ public class BuildingBlueprintLibraryService(
         industryBlueprintService.ClearProperties(BuildingBlueprintCatalog.Sawmill);
         buildingMeshBlueprintService.ClearProperties(BuildingBlueprintCatalog.Station);
         buildingMeshBlueprintService.ClearProperties(BuildingBlueprintCatalog.Residential);
+        depotBlueprintService.ClearProperties(BuildingBlueprintCatalog.Depot);
+        buildingMeshBlueprintService.ClearProperties(BuildingBlueprintCatalog.Depot);
 
         buildingBlueprintService.DeleteBlueprint(BuildingBlueprintCatalog.Station);
         buildingBlueprintService.DeleteBlueprint(BuildingBlueprintCatalog.Residential);
         buildingBlueprintService.DeleteBlueprint(BuildingBlueprintCatalog.Forest);
         buildingBlueprintService.DeleteBlueprint(BuildingBlueprintCatalog.Mine);
         buildingBlueprintService.DeleteBlueprint(BuildingBlueprintCatalog.Sawmill);
+        buildingBlueprintService.DeleteBlueprint(BuildingBlueprintCatalog.Depot);
 
         return Result.Success();
     }

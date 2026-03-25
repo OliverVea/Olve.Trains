@@ -5,6 +5,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
+using Olve.Trains.Scenes.GameLogic.Buildings.Depots;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Cargo;
 using Olve.Trains.Commands.GameLogic;
@@ -101,6 +102,8 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<ResidenceBlueprintService>();
         services.TryAddScoped<StationBlueprintService>();
         services.TryAddScoped<StationNameGenerator>();
+        services.TryAddScoped<DepotBlueprintService>();
+        services.TryAddScoped<DepotService>();
         services.TryAddScoped<StationService>();
         services.TryAddScoped<TerrainHighlightSettings>();
         services.TryAddScoped<TrackCollisionService>();
@@ -144,6 +147,13 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
             (StationService ss, Id<Building> id) => ss.DeleteStationForBuilding(id));
+        services.AddImmediateEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingAdded,
+            (DepotService ds, Id<Building> id) => ds.CreateDepotForBuilding(id).ToEmptyResult(),
+            prefill: bs => bs.BuildingIds);
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingRemoved,
+            (DepotService ds, Id<Building> id) => ds.DeleteDepotForBuilding(id));
         services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
             (IndustryService ist, Id<Building> id) => ist.CreateIndustryForBuilding(id).ToEmptyResult(),

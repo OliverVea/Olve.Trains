@@ -32,6 +32,7 @@ public static class UISceneServiceRegistration
         services.AddSceneService<ResidencePlacingToolService>(sceneId);
         services.AddSceneService<ForestPlacingToolService>(sceneId);
         services.AddSceneService<SawmillPlacingToolService>(sceneId);
+        services.AddSceneService<DepotPlacingToolService>(sceneId);
         services.AddSceneService<DeletionToolService>(sceneId);
         services.AddSceneService<SelectToolHandlerService>(sceneId);
         services.AddSceneService<ToolBarService>(sceneId);

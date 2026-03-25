@@ -7,4 +7,5 @@ public static class BuildingBlueprintCatalog
     public static Id<BuildingBlueprint> Forest { get; } = Id.FromName<BuildingBlueprint>("catalog/forest");
     public static Id<BuildingBlueprint> Mine { get; } = Id.FromName<BuildingBlueprint>("catalog/mine");
     public static Id<BuildingBlueprint> Sawmill { get; } = Id.FromName<BuildingBlueprint>("catalog/sawmill");
+    public static Id<BuildingBlueprint> Depot { get; } = Id.FromName<BuildingBlueprint>("catalog/depot");
 }

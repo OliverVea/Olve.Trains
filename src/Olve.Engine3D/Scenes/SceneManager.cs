@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Diagnostics;
@@ -11,6 +10,7 @@ namespace Olve.Engine3D.Scenes;
 public class SceneManager(
     IServiceProvider rootProvider,
     IEnumerable<SceneDefinition> definitions,
+    SceneScopeAccessor sceneScopeAccessor,
     ILoggerFactory loggerFactory)
 {
     private readonly ILogger<SceneManager> _logger = loggerFactory.CreateLogger<SceneManager>();
@@ -183,6 +183,11 @@ public class SceneManager(
             return new ResultProblem("Scene with id '{0}' is not inactive (state: {1})", sceneId, scene.State);
         }
 
+        if (_scopeOwner.TryGetValue(sceneId, out var rootId) && _scopes.TryGetValue(rootId, out var scope))
+        {
+            sceneScopeAccessor.Add(sceneId, scope.ServiceProvider);
+        }
+
         scene.State = SceneState.Active;
         EngineMetrics.ActiveScenes.Add(1);
 
@@ -219,6 +224,8 @@ public class SceneManager(
 
         scene.State = SceneState.Inactive;
         EngineMetrics.ActiveScenes.Add(-1);
+
+        sceneScopeAccessor.Remove(sceneId);
 
         return Result.Success();
     }
@@ -387,4 +394,14 @@ public class SceneManager(
             UnloadScene(rootId);
         }
     }
+}
+
+public class SceneScopeAccessor
+{
+    public IEnumerable<IServiceProvider> ActiveScopeProviders => _providers.Values;
+
+    private readonly Dictionary<Id<IScene>, IServiceProvider> _providers = new();
+
+    public void Add(Id<IScene> sceneId, IServiceProvider provider) => _providers[sceneId] = provider;
+    public void Remove(Id<IScene> sceneId) => _providers.Remove(sceneId);
 }

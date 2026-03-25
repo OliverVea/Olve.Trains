@@ -3,6 +3,7 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Buildings.Depots;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Terrain;
@@ -22,6 +23,7 @@ public class DeletionToolService(
     BuildingService buildingService,
     BuildingCollisionService buildingCollisionService,
     StationService stationService,
+    DepotService depotService,
     MouseManager mouseManager,
     ILogger<DeletionToolService> logger,
     TerrainHighlightSettings terrainHighlightSettings) : BaseToolService<DeletionToolService.State>(toolManagementService, new State())
@@ -121,6 +123,12 @@ public class DeletionToolService(
         if (!stationService.CanDeleteStationForBuilding(buildingId))
         {
             logger.LogWarning("Cannot delete building {BuildingId}: station track is occupied", buildingId);
+            return false;
+        }
+
+        if (!depotService.CanDeleteDepotForBuilding(buildingId))
+        {
+            logger.LogWarning("Cannot delete building {BuildingId}: depot track is occupied", buildingId);
             return false;
         }
 

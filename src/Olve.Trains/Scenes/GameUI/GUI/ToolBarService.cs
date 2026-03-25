@@ -29,6 +29,7 @@ public class ToolBarService(
         (ToolBar.PlaceHouse, ResidencePlacingToolService.ToolId),
         (ToolBar.PlaceForester, ForestPlacingToolService.ToolId),
         (ToolBar.PlaceSawmill, SawmillPlacingToolService.ToolId),
+        (ToolBar.PlaceDepot, DepotPlacingToolService.ToolId),
         (ToolBar.Delete, DeletionToolService.ToolId)
     ];
 
