@@ -76,6 +76,22 @@ public static class GuiSceneServiceRegistration
                 ss.UpdateState(id, s => s & ~GuiNodeState.Pressed),
             after: AfterMouseInput, before: BeforeAnimation);
 
+        // Clean up animation and state entries when nodes are removed
+        services.AddImmediateEventSceneService(sceneId,
+            (GuiNodeService ns) => ns.OnNodeRemoved,
+            (GuiAnimationService gas, Id<GuiNode> id) =>
+            {
+                gas.RemoveAnimationsForNode(id);
+                return Result.Success();
+            });
+        services.AddImmediateEventSceneService(sceneId,
+            (GuiNodeService ns) => ns.OnNodeRemoved,
+            (GuiNodeStateService ss, Id<GuiNode> id) =>
+            {
+                ss.RemoveState(id);
+                return Result.Success();
+            });
+
         // GuiStyleApplier event — must run after GuiAnimationService which produces weight changes
         services.AddEventSceneService(sceneId,
             (GuiAnimationService gas) => gas.GuiStateWeightsChanged,

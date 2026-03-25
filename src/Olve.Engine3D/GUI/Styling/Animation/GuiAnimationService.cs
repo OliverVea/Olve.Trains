@@ -32,6 +32,11 @@ public class GuiAnimationService(
 
     private readonly List<WeightAnimation> _animations = [];
 
+    public void RemoveAnimationsForNode(Id<GuiNode> nodeId)
+    {
+        _animations.RemoveAll(x => x.NodeId == nodeId);
+    }
+
     public Result Load()
     {
         _guiNodeStateChangedQueue

@@ -16,6 +16,11 @@ public class GuiNodeStateService(ILogger<GuiNodeStateService> logger, GuiNodeSer
 
     public Event<GuiNodeStateChanged> OnStateChanged { get; } = new();
 
+    public void RemoveState(Id<GuiNode> nodeId)
+    {
+        _stateRegistry.Remove(nodeId);
+    }
+
     public bool TryGetState(Id<GuiNode> nodeId, out GuiNodeState state)
     {
         return _stateRegistry.TryGetValue(nodeId, out state);
