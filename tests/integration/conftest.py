@@ -118,6 +118,7 @@ def game(_game_pool: GamePool) -> Game:
     g = _game_pool.acquire()
     try:
         g.load_scene("game")
+        g.send("select-tool name=none")
         g.step(2)
     except game_module.GameCrashedError:
         # Game died — restart it before handing to the test
@@ -125,6 +126,7 @@ def game(_game_pool: GamePool) -> Game:
         g._launch_game()
         g._wait_for_pipe()
         g.load_scene("game")
+        g.send("select-tool name=none")
         g.step(2)
     g.mark_log_position()
     yield g
