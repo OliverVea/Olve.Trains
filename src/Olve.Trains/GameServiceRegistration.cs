@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Events;
@@ -27,6 +28,17 @@ public static class GameServiceRegistration
     {
         // Logging & Metrics
         services.AddLogging(builder => builder.AddConfiguredLogging(configuration));
+        services.Add(ServiceDescriptor.Describe(
+            typeof(ILoggerFactory),
+            sp =>
+            {
+                var factory = ActivatorUtilities.CreateInstance<LoggerFactory>(sp);
+                return new DisplayNameResolvingLoggerFactory(
+                    factory,
+                    sp.GetRequiredService<DisplayNameResolver>());
+            },
+            ServiceLifetime.Singleton));
+
         services.AddConfiguredMetrics(configuration);
 
         // Engine modules
@@ -58,12 +70,15 @@ public static class GameServiceRegistration
         services.AddSingleton<ScreenshotManager>();
         services.AddSingleton<CommandHandlerServiceCollection>();
         services.AddSingleton<EventQueueFactory>();
+        services.AddSingleton<DisplayNameResolver>();
+
 
         // Command infrastructure
         services.AddSingleton(instanceId);
         services.AddSingleton<CommandRunner>();
         services.AddSingleton<CommandQueue>();
         services.AddSingleton<EchoCommandHandler>();
+        services.AddSingleton<LogCommandHandler>();
         services.AddSingleton<HelpCommandHandler>();
         services.AddSingleton<ExitCommandHandler>();
         services.AddSingleton<ScreenshotCommandHandler>();

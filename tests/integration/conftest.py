@@ -126,6 +126,7 @@ def game(_game_pool: GamePool) -> Game:
         g._wait_for_pipe()
         g.load_scene("game")
         g.step(2)
+    g.mark_log_position()
     yield g
     _game_pool.release(g)
 

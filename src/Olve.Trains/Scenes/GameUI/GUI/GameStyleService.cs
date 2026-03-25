@@ -6,6 +6,7 @@ namespace Olve.Trains.Scenes.GameUI.GUI;
 public class GameStyleService(
     GuiStyleRegistry styleRegistry) : ISceneService
 {
+    public int Priority => int.MinValue;
 
     private static readonly IGuiElementStyling[] GameStyles =
     [

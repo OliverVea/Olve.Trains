@@ -10,8 +10,10 @@ public class TrainJunctionCrossingService(
     JunctionService junctionService,
     JunctionSignalService junctionSignalService,
     JunctionSignalRuleEvaluationService junctionSignalRuleEvaluationService,
-    TrainTrackHistoryService trainTrackHistoryService) : ISceneService
+    TrainTrackHistoryService trainTrackHistoryService,
+    TrainMovementService trainMovementService) : ISceneService
 {
+    public int Priority => SceneServicePriority.FromDependencies([trainMovementService]);
     private readonly List<Id<Train>> _queue = new();
     private readonly List<Id<Train>> _suspended = new();
 

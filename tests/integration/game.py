@@ -247,13 +247,35 @@ class Game:
 
         return result
 
-    def assert_no_errors(self) -> None:
-        """Assert that the game stderr log contains no 'fail:' lines."""
+    def mark_log_position(self) -> None:
+        """Mark the current end of the stderr log. Subsequent assert_no_errors/assert_no_warnings
+        will only check lines after this mark."""
         self._game_stderr_file.flush()
-        text = self._game_stderr_path.read_text(errors="replace")
+        self._log_mark = self._game_stderr_path.stat().st_size
+
+    def _read_log_since_mark(self) -> str:
+        # SimpleConsole may buffer when stdout is redirected to a file;
+        # give the runtime a moment to flush.
+        time.sleep(0.5)
+        mark = getattr(self, "_log_mark", 0)
+        with open(self._game_stderr_path, "r", errors="replace") as f:
+            f.seek(mark)
+            return f.read()
+
+    def assert_no_errors(self) -> None:
+        """Assert that the game stderr log contains no 'fail:' lines since the last mark."""
+        text = self._read_log_since_mark()
         fail_lines = [line for line in text.splitlines() if " fail: " in line]
         assert not fail_lines, (
             f"Game produced {len(fail_lines)} error(s):\n" + "\n".join(fail_lines)
+        )
+
+    def assert_no_warnings(self) -> None:
+        """Assert that the game stderr log contains no 'warn:' lines since the last mark."""
+        text = self._read_log_since_mark()
+        warn_lines = [line for line in text.splitlines() if " warn: " in line]
+        assert not warn_lines, (
+            f"Game produced {len(warn_lines)} warning(s):\n" + "\n".join(warn_lines)
         )
 
     # -- Typed command wrappers --
@@ -543,8 +565,8 @@ class Game:
         env = {**(self._game_env or os.environ), "Logging__File__LogLevel__Default": "Information"}
         self._game_proc = subprocess.Popen(
             cmd,
-            stdout=subprocess.DEVNULL,
-            stderr=self._game_stderr_file,
+            stdout=self._game_stderr_file,
+            stderr=subprocess.STDOUT,
             env=env,
         )
 

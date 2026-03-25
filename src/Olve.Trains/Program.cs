@@ -70,6 +70,7 @@ public static class Program
         // Register global command handlers
         var collection = serviceProvider.GetRequiredService<CommandHandlerServiceCollection>();
         collection.Add(serviceProvider.GetRequiredService<EchoCommandHandler>());
+        collection.Add(serviceProvider.GetRequiredService<LogCommandHandler>());
         collection.Add(serviceProvider.GetRequiredService<HelpCommandHandler>());
         collection.Add(serviceProvider.GetRequiredService<ExitCommandHandler>());
         collection.Add(serviceProvider.GetRequiredService<ScreenshotCommandHandler>());

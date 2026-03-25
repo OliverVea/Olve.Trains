@@ -8,14 +8,16 @@ namespace Olve.Engine3D.Scenes;
 
 public static class SceneServiceRegistration
 {
+    private const int Step = 1024;
+
     private static int ResolvePriority(IServiceProvider sp, ISceneServiceType[]? after, ISceneServiceType[]? before)
     {
         if (after is { Length: > 0 } && before is { Length: > 0 })
         {
-            var afterPriority = after.Select(t => t.ResolvePriority(sp)).Max() + 1;
-            var beforePriority = before.Select(t => t.ResolvePriority(sp)).Min() - 1;
+            var afterPriority = after.Select(t => t.ResolvePriority(sp)).Max();
+            var beforePriority = before.Select(t => t.ResolvePriority(sp)).Min();
 
-            if (afterPriority > beforePriority)
+            if (afterPriority >= beforePriority)
             {
                 var logger = sp.GetRequiredService<ILoggerFactory>()
                     .CreateLogger(nameof(SceneServiceRegistration));
@@ -29,12 +31,12 @@ public static class SceneServiceRegistration
 
         if (after is { Length: > 0 })
         {
-            return after.Select(t => t.ResolvePriority(sp)).Max() + 1;
+            return after.Select(t => t.ResolvePriority(sp)).Max() + Step;
         }
 
         if (before is { Length: > 0 })
         {
-            return before.Select(t => t.ResolvePriority(sp)).Min() - 1;
+            return before.Select(t => t.ResolvePriority(sp)).Min() - Step;
         }
 
         return 0;
