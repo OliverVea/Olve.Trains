@@ -41,6 +41,7 @@ public static class UISceneServiceRegistration
         services.AddSceneService<SignalRulesPanelService>(sceneId);
         services.AddSceneService<StationInfoPanelService>(sceneId);
         services.AddSceneService<DepotPanelService>(sceneId);
+        services.AddSceneService<TrainSpeedCycleService>(sceneId);
         services.AddSceneService<ActivateGuiHandlerService>(sceneId);
         services.AddSceneService<QueryGuiHandlerService>(sceneId);
 

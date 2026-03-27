@@ -49,7 +49,7 @@ public class PlaceTrainHandlerService(
         }
 
         TrackPoint trackPoint = new(trackId, 0);
-        TrainTrackPosition trainTrackPosition = new(trackPoint, speed);
+        TrainTrackPosition trainTrackPosition = new(trackPoint, speed, speed);
 
         trainPositionService.SetTrackPosition(trainId, trainTrackPosition);
 

@@ -37,7 +37,19 @@ public class TrainMovementService(ILogger<TrainMovementService> logger,
             return problems;
         }
 
-        var newTime = trainTrackPosition.Time + trainTrackPosition.Velocity * deltaTime.InSeconds() / trackLength;
+        var dt = deltaTime.InSeconds();
+        var velocity = trainTrackPosition.Velocity;
+        var target = trainTrackPosition.TargetVelocity;
+
+        if (velocity != target)
+        {
+            var sign = target > velocity ? 1f : -1f;
+            velocity += sign * trainTrackPosition.Acceleration * dt;
+            velocity = sign > 0 ? float.Min(velocity, target) : float.Max(velocity, target);
+            trainTrackPosition = trainTrackPosition with { Velocity = velocity };
+        }
+
+        var newTime = trainTrackPosition.Time + velocity * dt / trackLength;
 
         var reachedEndOfTrack = newTime < 0 && trainTrackPosition.Velocity < 0 || newTime > 1 && trainTrackPosition.Velocity > 0;
         newTime = float.Clamp(newTime, 0, 1);

@@ -103,12 +103,13 @@ public class TrainJunctionCrossingService(
         }
 
         var newVelocity = isAtDestinationEnd ? -float.Abs(trainTrackPosition.Velocity) : float.Abs(trainTrackPosition.Velocity);
+        var newTargetVelocity = isAtDestinationEnd ? -float.Abs(trainTrackPosition.TargetVelocity) : float.Abs(trainTrackPosition.TargetVelocity);
         var newTime = isAtDestinationEnd ? 1 : 0;
 
         trainTrackHistoryService.RecordTransition(trainId, trainTrackPosition.TrackId, trainTrackPosition.Velocity);
 
         TrackPoint newTrainTrackPoint = new(transferredTracks.To, newTime);
-        TrainTrackPosition newTrainTrackPosition = new(newTrainTrackPoint, newVelocity);
+        TrainTrackPosition newTrainTrackPosition = new(newTrainTrackPoint, newVelocity, newTargetVelocity, trainTrackPosition.Acceleration);
         return trainPositionService.SetTrackPosition(trainId, newTrainTrackPosition);
     }
 }
