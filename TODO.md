@@ -22,9 +22,9 @@
   - [x] Add Dropdown widget (collapsed box that expands to show options, single selection)
 - [ ] Train depot epic (Feature):
   - Description: Train depots are buildings where players build and customize trains. Place them like a station, click it to open a train builder UI. Players choose a locomotive, add/remove/reorder wagons, and deploy the train onto the depot's track. Replaces the current auto-spawn with 2 goods wagons.
-  - [ ] Add train depot building type (placed with new owned track, like stations)
-  - [ ] Add depot UI panel (click depot → open train builder)
-  - [ ] Add 'create new train dialog' in the UI - creating a new train immediately deploys the train to the depo track
+  - [x] Add train depot building type (placed with new owned track, like stations)
+  - [x] Add depot UI panel (click depot → open train builder)
+  - [x] Add 'create new train dialog' in the UI - creating a new train immediately deploys the train to the depo track
   - [ ] Allow for editing existing train in the UI - a train on the depo track can be edited until released
   - [ ] Remove automatic 2-goods-wagon attachment on train creation
 - [ ] Resources epic (Feature):

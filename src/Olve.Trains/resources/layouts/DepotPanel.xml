@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Overlay" Style="StationPanelOverlayStyle" Interactive="true">
+    <Box id="Panel" Style="StationPanelStyle" Interactive="true">
+        <Text id="Header" Content='"Depot"' Style="StationPanelHeaderStyle" />
+        <Text id="DepotName" Content='""' Style="StationPanelInfoTextStyle" />
+        <Box id="CreateTrainButton" Style="ModalButtonStyle" Interactive="true">
+            <Text Content='"Create Train"' Style="ModalButtonTextStyle" InheritParentState="true" />
+        </Box>
+    </Box>
+</Box>

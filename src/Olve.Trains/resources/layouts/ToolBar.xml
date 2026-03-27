@@ -4,9 +4,6 @@
         <Box id="PlaceTrack" Style="MenuButtonStyle" Interactive="true">
             <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconTrack" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
         </Box>
-        <Box id="PlaceTrain" Style="MenuButtonStyle" Interactive="true">
-            <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconTrain" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
-        </Box>
         <Box id="PlaceStation" Style="MenuButtonStyle" Interactive="true">
             <Image Texture="TextureAtlases.MenuIcons.Atlas.Texture" SourceRect="TextureAtlases.MenuIcons.IconStation" TextureSize="TextureAtlases.MenuIcons.Atlas.Size" Style="ToolIconStyle" InheritParentState="true" />
         </Box>

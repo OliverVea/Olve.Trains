@@ -25,7 +25,6 @@ public class ToolBarService(
     private readonly (Box, Id<Tool>)[] _toolElements = [
         (ToolBar.PlaceTrack, TrackPlacingToolService.ToolId),
         (ToolBar.PlaceStation, StationPlacingToolService.ToolId),
-        (ToolBar.PlaceTrain, TrainPlacingToolService.ToolId),
         (ToolBar.PlaceHouse, ResidencePlacingToolService.ToolId),
         (ToolBar.PlaceForester, ForestPlacingToolService.ToolId),
         (ToolBar.PlaceSawmill, SawmillPlacingToolService.ToolId),
