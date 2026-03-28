@@ -58,6 +58,8 @@ def test_cargo_transport(game: Game, screenshots: ScreenshotComparer) -> None:
     # Place train on the east connector (not on a station track, so first
     # station entry triggers cargo transfer)
     train_id = game.place_train(track=east_tracks[0], speed=5)
+    game.add_wagon(train_id, "goods")
+    game.add_wagon(train_id, "goods")
 
     # Run for ~20 seconds of game time (1200 frames).
     # At speed=5 on a ~30-unit loop, the train completes ~3 full laps.
