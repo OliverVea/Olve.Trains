@@ -13,7 +13,7 @@ public class PlaceBuildingHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection) : CommandHandlerService(commandHandlerServiceCollection)
 {
     private static readonly CommandArgument PositionArgument = new("pos", "Tile position as x,z (y defaults to terrain height) or x,y,z", true);
-    private static readonly CommandArgument TypeArgument = new("type", "Building type: residential, station, forest, mine, sawmill (default: residential)");
+    private static readonly CommandArgument TypeArgument = new("type", "Building type: residential, station, depot, forest, mine, sawmill (default: residential)");
     private static readonly CommandArgument DirectionArgument = new("dir", "Direction: north, south, east, west (default: north)");
 
     public override string Verb => "place-building";
@@ -40,12 +40,13 @@ public class PlaceBuildingHandlerService(
             "forest" => BuildingBlueprintCatalog.Forest,
             "mine" => BuildingBlueprintCatalog.Mine,
             "sawmill" => BuildingBlueprintCatalog.Sawmill,
+            "depot" => BuildingBlueprintCatalog.Depot,
             _ => default,
         };
 
         if (blueprintId == default)
         {
-            return new ResultProblem("Unknown building type '{0}'. Use: residential, station, forest, mine, sawmill", typeArg);
+            return new ResultProblem("Unknown building type '{0}'. Use: residential, station, depot, forest, mine, sawmill", typeArg);
         }
 
         var direction = CardinalDirection.North;

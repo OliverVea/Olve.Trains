@@ -3,6 +3,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Logging;
+using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Buildings.Depots;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
 
@@ -13,33 +15,62 @@ public class PlaceTrainHandlerService(
     CommandHandlerServiceCollection commandHandlerServiceCollection,
     TrackService trackService,
     TrainService trainService,
-    TrainPositionService trainPositionService) : CommandHandlerService(commandHandlerServiceCollection)
+    TrainPositionService trainPositionService,
+    DepotService depotService) : CommandHandlerService(commandHandlerServiceCollection)
 {
-    private static readonly CommandArgument TrackArgument = new ("track", "The track to place the train on.", true);
+    private static readonly CommandArgument TrackArgument = new ("track", "The track to place the train on.");
+    private static readonly CommandArgument DepotArgument = new("depot", "The depot building ID to place the train at.");
     private static readonly CommandArgument TrainIdArgument = new("train", "The train to place. If empty, a new train will be created.");
     private static readonly CommandArgument SpeedArgument = new("speed", "The speed of the train.");
 
     public override string Verb => "place-train";
-    public override string HelpString => "Places the specified train on the specified track";
-    public override IReadOnlyList<CommandArgument> Arguments { get; } = [TrainIdArgument, TrackArgument, SpeedArgument];
+    public override string HelpString => "Places a train on a track or at a depot. Provide either track= or depot=.";
+    public override IReadOnlyList<CommandArgument> Arguments { get; } = [TrainIdArgument, TrackArgument, DepotArgument, SpeedArgument];
     public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
-        var trackIdResult = commandContext.GetId<Track>(TrackArgument);
+        var hasTrack = commandContext.Arguments.ContainsKey(TrackArgument.Key);
+        var hasDepot = commandContext.Arguments.ContainsKey(DepotArgument.Key);
+
+        if (!hasTrack && !hasDepot)
+        {
+            return new ResultProblem("Either 'track' or 'depot' must be provided");
+        }
+
+        Id<Track> trackId;
+        if (hasDepot)
+        {
+            if (commandContext.GetId<Building>(DepotArgument).TryPickProblems(out var depotProblems, out var buildingId))
+            {
+                return depotProblems;
+            }
+
+            if (!depotService.TryGetDepot(buildingId, out var depot))
+            {
+                return new ResultProblem("Building '{0}' is not a depot", buildingId);
+            }
+
+            trackId = depot.TrackId;
+        }
+        else
+        {
+            if (commandContext.GetId<Track>(TrackArgument).TryPickProblems(out var trackProblems, out trackId))
+            {
+                return trackProblems;
+            }
+
+            if (!trackService.TrackExists(trackId))
+            {
+                return new ResultProblem("Track with id '{0}' doesnt exist", trackId);
+            }
+        }
 
         var trainIdResult = commandContext.Arguments.ContainsKey(TrainIdArgument.Key)
             ? commandContext.GetId<Train>(TrainIdArgument)
             : CreateTrain();
 
-        if (Result.Concat(trackIdResult, trainIdResult).TryPickProblems(out var problems, out var trackAndTrainId))
+        if (trainIdResult.TryPickProblems(out var problems, out var trainId))
         {
             return problems;
-        }
-
-        var (trackId, trainId) = trackAndTrainId;
-
-        if (!trackService.TrackExists(trackId))
-        {
-            return new ResultProblem("Track with id '{0}' doesnt exist", trackId);
         }
 
         var speedString = commandContext.Arguments.GetValueOrDefault(SpeedArgument.Key, "0");

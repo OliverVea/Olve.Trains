@@ -1,10 +1,11 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
 using Olve.Trains.Shared.Telemetry;
 
 namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public class TrainService(EntityStoreFactory entityStoreFactory)
+public class TrainService(ILogger<TrainService> logger, EntityStoreFactory entityStoreFactory)
 {
     private readonly EntityStore<Train> _trains = entityStoreFactory.Create<Train>();
     private int _count;
@@ -26,6 +27,7 @@ public class TrainService(EntityStoreFactory entityStoreFactory)
 
         _count++;
         if (EngineMetrics.IsEnabled) GameMetrics.TrainCount.Add(1);
+        logger.LogInformation("Created train '{TrainId}' name={Name}", trainId, name);
         return trainId;
     }
 
@@ -36,6 +38,7 @@ public class TrainService(EntityStoreFactory entityStoreFactory)
         {
             _count--;
             if (EngineMetrics.IsEnabled) GameMetrics.TrainCount.Add(-1);
+            logger.LogInformation("Deleted train '{TrainId}'", trainId);
         }
         return result;
     }

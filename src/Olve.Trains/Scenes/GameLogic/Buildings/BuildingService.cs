@@ -26,7 +26,7 @@ public class BuildingService
 
     public Result<Id<Building>> AddBuilding(Id<BuildingBlueprint> blueprintId, BuildingPosition position)
     {
-        if (!_blueprintService.TryGetBlueprint(blueprintId, out _))
+        if (!_blueprintService.TryGetBlueprint(blueprintId, out var blueprint))
         {
             return new ResultProblem("Building blueprint '{0}' not found", blueprintId);
         }
@@ -38,7 +38,11 @@ public class BuildingService
             return new ResultProblem("Failed to add building '{0}' with blueprint '{1}'", building.Id, blueprintId);
         }
 
-        _logger.LogInformation("Added building {BuildingId} with blueprint {BlueprintId} at {Origin}", building.Id, blueprintId, position);
+        _logger.LogInformation(
+            "Added building {BuildingId} type={Type} pos={X},{Y},{Z} dir={Direction}",
+            building.Id, blueprint.Description,
+            position.BottomLeft.X, position.BottomLeft.Y, position.BottomLeft.Z,
+            position.CardinalDirection);
         if (EngineMetrics.IsEnabled) GameMetrics.BuildingCount.Add(1);
 
         return building.Id;

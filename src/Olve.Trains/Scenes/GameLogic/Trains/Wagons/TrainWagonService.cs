@@ -1,8 +1,9 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Systems;
 
 namespace Olve.Trains.Scenes.GameLogic.Trains.Wagons;
 
-public class TrainWagonService(WagonBlueprintService wagonBlueprintService)
+public class TrainWagonService(ILogger<TrainWagonService> logger, WagonBlueprintService wagonBlueprintService)
 {
     private readonly Dictionary<Id<Train>, List<Wagon>> _wagons = new();
 
@@ -32,6 +33,9 @@ public class TrainWagonService(WagonBlueprintService wagonBlueprintService)
         list.Add(wagon);
         OnWagonAdded.Invoke((trainId, wagon));
 
+        var blueprintName = wagonBlueprintService.TryGet(blueprintId, out var bp) ? bp.Name : blueprintId.ToString();
+        logger.LogInformation("Added wagon '{WagonId}' type={Type} to train '{TrainId}'", wagon.Id, blueprintName, trainId);
+
         return wagon.Id;
     }
 
@@ -45,6 +49,8 @@ public class TrainWagonService(WagonBlueprintService wagonBlueprintService)
         var wagon = list[index];
         list.RemoveAt(index);
         OnWagonRemoved.Invoke((trainId, wagon));
+
+        logger.LogInformation("Removed wagon '{WagonId}' at index {Index} from train '{TrainId}'", wagon.Id, index, trainId);
 
         return Result.Success();
     }

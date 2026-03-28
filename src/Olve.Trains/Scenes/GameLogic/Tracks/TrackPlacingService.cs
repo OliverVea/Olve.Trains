@@ -64,8 +64,13 @@ public class TrackPlacingService(ILogger<TrackPlacingService> logger, TrackServi
             return problems.Prepend("Failed to add track");
         }
 
-        logger.LogInformation("Created track with id '{TrackId}'", trackId);
-        logger.LogDebug("Placed track from {StartEndpoint} to {EndEndpoint}", startEndpoint, endEndpoint);
+        logger.LogInformation(
+            "Created track '{TrackId}' from ({StartX:F2},{StartY:F2},{StartZ:F2}) to ({EndX:F2},{EndY:F2},{EndZ:F2}) dir ({StartDirX:F2},{StartDirY:F2},{StartDirZ:F2})->({EndDirX:F2},{EndDirY:F2},{EndDirZ:F2})",
+            trackId,
+            startEndpoint.Point.X, startEndpoint.Point.Y, startEndpoint.Point.Z,
+            endEndpoint.Point.X, endEndpoint.Point.Y, endEndpoint.Point.Z,
+            startEndpoint.Tangent.X, startEndpoint.Tangent.Y, startEndpoint.Tangent.Z,
+            endEndpoint.Tangent.X, endEndpoint.Tangent.Y, endEndpoint.Tangent.Z);
 
         return trackId;
     }

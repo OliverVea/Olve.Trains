@@ -118,6 +118,25 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "place-train t
 dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "screenshot path=~/circle-track.png"
 ```
 
+### Replay / Manual Testing
+
+When you need to set up a game for the user to test features, use the replay system. The canonical replay is `scripts/replays/industry-loop.py` — an industry loop with depot, stations, forest, sawmill, tracks, and trains with wagons.
+
+```bash
+# Build Release first (if not already built)
+dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release
+
+# Run the replay (launches windowed game, sets up the scenario, keeps game running)
+tests/integration/.venv/Scripts/python.exe scripts/replays/industry-loop.py
+```
+
+Replays are Python scripts using the `Game` class from `tests/integration/game.py`. They start the game in non-manual mode with `--listen`, send commands via the named pipe, and keep the game alive for interactive use. Add new replays in `scripts/replays/` for different scenarios.
+
+For simpler command-file replays (no ID chaining needed), use `scripts/replay.py`:
+```bash
+tests/integration/.venv/Scripts/python.exe scripts/replay.py scripts/replays/some-file.txt --skip-build
+```
+
 ## Testing (IMPORTANT!)
 
 **Always run integration tests before committing.**
@@ -343,6 +362,15 @@ path.TryGlob("**/*.cs", out _)  // instead of Directory.GetFiles()
 var home = Path.GetHomeDirectory();
 Path.TryGetAssemblyExecutable(out var exe);
 ```
+
+## Design Principles
+
+### Observability
+Every player-visible action must be **loggable** and the full game state must be **queryable** via the command interface. This enables replay files, debugging, and AI-assisted testing.
+
+- **Logging**: When a player action mutates game state (placing/deleting tracks, buildings, trains, wagons, etc.), log enough detail to reconstruct the action as a replay command. Use `info` level for state-changing actions, `debug` for transient events (tool switches, hover, etc.).
+- **Query commands**: Every entity type must have `list-<entity>` and `query-<entity>` commands that return full state as JSON. When adding a new entity type, add these commands as part of the feature.
+- **Replay-ability**: The combination of logs + query commands should make it possible to reconstruct the full game state at any point.
 
 ## Code Organization Rules
 
