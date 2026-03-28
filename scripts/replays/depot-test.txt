@@ -1,0 +1,16 @@
+# Depot test scenario: place a depot, create a train, add wagons
+
+# Camera setup
+set-camera target=12.5,0,10 zoom=2.5
+
+# Place a depot
+place-building pos=11,1,10 type=depot dir=north
+
+# Wait for the game to settle
+wait 2
+
+# Place a track loop around the depot
+place-track start=10.5,0.125,8.5 end=14.5,0.125,8.5 start-dir=east end-dir=east
+place-track start=14.5,0.125,8.5 end=14.5,0.125,12.5 start-dir=north end-dir=north
+place-track start=14.5,0.125,12.5 end=10.5,0.125,12.5 start-dir=west end-dir=west
+place-track start=10.5,0.125,12.5 end=10.5,0.125,8.5 start-dir=south end-dir=south

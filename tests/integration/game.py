@@ -125,6 +125,7 @@ class Game:
         skip_build: bool = False,
         scene: str | None = None,
         kill_stale: bool = True,
+        manual: bool = True,
     ):
         self.instance_id = instance_id
         self.resolution = resolution
@@ -132,6 +133,7 @@ class Game:
         self.skip_build = skip_build
         self.scene = scene
         self.kill_stale = kill_stale
+        self.manual = manual
 
         self._display: int = Game._next_display
         Game._next_display += 1
@@ -299,9 +301,14 @@ class Game:
         return data["trackIds"]
 
     def place_train(
-        self, track: str, speed: float | None = None
+        self, track: str | None = None, depot: str | None = None, speed: float | None = None
     ) -> str:
-        cmd = f"place-train track={track}"
+        if depot is not None:
+            cmd = f"place-train depot={depot}"
+        elif track is not None:
+            cmd = f"place-train track={track}"
+        else:
+            raise ValueError("Either track or depot must be provided")
         if speed is not None:
             cmd += f" speed={speed}"
         result = self.send(cmd)
@@ -549,17 +556,18 @@ class Game:
         time.sleep(2)
 
     def _launch_game(self) -> None:
-        logger.info("Launching game (manual mode, scene=%s, pipe=%s)", self.scene or "default", self._pipe_id)
+        logger.info("Launching game (manual=%s, scene=%s, pipe=%s)", self.manual, self.scene or "default", self._pipe_id)
         cmd = [
             "dotnet",
             str(GAME_DLL),
-            "--manual",
             "--listen",
             "--instance",
             self._pipe_id,
             "--resolution",
             self.resolution,
         ]
+        if self.manual:
+            cmd.append("--manual")
         if self.scene:
             cmd.extend(["--scene", self.scene])
         self._game_stderr_path = Path(self._temp_dir) / "game-stderr.log"

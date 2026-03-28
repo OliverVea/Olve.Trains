@@ -1,0 +1,80 @@
+# Industry loop scenario — replicated from player session
+
+# Camera
+set-camera target=10,0,17 zoom=3.5
+
+# === Buildings ===
+
+# Depot at top
+place-building pos=9,1,24 type=depot dir=north
+
+# Station near forest
+place-building pos=9,1,20 type=station dir=north
+
+# Forest (wood producer)
+place-building pos=10,1,22 type=forest dir=north
+
+# Station near sawmill
+place-building pos=9,1,11 type=station dir=north
+
+# Two sawmills (wood consumers)
+place-building pos=10,1,9 type=sawmill dir=north
+place-building pos=10,1,9 type=sawmill dir=north
+
+# === Tracks ===
+
+# Top-right curve: depot track east end curving south
+place-track start=13.5,0.125,24.5 end=15.5,0.125,22.5 start-dir=east end-dir=south
+
+# Right side straight: south from 22.5 to 18.5
+place-track start=15.5,0.125,22.5 end=15.5,0.125,18.5 start-dir=south end-dir=south
+
+# Mid-right curve: station track east end curving south
+place-track start=13.5,0.125,20.5 end=15.5,0.125,18.5 start-dir=east end-dir=south
+
+# Return curve: station track east end curving north (back to right side)
+place-track start=13.5,0.125,20.5 end=15.5,0.125,22.5 start-dir=east end-dir=north
+
+# Left side from station: west
+place-track start=8.5,0.125,20.5 end=7.5,0.125,20.5 start-dir=west end-dir=west
+place-track start=7.5,0.125,20.5 end=6.5,0.125,20.5 start-dir=west end-dir=west
+
+# Bottom-left curve: west curving south
+place-track start=6.5,0.125,20.5 end=4.5,0.125,22.5 start-dir=west end-dir=south
+
+# Left curve back up: south curving east (completing west loop)
+place-track start=4.5,0.125,22.5 end=8.5,0.125,24.5 start-dir=north end-dir=east
+
+# Left Y-branch: from station west end curving south
+place-track start=8.5,0.125,20.5 end=6.5,0.125,18.5 start-dir=west end-dir=south
+
+# Left loop closure: from bottom-left to Y-branch bottom
+place-track start=4.5,0.125,22.5 end=6.5,0.125,18.5 start-dir=south end-dir=south
+
+# Bottom-right: station track east end curving north
+place-track start=13.5,0.125,11.5 end=15.5,0.125,13.5 start-dir=east end-dir=north
+
+# Right side straight: north from 13.5 to 18.5
+place-track start=15.5,0.125,13.5 end=15.5,0.125,18.5 start-dir=north end-dir=north
+
+# Bottom-left: station track west end curving north
+place-track start=8.5,0.125,11.5 end=6.5,0.125,13.5 start-dir=west end-dir=north
+
+# Left side straight: north from 13.5 to 18.5
+place-track start=6.5,0.125,13.5 end=6.5,0.125,18.5 start-dir=north end-dir=north
+
+# === Trains ===
+
+# Train 1: on depot track with 4 goods wagons
+# (place-train uses the depot track — we need the track ID from depot creation)
+# The depot creates a track automatically; we place train on it via place-train
+# For now we use the first track segment from the first place-track output
+
+wait 1
+
+# We need a different approach: create trains via the depot
+# Unfortunately we can't click the depot via commands yet
+# Instead, place trains directly on tracks and add wagons
+
+# Let the game settle
+wait 2

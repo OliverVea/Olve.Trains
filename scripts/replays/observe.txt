@@ -1,0 +1,3 @@
+# Empty replay - just observe player actions
+# Camera centered on the map
+set-camera target=12.5,0,12.5 zoom=3.0
