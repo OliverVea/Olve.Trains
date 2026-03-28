@@ -269,8 +269,8 @@ public class ProcessShaders(
         programObject.Add("InstanceStrideBytes", instanceStride * sizeof(float));
 
         // Separate lists for struct generation (avoids Scriban filtering issues)
-        var instancedAttrObjects = vertexAttributeObjects.Where(a => (bool)a["IsInstanced"]).ToList();
-        var perVertexAttrObjects = vertexAttributeObjects.Where(a => !(bool)a["IsInstanced"]).ToList();
+        var instancedAttrObjects = vertexAttributeObjects.Where(a => a["IsInstanced"] is true).ToList();
+        var perVertexAttrObjects = vertexAttributeObjects.Where(a => a["IsInstanced"] is not true).ToList();
         programObject.Add("InstancedAttributes", instancedAttrObjects);
         programObject.Add("PerVertexAttributes", perVertexAttrObjects);
 
