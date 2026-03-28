@@ -54,7 +54,8 @@ class TrainState:
     train_id: str
     track_id: str
     time: float
-    velocity: float
+    speed: float
+    direction: str
     position: tuple[float, float, float] | None = None
 
 
@@ -396,7 +397,8 @@ class Game:
             train_id=data["trainId"],
             track_id=data["trackId"],
             time=data["time"],
-            velocity=data["velocity"],
+            speed=data["speed"],
+            direction=data["direction"],
             position=(float(pos["x"]), float(pos["y"]), float(pos["z"])) if pos else None,
         )
 
@@ -418,7 +420,8 @@ class Game:
                 train_id=v["trainId"],
                 track_id=v["trackId"],
                 time=v["time"],
-                velocity=v["velocity"],
+                speed=v["speed"],
+                direction=v["direction"],
             )
             for v in data["trains"]
         ]
