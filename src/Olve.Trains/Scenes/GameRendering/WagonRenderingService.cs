@@ -102,7 +102,7 @@ public class WagonRenderingService(
                     return problems.Prepend("Failed to sample position for wagon '{0}'", wagonPos.WagonId);
                 }
 
-                var worldMatrix = TrainWorldMatrix.Compute(wagonPos.Velocity, position);
+                var worldMatrix = TrainWorldMatrix.Compute(wagonPos.Direction, position);
 
                 if (meshRenderingService.UpdateInstance(instanceHandle, worldMatrix)
                     .TryPickProblems(out problems))

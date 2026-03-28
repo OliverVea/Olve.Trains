@@ -171,9 +171,14 @@ public class DepotPanelService(
         }
 
         TrackPoint trackPoint = new(_depot.TrackId, 0f);
-        TrainTrackPosition position = new(trackPoint, 0f);
+        TrainTrackPosition position = new(trackPoint, TrainDirection.Forward);
 
         if (trainPositionService.SetTrackPosition(trainId, position).TryPickProblems(out problems))
+        {
+            return problems;
+        }
+
+        if (trainPositionService.SetMotion(trainId, new TrainMotion(0f, 0f)).TryPickProblems(out problems))
         {
             return problems;
         }

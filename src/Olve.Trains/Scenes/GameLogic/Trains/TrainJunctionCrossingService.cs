@@ -94,7 +94,7 @@ public class TrainJunctionCrossingService(
         return Result.Success();
     }
 
-    private Result TransferTracks(Id<Train> trainId, TrainTrackPosition trainTrackPosition, TransferredTracks transferredTracks)
+    private Result TransferTracks(Id<Train> trainId, TrainTrackPosition trackPosition, TransferredTracks transferredTracks)
     {
         var isAtDestinationEndResult = trainJunctionService.IsAtTrackEnd(trainId, transferredTracks.To);
         if (isAtDestinationEndResult.TryPickProblems(out var problems, out var isAtDestinationEnd))
@@ -102,14 +102,13 @@ public class TrainJunctionCrossingService(
             return problems;
         }
 
-        var newVelocity = isAtDestinationEnd ? -float.Abs(trainTrackPosition.Velocity) : float.Abs(trainTrackPosition.Velocity);
-        var newTargetVelocity = isAtDestinationEnd ? -float.Abs(trainTrackPosition.TargetVelocity) : float.Abs(trainTrackPosition.TargetVelocity);
-        var newTime = isAtDestinationEnd ? 1 : 0;
+        var newDirection = isAtDestinationEnd ? TrainDirection.Backward : TrainDirection.Forward;
+        var newTime = isAtDestinationEnd ? 1f : 0f;
 
-        trainTrackHistoryService.RecordTransition(trainId, trainTrackPosition.TrackId, trainTrackPosition.Velocity);
+        trainTrackHistoryService.RecordTransition(trainId, trackPosition.TrackId, trackPosition.Direction);
 
         TrackPoint newTrainTrackPoint = new(transferredTracks.To, newTime);
-        TrainTrackPosition newTrainTrackPosition = new(newTrainTrackPoint, newVelocity, newTargetVelocity, trainTrackPosition.Acceleration);
+        TrainTrackPosition newTrainTrackPosition = new(newTrainTrackPoint, newDirection);
         return trainPositionService.SetTrackPosition(trainId, newTrainTrackPosition);
     }
 }

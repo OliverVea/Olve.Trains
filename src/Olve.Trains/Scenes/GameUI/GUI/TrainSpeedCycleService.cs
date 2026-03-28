@@ -35,12 +35,11 @@ public class TrainSpeedCycleService(
             if (hit.Group != ColliderGroups.Train) continue;
 
             if (trainCollisionService.TryGetTrainId(hit.ColliderId, out var trainId)
-                && trainPositionService.TryGetTrackPosition(trainId, out var trackPosition))
+                && trainPositionService.TryGetMotion(trainId, out var motion))
             {
-                var nextSpeed = GetNextSpeed(trackPosition.TargetVelocity);
-                var newPosition = trackPosition with { TargetVelocity = nextSpeed };
-                trainPositionService.SetTrackPosition(trainId, newPosition);
-                logger.LogInformation("Train {TrainId} target speed: {PreviousSpeed} -> {NextSpeed}", trainId, trackPosition.TargetVelocity, nextSpeed);
+                var nextSpeed = GetNextSpeed(motion.TargetSpeed);
+                trainPositionService.SetMotion(trainId, motion with { TargetSpeed = nextSpeed });
+                logger.LogInformation("Train {TrainId} target speed: {PreviousSpeed} -> {NextSpeed}", trainId, motion.TargetSpeed, nextSpeed);
             }
 
             break;

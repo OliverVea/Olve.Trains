@@ -77,12 +77,16 @@ public class QueryTrainHandlerService(
             })
             .ToArray();
 
+        trainPositionService.TryGetMotion(trainId, out var motion);
+
         var json = JsonSerializer.Serialize(new
         {
             trainId = trainId.ToString(),
             trackId = trackPosition.TrackPoint.TrackId.ToString(),
             time = trackPosition.TrackPoint.Time,
-            velocity = trackPosition.Velocity,
+            direction = trackPosition.Direction.ToString(),
+            speed = motion.Speed,
+            targetSpeed = motion.TargetSpeed,
             position,
             wagons,
         });

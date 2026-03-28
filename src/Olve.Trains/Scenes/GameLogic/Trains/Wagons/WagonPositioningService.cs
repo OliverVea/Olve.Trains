@@ -13,7 +13,7 @@ public class WagonPositioningService(
     private const float DefaultWagonLength = 1.0f * Scale;
     private const float CouplingGap = 0.1f * Scale;
 
-    public readonly record struct WagonPosition(Id<Wagon> WagonId, Id<Track> TrackId, float Time, float Velocity);
+    public readonly record struct WagonPosition(Id<Wagon> WagonId, Id<Track> TrackId, float Time, TrainDirection Direction);
 
     public Result<IReadOnlyList<WagonPosition>> GetWagonPositions(Id<Train> trainId, TrainTrackPosition trackPosition)
     {
@@ -45,20 +45,20 @@ public class WagonPositioningService(
                 return problems.Prepend("Failed to compute position for wagon '{0}'", wagon.Id);
             }
 
-            positions[i] = new WagonPosition(wagon.Id, wagonPos.TrackId, wagonPos.Time, wagonPos.Velocity);
+            positions[i] = new WagonPosition(wagon.Id, wagonPos.TrackId, wagonPos.Time, wagonPos.Direction);
             cumulativeOffset += wagonLength + CouplingGap;
         }
 
         return positions;
     }
 
-    private Result<(Id<Track> TrackId, float Time, float Velocity)> ComputeWagonPosition(
+    private Result<(Id<Track> TrackId, float Time, TrainDirection Direction)> ComputeWagonPosition(
         Id<Train> trainId,
         TrainTrackPosition locoPosition,
         float offset)
     {
         var trackId = locoPosition.TrackId;
-        var velocity = locoPosition.Velocity;
+        var direction = locoPosition.Direction;
 
         if (trackSplineService.GetLength(trackId).TryPickProblems(out var problems, out var trackLength))
         {
@@ -68,7 +68,7 @@ public class WagonPositioningService(
         var locoArcDist = locoPosition.Time * trackLength;
 
         float availableBehind;
-        if (velocity > 0)
+        if (direction == TrainDirection.Forward)
         {
             availableBehind = locoArcDist;
         }
@@ -80,7 +80,7 @@ public class WagonPositioningService(
         if (offset <= availableBehind)
         {
             float wagonTime;
-            if (velocity > 0)
+            if (direction == TrainDirection.Forward)
             {
                 wagonTime = (locoArcDist - offset) / trackLength;
             }
@@ -89,18 +89,18 @@ public class WagonPositioningService(
                 wagonTime = (locoArcDist + offset) / trackLength;
             }
 
-            return (trackId, wagonTime, velocity);
+            return (trackId, wagonTime, direction);
         }
 
         var overflow = offset - availableBehind;
         var history = trainTrackHistoryService.GetHistory(trainId);
 
-        return WalkHistory(trackId, velocity, overflow, history);
+        return WalkHistory(trackId, direction, overflow, history);
     }
 
-    private Result<(Id<Track> TrackId, float Time, float Velocity)> WalkHistory(
+    private Result<(Id<Track> TrackId, float Time, TrainDirection Direction)> WalkHistory(
         Id<Track> currentTrackId,
-        float currentVelocity,
+        TrainDirection currentDirection,
         float overflow,
         IReadOnlyList<TrainTrackHistoryService.TrackHistoryEntry> history)
     {
@@ -114,7 +114,7 @@ public class WagonPositioningService(
             if (overflow <= prevTrackLength)
             {
                 float wagonTime;
-                if (entry.Velocity > 0)
+                if (entry.Direction == TrainDirection.Forward)
                 {
                     wagonTime = (prevTrackLength - overflow) / prevTrackLength;
                 }
@@ -123,7 +123,7 @@ public class WagonPositioningService(
                     wagonTime = overflow / prevTrackLength;
                 }
 
-                return (entry.TrackId, wagonTime, entry.Velocity);
+                return (entry.TrackId, wagonTime, entry.Direction);
             }
 
             overflow -= prevTrackLength;
@@ -132,11 +132,11 @@ public class WagonPositioningService(
         if (history.Count > 0)
         {
             var lastEntry = history[^1];
-            var clampTime = lastEntry.Velocity > 0 ? 0f : 1f;
-            return (lastEntry.TrackId, clampTime, lastEntry.Velocity);
+            var clampTime = lastEntry.Direction == TrainDirection.Forward ? 0f : 1f;
+            return (lastEntry.TrackId, clampTime, lastEntry.Direction);
         }
 
-        var clampToStart = currentVelocity > 0 ? 0f : 1f;
-        return (currentTrackId, clampToStart, currentVelocity);
+        var clampToStart = currentDirection == TrainDirection.Forward ? 0f : 1f;
+        return (currentTrackId, clampToStart, currentDirection);
     }
 }

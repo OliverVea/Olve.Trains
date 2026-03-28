@@ -16,12 +16,18 @@ public class ListTrainsHandlerService(
     public override Result<CommandOutput> Handle(CommandContext commandContext)
     {
         var trains = trainPositionService.TrackPositions
-            .Select(tp => new
+            .Select(tp =>
             {
-                trainId = tp.Item1.ToString(),
-                trackId = tp.Item2.TrackPoint.TrackId.ToString(),
-                time = tp.Item2.TrackPoint.Time,
-                velocity = tp.Item2.Velocity,
+                trainPositionService.TryGetMotion(tp.Item1, out var motion);
+                return new
+                {
+                    trainId = tp.Item1.ToString(),
+                    trackId = tp.Item2.TrackPoint.TrackId.ToString(),
+                    time = tp.Item2.TrackPoint.Time,
+                    direction = tp.Item2.Direction.ToString(),
+                    speed = motion.Speed,
+                    targetSpeed = motion.TargetSpeed,
+                };
             })
             .ToArray();
 

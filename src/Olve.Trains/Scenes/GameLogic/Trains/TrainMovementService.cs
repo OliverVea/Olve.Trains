@@ -20,7 +20,12 @@ public class TrainMovementService(ILogger<TrainMovementService> logger,
 
         foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
         {
-            var result = UpdateTrackPosition(trainId, deltaTime, trackPosition);
+            if (!trainPositionService.TryGetMotion(trainId, out var motion))
+            {
+                continue;
+            }
+
+            var result = UpdateTrackPosition(trainId, deltaTime, trackPosition, motion);
             if (result.TryPickProblems(out var problems))
             {
                 logger.LogWarning("Failed to update track position: {Problems}", problems);
@@ -30,33 +35,34 @@ public class TrainMovementService(ILogger<TrainMovementService> logger,
         return Result.Success();
     }
 
-    private Result UpdateTrackPosition(Id<Train> trainId, TimeSpan deltaTime, TrainTrackPosition trainTrackPosition)
+    private Result UpdateTrackPosition(Id<Train> trainId, TimeSpan deltaTime, TrainTrackPosition trackPosition, TrainMotion motion)
     {
-        if (trackSplineService.GetLength(trainTrackPosition.TrackId).TryPickProblems(out var problems, out var trackLength))
+        if (trackSplineService.GetLength(trackPosition.TrackId).TryPickProblems(out var problems, out var trackLength))
         {
             return problems;
         }
 
         var dt = deltaTime.InSeconds();
-        var velocity = trainTrackPosition.Velocity;
-        var target = trainTrackPosition.TargetVelocity;
+        var speed = motion.Speed;
+        var target = motion.TargetSpeed;
 
-        if (velocity != target)
+        if (speed != target)
         {
-            var sign = target > velocity ? 1f : -1f;
-            velocity += sign * trainTrackPosition.Acceleration * dt;
-            velocity = sign > 0 ? float.Min(velocity, target) : float.Max(velocity, target);
-            trainTrackPosition = trainTrackPosition with { Velocity = velocity };
+            var sign = target > speed ? 1f : -1f;
+            speed += sign * motion.Acceleration * dt;
+            speed = sign > 0 ? float.Min(speed, target) : float.Max(speed, target);
+            trainPositionService.SetMotion(trainId, motion with { Speed = speed });
         }
 
-        var newTime = trainTrackPosition.Time + velocity * dt / trackLength;
+        var directionSign = trackPosition.Direction == TrainDirection.Forward ? 1f : -1f;
+        var newTime = trackPosition.Time + directionSign * speed * dt / trackLength;
 
-        var reachedEndOfTrack = newTime < 0 && trainTrackPosition.Velocity < 0 || newTime > 1 && trainTrackPosition.Velocity > 0;
+        var reachedEndOfTrack = newTime < 0 || newTime > 1;
         newTime = float.Clamp(newTime, 0, 1);
 
-        var newTrackPoint = trainTrackPosition.TrackPoint with { Time = newTime };
-        trainTrackPosition = trainTrackPosition with { TrackPoint = newTrackPoint };
-        trainPositionService.SetTrackPosition(trainId, trainTrackPosition);
+        var newTrackPoint = trackPosition.TrackPoint with { Time = newTime };
+        trackPosition = trackPosition with { TrackPoint = newTrackPoint };
+        trainPositionService.SetTrackPosition(trainId, trackPosition);
 
         if (reachedEndOfTrack)
         {

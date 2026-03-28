@@ -27,9 +27,9 @@ public class SetTrainSpeedHandlerService(
             return problems;
         }
 
-        if (!trainPositionService.TryGetTrackPosition(trainId, out var trackPosition))
+        if (!trainPositionService.TryGetMotion(trainId, out var motion))
         {
-            return new ResultProblem("Train '{0}' has no track position", trainId);
+            return new ResultProblem("Train '{0}' has no motion state", trainId);
         }
 
         var speedString = commandContext.Arguments.GetValueOrDefault(SpeedArgument.Key, "0");
@@ -38,8 +38,7 @@ public class SetTrainSpeedHandlerService(
             return new ResultProblem("Got invalid speed value '{0}'", speedString);
         }
 
-        var newPosition = trackPosition with { TargetVelocity = speed };
-        trainPositionService.SetTrackPosition(trainId, newPosition);
+        trainPositionService.SetMotion(trainId, motion with { TargetSpeed = speed });
 
         logger.LogInformation("Set train '{TrainId}' target speed to {Speed}", trainId, speed);
 

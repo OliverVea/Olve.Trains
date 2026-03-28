@@ -4,13 +4,13 @@ namespace Olve.Trains.Scenes.GameLogic.Trains;
 
 public class TrainTrackHistoryService
 {
-    public readonly record struct TrackHistoryEntry(Id<Track> TrackId, float Velocity);
+    public readonly record struct TrackHistoryEntry(Id<Track> TrackId, TrainDirection Direction);
 
     private const int MaxHistorySize = 8;
 
     private readonly Dictionary<Id<Train>, List<TrackHistoryEntry>> _history = new();
 
-    public void RecordTransition(Id<Train> trainId, Id<Track> previousTrackId, float velocityOnPreviousTrack)
+    public void RecordTransition(Id<Train> trainId, Id<Track> previousTrackId, TrainDirection direction)
     {
         if (!_history.TryGetValue(trainId, out var list))
         {
@@ -18,7 +18,7 @@ public class TrainTrackHistoryService
             _history[trainId] = list;
         }
 
-        list.Insert(0, new TrackHistoryEntry(previousTrackId, velocityOnPreviousTrack));
+        list.Insert(0, new TrackHistoryEntry(previousTrackId, direction));
 
         if (list.Count > MaxHistorySize)
         {
