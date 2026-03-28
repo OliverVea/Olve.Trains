@@ -46,7 +46,9 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<DeleteTrackHandlerService>(sceneId);
         services.AddSceneService<DeleteTrainHandlerService>(sceneId);
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
+        services.AddSceneService<ListBuildingsHandlerService>(sceneId);
         services.AddSceneService<ListJunctionsHandlerService>(sceneId);
+        services.AddSceneService<ListTracksHandlerService>(sceneId);
         services.AddSceneService<ListTrainsHandlerService>(sceneId);
         services.AddSceneService<ListWagonsHandlerService>(sceneId);
         services.AddSceneService<PlaceBuildingHandlerService>(sceneId);
@@ -56,6 +58,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<QueryBuildingHandlerService>(sceneId);
         services.AddSceneService<QueryJunctionHandlerService>(sceneId);
         services.AddSceneService<QueryTimeHandlerService>(sceneId);
+        services.AddSceneService<QueryTrackHandlerService>(sceneId);
         services.AddSceneService<QueryTrainHandlerService>(sceneId);
         services.AddSceneService<RaycastHandlerService>(sceneId);
         services.AddSceneService<RemoveWagonHandlerService>(sceneId);
@@ -201,17 +204,6 @@ public static class GameLogicSceneServiceRegistration
             (TrainJunctionCrossingService vjcs, Id<Train> id) => vjcs.OnTrainReachedEnd(id),
             after: [new SceneServiceType<TrainMovementService>()],
             before: [new SceneServiceType<TrainJunctionCrossingService>()]);
-
-        // TODO: Remove auto-attach once train depot UI allows players to build trains manually
-        services.AddEventSceneService(sceneId,
-            (TrainService ts) => ts.OnTrainAdded,
-            (TrainWagonService tws, Id<Train> trainId) =>
-            {
-                return Result.Concat(
-                    tws.AddWagon(trainId, WagonBlueprintCatalog.GoodsWagon).ToEmptyResult(),
-                    tws.AddWagon(trainId, WagonBlueprintCatalog.GoodsWagon).ToEmptyResult());
-            },
-            prefill: ts => ts.TrainIds);
 
         services.AddEventSceneService(sceneId,
             (TrainService ts) => ts.OnTrainRemoved,

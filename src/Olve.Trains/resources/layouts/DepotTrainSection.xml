@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Section" Style="StationPanelContainerStyle">
+    <Text id="TrainName" Content='""' Style="StationPanelSubHeaderStyle" />
+    <Box id="WagonContainer" Style="StationPanelContainerStyle" />
+    <Box id="AddWagonButton" Style="ModalButtonStyle" Interactive="true">
+        <Text Content='"Add Wagon"' Style="ModalButtonTextStyle" InheritParentState="true" />
+    </Box>
+    <Box id="DeleteTrainButton" Style="ModalButtonStyle" Interactive="true">
+        <Text Content='"Delete Train"' Style="ModalButtonTextStyle" InheritParentState="true" />
+    </Box>
+</Box>

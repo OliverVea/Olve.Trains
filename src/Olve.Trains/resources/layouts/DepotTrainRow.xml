@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Row" Style="InventoryRowStyle">
+    <Text id="WagonName" Content='""' Style="InventoryRowTextStyle" />
+    <Box id="RemoveButton" Style="ModalButtonStyle" Interactive="true">
+        <Text Content='"X"' Style="ModalButtonTextStyle" InheritParentState="true" />
+    </Box>
+</Box>

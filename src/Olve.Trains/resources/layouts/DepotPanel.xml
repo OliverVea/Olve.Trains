@@ -3,6 +3,7 @@
     <Box id="Panel" Style="StationPanelStyle" Interactive="true">
         <Text id="Header" Content='"Depot"' Style="StationPanelHeaderStyle" />
         <Text id="DepotName" Content='""' Style="StationPanelInfoTextStyle" />
+        <Box id="TrainListContainer" Style="StationPanelContainerStyle" />
         <Box id="CreateTrainButton" Style="ModalButtonStyle" Interactive="true">
             <Text Content='"Create Train"' Style="ModalButtonTextStyle" InheritParentState="true" />
         </Box>

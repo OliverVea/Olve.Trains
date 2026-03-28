@@ -20,13 +20,34 @@
   - [x] Add Checkbox widget (box + checkmark, toggle on click)
   - [x] Add Radio Button widget (group of options, single selection)
   - [x] Add Dropdown widget (collapsed box that expands to show options, single selection)
-- [ ] Train depot epic (Feature):
+- [x] Train depot epic (Feature):
   - Description: Train depots are buildings where players build and customize trains. Place them like a station, click it to open a train builder UI. Players choose a locomotive, add/remove/reorder wagons, and deploy the train onto the depot's track. Replaces the current auto-spawn with 2 goods wagons.
   - [x] Add train depot building type (placed with new owned track, like stations)
   - [x] Add depot UI panel (click depot → open train builder)
   - [x] Add 'create new train dialog' in the UI - creating a new train immediately deploys the train to the depo track
-  - [ ] Allow for editing existing train in the UI - a train on the depo track can be edited until released
-  - [ ] Remove automatic 2-goods-wagon attachment on train creation
+  - [x] Allow for editing existing train in the UI - a train on the depo track can be edited until released
+  - [x] Remove automatic 2-goods-wagon attachment on train creation
+- [x] Observability epic (Tooling):
+  - Description: Every player action must be visible in logs as a replay-able command, and the full game state must be queryable via the command interface. This enables replay files, debugging, and AI-assisted testing. This is also a design principle — all future features must log actions and expose query commands.
+  - [x] Log track placements with start/end coordinates and directions (not just track ID)
+  - [x] Log building placements as replay-able commands (type, position, direction)
+  - [x] Log train creation, wagon add/remove, and deletion actions with full parameters
+  - [x] Add `list-tracks` command — returns all tracks with their start/end endpoints and directions
+  - [x] Add `query-track` command — returns full track details (endpoints, directions, connected junctions)
+  - [x] Add `list-buildings` command — returns all buildings with type, position, and direction
+  - [x] Audit existing commands and logs for completeness — every entity type should have list/query commands
+- [ ] Train stopping epic (Feature):
+  - Description: Trains stop at stations and depots instead of passing through. When approaching a stop, the train targets a speed of 1/120% of the kinematically-correct braking speed for the remaining distance — this 20% overshoot margin ensures the train always reaches the stop point even with floating-point drift. Trains decelerate smoothly and come to a full stop at the station/depot track position.
+  - [ ] Add stop target system — trains identify upcoming stations/depots on their route and compute a braking curve with 1/1.2× speed margin
+  - [ ] Implement smooth deceleration along the braking curve so trains come to rest at the stop point
+  - [ ] Add station stop behavior — train pauses at station for a duration (loading/unloading), then departs
+  - [ ] Add depot stop behavior — train stops at depot and remains until released by the player
+- [ ] Train collisions epic (Feature):
+  - Description: Prevent trains from occupying the same track space. On collision, both trains immediately set speed to 0 (simplified — no physics knockback for now). Placement must also prevent spawning trains on top of existing ones.
+  - [ ] Add collision detection — check if any two trains overlap on the same track segment each tick
+  - [ ] On collision, set both trains' speed to 0
+  - [ ] Prevent train placement on occupied track — reject placement if another train already occupies the target position
+  - [ ] Log an error if overlapping trains are ever detected (defensive guard for edge cases)
 - [ ] Resources epic (Feature):
   - [ ] Design resource system (discrete entities, field deposits, geometric resources; harvest range; production linking)
   - [ ] Implement resource system based on design
