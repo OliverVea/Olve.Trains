@@ -88,7 +88,7 @@ public class TrainCollisionService(
                     "Failed to sample spline for train '{0}' collision update", trainId);
             }
 
-            var worldMatrix = TrainWorldMatrix.Compute(trackPosition.Velocity, position);
+            var worldMatrix = TrainWorldMatrix.Compute(trackPosition.Direction, position);
             var centerMatrix = Matrix4X4.CreateTranslation(_centerOffset);
             var adjustedMatrix = centerMatrix * worldMatrix;
 

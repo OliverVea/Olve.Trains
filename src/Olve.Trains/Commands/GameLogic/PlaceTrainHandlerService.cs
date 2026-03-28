@@ -80,9 +80,11 @@ public class PlaceTrainHandlerService(
         }
 
         TrackPoint trackPoint = new(trackId, 0);
-        TrainTrackPosition trainTrackPosition = new(trackPoint, speed, speed);
+        TrainTrackPosition trainTrackPosition = new(trackPoint, TrainDirection.Forward);
+        TrainMotion trainMotion = new(speed, speed);
 
         trainPositionService.SetTrackPosition(trainId, trainTrackPosition);
+        trainPositionService.SetMotion(trainId, trainMotion);
 
         logger.LogInformation("Placed train '{TrainId}' on track with id '{TrackId}' with position '{TrainTrackPosition}'", trainId, trackId, trainTrackPosition);
 

@@ -7,6 +7,7 @@ public class TrainPositionService(TrainService trainService) : ISceneService
 {
     private readonly ConcurrentDictionary<Id<Train>, TrainPositionType> _positionTypes = new();
     private readonly ConcurrentDictionary<Id<Train>, TrainTrackPosition> _trackPositions = new();
+    private readonly ConcurrentDictionary<Id<Train>, TrainMotion> _motions = new();
 
     public Result Load()
     {
@@ -39,9 +40,23 @@ public class TrainPositionService(TrainService trainService) : ISceneService
         return _trackPositions.TryGetValue(trainId, out trainTrackPosition);
     }
 
+    public Result SetMotion(Id<Train> trainId, TrainMotion motion)
+    {
+        _motions[trainId] = motion;
+        return Result.Success();
+    }
+
+    public bool TryGetMotion(Id<Train> trainId, out TrainMotion motion)
+    {
+        return _motions.TryGetValue(trainId, out motion);
+    }
+
+    public IEnumerable<(Id<Train>, TrainMotion)> Motions => _motions.Select(x => (x.Key, x.Value));
+
     private void OnRemoved(Id<Train> id)
     {
         _positionTypes.Remove(id, out _);
         _trackPositions.Remove(id, out _);
+        _motions.Remove(id, out _);
     }
 }

@@ -85,7 +85,7 @@ public class TrainRenderingService(
                 return problems.Prepend("Failed to sample point with t '{0}' on track with id '{1}' for train with id '{2}'", trackPosition.Time, trackPosition.TrackId, trainId);
             }
 
-            var worldMatrix = TrainWorldMatrix.Compute(trackPosition.Velocity, position);
+            var worldMatrix = TrainWorldMatrix.Compute(trackPosition.Direction, position);
 
             if (meshRenderingService.UpdateInstance(instanceHandle, worldMatrix)
                 .TryPickProblems(out problems))
