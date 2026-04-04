@@ -31,7 +31,7 @@ def main() -> None:
         # === Buildings ===
         depot_id = game.place_building(pos="9,1,24", type="depot", dir="north")
         game.place_building(pos="9,1,20", type="station", dir="north")
-        game.place_building(pos="10,1,22", type="forest", dir="north")
+        game.place_building(pos="10,1,14", type="forest", dir="north")
         game.place_building(pos="9,1,11", type="station", dir="north")
         game.place_building(pos="10,1,9", type="sawmill", dir="north")
 

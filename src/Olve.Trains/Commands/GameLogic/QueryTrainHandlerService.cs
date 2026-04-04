@@ -87,6 +87,7 @@ public class QueryTrainHandlerService(
             direction = trackPosition.Direction.ToString(),
             speed = motion.Speed,
             targetSpeed = motion.TargetSpeed,
+            userTargetSpeed = motion.UserTargetSpeed,
             position,
             wagons,
         });

@@ -38,7 +38,7 @@ public class SetTrainSpeedHandlerService(
             return new ResultProblem("Got invalid speed value '{0}'", speedString);
         }
 
-        trainPositionService.SetMotion(trainId, motion with { TargetSpeed = speed });
+        trainPositionService.SetMotion(trainId, motion with { TargetSpeed = speed, UserTargetSpeed = speed });
 
         logger.LogInformation("Set train '{TrainId}' target speed to {Speed}", trainId, speed);
 
