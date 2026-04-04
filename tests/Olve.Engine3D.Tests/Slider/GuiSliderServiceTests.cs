@@ -42,15 +42,15 @@ public class GuiSliderServiceTests
         var nodeService = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
         var anchorService = new GuiAnchorService(NullLogger<GuiAnchorService>.Instance);
         var layoutContextProvider = new Provider<LayoutContext>(DefaultContext);
-        var layoutService = new GuiLayoutService(
-            NullLogger<GuiLayoutService>.Instance, nodeService, anchorService, layoutContextProvider);
         var elementService = new GuiElementService(nodeService);
+        var stateService = new GuiNodeStateService(
+            NullLogger<GuiNodeStateService>.Instance, nodeService, elementService);
+        var layoutService = new GuiLayoutService(
+            NullLogger<GuiLayoutService>.Instance, nodeService, stateService, anchorService, layoutContextProvider);
         var collisionService = new GuiCollisionService(layoutService);
         var depthService = new GuiDepthService(NullLogger<GuiDepthService>.Instance, nodeService, anchorService);
         var focusService = new GuiFocusService();
         var activationService = new GuiActivationService();
-        var stateService = new GuiNodeStateService(
-            NullLogger<GuiNodeStateService>.Instance, nodeService, elementService);
 
         // MouseManager needs Provider<IInputContext> and Provider<IWindow> but we won't call
         // Initialize() or Input() — we manipulate State directly.
@@ -101,10 +101,15 @@ public class GuiSliderServiceTests
         // Force layout computation so collision detection works
         h.LayoutService.ComputeLayout();
 
-        // Set Enabled state on the thumb so GuiMouseInputService recognises it
+        // Set Enabled state on the thumb and track so GuiMouseInputService recognises them
         if (h.ElementService.TryGetGuiNodeId(slider.Thumb.Id, registrationId, out var thumbNodeId))
         {
             h.StateService.SetState(thumbNodeId, GuiNodeState.Show | GuiNodeState.Enabled);
+        }
+
+        if (h.ElementService.TryGetGuiNodeId(slider.Track.Id, registrationId, out var trackNodeId))
+        {
+            h.StateService.SetState(trackNodeId, GuiNodeState.Show | GuiNodeState.Enabled);
         }
 
         return (slider, registrationId);
@@ -307,6 +312,24 @@ public class GuiSliderServiceTests
         var valueAfterRelease = slider.Value;
 
         await Assert.That(valueAfterDrag).IsEqualTo(valueAfterRelease);
+    }
+
+    [Test, NotInParallel]
+    public async Task Slider_ClickTrackBar_SnapsThumbToPosition()
+    {
+        var h = BuildHarness();
+        var (slider, _) = RegisterSlider(h, minValue: 0f, maxValue: 100f, initialValue: 0f);
+
+        float? capturedValue = null;
+        h.SliderService.OnValueChanged.Subscribe(msg => capturedValue = msg.NewValue);
+
+        // Click directly on the track bar at x=100 (center of the 200px track).
+        // The thumb starts at x=0..16 so x=100 is well outside it — this hits the track.
+        // t = (100 - 0 - 8) / (200 - 16) = 92/184 = 0.5 → value ~50
+        SimulateMousePress(h, 100f, 10f);
+
+        await Assert.That(capturedValue).IsNotNull();
+        await Assert.That(capturedValue!.Value).IsEqualTo(50f).Within(1f);
     }
 
     [Test, NotInParallel]

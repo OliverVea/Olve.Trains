@@ -11,6 +11,7 @@ using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Cargo;
 using Olve.Trains.Scenes.GameLogic.Collision;
+using Olve.Trains.Scenes.GameUI.Tools;
 using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.GUI;
@@ -28,7 +29,8 @@ public class StationInfoPanelService(
     IndustryRecipeService industryRecipeService,
     CargoTypeService cargoTypeService,
     CargoInventoryService cargoInventoryService,
-    CargoTransferPolicyService cargoTransferPolicyService) : ISceneService
+    CargoTransferPolicyService cargoTransferPolicyService,
+    ToolManagementService toolManagementService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([mouseRaycastService]);
 
@@ -72,7 +74,7 @@ public class StationInfoPanelService(
 
     public Result Update()
     {
-        if (_clickedThisFrame)
+        if (_clickedThisFrame && toolManagementService.ActiveToolId is null)
         {
             foreach (var hit in mouseRaycastService.Hits)
             {

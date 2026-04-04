@@ -169,6 +169,29 @@ public class GuiSliderService(
             _draggingThumbNode = nodeId;
             logger.LogDebug("Started dragging slider thumb {NodeId}", nodeId);
         }
+        else if (_trackNodeToSlider.TryGetValue(nodeId, out var slider))
+        {
+            // Clicked on the track bar — snap thumb to click position without starting a drag
+            if (guiElementService.TryGetElementIds(nodeId, out _, out var registrationId)
+                && guiElementService.TryGetGuiNodeId(slider.Thumb.Id, registrationId, out var thumbNodeId)
+                && guiLayoutService.TryGetBoxPosition(nodeId, out var trackBox))
+            {
+                var mouseX = new Px((int)mouseManager.State.Position.X);
+                var trackLeft = trackBox.Position.X;
+                var trackWidth = trackBox.Size.X;
+                var thumbWidthPx = layoutContextProvider.Value.ToPx(new Dp(slider.ThumbWidth));
+                var usableWidth = trackWidth - thumbWidthPx;
+
+                if (usableWidth.Value > 0)
+                {
+                    var relativeX = mouseX - trackLeft - new Px(thumbWidthPx.Value / 2);
+                    var t = System.Math.Clamp((float)relativeX.Value / usableWidth.Value, 0f, 1f);
+                    var newValue = slider.MinValue + t * (slider.MaxValue - slider.MinValue);
+                    SetSliderValue(slider, thumbNodeId, newValue);
+                    logger.LogDebug("Slider {SliderId} track clicked, snapped to value {Value:F3}", slider.Id, newValue);
+                }
+            }
+        }
     }
 
     private void OnNodeReleased(Id<GuiNode> nodeId)

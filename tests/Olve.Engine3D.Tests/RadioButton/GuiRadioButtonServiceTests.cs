@@ -33,13 +33,13 @@ public class GuiRadioButtonServiceTests
             DpPxRatio = new DpPxRatio(1),
             UiScale = 1,
         });
-        var layoutService = new GuiLayoutService(
-            NullLogger<GuiLayoutService>.Instance, nodeService, anchorService, layoutContextProvider);
         var elementService = new GuiElementService(nodeService);
-        var depthService = new GuiDepthService(NullLogger<GuiDepthService>.Instance, nodeService, anchorService);
-        var activationService = new GuiActivationService();
         var stateService = new GuiNodeStateService(
             NullLogger<GuiNodeStateService>.Instance, nodeService, elementService);
+        var layoutService = new GuiLayoutService(
+            NullLogger<GuiLayoutService>.Instance, nodeService, stateService, anchorService, layoutContextProvider);
+        var depthService = new GuiDepthService(NullLogger<GuiDepthService>.Instance, nodeService, anchorService);
+        var activationService = new GuiActivationService();
 
         var radioButtonService = new GuiRadioButtonService(
             NullLogger<GuiRadioButtonService>.Instance,

@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Olve.Engine3D.GUI;
+using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Utilities;
 using Olve.Results.TUnit;
@@ -31,7 +33,9 @@ public class GuiLayoutServicePositioningTests
         // Register the default anchor
         guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight);
 
-        return new GuiLayoutService(NullLogger<GuiLayoutService>.Instance, svc, guiAnchorService, lcp);
+        var elementService = new GuiElementService(svc);
+        var stateService = new GuiNodeStateService(NullLogger<GuiNodeStateService>.Instance, svc, elementService);
+        return new GuiLayoutService(NullLogger<GuiLayoutService>.Instance, svc, stateService, guiAnchorService, lcp);
     }
 
     // Shorthand for creating boxes

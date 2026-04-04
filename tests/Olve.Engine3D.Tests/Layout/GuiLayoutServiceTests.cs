@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Olve.Engine3D.GUI;
+using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Utilities;
 using Olve.Results.TUnit;
@@ -25,7 +27,9 @@ public class GuiLayoutServiceTests
         GuiNodeService guiNodeService = new(NullLogger<GuiNodeService>.Instance);
         GuiAnchorService guiAnchorService = new(NullLogger<GuiAnchorService>.Instance);
         Provider<LayoutContext> layoutContextProvider = new(layoutContext ?? DefaultContext);
-        GuiLayoutService guiLayoutService = new(NullLogger<GuiLayoutService>.Instance, guiNodeService, guiAnchorService, layoutContextProvider);
+        GuiElementService guiElementService = new(guiNodeService);
+        GuiNodeStateService guiNodeStateService = new(NullLogger<GuiNodeStateService>.Instance, guiNodeService, guiElementService);
+        GuiLayoutService guiLayoutService = new(NullLogger<GuiLayoutService>.Instance, guiNodeService, guiNodeStateService, guiAnchorService, layoutContextProvider);
 
         // Register the default anchor
         guiAnchorService.RegisterAnchor(AnchorPosition.TopLeft, GrowthDirection.DownRight);

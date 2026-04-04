@@ -3,6 +3,7 @@ using Olve.Engine3D.Input;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Trains;
+using Olve.Trains.Scenes.GameUI.Tools;
 using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.GUI;
@@ -12,7 +13,8 @@ public class TrainSpeedCycleService(
     MouseRaycastService mouseRaycastService,
     MouseManager mouseManager,
     TrainCollisionService trainCollisionService,
-    TrainPositionService trainPositionService) : ISceneService
+    TrainPositionService trainPositionService,
+    ToolManagementService toolManagementService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([mouseRaycastService]);
 
@@ -28,7 +30,7 @@ public class TrainSpeedCycleService(
 
     public Result Update()
     {
-        if (!_clickedThisFrame) return Result.Success();
+        if (!_clickedThisFrame || toolManagementService.ActiveToolId is not null) return Result.Success();
 
         foreach (var hit in mouseRaycastService.Hits)
         {
@@ -37,8 +39,8 @@ public class TrainSpeedCycleService(
             if (trainCollisionService.TryGetTrainId(hit.ColliderId, out var trainId)
                 && trainPositionService.TryGetMotion(trainId, out var motion))
             {
-                var nextSpeed = GetNextSpeed(motion.TargetSpeed);
-                trainPositionService.SetMotion(trainId, motion with { TargetSpeed = nextSpeed });
+                var nextSpeed = GetNextSpeed(motion.UserTargetSpeed);
+                trainPositionService.SetMotion(trainId, motion with { TargetSpeed = nextSpeed, UserTargetSpeed = nextSpeed });
                 logger.LogInformation("Train {TrainId} target speed: {PreviousSpeed} -> {NextSpeed}", trainId, motion.TargetSpeed, nextSpeed);
             }
 

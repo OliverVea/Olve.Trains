@@ -8,6 +8,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
 using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Junctions;
+using Olve.Trains.Scenes.GameUI.Tools;
 using Olve.Utilities.Types;
 using Silk.NET.Input;
 
@@ -21,7 +22,8 @@ public class SignalRulesPanelService(
     JunctionSignalRuleService junctionSignalRuleService,
     MouseRaycastService mouseRaycastService,
     MouseManager mouseManager,
-    JunctionSignalCollisionService junctionSignalCollisionService) : ISceneService
+    JunctionSignalCollisionService junctionSignalCollisionService,
+    ToolManagementService toolManagementService) : ISceneService
 {
     private Layouts.SignalRulesPanel? _panel;
 
@@ -93,7 +95,7 @@ public class SignalRulesPanelService(
 
     public Result Update()
     {
-        if (_clickedThisFrame)
+        if (_clickedThisFrame && toolManagementService.ActiveToolId is null)
         {
             foreach (var hit in mouseRaycastService.Hits)
             {

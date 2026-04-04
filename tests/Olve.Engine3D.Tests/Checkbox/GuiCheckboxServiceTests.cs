@@ -42,15 +42,15 @@ public class GuiCheckboxServiceTests
         var nodeService = new GuiNodeService(NullLogger<GuiNodeService>.Instance);
         var anchorService = new GuiAnchorService(NullLogger<GuiAnchorService>.Instance);
         var layoutContextProvider = new Provider<LayoutContext>(DefaultContext);
-        var layoutService = new GuiLayoutService(
-            NullLogger<GuiLayoutService>.Instance, nodeService, anchorService, layoutContextProvider);
         var elementService = new GuiElementService(nodeService);
+        var stateService = new GuiNodeStateService(
+            NullLogger<GuiNodeStateService>.Instance, nodeService, elementService);
+        var layoutService = new GuiLayoutService(
+            NullLogger<GuiLayoutService>.Instance, nodeService, stateService, anchorService, layoutContextProvider);
         var collisionService = new GuiCollisionService(layoutService);
         var depthService = new GuiDepthService(NullLogger<GuiDepthService>.Instance, nodeService, anchorService);
         var focusService = new GuiFocusService();
         var activationService = new GuiActivationService();
-        var stateService = new GuiNodeStateService(
-            NullLogger<GuiNodeStateService>.Instance, nodeService, elementService);
 
         var mouseManager = new MouseManager(new Provider<IInputContext>(), new Provider<IWindow>());
 

@@ -68,7 +68,7 @@ public class Slider : GuiElement
         {
             Id = Olve.Utilities.Ids.Id.New<GuiElement>(),
             Name = "Slider/Track",
-            Interactive = false,
+            Interactive = true,
             InheritParentState = true,
             Height = TrackHeight,
             Weight = 1f,

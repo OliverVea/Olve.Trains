@@ -12,6 +12,7 @@ using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Trains.Scenes.GameLogic.Trains.Wagons;
+using Olve.Trains.Scenes.GameUI.Tools;
 using Silk.NET.Input;
 
 namespace Olve.Trains.Scenes.GameUI.GUI;
@@ -29,7 +30,8 @@ public class DepotPanelService(
     TrainService trainService,
     TrainPositionService trainPositionService,
     TrainWagonService trainWagonService,
-    WagonBlueprintService wagonBlueprintService) : ISceneService
+    WagonBlueprintService wagonBlueprintService,
+    ToolManagementService toolManagementService) : ISceneService
 {
     public int Priority => SceneServicePriority.FromDependencies([mouseRaycastService]);
 
@@ -79,7 +81,7 @@ public class DepotPanelService(
 
     public Result Update()
     {
-        if (_clickedThisFrame)
+        if (_clickedThisFrame && toolManagementService.ActiveToolId is null)
         {
             foreach (var hit in mouseRaycastService.Hits)
             {
@@ -178,7 +180,7 @@ public class DepotPanelService(
             return problems;
         }
 
-        if (trainPositionService.SetMotion(trainId, new TrainMotion(0f, 0f)).TryPickProblems(out problems))
+        if (trainPositionService.SetMotion(trainId, new TrainMotion(0f, 0f, 0f)).TryPickProblems(out problems))
         {
             return problems;
         }
