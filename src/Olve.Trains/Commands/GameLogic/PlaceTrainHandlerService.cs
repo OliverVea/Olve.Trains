@@ -81,7 +81,7 @@ public class PlaceTrainHandlerService(
 
         TrackPoint trackPoint = new(trackId, 0);
         TrainTrackPosition trainTrackPosition = new(trackPoint, TrainDirection.Forward);
-        TrainMotion trainMotion = new(speed, speed, speed);
+        TrainMotion trainMotion = TrainMotion.Stopped with { Speed = speed, TargetSpeed = speed, UserTargetSpeed = speed };
 
         trainPositionService.SetTrackPosition(trainId, trainTrackPosition);
         trainPositionService.SetMotion(trainId, trainMotion);

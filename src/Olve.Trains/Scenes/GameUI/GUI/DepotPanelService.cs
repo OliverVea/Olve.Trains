@@ -180,7 +180,7 @@ public class DepotPanelService(
             return problems;
         }
 
-        if (trainPositionService.SetMotion(trainId, new TrainMotion(0f, 0f, 0f)).TryPickProblems(out problems))
+        if (trainPositionService.SetMotion(trainId, TrainMotion.Stopped).TryPickProblems(out problems))
         {
             return problems;
         }

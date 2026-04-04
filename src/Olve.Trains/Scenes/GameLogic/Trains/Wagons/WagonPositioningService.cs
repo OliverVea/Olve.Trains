@@ -8,10 +8,8 @@ public class WagonPositioningService(
     TrainTrackHistoryService trainTrackHistoryService,
     WagonBlueprintService wagonBlueprintService)
 {
-    private const float Scale = TrainWorldMatrix.TrainScale;
-    private const float LocomotiveLength = 1.0f * Scale;
-    private const float DefaultWagonLength = 1.0f * Scale;
-    private const float CouplingGap = 0.1f * Scale;
+    private static readonly float LocomotiveLength = LocomotiveProperties.Length;
+    private static readonly float CouplingGap = LocomotiveProperties.CouplingGap;
 
     public readonly record struct WagonPosition(Id<Wagon> WagonId, Id<Track> TrackId, float Time, TrainDirection Direction);
 
@@ -31,10 +29,10 @@ public class WagonPositioningService(
         {
             var wagon = wagons[i];
 
-            var wagonLength = DefaultWagonLength;
+            var wagonLength = LocomotiveLength;
             if (wagonBlueprintService.TryGet(wagon.BlueprintId, out var blueprint))
             {
-                wagonLength = blueprint.Length * Scale;
+                wagonLength = blueprint.Length;
             }
 
             var offset = cumulativeOffset + wagonLength / 2f;

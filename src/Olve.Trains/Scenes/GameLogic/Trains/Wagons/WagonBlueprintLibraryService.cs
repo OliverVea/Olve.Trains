@@ -11,7 +11,7 @@ public class WagonBlueprintLibraryService(WagonBlueprintService wagonBlueprintSe
                 "Goods Wagon",
                 Capacity: 10,
                 AllowedTypes: null,
-                Length: 1.0f))
+                Length: 16.2f / WorldScale.TileSizeInMeters))
             .TryPickProblems(out var problems))
         {
             return problems;

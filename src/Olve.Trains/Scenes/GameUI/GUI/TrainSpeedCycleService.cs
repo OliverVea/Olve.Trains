@@ -18,7 +18,7 @@ public class TrainSpeedCycleService(
 {
     public int Priority => SceneServicePriority.FromDependencies([mouseRaycastService]);
 
-    private static readonly float[] SpeedModes = [0f, 2f, 10f];
+    private static readonly float[] SpeedModes = [0f, LocomotiveProperties.MaxSpeed * 0.5f, LocomotiveProperties.MaxSpeed];
 
     private bool _clickedThisFrame;
 
