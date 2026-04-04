@@ -43,10 +43,12 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<EnvironmentalObjectBlueprintLibraryService>(sceneId);
 
         services.AddSceneService<DayTimeSteppingService>(sceneId);
+        services.AddSceneService<DeleteEnvironmentalObjectHandlerService>(sceneId);
         services.AddSceneService<DeleteTrackHandlerService>(sceneId);
         services.AddSceneService<DeleteTrainHandlerService>(sceneId);
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
         services.AddSceneService<ListBuildingsHandlerService>(sceneId);
+        services.AddSceneService<ListEntitiesHandlerService>(sceneId);
         services.AddSceneService<ListJunctionsHandlerService>(sceneId);
         services.AddSceneService<ListTracksHandlerService>(sceneId);
         services.AddSceneService<ListTrainsHandlerService>(sceneId);

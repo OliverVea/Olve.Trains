@@ -6,6 +6,7 @@ using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Buildings.Depots;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Collision;
+using Olve.Trains.Scenes.GameLogic.Environment;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
@@ -24,6 +25,8 @@ public class DeletionToolService(
     BuildingCollisionService buildingCollisionService,
     StationService stationService,
     DepotService depotService,
+    EnvironmentalObjectService environmentalObjectService,
+    EnvironmentalObjectCollisionService environmentalObjectCollisionService,
     MouseManager mouseManager,
     ILogger<DeletionToolService> logger,
     TerrainHighlightSettings terrainHighlightSettings) : BaseToolService<DeletionToolService.State>(toolManagementService, new State())
@@ -92,6 +95,11 @@ public class DeletionToolService(
             return TryDeleteTrack(hit.ColliderId);
         }
 
+        if (hit.Group == ColliderGroups.Environment)
+        {
+            return TryDeleteEnvironmentalObject(hit.ColliderId);
+        }
+
         return false;
     }
 
@@ -140,6 +148,24 @@ public class DeletionToolService(
         }
 
         logger.LogInformation("Deleted building {BuildingId}", buildingId);
+        return true;
+    }
+
+    private bool TryDeleteEnvironmentalObject(Id<Collider> colliderId)
+    {
+        if (!environmentalObjectCollisionService.TryGetObjectId(colliderId, out var objectId))
+        {
+            return false;
+        }
+
+        var result = environmentalObjectService.DeleteObject(objectId);
+        if (result.TryPickProblems(out var problems))
+        {
+            logger.LogWarning("Failed to delete environmental object {ObjectId}: {Problems}", objectId, problems);
+            return false;
+        }
+
+        logger.LogInformation("Deleted environmental object {ObjectId}", objectId);
         return true;
     }
 
