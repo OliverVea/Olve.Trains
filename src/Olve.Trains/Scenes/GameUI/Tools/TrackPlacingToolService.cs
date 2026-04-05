@@ -181,22 +181,16 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
 
         var pointArray = points.ToArray();
 
-        // Compute combined AABB of all track segments for a single preview query
-        var min = new Vector3D<float>(float.MaxValue, float.MaxValue, float.MaxValue);
-        var max = new Vector3D<float>(float.MinValue, float.MinValue, float.MinValue);
-
+        var segmentAABBs = new AABB[TrackSegmentHelper.SegmentCount];
         for (var i = 0; i < TrackSegmentHelper.SegmentCount; i++)
         {
             var segmentFrom = pointArray[i];
             var segmentTo = pointArray[i + 1];
             var matrix = TrackSegmentHelper.ComputeSegmentOBBMatrix(segmentFrom, segmentTo);
-            var segmentAABB = TrackSegmentHelper.HalfUnitBox.GetWorldAABB(matrix);
-
-            min = Vector3D.Min(min, segmentAABB.Min);
-            max = Vector3D.Max(max, segmentAABB.Max);
+            segmentAABBs[i] = TrackSegmentHelper.HalfUnitBox.GetWorldAABB(matrix);
         }
 
-        clearancePreviewService.ShowPreview(new AABB(min, max));
+        clearancePreviewService.ShowPreview(segmentAABBs);
     }
 
     private void UnregisterGhost()

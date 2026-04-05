@@ -19,16 +19,24 @@ public class ClearancePreviewService(
 
     public void ShowPreview(AABB area)
     {
+        ShowPreview([area]);
+    }
+
+    public void ShowPreview(IReadOnlyList<AABB> areas)
+    {
         var newHighlighted = new HashSet<Id<EnvironmentalObject>>();
 
-        var hits = collisionSystem.QueryOverlapAABB(area, AutoClearableGroups);
-        foreach (var hit in hits)
+        foreach (var area in areas)
         {
-            if (!ColliderGroups.IsAutoClearable(hit.Group)) continue;
-
-            if (environmentalObjectCollisionService.TryGetObjectId(hit.ColliderId, out var objectId))
+            var hits = collisionSystem.QueryOverlapAABB(area, AutoClearableGroups);
+            foreach (var hit in hits)
             {
-                newHighlighted.Add(objectId);
+                if (!ColliderGroups.IsAutoClearable(hit.Group)) continue;
+
+                if (environmentalObjectCollisionService.TryGetObjectId(hit.ColliderId, out var objectId))
+                {
+                    newHighlighted.Add(objectId);
+                }
             }
         }
 
