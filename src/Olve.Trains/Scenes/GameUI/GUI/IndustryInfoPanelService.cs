@@ -1,0 +1,266 @@
+using Olve.Engine3D;
+using Olve.Engine3D.GUI;
+using Olve.Engine3D.GUI.Elements;
+using Olve.Engine3D.GUI.Input;
+using Olve.Engine3D.GUI.Layout;
+using Olve.Engine3D.Input;
+using Olve.Engine3D.Scenes;
+using Olve.Generated.Layouts;
+using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
+using Olve.Trains.Scenes.GameLogic.Cargo;
+using Olve.Trains.Scenes.GameLogic.Collision;
+using Olve.Trains.Scenes.GameLogic.Resources;
+using Olve.Trains.Scenes.GameUI.Tools;
+using Silk.NET.Input;
+
+namespace Olve.Trains.Scenes.GameUI.GUI;
+
+public class IndustryInfoPanelService(
+    GuiElementService guiElementService,
+    GuiActivationService guiActivationService,
+    GuiAnchorService guiAnchorService,
+    MouseRaycastService mouseRaycastService,
+    MouseManager mouseManager,
+    BuildingCollisionService buildingCollisionService,
+    BuildingService buildingService,
+    BuildingBlueprintService buildingBlueprintService,
+    IndustryService industryService,
+    IndustryRecipeService industryRecipeService,
+    IndustryBlueprintService industryBlueprintService,
+    CargoTypeService cargoTypeService,
+    CargoInventoryService cargoInventoryService,
+    CargoTransferPolicyService cargoTransferPolicyService,
+    ResourceOwnershipService resourceOwnershipService,
+    ToolManagementService toolManagementService) : ISceneService
+{
+    public int Priority => SceneServicePriority.FromDependencies([mouseRaycastService]);
+
+    private readonly record struct MountedRow(
+        Layouts.InventoryRow Row,
+        Id<GuiElementRegistrations> RegistrationId,
+        Id<CargoInventory> InventoryId,
+        Id<CargoType> CargoTypeId);
+
+    private Layouts.IndustryInfoPanel? _panel;
+    private Id<GuiElementRegistrations> _panelRegistrationId;
+    private Id<GuiAnchor> _anchorId;
+    private bool _isOpen;
+    private bool _clickedThisFrame;
+    private Id<Building> _buildingId;
+    private Id<Industry> _industryId;
+    private bool _isExtractive;
+    private readonly List<MountedRow> _mountedRows = [];
+
+    public Result Load()
+    {
+        guiActivationService.GuiElementActivated.Subscribe(OnGuiElementActivated);
+        return Result.Success();
+    }
+
+    public Result Unload()
+    {
+        guiActivationService.GuiElementActivated.Unsubscribe(OnGuiElementActivated);
+
+        if (_isOpen)
+        {
+            ClosePanel();
+        }
+
+        return Result.Success();
+    }
+
+    public Result<Pass> Input()
+    {
+        _clickedThisFrame = mouseManager.State.IsButtonPressed(MouseButton.Left);
+        return Pass.Pass;
+    }
+
+    public Result Update()
+    {
+        if (_clickedThisFrame && toolManagementService.ActiveToolId is null)
+        {
+            foreach (var hit in mouseRaycastService.Hits)
+            {
+                if (hit.Group != ColliderGroups.Building) continue;
+
+                var hasBuildingId = buildingCollisionService.TryGetBuildingId(hit.ColliderId, out var buildingId);
+                var hasIndustry = hasBuildingId && industryService.TryGetByBuilding(buildingId, out _);
+
+                if (hasBuildingId && hasIndustry)
+                {
+                    OpenPanel(buildingId);
+                }
+
+                break;
+            }
+        }
+
+        if (_isOpen)
+        {
+            UpdateDynamicContent();
+        }
+
+        return Result.Success();
+    }
+
+    private Result OpenPanel(Id<Building> buildingId)
+    {
+        if (_isOpen)
+        {
+            if (_buildingId == buildingId)
+            {
+                return ClosePanel();
+            }
+
+            ClosePanel();
+        }
+
+        if (!industryService.TryGetByBuilding(buildingId, out var industry))
+        {
+            return new ResultProblem("Building '{0}' has no industry", buildingId);
+        }
+
+        _buildingId = buildingId;
+        _industryId = industry.Id;
+        _panel = Layouts.BuildIndustryInfoPanel();
+
+        _isExtractive = buildingService.TryGetBuilding(buildingId, out var building)
+            && industryBlueprintService.TryGetProperties(building.BlueprintId, out var props)
+            && props.RequiredResourceType is not null;
+
+        if (guiAnchorService.RegisterAnchor(AnchorPosition.TopRight, GrowthDirection.DownLeft, depth: 10)
+            .TryPickProblems(out var problems, out _anchorId))
+        {
+            return problems;
+        }
+
+        UpdateIndustryName();
+
+        if (guiElementService.RegisterElementAndChildren(_anchorId, _panel.Overlay)
+            .TryPickProblems(out problems, out _panelRegistrationId))
+        {
+            guiAnchorService.UnregisterAnchor(_anchorId);
+            return problems;
+        }
+
+        MountInventoryRows(industry);
+
+        _isOpen = true;
+        return Result.Success();
+    }
+
+    private Result ClosePanel()
+    {
+        UnmountRows();
+        guiElementService.UnregisterElementAndChildren(_panelRegistrationId);
+        guiAnchorService.UnregisterAnchor(_anchorId);
+        _isOpen = false;
+        _panel = null;
+        return Result.Success();
+    }
+
+    private void UpdateIndustryName()
+    {
+        if (_panel is null) return;
+
+        if (buildingService.TryGetBuilding(_buildingId, out var building)
+            && buildingBlueprintService.TryGetBlueprint(building.BlueprintId, out var blueprint))
+        {
+            _panel.IndustryName.Content = blueprint.Description;
+        }
+    }
+
+    private void MountInventoryRows(Industry industry)
+    {
+        if (_panel is null) return;
+
+        if (!guiElementService.TryGetGuiNodeId(_panel.InventoryContainer.Id, _panelRegistrationId,
+                out var containerNodeId))
+        {
+            return;
+        }
+
+        if (!industryRecipeService.TryGetRecipe(industry.RecipeId, out var recipe)) return;
+
+        foreach (var (cargoTypeId, direction) in cargoTransferPolicyService.GetPolicies(industry.InventoryId))
+        {
+            var row = Layouts.BuildInventoryRow();
+
+            // Direction from the industry's perspective:
+            // In = industry consumes input, Out = industry produces output
+            var directionText = direction switch
+            {
+                TransferDirection.In => "->",
+                TransferDirection.Out => "<-",
+                TransferDirection.Both => "<>",
+                _ => "--",
+            };
+
+            var cargoName = cargoTypeService.TryGetCargoType(cargoTypeId, out var cargoType)
+                ? cargoType.Name
+                : "Unknown";
+
+            row.DirectionIndicator.Content = directionText;
+            row.CargoName.Content = $"{recipe.Name}: {cargoName}";
+
+            var amount = cargoInventoryService.GetAmount(industry.InventoryId, cargoTypeId);
+            var capacity = cargoInventoryService.GetRemainingCapacityForType(industry.InventoryId, cargoTypeId) + amount;
+            row.AmountText.Content = $"{amount}/{capacity}";
+
+            if (guiElementService.RegisterElementAndChildren(containerNodeId, row.Row)
+                .TryPickProblems(out _, out var rowRegistrationId))
+            {
+                continue;
+            }
+
+            _mountedRows.Add(new MountedRow(row, rowRegistrationId, industry.InventoryId, cargoTypeId));
+        }
+    }
+
+    private void UpdateDynamicContent()
+    {
+        if (_panel is null) return;
+
+        _panel.ProductivityValue.Content = _isExtractive
+            ? $"x{resourceOwnershipService.GetProductivity(_industryId):F2}"
+            : "N/A";
+
+        foreach (var mountedRow in _mountedRows)
+        {
+            var amount = cargoInventoryService.GetAmount(mountedRow.InventoryId, mountedRow.CargoTypeId);
+            var capacity = cargoInventoryService.GetRemainingCapacityForType(mountedRow.InventoryId, mountedRow.CargoTypeId) + amount;
+            mountedRow.Row.AmountText.Content = $"{amount}/{capacity}";
+        }
+    }
+
+    private void UnmountRows()
+    {
+        foreach (var mountedRow in _mountedRows)
+        {
+            guiElementService.UnregisterElementAndChildren(mountedRow.RegistrationId);
+        }
+
+        _mountedRows.Clear();
+    }
+
+    private void OnGuiElementActivated(GuiActivationService.GuiElementActivatedMessage message)
+    {
+        if (!_isOpen || _panel is null) return;
+
+        if (NodeIdMatches(_panel.Overlay, message.NodeId))
+        {
+            ClosePanel();
+        }
+    }
+
+    private bool NodeIdMatches(GuiElement guiElement, Id<GuiNode> nodeId)
+    {
+        if (!guiElementService.TryGetGuiNodeId(guiElement.Id, _panelRegistrationId, out var guiElementNodeId))
+        {
+            return false;
+        }
+
+        return nodeId == guiElementNodeId;
+    }
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Overlay" Style="StationPanelOverlayStyle" Interactive="true">
+    <Box id="Panel" Style="StationPanelStyle" Interactive="true">
+        <Text id="Header" Content='"Industry"' Style="StationPanelHeaderStyle" />
+        <Text id="IndustryName" Content='""' Style="StationPanelInfoTextStyle" />
+        <Text id="ProductivityHeader" Content='"Productivity"' Style="StationPanelSubHeaderStyle" />
+        <Text id="ProductivityValue" Content='""' Style="StationPanelInfoTextStyle" />
+        <Text id="InventoryHeader" Content='"Inventory"' Style="StationPanelSubHeaderStyle" />
+        <Box id="InventoryContainer" Style="StationPanelContainerStyle" />
+    </Box>
+</Box>

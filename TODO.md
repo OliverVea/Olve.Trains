@@ -43,21 +43,14 @@
   - [x] Auto-clear environmental objects when placing buildings (remove trees/etc. that overlap the building footprint)
   - [x] Auto-clear environmental objects when placing tracks (remove trees/etc. that overlap the track path)
   - [x] Show deletion preview during placement — highlight environmental objects that will be auto-cleared before the player confirms placement
-- [ ] Train stopping epic (Feature):
-  - Description: Trains stop at stations and depots instead of passing through. When approaching a stop, the train targets a speed of 1/120% of the kinematically-correct braking speed for the remaining distance — this 20% overshoot margin ensures the train always reaches the stop point even with floating-point drift. Trains decelerate smoothly and come to a full stop at the station/depot track position.
-  - [ ] Add stop target system — trains identify upcoming stations/depots on their route and compute a braking curve with 1/1.2× speed margin
-  - [ ] Implement smooth deceleration along the braking curve so trains come to rest at the stop point
-  - [ ] Add station stop behavior — train pauses at station for a duration (loading/unloading), then departs
-  - [ ] Add depot stop behavior — train stops at depot and remains until released by the player
-- [ ] Train collisions epic (Feature):
-  - Description: Prevent trains from occupying the same track space. On collision, both trains immediately set speed to 0 (simplified — no physics knockback for now). Placement must also prevent spawning trains on top of existing ones.
-  - [ ] Add collision detection — check if any two trains overlap on the same track segment each tick
-  - [ ] On collision, set both trains' speed to 0
-  - [ ] Prevent train placement on occupied track — reject placement if another train already occupies the target position
-  - [ ] Log an error if overlapping trains are ever detected (defensive guard for edge cases)
 - [ ] Resources epic (Feature):
-  - [ ] Design resource system (discrete entities, field deposits, geometric resources; harvest range; production linking)
-  - [ ] Implement resource system based on design
+  - [x] Design resource system — productivity model with ownership, distance efficiency, diminishing returns (see `docs/design/resources.md`)
+  - [x] Add resource types, entity, and catalog (`ResourceType`, `ResourceTypeCatalog`, `Resource`)
+  - [x] Add `HarvestRange` and `RequiredResourceType` to `IndustryProperties`; configure Forest and Mine blueprints
+  - [x] Add `ResourceService` with EntityStore, wire to EnvironmentalObject events (tree → Wood resource)
+  - [x] Add `ResourceOwnershipService` with dirty-flag recalculation and productivity caching
+  - [x] Integrate productivity scaling into `IndustryProductionService` for extractive industries
+  - [x] Add industry info panel — click an industry to see production status, inventory, and productivity multiplier (e.g. ×1.27)
 - [x] Shadow epic (Visual):
   - Description: Add shadow mapping to the game. Requires shader pipeline changes (removing geometry shaders, adding SDF grid), FBO infrastructure for the shadow depth pass, and receiver shader modifications to sample the shadow map.
   - [x] Remove terrain geometry shader — compute flat normals via `dFdx`/`dFdy` in fragment shader, render grid overlay as SDF in terrain fragment shader, delete wireframe shader files
@@ -109,7 +102,6 @@
   - [ ] Design the full industry/cargo graph (what industries exist, what they consume/produce, production chains)
   - [ ] Implement all industry types, recipes, and cargo types from the design
   - [ ] Add industry builder tool (toolbar button → select industry type → click to place)
-  - [ ] Add industry info panel showing production status and inventory when clicking an industry
 - [ ] Audio support epic (Feature):
   - [ ] Add basic support for playing audio
   - [ ] Add in-game music
@@ -153,6 +145,19 @@
 - [ ] GUI layout previewer (Tooling):
   - [ ] Standalone viewer that renders XML layouts via the existing GUI system
   - [ ] File watcher for live reload on XML changes
+
+- [ ] Train collisions epic (Feature):
+  - Description: Prevent trains from occupying the same track space. On collision, both trains immediately set speed to 0 (simplified — no physics knockback for now). Placement must also prevent spawning trains on top of existing ones.
+  - [ ] Add collision detection — check if any two trains overlap on the same track segment each tick
+  - [ ] On collision, set both trains' speed to 0
+  - [ ] Prevent train placement on occupied track — reject placement if another train already occupies the target position
+  - [ ] Log an error if overlapping trains are ever detected (defensive guard for edge cases)
+- [ ] Train stopping epic (Feature):
+  - Description: Trains stop at stations and depots instead of passing through. When approaching a stop, the train targets a speed of 1/120% of the kinematically-correct braking speed for the remaining distance — this 20% overshoot margin ensures the train always reaches the stop point even with floating-point drift. Trains decelerate smoothly and come to a full stop at the station/depot track position.
+  - [ ] Add stop target system — trains identify upcoming stations/depots on their route and compute a braking curve with 1/1.2× speed margin
+  - [ ] Implement smooth deceleration along the braking curve so trains come to rest at the stop point
+  - [ ] Add station stop behavior — train pauses at station for a duration (loading/unloading), then departs
+  - [ ] Add depot stop behavior — train stops at depot and remains until released by the player
 
 ---
 
