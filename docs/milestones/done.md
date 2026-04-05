@@ -1,5 +1,13 @@
 # Done
 
+- [x] Resources epic (Feature):
+  - [x] Design resource system — productivity model with ownership, distance efficiency, diminishing returns (see `docs/design/resources.md`)
+  - [x] Add resource types, entity, and catalog (`ResourceType`, `ResourceTypeCatalog`, `Resource`)
+  - [x] Add `HarvestRange` and `RequiredResourceType` to `IndustryProperties`; configure Forest and Mine blueprints
+  - [x] Add `ResourceService` with EntityStore, wire to EnvironmentalObject events (tree → Wood resource)
+  - [x] Add `ResourceOwnershipService` with dirty-flag recalculation and productivity caching
+  - [x] Integrate productivity scaling into `IndustryProductionService` for extractive industries
+  - [x] Add industry info panel — click an industry to see production status, inventory, and productivity multiplier (e.g. ×1.27)
 - [x] Signal logic epic (Feature):
   - [x] Automatic junction and signal creation/removal based on track topology
   - [x] Rule-based routing system (train, source, destination, distribution)
