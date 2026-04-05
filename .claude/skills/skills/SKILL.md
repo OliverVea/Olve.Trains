@@ -161,6 +161,9 @@ agent: Explore                # or Plan, general-purpose
 ### Content
 
 - Be concise. Only add context Claude doesn't already have.
+- **Write current state, not change history.** Describe how things work *now*. Never leave behind references to how things used to work — just replace the old description with the new one.
+  - Bad: "Bar used to be a child of Foo requiring a FooConfig, but it has been changed to require a BarConfig."
+  - Good: "Bar requires a BarConfig."
 - Use consistent terminology throughout
 - Structure longer files with clear sections and tables
 - Avoid time-sensitive information

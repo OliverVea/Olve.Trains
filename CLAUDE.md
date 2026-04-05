@@ -64,15 +64,20 @@ All work must be tied to an epic in `TODO.md`. Before starting any task, identif
 - If about to do work that doesn't map to any epic step, stop and clarify with the user.
 - Ad-hoc fixes and refactors are fine if they support an epic step — just note which one.
 
-### Keeping Skills Up to Date (IMPORTANT!)
+### Keeping Skills and CLAUDE.md Up to Date (IMPORTANT!)
 
-Skills (`.claude/skills/`) are reference documentation that must **always** reflect the current state of the codebase. If you make changes that invalidate information in a skill, you **must** update that skill in the same commit. This includes:
+Skills (`.claude/skills/`) and `CLAUDE.md` are reference documentation that must **always** reflect the current state of the codebase. If you make changes that invalidate information in a skill or in `CLAUDE.md`, you **must** update it in the same commit. This includes:
 
 - Adding/removing/renaming commands, fixtures, test scenarios, pipeline stages, scene services, events, etc.
 - Changing APIs documented in skills (Game class methods, Result patterns, scene registration, etc.)
 - Modifying workflows or processes described in skills (build steps, test commands, replay system, etc.)
 
-Stale skills are worse than no skills — they cause incorrect code to be written.
+Stale documentation is worse than no documentation — it causes incorrect code to be written. Both `CLAUDE.md` and skills are vital to keep current, but **`CLAUDE.md` is the highest priority** — it is loaded by every agent and conversation, so outdated information here has the widest impact.
+
+**Write current state, not change history.** When updating documentation, describe how things work *now*. Never leave behind references to how things used to work — just replace the old description with the new one.
+
+- Bad: "Bar used to be a child of Foo requiring a FooConfig, but it has been changed to require a BarConfig."
+- Good: "Bar requires a BarConfig."
 
 ### Asset Pipeline
 
