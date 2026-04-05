@@ -1,11 +1,12 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
+using Olve.Trains.Scenes.GameLogic.Money;
 using Olve.Trains.Shared.Telemetry;
 
 namespace Olve.Trains.Scenes.GameLogic.Trains;
 
-public class TrainService(ILogger<TrainService> logger, EntityStoreFactory entityStoreFactory)
+public class TrainService(ILogger<TrainService> logger, MoneyService moneyService, EntityStoreFactory entityStoreFactory)
 {
     private readonly EntityStore<Train> _trains = entityStoreFactory.Create<Train>();
     private int _count;
@@ -18,6 +19,11 @@ public class TrainService(ILogger<TrainService> logger, EntityStoreFactory entit
 
     public Result<Id<Train>> AddTrain(string name)
     {
+        if (!moneyService.TryCharge(MoneyConstants.TrainCost, $"create train '{name}'"))
+        {
+            return new ResultProblem("Cannot afford train: need {0}, have {1}", MoneyConstants.TrainCost, moneyService.Balance);
+        }
+
         var trainId = Id.New<Train>();
         Train train = new(trainId, name);
         if (!_trains.TryAdd(train))

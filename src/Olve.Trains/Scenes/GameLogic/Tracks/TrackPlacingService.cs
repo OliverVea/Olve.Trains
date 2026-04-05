@@ -1,9 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
+using Olve.Trains.Scenes.GameLogic.Money;
 
 namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
-public class TrackPlacingService(ILogger<TrackPlacingService> logger, TrackService trackService)
+public class TrackPlacingService(ILogger<TrackPlacingService> logger, TrackService trackService, MoneyService moneyService)
 {
     public Result<IReadOnlyList<Id<Track>>> PlaceTrack(TrackEndpoint startEndpoint, TrackEndpoint endEndpoint)
     {
@@ -11,6 +12,13 @@ public class TrackPlacingService(ILogger<TrackPlacingService> logger, TrackServi
         if (delta.Length < MathConstants.Epsilon)
         {
             return Result.Success<IReadOnlyList<Id<Track>>>([]);
+        }
+
+        var estimatedLength = delta.Length;
+        var cost = (int)MathF.Ceiling(estimatedLength * MoneyConstants.TrackCostPerMeter);
+        if (!moneyService.TryCharge(cost, $"place track ({estimatedLength:F1}m)"))
+        {
+            return new ResultProblem("Cannot afford track: need {0}, have {1}", cost, moneyService.Balance);
         }
 
         List<(TrackEndpoint Start, TrackEndpoint End)> tracks = [];

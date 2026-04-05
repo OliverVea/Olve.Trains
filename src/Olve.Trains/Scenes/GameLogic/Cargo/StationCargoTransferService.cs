@@ -1,5 +1,6 @@
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
+using Olve.Trains.Scenes.GameLogic.Money;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Trains.Scenes.GameLogic.Trains.Wagons;
@@ -12,7 +13,8 @@ public class StationCargoTransferService(
     WagonInventoryService wagonInventoryService,
     CargoInventoryService cargoInventoryService,
     CargoTransferService cargoTransferService,
-    CargoTransferPolicyService cargoTransferPolicyService) : ISceneService
+    CargoTransferPolicyService cargoTransferPolicyService,
+    MoneyService moneyService) : ISceneService
 {
     private HashSet<(Id<Train>, Id<Track>)> _activeVisits = [];
 
@@ -53,6 +55,11 @@ public class StationCargoTransferService(
 
                         var transferred = cargoTransferService.Transfer(
                             wagonInventoryId, industry.InventoryId, cargoTypeId, remaining);
+                        if (transferred > 0)
+                        {
+                            var value = MoneyConstants.GetCargoDeliveryValue(cargoTypeId, transferred);
+                            moneyService.Add(value, $"delivery of {transferred}x {cargoTypeId}");
+                        }
                         remaining -= transferred;
                         if (remaining <= 0) break;
                     }

@@ -1,9 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Systems;
+using Olve.Trains.Scenes.GameLogic.Money;
 
 namespace Olve.Trains.Scenes.GameLogic.Trains.Wagons;
 
-public class TrainWagonService(ILogger<TrainWagonService> logger, WagonBlueprintService wagonBlueprintService)
+public class TrainWagonService(ILogger<TrainWagonService> logger, WagonBlueprintService wagonBlueprintService, MoneyService moneyService)
 {
     private readonly Dictionary<Id<Train>, List<Wagon>> _wagons = new();
 
@@ -20,6 +21,11 @@ public class TrainWagonService(ILogger<TrainWagonService> logger, WagonBlueprint
         if (!wagonBlueprintService.TryGet(blueprintId, out _))
         {
             return new ResultProblem("Wagon blueprint not found: '{0}'", blueprintId);
+        }
+
+        if (!moneyService.TryCharge(MoneyConstants.WagonCost, $"add wagon to train '{trainId}'"))
+        {
+            return new ResultProblem("Cannot afford wagon: need {0}, have {1}", MoneyConstants.WagonCost, moneyService.Balance);
         }
 
         var wagon = new Wagon(Id.New<Wagon>(), blueprintId);

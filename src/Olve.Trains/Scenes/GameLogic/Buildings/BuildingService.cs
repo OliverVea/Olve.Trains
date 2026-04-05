@@ -2,6 +2,7 @@
 using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
+using Olve.Trains.Scenes.GameLogic.Money;
 using Olve.Trains.Shared.Telemetry;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings;
@@ -10,13 +11,15 @@ public class BuildingService
 {
     private readonly ILogger<BuildingService> _logger;
     private readonly BuildingBlueprintService _blueprintService;
+    private readonly MoneyService _moneyService;
     private readonly EntityStore<Building> _buildings;
     private readonly EntityStoreIndex<Building, Id<BuildingBlueprint>> _buildingsByBlueprint;
 
-    public BuildingService(ILogger<BuildingService> logger, BuildingBlueprintService blueprintService, EntityStoreFactory entityStoreFactory)
+    public BuildingService(ILogger<BuildingService> logger, BuildingBlueprintService blueprintService, MoneyService moneyService, EntityStoreFactory entityStoreFactory)
     {
         _logger = logger;
         _blueprintService = blueprintService;
+        _moneyService = moneyService;
         _buildings = entityStoreFactory.Create<Building>();
         _buildingsByBlueprint = _buildings.CreateIndex(x => x.BlueprintId);
     }
@@ -29,6 +32,12 @@ public class BuildingService
         if (!_blueprintService.TryGetBlueprint(blueprintId, out var blueprint))
         {
             return new ResultProblem("Building blueprint '{0}' not found", blueprintId);
+        }
+
+        var cost = MoneyConstants.GetBuildingCost(blueprintId);
+        if (!_moneyService.TryCharge(cost, $"place {blueprint.Description}"))
+        {
+            return new ResultProblem("Cannot afford {0}: need {1}, have {2}", blueprint.Description, cost, _moneyService.Balance);
         }
 
         Building building = new(Id.New<Building>(), blueprintId, position);

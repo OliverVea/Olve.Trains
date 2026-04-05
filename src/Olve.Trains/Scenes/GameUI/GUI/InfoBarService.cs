@@ -5,6 +5,7 @@ using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 using Olve.Generated.Layouts;
+using Olve.Trains.Scenes.GameLogic.Money;
 
 namespace Olve.Trains.Scenes.GameUI.GUI;
 
@@ -14,7 +15,8 @@ public class InfoBarService(
     GuiActivationService guiActivationService,
     GuiAnchorService guiAnchorService,
     BurgerMenuService burgerMenuService,
-    DeltaTimeService deltaTimeService) : ISceneService
+    DeltaTimeService deltaTimeService,
+    MoneyService moneyService) : ISceneService
 {
 
     public int Priority => 100;
@@ -57,6 +59,7 @@ public class InfoBarService(
 
         var dayTime = dayTimeManager.CurrentTime;
         InfoBar.Clock.Content = $"{dayTime.Hours:D2} : {dayTime.Minutes:D2}";
+        InfoBar.Balance.Content = $"${moneyService.Balance:N0}";
 
         if (_frameTimes.Count >= FpsWindowSize)
         {

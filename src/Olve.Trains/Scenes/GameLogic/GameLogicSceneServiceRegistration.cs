@@ -14,6 +14,7 @@ using Olve.Trains.Scenes.GameLogic.Environment;
 using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Light;
+using Olve.Trains.Scenes.GameLogic.Money;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Time;
 using Olve.Trains.Scenes.GameLogic.Tracks;
@@ -108,6 +109,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<JunctionSignalCollisionService>();
         services.TryAddScoped<JunctionSignalRuleEvaluationService>();
         services.TryAddScoped<JunctionSignalService>();
+        services.TryAddScoped<MoneyService>();
         services.TryAddScoped<ResourceService>();
         services.TryAddScoped<ResidenceBlueprintService>();
         services.TryAddScoped<StationBlueprintService>();

@@ -1,0 +1,20 @@
+# Generated assets (produced by Olve.Trains.AssetPipeline)
+src/Olve.Trains/assets/
+src/Olve.Trains.AssetPipeline/temp/
+
+# .NET build output
+**/bin/
+**/obj/
+
+# Integration test artifacts
+tests/integration/reference/
+tests/integration/.venv/
+tests/integration/.pytest_cache/
+
+# Lock files
+uv.lock
+*.lock
+
+# IDE
+.vs/
+.idea/

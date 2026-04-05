@@ -54,13 +54,18 @@
 
 ### Gameplay mechanics (build after core systems are validated)
 
-- [ ] Money epic (Feature):
+- [x] Money epic (Feature):
   - Description: The economic feedback loop. Players earn money from cargo deliveries and spend it on tracks, buildings, and trains. Without money the demo is a sandbox with no goals.
-  - [ ] Add money/balance entity and service
-  - [ ] Earn money from cargo deliveries (pay out when cargo reaches a consuming industry or city)
-  - [ ] Charge money for placing tracks
-  - [ ] Charge money for placing buildings and trains
-  - [ ] Add money display to UI (balance in the info bar)
+  - [x] Add money/balance entity and service
+  - [x] Earn money from cargo deliveries (pay out when cargo reaches a consuming industry or city)
+  - [x] Charge money for placing tracks
+  - [x] Charge money for placing buildings and trains
+  - [x] Add money display to UI (balance in the info bar)
+- [ ] Scene arguments epic (Technical):
+  - Description: Parameterize scene loading so callers can pass initialization data (e.g. starting money, prebuilt tracks, save file path) into a scene. Enables flows like `LoadingSceneArguments(saveFile: "mysave.sav")` → `GameSceneArguments(money: 12312, trains: [...])`. Needed for save/load, scenario maps, and testing with non-default starting state.
+  - [ ] Add typed scene-argument mechanism to SceneManager (pass args into LoadScene / LoadAndActivateScene, resolvable from scene services)
+  - [ ] Use arguments in GameLogicScene to initialize starting money/entities
+  - [ ] Add a LoadingScene that takes a save-file path argument, reads the file, and transitions to GameLogicScene with populated arguments
 - [ ] Cities epic (Feature):
   - Description: Cities are simple, transparent demand targets for the demo. A city has a level (1-4) and each level requires specific goods at specific rates. Delivering goods earns money and progresses the city. Higher levels unlock new demand tiers requiring cross-network transport. Cities are hardcoded on the demo map — procedural city placement is a v1.0 concern.
   - [ ] Create city entity with name, level, and demand table (level → required goods and rates)
