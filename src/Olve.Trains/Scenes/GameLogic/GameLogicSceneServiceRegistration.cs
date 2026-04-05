@@ -17,6 +17,7 @@ using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Time;
 using Olve.Trains.Scenes.GameLogic.Tracks;
+using Olve.Trains.Scenes.GameLogic.Resources;
 using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Trains.Scenes.GameLogic.Trains.Wagons;
 
@@ -75,6 +76,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<TrackSplineService>(sceneId);
         services.AddSceneService<TrainCollisionService>(sceneId);
         services.AddSceneService<TrainJunctionCrossingService>(sceneId);
+        services.AddSceneService<ResourceOwnershipService>(sceneId);
         services.AddSceneService<IndustryProductionService>(sceneId);
         services.AddSceneService<StationCargoTransferService>(sceneId);
         services.AddSceneService<TrainMovementService>(sceneId);
@@ -106,6 +108,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<JunctionSignalCollisionService>();
         services.TryAddScoped<JunctionSignalRuleEvaluationService>();
         services.TryAddScoped<JunctionSignalService>();
+        services.TryAddScoped<ResourceService>();
         services.TryAddScoped<ResidenceBlueprintService>();
         services.TryAddScoped<StationBlueprintService>();
         services.TryAddScoped<StationNameGenerator>();
@@ -191,6 +194,28 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectRemoved,
             (EnvironmentalObjectCollisionService eocs, Id<EnvironmentalObject> id) => eocs.Unregister(id));
+        services.AddImmediateEventSceneService(sceneId,
+            (EnvironmentalObjectService eos) => eos.OnObjectAdded,
+            (ResourceService rs, Id<EnvironmentalObject> id) => rs.CreateResourceForEnvironmentalObject(id),
+            prefill: eos => eos.ObjectIds);
+        services.AddEventSceneService(sceneId,
+            (EnvironmentalObjectService eos) => eos.OnObjectRemoved,
+            (ResourceService rs, Id<EnvironmentalObject> id) => rs.RemoveResourceForEnvironmentalObject(id));
+
+        // Mark resource ownership dirty when buildings or resources change
+        // TODO: Optimize — only mark dirty when the entity is relevant (extractive building, matching resource type/position)
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingAdded,
+            (ResourceOwnershipService ros, Id<Building> _) => { ros.MarkDirty(); return Result.Success(); });
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingRemoved,
+            (ResourceOwnershipService ros, Id<Building> _) => { ros.MarkDirty(); return Result.Success(); });
+        services.AddEventSceneService(sceneId,
+            (ResourceService rs) => rs.OnResourceAdded,
+            (ResourceOwnershipService ros, Id<Resource> _) => { ros.MarkDirty(); return Result.Success(); });
+        services.AddEventSceneService(sceneId,
+            (ResourceService rs) => rs.OnResourceRemoved,
+            (ResourceOwnershipService ros, Id<Resource> _) => { ros.MarkDirty(); return Result.Success(); });
         services.AddImmediateEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
             (TrackCollisionService tcs, Id<Track> id) => tcs.Register(id),

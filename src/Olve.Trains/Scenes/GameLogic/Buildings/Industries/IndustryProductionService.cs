@@ -1,13 +1,17 @@
 using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 using Olve.Trains.Scenes.GameLogic.Cargo;
+using Olve.Trains.Scenes.GameLogic.Resources;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 
 public class IndustryProductionService(
     IndustryService industryService,
     IndustryRecipeService industryRecipeService,
+    IndustryBlueprintService industryBlueprintService,
+    BuildingService buildingService,
     RecipeTransactionService recipeTransactionService,
+    ResourceOwnershipService resourceOwnershipService,
     DeltaTimeService deltaTimeService) : ISceneService
 {
     private readonly Dictionary<(Id<Industry>, Id<IndustryRecipe>), TimeSpan> _accumulators = new();
@@ -29,7 +33,21 @@ public class IndustryProductionService(
                 continue;
             }
 
-            var accumulated = _accumulators.GetValueOrDefault(key) + deltaTime;
+            var effectiveDelta = deltaTime;
+
+            if (IsExtractiveIndustry(industry))
+            {
+                var productivity = resourceOwnershipService.GetProductivity(industry.Id);
+                if (productivity <= 0f)
+                {
+                    _accumulators[key] = TimeSpan.Zero;
+                    continue;
+                }
+
+                effectiveDelta *= productivity;
+            }
+
+            var accumulated = _accumulators.GetValueOrDefault(key) + effectiveDelta;
 
             if (accumulated >= recipe.ProductionInterval)
             {
@@ -41,5 +59,12 @@ public class IndustryProductionService(
         }
 
         return Result.Success();
+    }
+
+    private bool IsExtractiveIndustry(Industry industry)
+    {
+        if (!buildingService.TryGetBuilding(industry.BuildingId, out var building)) return false;
+        if (!industryBlueprintService.TryGetProperties(building.BlueprintId, out var props)) return false;
+        return props.RequiredResourceType is not null;
     }
 }

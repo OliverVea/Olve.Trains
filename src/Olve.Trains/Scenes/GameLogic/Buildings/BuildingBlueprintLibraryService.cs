@@ -7,6 +7,7 @@ using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
 using Olve.Trains.Scenes.GameLogic.Buildings.Depots;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Cargo;
+using Olve.Trains.Scenes.GameLogic.Resources;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings;
 
@@ -71,7 +72,8 @@ public class BuildingBlueprintLibraryService(
 
         industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Forest,
             new IndustryProperties(IndustryRecipeCatalog.Forest, Capacity: 10,
-                new Dictionary<Id<CargoType>, int> { [CargoTypeCatalog.Wood] = 10 }.ToImmutableDictionary()));
+                new Dictionary<Id<CargoType>, int> { [CargoTypeCatalog.Wood] = 10 }.ToImmutableDictionary(),
+                HarvestRange: 10f, RequiredResourceType: ResourceTypeCatalog.Wood));
 
         return Result.Success();
     }
@@ -86,7 +88,8 @@ public class BuildingBlueprintLibraryService(
 
         industryBlueprintService.SetProperties(BuildingBlueprintCatalog.Mine,
             new IndustryProperties(IndustryRecipeCatalog.Mine, Capacity: 10,
-                new Dictionary<Id<CargoType>, int> { [CargoTypeCatalog.Coal] = 10 }.ToImmutableDictionary()));
+                new Dictionary<Id<CargoType>, int> { [CargoTypeCatalog.Coal] = 10 }.ToImmutableDictionary(),
+                HarvestRange: 10f, RequiredResourceType: ResourceTypeCatalog.Ore));
 
         return Result.Success();
     }

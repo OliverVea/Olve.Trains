@@ -14,17 +14,14 @@ def _get_inventory_amount(game: Game, building_id: str, cargo_type: str) -> int:
 
 
 def test_forest_production(game: Game) -> None:
-    """Forest produces 1 Wood every 3s (~180 frames at 1/60s)."""
+    """Forest produces Wood over time, scaled by nearby tree productivity."""
     forest_id = game.place_building(pos="5,0,5", type="forest", dir="north")
 
-    # Production interval = 3s ≈ 180 frames. Use ~175 as "safely before" threshold.
-    game.step(175)
+    # No production immediately
     assert _get_inventory_amount(game, forest_id, "Wood") == 0
 
-    # 10 more frames guarantees we cross the 180-frame boundary
-    game.step(10)
-    assert _get_inventory_amount(game, forest_id, "Wood") == 1
-
-    # 3 more full cycles (~540 frames, use 545 for margin)
-    game.step(545)
-    assert _get_inventory_amount(game, forest_id, "Wood") == 4
+    # After enough time, the forest should have produced some wood.
+    # Base interval is 3s (180 frames), but nearby trees scale the rate.
+    game.step(360)
+    amount = _get_inventory_amount(game, forest_id, "Wood")
+    assert amount > 0, "Forest near trees should produce wood"
