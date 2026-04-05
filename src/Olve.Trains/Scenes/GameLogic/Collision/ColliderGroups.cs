@@ -10,4 +10,12 @@ public static class ColliderGroups
     public static readonly Id<ColliderGroup> Track = Id.FromName<ColliderGroup>("Track");
     public static readonly Id<ColliderGroup> Terrain = Id.FromName<ColliderGroup>("Terrain");
     public static readonly Id<ColliderGroup> Environment = Id.FromName<ColliderGroup>("Environment");
+
+    private static readonly HashSet<Id<ColliderGroup>> AutoClearableGroups = [Environment];
+
+    /// <summary>
+    /// Returns true if entities in this collider group are automatically removed
+    /// when a building or track is placed on top of them (e.g. trees, mushrooms).
+    /// </summary>
+    public static bool IsAutoClearable(Id<ColliderGroup> group) => AutoClearableGroups.Contains(group);
 }

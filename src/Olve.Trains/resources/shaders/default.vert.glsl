@@ -11,6 +11,11 @@ layout (location = 2) in vec2 texCoords;
 // @instanced
 layout (location = 3) in mat4 iWorld;
 
+// @instanced
+layout (location = 7) in vec3 iColorOverride;
+// @instanced
+layout (location = 8) in float iColorMix;
+
 // @implements(ICameraPositionShader.View)
 uniform mat4 view;
 // @implements(ICameraPositionShader.Projection)
@@ -23,6 +28,8 @@ out vec3 FragPos;
 out vec3 FragNormal;
 out vec2 TexCoords;
 out vec4 FragPosLightSpace;
+out vec3 InstanceColorOverride;
+out float InstanceColorMix;
 
 void main()
 {
@@ -31,6 +38,8 @@ void main()
     FragNormal = mat3(transpose(inverse(iWorld))) * normal;
     TexCoords = texCoords;
     FragPosLightSpace = lightSpaceMatrix * worldPos;
+    InstanceColorOverride = iColorOverride;
+    InstanceColorMix = iColorMix;
 
     gl_Position = projection * view * worldPos;
 }

@@ -84,6 +84,27 @@ public class EnvironmentalObjectRenderingService(
         return Result.Success();
     }
 
+    public Result SetColorOverride(Id<EnvironmentalObject> objectId, Vector3D<float> colorOverride, float colorMix)
+    {
+        if (!_instances.TryGetValue(objectId, out var instanceHandle))
+        {
+            return new ResultProblem("No rendering instance for environmental object '{0}'", objectId);
+        }
+
+        if (!environmentalObjectService.TryGetObject(objectId, out var obj))
+        {
+            return new ResultProblem("Environmental object not found: '{0}'", objectId);
+        }
+
+        var worldMatrix = obj.Position.ToMatrix4X4();
+        return meshRenderingService.UpdateInstance(instanceHandle, worldMatrix, colorOverride, colorMix);
+    }
+
+    public Result ClearColorOverride(Id<EnvironmentalObject> objectId)
+    {
+        return SetColorOverride(objectId, default, 0f);
+    }
+
     private Result<MeshRenderingService.MeshGroupHandle> GetOrCreateMeshGroup(EnvironmentalObject obj)
     {
         var meshPath = obj.MeshPath;

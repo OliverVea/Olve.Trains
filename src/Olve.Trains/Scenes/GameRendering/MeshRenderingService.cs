@@ -162,7 +162,7 @@ public class MeshRenderingService(
 
     public Result<MeshInstanceHandle> AddInstance(MeshGroupHandle group, Matrix4X4<float> worldMatrix)
     {
-        var instance = new Shaders.Default.Instance(worldMatrix);
+        var instance = new Shaders.Default.Instance(worldMatrix, default, 0f);
 
         if (renderingInstanceManager.Add(group.GroupId, instance)
             .TryPickProblems(out var problems, out var instanceId))
@@ -181,7 +181,20 @@ public class MeshRenderingService(
 
     public Result UpdateInstance(MeshInstanceHandle instance, Matrix4X4<float> worldMatrix)
     {
-        var data = new Shaders.Default.Instance(worldMatrix);
+        var data = new Shaders.Default.Instance(worldMatrix, default, 0f);
+
+        if (renderingInstanceManager.Update(instance.GroupId, instance.InstanceId, data)
+            .TryPickProblems(out var problems))
+        {
+            return problems;
+        }
+
+        return shadowMapService.UpdateInstance(instance.ShadowGroupId, instance.ShadowInstanceId, data);
+    }
+
+    public Result UpdateInstance(MeshInstanceHandle instance, Matrix4X4<float> worldMatrix, Vector3D<float> colorOverride, float colorMix)
+    {
+        var data = new Shaders.Default.Instance(worldMatrix, colorOverride, colorMix);
 
         if (renderingInstanceManager.Update(instance.GroupId, instance.InstanceId, data)
             .TryPickProblems(out var problems))

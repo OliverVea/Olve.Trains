@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Input;
+using Olve.Engine3D.Math;
+using Olve.Engine3D.Physics3D.Collisions;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Shaders;
 using Olve.Trains.Scenes.GameLogic.Terrain;
@@ -21,6 +23,8 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
     TrackGhostRenderingService trackGhostRenderingService,
     TrackLineStripDataService trackLineStripDataService,
     TrackValidationService trackValidationService,
+    TrackSplineService trackSplineService,
+    ClearancePreviewService clearancePreviewService,
     TerrainHighlightSettings terrainHighlightSettings) : BaseToolService<TrackPlacingToolService.State>(toolManagementService, new State())
 {
     public record State(TrackEndpoint? From = null, CardinalDirection Direction = CardinalDirection.North, bool ActivatedThisFrame = false);
@@ -71,6 +75,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
     {
         arrowIndicatorService.Hide(_arrowIndicatorId);
         terrainHighlightSettings.ShowGrid = false;
+        clearancePreviewService.ClearPreview();
         UnregisterGhost();
         return toolState;
     }
@@ -124,6 +129,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
         }
 
         UnregisterGhost();
+        clearancePreviewService.ClearPreview();
         ToolState = ToolState with { From = null };
         return trackPlacingService.PlaceTrack(f, trackEndpoint).ToEmptyResult();
     }
@@ -132,6 +138,7 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
     {
         if (ToolState.From is not { } f)
         {
+            clearancePreviewService.ClearPreview();
             return Result.Success();
         }
 
@@ -157,7 +164,39 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
             _ghostRegistered = true;
         }
 
+        UpdateClearancePreview(f, currentEndpoint);
+
         return Result.Success();
+    }
+
+    private void UpdateClearancePreview(TrackEndpoint from, TrackEndpoint to)
+    {
+        var spline = trackSplineService.CreateSpline(from, to);
+        if (spline.GetPoints(TrackSegmentHelper.SegmentCount + 1)
+            .TryPickProblems(out _, out var points))
+        {
+            clearancePreviewService.ClearPreview();
+            return;
+        }
+
+        var pointArray = points.ToArray();
+
+        // Compute combined AABB of all track segments for a single preview query
+        var min = new Vector3D<float>(float.MaxValue, float.MaxValue, float.MaxValue);
+        var max = new Vector3D<float>(float.MinValue, float.MinValue, float.MinValue);
+
+        for (var i = 0; i < TrackSegmentHelper.SegmentCount; i++)
+        {
+            var segmentFrom = pointArray[i];
+            var segmentTo = pointArray[i + 1];
+            var matrix = TrackSegmentHelper.ComputeSegmentOBBMatrix(segmentFrom, segmentTo);
+            var segmentAABB = TrackSegmentHelper.HalfUnitBox.GetWorldAABB(matrix);
+
+            min = Vector3D.Min(min, segmentAABB.Min);
+            max = Vector3D.Max(max, segmentAABB.Max);
+        }
+
+        clearancePreviewService.ShowPreview(new AABB(min, max));
     }
 
     private void UnregisterGhost()

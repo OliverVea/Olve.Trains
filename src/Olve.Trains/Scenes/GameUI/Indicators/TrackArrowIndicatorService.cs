@@ -126,7 +126,7 @@ public class TrackArrowIndicatorService(
 
         if (_instanceId is null)
         {
-            if (renderingInstanceManager.Add(_groupId, new Shaders.Default.Instance(new Matrix4X4<float>()))
+            if (renderingInstanceManager.Add(_groupId, new Shaders.Default.Instance(new Matrix4X4<float>(), default, 0f))
                 .TryPickProblems(out var problems, out var instanceId))
             {
                 return problems.Prepend("Failed to add arrow instance");
@@ -170,7 +170,7 @@ public class TrackArrowIndicatorService(
 
         if (_instanceId is { } instanceId)
         {
-            if (renderingInstanceManager.Update(_groupId, instanceId, new Shaders.Default.Instance(world))
+            if (renderingInstanceManager.Update(_groupId, instanceId, new Shaders.Default.Instance(world, default, 0f))
                 .TryPickProblems(out var problems))
             {
                 return problems.Prepend("Failed to update arrow instance");

@@ -4,6 +4,8 @@ in vec3 FragPos;
 in vec3 FragNormal;
 in vec2 TexCoords;
 in vec4 FragPosLightSpace;
+in vec3 InstanceColorOverride;
+in float InstanceColorMix;
 
 out vec4 FragColor;
 
@@ -102,8 +104,9 @@ void main()
     // Sample the texture color using texture coordinates
     vec4 textureColor = texture(textureSampler, TexCoords);
 
-    // Color tinting: mix base color with override, then multiply by texture
-    vec3 baseColor = mix(uColor, uColorOverride, uColorMix) * textureColor.rgb;
+    // Color tinting: uniform override first, then per-instance override on top
+    vec3 colorAfterUniform = mix(uColor, uColorOverride, uColorMix);
+    vec3 baseColor = mix(colorAfterUniform, InstanceColorOverride, InstanceColorMix) * textureColor.rgb;
 
     float rimFactor = 1.0 - max(dot(cameraDirection, norm), 0.0);
     rimFactor = smoothstep(0.3, 0.8, rimFactor);

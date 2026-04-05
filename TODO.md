@@ -36,13 +36,13 @@
   - [x] Add `query-track` command — returns full track details (endpoints, directions, connected junctions)
   - [x] Add `list-buildings` command — returns all buildings with type, position, and direction
   - [x] Audit existing commands and logs for completeness — every entity type should have list/query commands
-- [ ] Placement clearance epic (Feature):
+- [x] Placement clearance epic (Feature):
   - Description: Environmental objects (trees, mushrooms) can be removed by the player and are auto-cleared when placing buildings or tracks on top of them. Other entities (buildings, tracks, trains) block placement and are never auto-cleared. The system distinguishes auto-clearable entities from blocking ones, and shows a preview of what will be deleted before the player commits to a placement.
   - [x] Add tree deletion via the delete tool (click a tree to remove it)
-  - [ ] Define clearance categories — auto-clearable (trees, environmental objects) vs blocking (buildings, tracks, trains) vs immovable (terrain)
-  - [ ] Auto-clear environmental objects when placing buildings (remove trees/etc. that overlap the building footprint)
-  - [ ] Auto-clear environmental objects when placing tracks (remove trees/etc. that overlap the track path)
-  - [ ] Show deletion preview during placement — highlight environmental objects that will be auto-cleared before the player confirms placement
+  - [x] Define clearance categories — auto-clearable (trees, environmental objects) vs blocking (buildings, tracks, trains) vs immovable (terrain)
+  - [x] Auto-clear environmental objects when placing buildings (remove trees/etc. that overlap the building footprint)
+  - [x] Auto-clear environmental objects when placing tracks (remove trees/etc. that overlap the track path)
+  - [x] Show deletion preview during placement — highlight environmental objects that will be auto-cleared before the player confirms placement
 - [ ] Train stopping epic (Feature):
   - Description: Trains stop at stations and depots instead of passing through. When approaching a stop, the train targets a speed of 1/120% of the kinematically-correct braking speed for the remaining distance — this 20% overshoot margin ensures the train always reaches the stop point even with floating-point drift. Trains decelerate smoothly and come to a full stop at the station/depot track position.
   - [ ] Add stop target system — trains identify upcoming stations/depots on their route and compute a braking curve with 1/1.2× speed margin

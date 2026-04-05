@@ -10,7 +10,7 @@ public class TrackValidationService(
     public const int SamplingPoints = 25;
     public const float MaxCurvature = 1f;
 
-    private readonly HashSet<Id<ColliderGroup>> _colliderGroups = [ColliderGroups.Building, ColliderGroups.Environment];
+    private readonly HashSet<Id<ColliderGroup>> _colliderGroups = [ColliderGroups.Building];
 
     public bool IsValid(TrackEndpoint from, TrackEndpoint to) =>
         !HasInvalidCurvature(from, to) && !HasCollisions(from, to);

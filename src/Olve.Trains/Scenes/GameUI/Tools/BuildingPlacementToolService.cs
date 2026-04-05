@@ -1,4 +1,5 @@
 using Olve.Trains.Scenes.GameLogic.Buildings;
+using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameRendering;
 
@@ -9,6 +10,7 @@ public class BuildingPlacementToolService(
     BuildingValidationService buildingValidationService,
     BuildingService buildingService,
     BuildingBlueprintService buildingBlueprintService,
+    ClearancePreviewService clearancePreviewService,
     TerrainHighlightSettings terrainHighlightSettings)
 {
     public record PreviewState(
@@ -43,15 +45,20 @@ public class BuildingPlacementToolService(
                 {
                     Valid = buildingValidationService.IsValid(newState.Position, blueprint.Footprint),
                 };
+
+                var (minX, minZ, maxX, maxZ) = BuildingValidationService.GetBounds(newState.Position, blueprint.Footprint);
+                var area = PlacementClearanceService.FootprintToAABB(minX, minZ, maxX, maxZ);
+                clearancePreviewService.ShowPreview(area);
             }
         }
 
         _states[previewId] = newState;
 
-        // Toggle terrain grid
+        // Toggle terrain grid and clearance preview
         if (oldState.Show != newState.Show)
         {
             terrainHighlightSettings.ShowGrid = newState.Show;
+            if (!newState.Show) clearancePreviewService.ClearPreview();
         }
 
         // Delegate to ghost preview service
@@ -74,6 +81,8 @@ public class BuildingPlacementToolService(
         {
             return Result.Success();
         }
+
+        clearancePreviewService.ClearPreview();
 
         if (buildingService.AddBuilding(blueprintId, state.Position).TryPickProblems(out var problems))
         {

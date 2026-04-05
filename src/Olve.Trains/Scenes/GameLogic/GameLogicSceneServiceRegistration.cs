@@ -93,6 +93,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<CargoTransferPolicyService>();
         services.TryAddScoped<CargoTypeService>();
         services.TryAddScoped<ColliderDebugSettings>();
+        services.TryAddScoped<PlacementClearanceService>();
         services.TryAddScoped<EnvironmentalObjectBlueprintService>();
         services.TryAddScoped<EnvironmentalObjectCollisionService>();
         services.TryAddScoped<EnvironmentalObjectService>();
@@ -175,6 +176,9 @@ public static class GameLogicSceneServiceRegistration
             (BuildingService bs) => bs.OnBuildingRemoved,
             (BuildingCollisionService bcs, Id<Building> id) => bcs.Unregister(id));
         services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingAdded,
+            (PlacementClearanceService pcs, Id<Building> id) => pcs.ClearForBuilding(id));
+        services.AddEventSceneService(sceneId,
             (BuildingBlueprintService blueprintService) => blueprintService.OnBlueprintRemoved,
             (BuildingService buildingService, Id<BuildingBlueprint> id) => buildingService.DeleteBuildingsWithBlueprint(id));
         services.AddEventSceneService(sceneId,
@@ -194,6 +198,9 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackRemoved,
             (TrackCollisionService tcs, Id<Track> id) => tcs.Unregister(id));
+        services.AddEventSceneService(sceneId,
+            (TrackService ts) => ts.OnTrackAdded,
+            (PlacementClearanceService pcs, Id<Track> id) => pcs.ClearForTrack(id));
         services.AddEventSceneService(sceneId,
             (TrainService vs) => vs.OnTrainAdded,
             (TrainCollisionService vcs, Id<Train> id) => vcs.Register(id),

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Commands.GameRendering;
@@ -87,6 +88,8 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<EnvironmentalObjectRenderingService>(sceneId);
         services.AddSceneService<ColliderDebugRenderingService>(sceneId);
         services.AddSceneService<ToggleColliderDebugHandlerService>(sceneId);
+
+        services.TryAddScoped<ClearancePreviewService>();
 
         return services;
     }
