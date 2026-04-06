@@ -31,8 +31,8 @@ def main() -> None:
 
         # === Buildings ===
         depot_id = game.place_building(pos="9,1,24", type="depot", dir="north")
+        game.place_building(pos="10,1,22", type="forest", dir="north")
         game.place_building(pos="9,1,20", type="station", dir="north")
-        game.place_building(pos="10,1,14", type="forest", dir="north")
         game.place_building(pos="9,1,11", type="station", dir="north")
         game.place_building(pos="10,1,9", type="sawmill", dir="north")
 
@@ -80,15 +80,17 @@ def main() -> None:
 
         # === Trains ===
 
-        # Train 1: on depot with 4 goods wagons, speed 2
+        # Train 1: 4 wagons filtered for wood only, speed 2
         train1_id = game.place_train(depot=depot_id, speed=2)
         for _ in range(4):
-            game.add_wagon(train1_id, "goods")
+            wagon_id = game.add_wagon(train1_id, "goods")
+            game.send(f"set-wagon-filter wagon={wagon_id} type=Wood direction=Both")
 
-        # Train 2: on depot with 2 goods wagons, speed 2
+        # Train 2: 2 wagons filtered for planks only, speed 2
         train2_id = game.place_train(depot=depot_id, speed=2)
         for _ in range(2):
-            game.add_wagon(train2_id, "goods")
+            wagon_id = game.add_wagon(train2_id, "goods")
+            game.send(f"set-wagon-filter wagon={wagon_id} type=Planks direction=Both")
 
         game.send("set-speed scale=0")
 

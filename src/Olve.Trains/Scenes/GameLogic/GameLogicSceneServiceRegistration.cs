@@ -76,6 +76,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<SetSpeedHandlerService>(sceneId);
         services.AddSceneService<SetTimeHandlerService>(sceneId);
         services.AddSceneService<SetTrainSpeedHandlerService>(sceneId);
+        services.AddSceneService<SetWagonFilterHandlerService>(sceneId);
 
         services.AddSceneService<TerrainService>(sceneId);
         services.AddSceneService<TrackSplineService>(sceneId);

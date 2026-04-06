@@ -28,6 +28,30 @@ public class CargoTransferPolicyService
         return _policies.GetValueOrDefault((inventoryId, cargoTypeId), TransferDirection.None);
     }
 
+    public bool InventoryAccepts(Id<CargoInventory> inventoryId, Id<CargoType> cargoTypeId)
+    {
+        if (!HasAnyPolicies(inventoryId)) return true;
+        var direction = GetDirection(inventoryId, cargoTypeId);
+        return direction is TransferDirection.In or TransferDirection.Both;
+    }
+
+    public bool InventoryProvides(Id<CargoInventory> inventoryId, Id<CargoType> cargoTypeId)
+    {
+        if (!HasAnyPolicies(inventoryId)) return true;
+        var direction = GetDirection(inventoryId, cargoTypeId);
+        return direction is TransferDirection.Out or TransferDirection.Both;
+    }
+
+    public bool HasAnyPolicies(Id<CargoInventory> inventoryId)
+    {
+        foreach (var key in _policies.Keys)
+        {
+            if (key.Item1 == inventoryId) return true;
+        }
+
+        return false;
+    }
+
     public IEnumerable<(Id<CargoType> CargoTypeId, TransferDirection Direction)> GetPolicies(Id<CargoInventory> inventoryId)
     {
         foreach (var (key, direction) in _policies)

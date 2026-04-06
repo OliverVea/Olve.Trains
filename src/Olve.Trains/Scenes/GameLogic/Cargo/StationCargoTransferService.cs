@@ -50,6 +50,8 @@ public class StationCargoTransferService(
                     if (amount <= 0) continue;
 
                     var remaining = amount;
+                    if (!cargoTransferPolicyService.InventoryProvides(wagonInventoryId, cargoTypeId)) continue;
+
                     foreach (var industry in nearbyIndustries)
                     {
                         var direction = cargoTransferPolicyService.GetDirection(industry.InventoryId, cargoTypeId);
@@ -99,6 +101,7 @@ public class StationCargoTransferService(
                     foreach (var wagonInventoryId in wagonInventories)
                     {
                         if (!cargoInventoryService.CanAccept(wagonInventoryId, cargoTypeId)) continue;
+                        if (!cargoTransferPolicyService.InventoryAccepts(wagonInventoryId, cargoTypeId)) continue;
 
                         var transferred = cargoTransferService.Transfer(
                             industry.InventoryId, wagonInventoryId, cargoTypeId, available);
@@ -112,4 +115,5 @@ public class StationCargoTransferService(
         _activeVisits = currentVisits;
         return Result.Success();
     }
+
 }
