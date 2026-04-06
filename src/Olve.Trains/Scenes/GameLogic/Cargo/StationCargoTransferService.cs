@@ -1,5 +1,6 @@
 using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
+using Olve.Trains.Scenes.GameLogic.Cities;
 using Olve.Trains.Scenes.GameLogic.Money;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 using Olve.Trains.Scenes.GameLogic.Trains;
@@ -38,6 +39,7 @@ public class StationCargoTransferService(
             }
 
             var nearbyIndustries = stationService.GetNearbyIndustries(station.BuildingId).ToList();
+            var nearbyCities = stationService.GetNearbyCities(station.BuildingId).ToList();
             var wagonInventories = wagonInventoryService.GetTrainInventories(trainId).ToList();
 
             // Phase 1: UNLOAD (wagon → industry where direction is In)
@@ -55,6 +57,24 @@ public class StationCargoTransferService(
 
                         var transferred = cargoTransferService.Transfer(
                             wagonInventoryId, industry.InventoryId, cargoTypeId, remaining);
+                        if (transferred > 0)
+                        {
+                            var value = MoneyConstants.GetCargoDeliveryValue(cargoTypeId, transferred);
+                            moneyService.Add(value, $"delivery of {transferred}x {cargoTypeId}");
+                        }
+                        remaining -= transferred;
+                        if (remaining <= 0) break;
+                    }
+
+                    if (remaining <= 0) continue;
+
+                    foreach (var city in nearbyCities)
+                    {
+                        var direction = cargoTransferPolicyService.GetDirection(city.InventoryId, cargoTypeId);
+                        if (direction is not (TransferDirection.In or TransferDirection.Both)) continue;
+
+                        var transferred = cargoTransferService.Transfer(
+                            wagonInventoryId, city.InventoryId, cargoTypeId, remaining);
                         if (transferred > 0)
                         {
                             var value = MoneyConstants.GetCargoDeliveryValue(cargoTypeId, transferred);

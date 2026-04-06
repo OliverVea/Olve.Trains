@@ -16,6 +16,7 @@ Y = "0.125"
 def main() -> None:
     game = Game(
         instance_id="replay",
+        pipe_name="replay",
         resolution="1280x720",
         skip_build=True,
         scene="game",
@@ -89,7 +90,11 @@ def main() -> None:
         for _ in range(2):
             game.add_wagon(train2_id, "goods")
 
-        print("Replay complete. Close the window to exit.")
+        game.send("set-speed scale=0")
+
+        print(f"Replay complete. Pipe: {game.pipe_id}")
+        print("Send commands with: dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send \"<command>\" --instance {game.pipe_id}")
+        print("Close the window to exit.")
 
         # Keep alive until game exits
         while game._game_proc and game._game_proc.poll() is None:

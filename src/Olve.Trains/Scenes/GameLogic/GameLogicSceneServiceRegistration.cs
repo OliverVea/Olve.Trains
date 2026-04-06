@@ -5,6 +5,7 @@ using Olve.Engine3D.Scenes;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
+using Olve.Trains.Scenes.GameLogic.Cities;
 using Olve.Trains.Scenes.GameLogic.Buildings.Depots;
 using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Cargo;
@@ -50,6 +51,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<DeleteTrainHandlerService>(sceneId);
         services.AddSceneService<JunctionSignalRuleService>(sceneId);
         services.AddSceneService<ListBuildingsHandlerService>(sceneId);
+        services.AddSceneService<ListCitiesHandlerService>(sceneId);
         services.AddSceneService<ListEntitiesHandlerService>(sceneId);
         services.AddSceneService<ListJunctionsHandlerService>(sceneId);
         services.AddSceneService<ListTracksHandlerService>(sceneId);
@@ -60,6 +62,8 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<PlaceTrainHandlerService>(sceneId);
         services.AddSceneService<ProjectToScreenHandlerService>(sceneId);
         services.AddSceneService<QueryBuildingHandlerService>(sceneId);
+        services.AddSceneService<QueryCityHandlerService>(sceneId);
+        services.AddSceneService<QueryMoneyHandlerService>(sceneId);
         services.AddSceneService<QueryJunctionHandlerService>(sceneId);
         services.AddSceneService<QueryTimeHandlerService>(sceneId);
         services.AddSceneService<QueryTrackHandlerService>(sceneId);
@@ -112,6 +116,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<MoneyService>();
         services.TryAddScoped<ResourceService>();
         services.TryAddScoped<ResidenceBlueprintService>();
+        services.TryAddScoped<CityService>();
         services.TryAddScoped<StationBlueprintService>();
         services.TryAddScoped<StationNameGenerator>();
         services.TryAddScoped<DepotBlueprintService>();
@@ -173,6 +178,13 @@ public static class GameLogicSceneServiceRegistration
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
             (IndustryService ist, Id<Building> id) => ist.RemoveIndustryForBuilding(id));
+        services.AddImmediateEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingAdded,
+            (CityService cs, Id<Building> id) => cs.CreateResidenceForBuilding(id).ToEmptyResult(),
+            prefill: bs => bs.BuildingIds);
+        services.AddEventSceneService(sceneId,
+            (BuildingService bs) => bs.OnBuildingRemoved,
+            (CityService cs, Id<Building> id) => cs.RemoveResidenceForBuilding(id));
         services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
             (BuildingCollisionService bcs, Id<Building> id) => bcs.Register(id),

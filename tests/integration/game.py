@@ -127,6 +127,7 @@ class Game:
         scene: str | None = None,
         kill_stale: bool = True,
         manual: bool = True,
+        pipe_name: str | None = None,
     ):
         self.instance_id = instance_id
         self.resolution = resolution
@@ -142,10 +143,13 @@ class Game:
         self._game_proc: subprocess.Popen | None = None
         self._xvfb_proc: subprocess.Popen | None = None
         self._temp_dir = tempfile.mkdtemp(prefix="integration-test-")
+        self._pipe_name: str | None = pipe_name
         self._pipe_suffix: str = uuid.uuid4().hex[:8]
 
     @property
-    def _pipe_id(self) -> str:
+    def pipe_id(self) -> str:
+        if self._pipe_name is not None:
+            return self._pipe_name
         return f"{self.instance_id}-{self._pipe_suffix}"
 
     def start(self) -> None:
@@ -223,7 +227,7 @@ class Game:
         logger.debug("send: %s", command)
         try:
             proc = subprocess.run(
-                ["dotnet", str(GAME_DLL), "--send", command, "--instance", self._pipe_id],
+                ["dotnet", str(GAME_DLL), "--send", command, "--instance", self.pipe_id],
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -559,13 +563,13 @@ class Game:
         time.sleep(2)
 
     def _launch_game(self) -> None:
-        logger.info("Launching game (manual=%s, scene=%s, pipe=%s)", self.manual, self.scene or "default", self._pipe_id)
+        logger.info("Launching game (manual=%s, scene=%s, pipe=%s)", self.manual, self.scene or "default", self.pipe_id)
         cmd = [
             "dotnet",
             str(GAME_DLL),
             "--listen",
             "--instance",
-            self._pipe_id,
+            self.pipe_id,
             "--resolution",
             self.resolution,
         ]

@@ -66,10 +66,14 @@
   - [ ] Add typed scene-argument mechanism to SceneManager (pass args into LoadScene / LoadAndActivateScene, resolvable from scene services)
   - [ ] Use arguments in GameLogicScene to initialize starting money/entities
   - [ ] Add a LoadingScene that takes a save-file path argument, reads the file, and transitions to GameLogicScene with populated arguments
+- [ ] CLI output epic (Tooling):
+  - Description: Command output is currently raw JSON, which wastes tokens in agentic usage and is hard to read for humans. Add a `--nice` flag to all query/list commands that produces brief, scannable plain-text output optimized for both human and AI consumption. JSON remains the default for programmatic use.
+  - [ ] Add `--nice` flag support to the command system (opt-in per command)
+  - [ ] Add `--nice` formatters for all query/list commands (e.g. `City 1 | 2 residences | balance: $3913`)
 - [ ] Cities epic (Feature):
   - Description: Cities are simple, transparent demand targets for the demo. A city has a level (1-4) and each level requires specific goods at specific rates. Delivering goods earns money and progresses the city. Higher levels unlock new demand tiers requiring cross-network transport. Cities are hardcoded on the demo map — procedural city placement is a v1.0 concern.
-  - [ ] Create city entity with name, level, and demand table (level → required goods and rates)
-  - [ ] Cities consume goods delivered to nearby stations and pay out money
+  - [x] Create city entity with residences attached (name/level/demand table deferred to the leveling step)
+  - [x] Cities consume goods delivered to nearby stations and pay out money
   - [ ] City leveling — deliver enough goods to reach the next level, unlocking new demand tiers
   - [ ] Design demand tiers so levels 1-2 use isolated lines, levels 3-4 require cross-network cargo
   - [ ] City UI showing current level, demand, and progress toward next level

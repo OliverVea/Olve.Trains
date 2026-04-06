@@ -2,12 +2,13 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Systems;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
+using Olve.Trains.Scenes.GameLogic.Cities;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Tracks;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 
-public class StationService(ILogger<StationService> logger, StationBlueprintService stationBlueprintService, BuildingService buildingService, BuildingBlueprintService buildingBlueprintService, TrackService trackService, GridService gridService, IndustryService industryService)
+public class StationService(ILogger<StationService> logger, StationBlueprintService stationBlueprintService, BuildingService buildingService, BuildingBlueprintService buildingBlueprintService, TrackService trackService, GridService gridService, IndustryService industryService, CityService cityService)
 {
     private readonly Dictionary<Id<Building>, Station> _stations = [];
     private readonly Dictionary<Id<Track>, Station> _stationsByTrack = [];
@@ -103,6 +104,27 @@ public class StationService(ILogger<StationService> logger, StationBlueprintServ
             if (distance > stationProps.Range) continue;
 
             yield return industry;
+        }
+    }
+
+    public IEnumerable<City> GetNearbyCities(Id<Building> stationBuildingId)
+    {
+        if (!buildingService.TryGetBuilding(stationBuildingId, out var stationBuilding)) yield break;
+        if (!stationBlueprintService.TryGetProperties(stationBuilding.BlueprintId, out var stationProps)) yield break;
+
+        var seenCities = new HashSet<Id<City>>();
+
+        foreach (var building in buildingService.Buildings)
+        {
+            if (!cityService.TryGetResidenceByBuilding(building.Id, out var residence)) continue;
+
+            var distance = TileDistance(stationBuilding.Position.BottomLeft, building.Position.BottomLeft);
+            if (distance > stationProps.Range) continue;
+
+            if (!seenCities.Add(residence.CityId)) continue;
+            if (!cityService.TryGetCity(residence.CityId, out var city)) continue;
+
+            yield return city;
         }
     }
 

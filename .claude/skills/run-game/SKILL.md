@@ -22,6 +22,23 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj
 dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --listen
 ```
 
+## Demonstrating Features to the User
+
+When the user wants to play the game AND you need to send commands to the running instance:
+
+1. **Launch the game in the background** — use the initialize script, which runs the replay on pipe `replay`:
+   ```bash
+   bash .claude/skills/run-game/scripts/initialize-game.sh --windowing native
+   ```
+   Run this as a background task so the user can play.
+
+2. **Send commands to the running game** — wait for the user to ask, then:
+   ```bash
+   dotnet run --project src/Olve.Trains/Olve.Trains.csproj -- --send "list-cities" --instance replay
+   ```
+
+The initialize script uses pipe name `replay`, so `--instance replay` always works. No need to discover pipe names.
+
 ## Scripts
 
 | Script | Description |
