@@ -22,6 +22,9 @@ def test_loading_scene_transitions_to_game(game: Game) -> None:
     game.step(1)
 
     game.assert_no_errors()
+    game.assert_no_warnings(ignore=[
+        "shrink logic is not implemented",
+    ])
 
 
 def test_loading_scene_round_trip(game: Game) -> None:
@@ -48,3 +51,6 @@ def test_loading_scene_round_trip(game: Game) -> None:
     game.step(1)
 
     game.assert_no_errors()
+    game.assert_no_warnings(ignore=[
+        "shrink logic is not implemented",
+    ])

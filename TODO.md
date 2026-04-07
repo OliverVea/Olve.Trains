@@ -2,6 +2,10 @@
 
 (none)
 
+## Manual Verification
+
+- [ ] Put a breakpoint in `LoadingService.Update()` and verify the loading scene flow works: MainMenu → LoadingScene (loading indicator visible, background task runs) → GameLogicScene
+
 ## Tech Debt
 
 - [ ] Integration tests should use user-facing validated placement tools (e.g. select tool, click to place) instead of raw `place-track`/`place-building` commands. If validation logic breaks, raw commands bypass it silently — at least some tests should go through the full GUI placement flow to catch that.
