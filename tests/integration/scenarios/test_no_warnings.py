@@ -18,6 +18,9 @@ def test_no_warnings_on_game_start(game: Game) -> None:
     game.load_scene("menu")
     game.step(2)
 
+    game.load_scene("loading")
+    game.step(10)  # loading scene auto-transitions to game after background task completes
+
     game.load_scene("game")
     game.step(2)
 

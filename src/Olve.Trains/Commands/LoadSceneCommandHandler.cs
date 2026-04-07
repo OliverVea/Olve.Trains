@@ -11,13 +11,14 @@ public class LoadSceneCommandHandler(SceneManager sceneManager) : ICommandHandle
     {
         ["game"] = SceneIds.GameUIScene,
         ["menu"] = SceneIds.MainMenuScene,
+        ["loading"] = SceneIds.LoadingScene,
     };
 
     public string Verb => "load-scene";
-    public string HelpString => "Unloads all scenes and loads the specified scene. Available: game, menu";
+    public string HelpString => "Unloads all scenes and loads the specified scene. Available: game, menu, loading";
     public IReadOnlyList<CommandArgument> Arguments { get; } =
     [
-        new(SceneKey, "Scene to load: game, menu", Required: true),
+        new(SceneKey, "Scene to load: game, menu, loading", Required: true),
     ];
 
     public Result<CommandOutput> Handle(CommandContext context)

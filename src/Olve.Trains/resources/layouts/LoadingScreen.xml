@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Box id="Root" Justify="Justify.Center" Align="Align.Center">
+    <Text id="LoadingText" Content='"Loading..."' Style="ModalButtonTextStyle" />
+</Box>

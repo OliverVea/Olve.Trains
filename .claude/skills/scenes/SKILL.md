@@ -45,10 +45,14 @@ Default priority is 0. Step between levels is 1024.
 ```
 MainMenuScene (root, LayerOrder 0)
 
+LoadingScene (root, LayerOrder 0)
+
 GameLogicScene (root, LayerOrder 0)
   └── GameRenderingScene (child, LayerOrder 1)
       └── GameUIScene (child, LayerOrder 2)
 ```
+
+**Scene flow:** MainMenu → LoadingScene → GameLogicScene (via async task). LoadingScene shows a loading indicator, runs a background `Task<GameSceneArguments>`, and auto-transitions to the game when complete. Return-to-main-menu goes directly Game → MainMenu (no loading screen).
 
 Defined in `src/Olve.Trains/GameServiceRegistration.cs`:
 
@@ -150,6 +154,7 @@ public static class SceneIds
     public static readonly Id<IScene> GameLogicScene = Id.New<IScene>();
     public static readonly Id<IScene> GameUIScene = Id.New<IScene>();
     public static readonly Id<IScene> GameRenderingScene = Id.New<IScene>();
+    public static readonly Id<IScene> LoadingScene = Id.New<IScene>();
 }
 ```
 
@@ -158,6 +163,7 @@ public static class SceneIds
 | Scene | Registration file | Purpose |
 |---|---|---|
 | MainMenu | `Scenes/MainMenu/MainMenuSceneServiceRegistration.cs` | Menu UI, rendering core |
+| Loading | `Scenes/Loading/LoadingSceneServiceRegistration.cs` | Loading indicator, async task infrastructure, auto-transition to game |
 | GameLogic | `Scenes/GameLogic/GameLogicSceneServiceRegistration.cs` | Game state, commands, entity services, event wiring |
 | GameRendering | `Scenes/GameRendering/GameRenderingSceneServiceRegistration.cs` | 3D/2D rendering, shadow maps, entity renderers |
 | GameUI | `Scenes/GameUI/UISceneServiceRegistration.cs` | Tools, panels, GUI, screenshots |

@@ -17,6 +17,7 @@ using Olve.Trains.Commands;
 using Olve.Trains.Scenes.GameLogic;
 using Olve.Trains.Scenes.GameRendering;
 using Olve.Trains.Scenes.GameUI;
+using Olve.Trains.Scenes.Loading;
 using Olve.Trains.Scenes.MainMenu;
 using Olve.Trains.Shared.Telemetry;
 
@@ -94,6 +95,7 @@ public static class GameServiceRegistration
 
         // Scene services
         services.AddMainMenuSceneServices();
+        services.AddLoadingSceneServices();
         services.AddGameLogicSceneServices();
         services.AddGameRenderingSceneServices();
         services.AddUISceneServices();
@@ -102,6 +104,7 @@ public static class GameServiceRegistration
         services.AddSingleton<IEnumerable<SceneDefinition>>(_ =>
         [
             new(SceneIds.MainMenuScene, "MainMenuScene", LayerOrder: 0),
+            new(SceneIds.LoadingScene, "LoadingScene", LayerOrder: 0),
             new(SceneIds.GameLogicScene, "GameScene"),
             new(SceneIds.GameRenderingScene, "RenderingScene", LayerOrder: 1,
                 ParentId: SceneIds.GameLogicScene),

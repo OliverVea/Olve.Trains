@@ -61,11 +61,22 @@
   - [x] Charge money for placing tracks
   - [x] Charge money for placing buildings and trains
   - [x] Add money display to UI (balance in the info bar)
-- [ ] Scene arguments epic (Technical):
-  - Description: Parameterize scene loading so callers can pass initialization data (e.g. starting money, prebuilt tracks, save file path) into a scene. Enables flows like `LoadingSceneArguments(saveFile: "mysave.sav")` → `GameSceneArguments(money: 12312, trains: [...])`. Needed for save/load, scenario maps, and testing with non-default starting state.
+- [ ] Save/Load epic (Feature):
+  - Description: Save and load game state. A LoadingScene sits between MainMenu and Game, reading save files asynchronously and building GameSceneArguments. Saving serializes root game state to JSON — only root entities (tracks, buildings, trains, wagons, money, time, signal rules, environmental objects) since derived state (junctions, stations, depots, industries, cities, resources) is auto-created by the event system on load. GameSceneArguments is the single data contract: both new games and loaded games flow through it. Loading uses background tasks for file I/O, deserialization, and GameLogic service initialization, with GPU work finalized on the main thread. Save files carry a schema version for forward-compatible deserialization. OneOf-based types (SignalRuleTrain, SignalRuleSource, etc.) use JsonDerivedType subtype discriminators.
   - [x] Add typed scene-argument mechanism to SceneManager (pass args into LoadScene / LoadAndActivateScene, resolvable from scene services)
   - [x] Use arguments in GameLogicScene to initialize starting money/entities
-  - [ ] Add a LoadingScene that takes a save-file path argument, reads the file, and transitions to GameLogicScene with populated arguments
+  - [x] Add LoadingScene with async task infrastructure (MainMenu → LoadingScene → GameLogicScene, no save file yet — just passes default GameSceneArguments, renders a loading indicator)
+  - [ ] Move CPU-side asset managers (AssetLoader, MeshManager, MeshLoadingManager, TextureManager, TextureLoadingManager) from scoped to singleton so asset caches survive across scene transitions
+  - [ ] Pre-warm asset caches during LoadingScene — load all assets from generated catalogs on a background thread so game scene Load() hits cache instead of disk
+  - [ ] Background game scene initialization — run GameLogicScene DI scope creation + parameter service + logic service Load() calls on a background thread during LoadingScene, then finalize GPU work (GameRendering/GameUI scene loads) on the main thread
+  - [ ] Define save file format (versioned JSON schema covering money, time, terrain args, camera state, environmental objects)
+  - [ ] Add save game command — serialize current minimal state (money, time, terrain args, environmental objects) to save file
+  - [ ] Add load game support in LoadingScene — read save file on background thread, deserialize, populate GameSceneArguments, transition to game
+  - [ ] Expand GameSceneArguments and save format with track data
+  - [ ] Expand with building data (type + position — stations, depots, industries, residences auto-created via events)
+  - [ ] Expand with train data (trains, wagons, cargo, positions, motion state, cargo transfer policies, train groups)
+  - [ ] Expand with signal rules (OneOf types via JsonDerivedType discriminators; TODO: persist RoundRobin counter if needed)
+  - [ ] Add save/load UI (save button in burger menu, load from main menu)
 - [ ] CLI output epic (Tooling):
   - Description: Command output is currently raw JSON, which wastes tokens in agentic usage and is hard to read for humans. Add a `--nice` flag to all query/list commands that produces brief, scannable plain-text output optimized for both human and AI consumption. JSON remains the default for programmatic use.
   - [ ] Add `--nice` flag support to the command system (opt-in per command)
