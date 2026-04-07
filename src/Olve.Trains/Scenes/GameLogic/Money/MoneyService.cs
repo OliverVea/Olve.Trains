@@ -4,7 +4,7 @@ namespace Olve.Trains.Scenes.GameLogic.Money;
 
 public class MoneyService(ILogger<MoneyService> logger)
 {
-    public int Balance { get; private set; } = MoneyConstants.StartingBalance;
+    public int Balance { get; internal set; } = MoneyConstants.StartingBalance;
 
     public void Add(int amount, string reason)
     {

@@ -31,6 +31,9 @@ public static class GameLogicSceneServiceRegistration
     {
         var sceneId = SceneIds.GameLogicScene;
 
+        // Scene parameter services
+        services.AddSceneParameterService<GameSceneParameterService>(sceneId);
+
         // Command processing
         services.AddSceneService<CommandProcessingService>(sceneId);
 

@@ -102,6 +102,30 @@ services.TryAddScoped<TrackService>();
 
 Use this for services that hold state or provide logic but don't need `Load`/`Update`/`Render` callbacks. They live in the scene's DI scope and are shared across all services in that scope.
 
+### Adding a scene parameter service
+
+```csharp
+// Receives typed parameters before Load() runs on any scene service
+services.AddSceneParameterService<GameSceneParameterService>(sceneId);
+```
+
+Registers the type as scoped and keys it as `ISceneParameterService` for the scene. During scene loading, `LoadParameters(args)` is called on all parameter services **before** any `ISceneService.Load()` runs.
+
+```csharp
+public interface ISceneParameterService<in T> : ISceneParameterService
+{
+    Result LoadParameters(T parameters);
+}
+```
+
+Pass parameters when loading a scene:
+
+```csharp
+sceneManager.LoadAndActivateScene(SceneIds.GameUIScene, SceneIds.GameLogicScene, new GameSceneArguments());
+```
+
+The second argument is the target scene ID where the parameter service is registered. The parameter service distributes values to other services (e.g., `MoneyService.Balance`), keeping those services decoupled from the parameter system.
+
 ### When to use which
 
 | Need | Registration |
@@ -109,6 +133,7 @@ Use this for services that hold state or provide logic but don't need `Load`/`Up
 | Service needs `Update()` each frame | `AddSceneService` |
 | Service needs `Load()`/`Unload()` for setup/teardown | `AddSceneService` |
 | Service needs `Render()` | `AddSceneService` |
+| Service needs typed initialization parameters | `AddSceneParameterService` |
 | Service is pure state/logic, no lifecycle | `TryAddScoped` |
 | Service reacts to events only | `TryAddScoped` + event registration (see `/events` skill) |
 

@@ -6,6 +6,7 @@ using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
+using Olve.Trains.Scenes.GameLogic;
 
 namespace Olve.Trains.Scenes.MainMenu;
 
@@ -70,6 +71,6 @@ public class MainMenuService(
             return problems;
         }
 
-        return sceneManager.LoadAndActivateScene(SceneIds.GameUIScene);
+        return sceneManager.LoadAndActivateScene(SceneIds.GameUIScene, SceneIds.GameLogicScene, new GameSceneArguments());
     }
 }

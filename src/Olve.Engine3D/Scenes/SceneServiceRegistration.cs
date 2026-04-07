@@ -52,6 +52,14 @@ public static class SceneServiceRegistration
             return services;
         }
 
+        public IServiceCollection AddSceneParameterService<T>(Id<IScene> sceneId)
+            where T : class, ISceneParameterService
+        {
+            services.TryAddScoped<T>();
+            services.AddKeyedScoped<ISceneParameterService>(sceneId, (sp, _) => sp.GetRequiredService<T>());
+            return services;
+        }
+
         public IServiceCollection AddEventSceneService<TEventSource, TEvent>(
             Id<IScene> sceneId,
             Func<TEventSource, Event<TEvent>> eventSelector,

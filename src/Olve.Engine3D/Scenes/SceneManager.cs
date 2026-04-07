@@ -27,6 +27,8 @@ public class SceneManager(
     private readonly Dictionary<Id<IScene>, IServiceScope> _scopes = new();
     private readonly Dictionary<Id<IScene>, Id<IScene>> _scopeOwner = new(); // scene -> root scene
 
+    private readonly Dictionary<Id<IScene>, object> _sceneParameters = new();
+
     private List<IScene>? _orderedCache;
 
     public Result LoadScene(Id<IScene> sceneId)
@@ -82,6 +84,30 @@ public class SceneManager(
 
         _logger.LogDebug("Loading scene '{SceneName}' (id: {SceneId})", definition.Name, sceneId);
 
+        // Pass 1: Load parameters (before scene services Load())
+        if (_sceneParameters.TryGetValue(sceneId, out var parameters))
+        {
+            _sceneParameters.Remove(sceneId);
+
+            var parameterServices = sp.GetKeyedServices<ISceneParameterService>(sceneId);
+            foreach (var parameterService in parameterServices)
+            {
+                if (parameterService.LoadParameters(parameters).TryPickProblems(out var paramProblems))
+                {
+                    // Cleanup on failure
+                    _scopeOwner.Remove(sceneId);
+                    if (rootId == sceneId)
+                    {
+                        scope.Dispose();
+                        _scopes.Remove(rootId);
+                    }
+
+                    return paramProblems.Prepend("Error occurred while loading parameters for scene '{0}'", sceneId);
+                }
+            }
+        }
+
+        // Pass 2: Load scene services
         var loadResult = scene.Load();
         if (loadResult.TryPickProblems(out var problems))
         {
@@ -259,6 +285,12 @@ public class SceneManager(
         }
 
         return Result.Success();
+    }
+
+    public Result LoadAndActivateScene(Id<IScene> sceneId, Id<IScene> parameterTargetSceneId, object parameters)
+    {
+        _sceneParameters[parameterTargetSceneId] = parameters;
+        return LoadAndActivateScene(sceneId);
     }
 
     public Result DeactivateAndUnloadScene(Id<IScene> sceneId)

@@ -1,17 +1,17 @@
-﻿using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Scenes;
 using Olve.Engine3D.Time;
 
 namespace Olve.Trains.Scenes.GameLogic.Time;
 
 public class DayTimeSteppingService(DayTimeManager dayTimeManager, DeltaTimeService deltaTimeService) : ISceneService
 {
-    private static readonly DayTime DayStart = new(5, 30);
-    private static readonly TimeSpan DayDuration = TimeSpan.FromMinutes(15);
+    internal DayTime DayStartOverride { get; set; } = new(5, 30);
+    internal TimeSpan DayDurationOverride { get; set; } = TimeSpan.FromMinutes(15);
 
     public Result Load()
     {
-        dayTimeManager.CurrentTime = DayStart;
-        dayTimeManager.DayLength = DayDuration;
+        dayTimeManager.CurrentTime = DayStartOverride;
+        dayTimeManager.DayLength = DayDurationOverride;
 
         return Result.Success();
     }

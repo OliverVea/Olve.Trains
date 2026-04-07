@@ -21,29 +21,13 @@ public class TerrainService(
     public float TileStepHeight => _terrain?.Heightmap.Step ?? 1f;
     public int TilesPerMeterHeight => (int)float.Round(1 /  TileStepHeight);
 
+    internal HeightmapData? HeightmapOverride { get; set; }
+    internal int TreeSeed { get; set; } = 42;
+    internal double TreeSpawnProbability { get; set; } = 0.08;
+
     public Result Load()
     {
-        const int length = 50;
-        const int width = 50;
-
-        var heights = new int[length * width];
-        Array.Fill(heights, 1);
-
-        for (var z = 3; z <= 6; z++)
-        {
-            for (var x = 12; x <= 15; x++)
-            {
-                heights[z * width + x] = 2;
-            }
-        }
-
-        HeightmapData heightmap = new()
-        {
-            Heights = heights,
-            Width = width,
-            Length = length,
-            Step = 0.125f
-        };
+        var heightmap = HeightmapOverride ?? GameSceneArguments.DefaultHeightmap();
 
         _terrain = new TerrainData
         {
@@ -73,13 +57,13 @@ public class TerrainService(
 
     private void PlaceEnvironmentalObjects(HeightmapData heightmap)
     {
-        var random = new Random(42);
+        var random = new Random(TreeSeed);
 
         for (var z = 0; z < heightmap.Length; z++)
         {
             for (var x = 0; x < heightmap.Width; x++)
             {
-                if (random.NextDouble() > 0.08) continue;
+                if (random.NextDouble() > TreeSpawnProbability) continue;
 
                 var height = heightmap.Heights[z * heightmap.Width + x];
                 var y = height * heightmap.Step;

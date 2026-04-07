@@ -63,8 +63,8 @@
   - [x] Add money display to UI (balance in the info bar)
 - [ ] Scene arguments epic (Technical):
   - Description: Parameterize scene loading so callers can pass initialization data (e.g. starting money, prebuilt tracks, save file path) into a scene. Enables flows like `LoadingSceneArguments(saveFile: "mysave.sav")` → `GameSceneArguments(money: 12312, trains: [...])`. Needed for save/load, scenario maps, and testing with non-default starting state.
-  - [ ] Add typed scene-argument mechanism to SceneManager (pass args into LoadScene / LoadAndActivateScene, resolvable from scene services)
-  - [ ] Use arguments in GameLogicScene to initialize starting money/entities
+  - [x] Add typed scene-argument mechanism to SceneManager (pass args into LoadScene / LoadAndActivateScene, resolvable from scene services)
+  - [x] Use arguments in GameLogicScene to initialize starting money/entities
   - [ ] Add a LoadingScene that takes a save-file path argument, reads the file, and transitions to GameLogicScene with populated arguments
 - [ ] CLI output epic (Tooling):
   - Description: Command output is currently raw JSON, which wastes tokens in agentic usage and is hard to read for humans. Add a `--nice` flag to all query/list commands that produces brief, scannable plain-text output optimized for both human and AI consumption. JSON remains the default for programmatic use.
@@ -159,6 +159,26 @@
   - [ ] Implement smooth deceleration along the braking curve so trains come to rest at the stop point
   - [ ] Add station stop behavior — train pauses at station for a duration (loading/unloading), then departs
   - [ ] Add depot stop behavior — train stops at depot and remains until released by the player
+
+### Pre-demo polish (final gate before demo release)
+
+- [ ] Graphics overhaul epic (Visual):
+  - Description: Comprehensive visual upgrade pass. Batch all graphics improvements together since they're interconnected (AO interacts with lighting, particles need to look right under new lighting, etc.). Build the particle/VFX system as a generalized engine feature in Olve.Engine3D for reuse in future games.
+  - [ ] Add particle/VFX system to Olve.Engine3D (GPU-instanced billboards, emitter shapes, lifetime/velocity, color curves, blend modes)
+  - [ ] Add locomotive smoke and steam particles
+  - [ ] Add ambient occlusion (SSAO or similar)
+  - [ ] Rework lighting model (soft lighting, Townscaper-inspired)
+  - [ ] Improve materials (better shading, surface variation)
+  - [ ] Add additional light sources beyond the single directional sun/moon
+  - [ ] Add placement dust/effects using the particle system
+  - [ ] General visual polish pass across all rendered elements
+- [ ] GUI overhaul epic (Visual):
+  - Description: Complete visual redesign of all GUI panels and elements. Final art pass with polished, responsive feel. This is the last step before demo launch — all systems and gameplay must be done first.
+  - [ ] Design new GUI visual language (color palette, typography, spacing, border styles)
+  - [ ] Redesign all existing panels (toolbar, info bar, depot, station info, industry info, signal rules, day time, burger menu)
+  - [ ] Add responsive hover/click/transition animations across all interactive elements
+  - [ ] Make a visually appealing main menu
+  - [ ] Final polish pass on all GUI elements
 
 ---
 
