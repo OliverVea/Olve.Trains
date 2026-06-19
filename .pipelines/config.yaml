@@ -21,12 +21,12 @@ version: "1"
 secrets:
   - name: GITHUB_TOKEN
     description: GitHub read token; fetches the repo tarball/clone into each job.
-  - name: S3__Bucket
-    description: Asset-source S3 bucket (read) — consumed by the asset pipeline.
+  # Bucket + prefix come from the committed appsettings.json; only the AWS key/secret
+  # (the asset-download credentials) need injecting. Reused by publish-s3 too.
   - name: S3__Key
-    description: Asset-source S3 access key.
+    description: Asset-source AWS access key (read) — consumed by the asset pipeline.
   - name: S3__Secret
-    description: Asset-source S3 secret key.
+    description: Asset-source AWS secret key.
   - name: ITCH_API_KEY
     description: butler API key (BUTLER_API_KEY) for pushing builds to itch.io.
   # Distribution reuses the asset-pipeline AWS identity (S3__Key/S3__Secret) — the

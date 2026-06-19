@@ -228,9 +228,10 @@ sequentially, list order is the gate):
    upload the archives to the `olve-trains-dist` bucket under `releases/<version>/` and
    `releases/latest/`, logging a 7-day presigned URL per artifact.
 
-Secrets (`GITHUB_TOKEN`, `S3__Bucket/Key/Secret`, `ITCH_API_KEY`) are declared by name in
-`config.yaml`; values live in the pipeline's k8s secret. Distribution reuses the asset AWS
-identity, so there is no separate dist credential. See the
+Secrets (`GITHUB_TOKEN`, `S3__Key`, `S3__Secret`, `ITCH_API_KEY`) are declared by name in
+`config.yaml`; values live in the pipeline's k8s secret. The S3 bucket/prefix come from the
+committed `appsettings.json`, and distribution reuses the asset AWS identity — so there is no
+separate dist credential. See the
 `ovea-olve-pipelines` skill for the service model and the binding/inspection API.
 
 Headless rendering in the test step uses `LIBGL_ALWAYS_SOFTWARE=1` + Xvfb virtual framebuffer.
