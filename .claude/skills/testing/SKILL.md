@@ -126,7 +126,7 @@ When comparison fails, a diff image is generated in `/tmp/screenshot-diffs/<test
 - **Actual** — test output
 - **Diff** — greyscale delta (brighter = larger difference)
 
-CI uploads these as the `screenshot-diffs` artifact.
+In CD (the Olve.Pipelines `test` step) a screenshot mismatch fails the step and blocks publishing; the diffs appear in the job logs. (Uploading diffs to the VR review app is a planned follow-up — see the Infrastructure epic in `TODO.md`.)
 
 ### Existing Test Scenarios
 

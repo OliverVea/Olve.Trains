@@ -15,6 +15,16 @@
 - [ ] Remove `TerrainHighlightSettings` shared-settings pattern — replace with a more explicit service-based approach
 - [ ] GUI layout sizing — `GuiLayoutService` does not stretch cross-axis children to fill the parent (an unsized child's cross-axis size is 0), and unsized root nodes fill the entire anchor surface (1920x1080) instead of shrinking to content. The skipped tests in `GuiLayoutServiceTests`/`GuiLayoutServicePositioningTests` (`NestedWidthTest`, `TripleNested_Layout_Sizes_And_Positions`, `Positions_Nested_LeftRight_With_Fill_Weights`) specify the intended behavior; un-skip them once implemented. Also drop the obsolete `TryGetBoxPosition_Fails_Before_ComputeLayout` test (the method auto-computes layout, so its premise no longer holds).
 
+## Infrastructure
+
+- [ ] Migrate CD to Olve.Pipelines epic (Tooling):
+  - Description: Move continuous delivery off GitHub Actions onto Olve.Pipelines (GitOps CD). Every push to master builds Linux + Windows in parallel, gates on the screenshot test suite, then publishes to itch.io and a shareable S3 bucket. CI is master-only — no PR checks. Asset pipeline runs inside each build (S3 read). Windows cross-compiles self-contained from the Linux container.
+  - [x] Add `.pipelines/config.yaml` + step scripts (build-linux, build-windows, test, publish-itch, publish-s3)
+  - [x] Remove the three GitHub Actions workflows and update CI/CD docs (CLAUDE.md, docs/architecture.md)
+  - [ ] Create the `olve-trains-dist` S3 bucket and bind the pipeline (`POST /api/pipelines/with-repo`), set secret values
+  - [ ] Verify a master push builds, tests, and publishes end to end; check `GET /api/pipelines/{id}/binding/status`
+  - [ ] (Later) Source screenshot references from the VR app instead of git LFS; re-add VR review-on-failure to the test step
+
 ## Demo
 
 ### Core infrastructure (build first — other features depend on these)

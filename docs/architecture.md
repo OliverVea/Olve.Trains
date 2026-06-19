@@ -209,14 +209,31 @@ Infrastructure in `src/Olve.Engine3D/Commands/`:
 
 ## CI/CD
 
-GitHub Actions workflow: `.github/workflows/push_master.yml` (triggers on push/PR to master).
+CD runs on **Olve.Pipelines** (GitOps), configured by `.pipelines/config.yaml`. The pipeline is
+bound to this repo on the `master` branch; every push reconciles + runs it (no GitHub Actions).
+CD is master-only — there are no PR checks.
 
-3 jobs:
-1. **build-assets** (Ubuntu) — runs asset pipeline, uploads built assets artifact
-2. **build-dotnet** (matrix: linux-x64 + win-x64) — downloads assets, builds Release
-3. **validate-screenshot** (Ubuntu headless) — Xvfb + Mesa software OpenGL, runs `scripts/integration-test.sh --skip-build --windowing xvfb`, uploads screenshot artifact
+Pipeline shape (production steps run in parallel → ArtifactBundle; processing steps run
+sequentially, list order is the gate):
 
-Headless rendering uses `LIBGL_ALWAYS_SOFTWARE=1` + Xvfb virtual framebuffer.
+1. **build-linux** / **build-windows** (production, parallel) — fetch the repo, run the asset
+   pipeline (S3 read), `dotnet publish` self-contained (`win-x64` cross-compiles from the Linux
+   `dotnet/sdk:10.0` image), package a `.tar.gz` / `.zip` into the bundle.
+2. **test** (processing, gate) — `git clone` + `git lfs pull` for references, build Release, run
+   `scripts/integration-test.sh --skip-build --windowing xvfb` headlessly. A failure stops
+   publishing.
+3. **publish-itch** (processing) — `butler push` the Linux/Windows builds to itch.io
+   (`cookiscuit/on-track-to-grow`, channels `:linux` / `:windows`).
+4. **publish-s3** (processing) — upload the archives to the `olve-trains-dist` bucket under
+   `releases/<version>/` and `releases/latest/` (public-read + a 7-day presigned URL).
+
+Secrets (`GITHUB_TOKEN`, `S3__Bucket/Key/Secret`, `ITCH_API_KEY`, `S3_DIST_KEY/Secret`) are
+declared by name in `config.yaml`; values live in the pipeline's k8s secret. See the
+`ovea-olve-pipelines` skill for the service model and the binding/inspection API.
+
+Headless rendering in the test step uses `LIBGL_ALWAYS_SOFTWARE=1` + Xvfb virtual framebuffer.
+Reference screenshots are updated locally (`scripts/integration-test.sh --update-references`,
+then commit) — there is no longer an `accept_screenshots` CI job.
 
 ## Testing
 

@@ -1,0 +1,87 @@
+# In-repo CD pipeline for Olve.Pipelines (GitOps).
+#
+# This file is the single source of truth for how On Track To Grow is built, tested,
+# and published. Bind a pipeline to this repo once and the service reconciles the live
+# pipeline to match this file on every change; pushing a commit to master deploys
+# automatically (the deploy poll is configured by the binding — no trigger declared here).
+#
+# Shape (example #4 from the Olve.Pipelines docs, adapted for .NET):
+#   production (parallel)  : build-linux | build-windows   -> bundle
+#   processing (sequential): test -> publish-itch -> publish-s3   (list order is the gate)
+#
+# Secrets are declared by NAME only; values live in the pipeline's k8s secret
+# (olve-pipeline-{id}) and never in the repo. Every declared secret is mounted into
+# every job as an ordinary env var. The S3__* names match the .NET config keys the
+# asset pipeline reads (S3__Key -> S3:Key), so they inject with no extra mapping.
+apiVersion: "0.0"
+name: olve-trains
+description: Build (Linux + Windows), screenshot-test, then publish On Track To Grow to itch.io and S3.
+version: "1"
+
+secrets:
+  - name: GITHUB_TOKEN
+    description: GitHub read token; fetches the repo tarball/clone into each job.
+  - name: S3__Bucket
+    description: Asset-source S3 bucket (read) — consumed by the asset pipeline.
+  - name: S3__Key
+    description: Asset-source S3 access key.
+  - name: S3__Secret
+    description: Asset-source S3 secret key.
+  - name: ITCH_API_KEY
+    description: butler API key (BUTLER_API_KEY) for pushing builds to itch.io.
+  - name: S3_DIST_KEY
+    description: Distribution S3 access key (write) for shareable release artifacts.
+  - name: S3_DIST_SECRET
+    description: Distribution S3 secret key.
+
+# Production steps run in PARALLEL and each write their output to /output (-> bundle/<step>/).
+# Both run the asset pipeline (needs S3__* + libassimp) and publish self-contained; Windows
+# cross-compiles from this Linux image.
+productionSteps:
+  - name: build-linux
+    configuration:
+      image: mcr.microsoft.com/dotnet/sdk:10.0
+      scriptFile: scripts/build-linux.sh
+      environmentVariables:
+        REPO: OliverVea/Olve.Trains
+        BRANCH: master
+  - name: build-windows
+    configuration:
+      image: mcr.microsoft.com/dotnet/sdk:10.0
+      scriptFile: scripts/build-windows.sh
+      environmentVariables:
+        REPO: OliverVea/Olve.Trains
+        BRANCH: master
+
+# Processing steps run SEQUENTIALLY (list order). A failing step stops the chain, so the
+# screenshot test gates both publishes.
+processingSteps:
+  - name: test
+    configuration:
+      image: mcr.microsoft.com/dotnet/sdk:10.0
+      scriptFile: scripts/test.sh
+      environmentVariables:
+        REPO: OliverVea/Olve.Trains
+        BRANCH: master
+  - name: publish-itch
+    configuration:
+      image: debian:stable-slim
+      scriptFile: scripts/publish-itch.sh
+      environmentVariables:
+        # itch.io target (user/game); channels :linux and :windows are pushed by the script.
+        ITCH_TARGET: cookiscuit/on-track-to-grow
+  - name: publish-s3
+    configuration:
+      image: debian:stable-slim
+      scriptFile: scripts/publish-s3.sh
+      environmentVariables:
+        S3_DIST_BUCKET: olve-trains-dist
+        S3_DIST_PREFIX: releases
+        # Optional S3-compatible endpoint (empty = AWS). Region for SigV4.
+        S3_DIST_ENDPOINT: ""
+        S3_DIST_REGION: auto
+        # ACL applied to uploaded objects; set empty if the bucket disables ACLs
+        # (use a bucket policy for public read instead).
+        S3_DIST_ACL: public-read
+        # Optional stable public base URL (e.g. https://dl.example.com); empty = log keys only.
+        S3_DIST_PUBLIC_BASE: ""
