@@ -224,11 +224,13 @@ sequentially, list order is the gate):
    publishing.
 3. **publish-itch** (processing) — `butler push` the Linux/Windows builds to itch.io
    (`cookiscuit/on-track-to-grow`, channels `:linux` / `:windows`).
-4. **publish-s3** (processing) — upload the archives to the `olve-trains-dist` bucket under
-   `releases/<version>/` and `releases/latest/` (public-read + a 7-day presigned URL).
+4. **publish-s3** (processing) — reuse the asset AWS identity to create (if absent) and
+   upload the archives to the `olve-trains-dist` bucket under `releases/<version>/` and
+   `releases/latest/`, logging a 7-day presigned URL per artifact.
 
-Secrets (`GITHUB_TOKEN`, `S3__Bucket/Key/Secret`, `ITCH_API_KEY`, `S3_DIST_KEY/Secret`) are
-declared by name in `config.yaml`; values live in the pipeline's k8s secret. See the
+Secrets (`GITHUB_TOKEN`, `S3__Bucket/Key/Secret`, `ITCH_API_KEY`) are declared by name in
+`config.yaml`; values live in the pipeline's k8s secret. Distribution reuses the asset AWS
+identity, so there is no separate dist credential. See the
 `ovea-olve-pipelines` skill for the service model and the binding/inspection API.
 
 Headless rendering in the test step uses `LIBGL_ALWAYS_SOFTWARE=1` + Xvfb virtual framebuffer.

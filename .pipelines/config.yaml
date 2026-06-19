@@ -29,10 +29,8 @@ secrets:
     description: Asset-source S3 secret key.
   - name: ITCH_API_KEY
     description: butler API key (BUTLER_API_KEY) for pushing builds to itch.io.
-  - name: S3_DIST_KEY
-    description: Distribution S3 access key (write) for shareable release artifacts.
-  - name: S3_DIST_SECRET
-    description: Distribution S3 secret key.
+  # Distribution reuses the asset-pipeline AWS identity (S3__Key/S3__Secret) — the
+  # publish-s3 step creates and writes its own bucket with it. No separate creds.
 
 # Production steps run in PARALLEL and each write their output to /output (-> bundle/<step>/).
 # Both run the asset pipeline (needs S3__* + libassimp) and publish self-contained; Windows
@@ -75,13 +73,15 @@ processingSteps:
       image: debian:stable-slim
       scriptFile: scripts/publish-s3.sh
       environmentVariables:
+        # Bucket is created by the step (idempotent) using the asset AWS identity,
+        # in the same region/account as the asset bucket.
         S3_DIST_BUCKET: olve-trains-dist
         S3_DIST_PREFIX: releases
-        # Optional S3-compatible endpoint (empty = AWS). Region for SigV4.
-        S3_DIST_ENDPOINT: ""
-        S3_DIST_REGION: auto
-        # ACL applied to uploaded objects; set empty if the bucket disables ACLs
-        # (use a bucket policy for public read instead).
-        S3_DIST_ACL: public-read
+        S3_DIST_REGION: ap-southeast-2
+        # ACLs are disabled on new AWS buckets by default, so the default share
+        # mechanism is a presigned URL (logged per build). Leave empty unless the
+        # bucket is configured for public objects; then a one-time bucket policy
+        # makes the stable URLs below truly public.
+        S3_DIST_ACL: ""
         # Optional stable public base URL (e.g. https://dl.example.com); empty = log keys only.
         S3_DIST_PUBLIC_BASE: ""
