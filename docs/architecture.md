@@ -213,12 +213,14 @@ CD runs on **Olve.Pipelines** (GitOps), configured by `.pipelines/config.yaml`. 
 bound to this repo on the `master` branch; every push reconciles + runs it (no GitHub Actions).
 CD is master-only — there are no PR checks.
 
-Pipeline shape (production steps run in parallel → ArtifactBundle; processing steps run
+Pipeline shape (the production step produces the ArtifactBundle; processing steps run
 sequentially, list order is the gate):
 
-1. **build-linux** / **build-windows** (production, parallel) — fetch the repo, run the asset
-   pipeline (S3 read), `dotnet publish` self-contained (`win-x64` cross-compiles from the Linux
-   `dotnet/sdk:10.0` image), package a `.tar.gz` / `.zip` into the bundle.
+1. **build** (production) — fetch the repo, run the asset pipeline once (S3 read), `dotnet
+   publish` self-contained for both `linux-x64` and `win-x64` (`win-x64` cross-compiles from the
+   Linux `dotnet/sdk:10.0` image), package a `.tar.gz` + `.zip` into the bundle. A single
+   production step is deliberate — two parallel ones make the controller double-promote the
+   bundle and the duplicate test jobs deadlock by mutual supersession.
 2. **test** (processing, gate) — `git clone` + `git lfs pull` for references, build Release, run
    `scripts/integration-test.sh --skip-build --windowing xvfb` headlessly. A failure stops
    publishing.

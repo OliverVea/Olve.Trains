@@ -32,21 +32,14 @@ secrets:
   # Distribution reuses the asset-pipeline AWS identity (S3__Key/S3__Secret) — the
   # publish-s3 step creates and writes its own bucket with it. No separate creds.
 
-# Production steps run in PARALLEL and each write their output to /output (-> bundle/<step>/).
-# Both run the asset pipeline (needs S3__* + libassimp) and publish self-contained; Windows
-# cross-compiles from this Linux image.
+# One production step builds BOTH platforms (and runs the asset pipeline once). This is
+# intentional: two parallel production steps make the controller promote the bundle twice,
+# and the duplicate first-processing-step jobs mutually supersede each other (deadlock).
 productionSteps:
-  - name: build-linux
+  - name: build
     configuration:
       image: mcr.microsoft.com/dotnet/sdk:10.0
-      scriptFile: scripts/build-linux.sh
-      environmentVariables:
-        REPO: OliverVea/Olve.Trains
-        BRANCH: master
-  - name: build-windows
-    configuration:
-      image: mcr.microsoft.com/dotnet/sdk:10.0
-      scriptFile: scripts/build-windows.sh
+      scriptFile: scripts/build.sh
       environmentVariables:
         REPO: OliverVea/Olve.Trains
         BRANCH: master
