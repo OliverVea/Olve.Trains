@@ -13,6 +13,7 @@
 - [ ] Move entity counting metrics into `EntityStore` — services like `BuildingService` manually call `GameMetrics.BuildingCount.Add(1/-1)` on add/remove; this should be handled automatically by `EntityStore` so all entity types get metrics for free
 - [ ] Station ghost track preview (with per-component parameters) — ghost preview for station tracks when placing stations
 - [ ] Remove `TerrainHighlightSettings` shared-settings pattern — replace with a more explicit service-based approach
+- [ ] GUI layout sizing — `GuiLayoutService` does not stretch cross-axis children to fill the parent (an unsized child's cross-axis size is 0), and unsized root nodes fill the entire anchor surface (1920x1080) instead of shrinking to content. The skipped tests in `GuiLayoutServiceTests`/`GuiLayoutServicePositioningTests` (`NestedWidthTest`, `TripleNested_Layout_Sizes_And_Positions`, `Positions_Nested_LeftRight_With_Fill_Weights`) specify the intended behavior; un-skip them once implemented. Also drop the obsolete `TryGetBoxPosition_Fails_Before_ComputeLayout` test (the method auto-computes layout, so its premise no longer holds).
 
 ## Demo
 
