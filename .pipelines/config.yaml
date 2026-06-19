@@ -46,6 +46,9 @@ productionSteps:
 
 # Processing steps run SEQUENTIALLY (list order). A failing step stops the chain, so the
 # screenshot test gates both publishes.
+# Order is the gate chain: archive to our own S3 first (fully automated, no external
+# dependency), then the storefronts. Steam (steamcmd) appends after publish-itch once
+# implemented. A failed step stops everything after it.
 processingSteps:
   - name: test
     configuration:
@@ -54,13 +57,6 @@ processingSteps:
       environmentVariables:
         REPO: OliverVea/Olve.Trains
         BRANCH: master
-  - name: publish-itch
-    configuration:
-      image: debian:stable-slim
-      scriptFile: scripts/publish-itch.sh
-      environmentVariables:
-        # itch.io target (user/game); channels :linux and :windows are pushed by the script.
-        ITCH_TARGET: cookiscuit/on-track-to-grow
   - name: publish-s3
     configuration:
       image: debian:stable-slim
@@ -78,3 +74,10 @@ processingSteps:
         S3_DIST_ACL: ""
         # Optional stable public base URL (e.g. https://dl.example.com); empty = log keys only.
         S3_DIST_PUBLIC_BASE: ""
+  - name: publish-itch
+    configuration:
+      image: debian:stable-slim
+      scriptFile: scripts/publish-itch.sh
+      environmentVariables:
+        # itch.io target (user/game); channels :linux and :windows are pushed by the script.
+        ITCH_TARGET: cookiscuit/on-track-to-grow

@@ -224,11 +224,13 @@ sequentially, list order is the gate):
 2. **test** (processing, gate) — `git clone` + `git lfs pull` for references, build Release, run
    `scripts/integration-test.sh --skip-build --windowing xvfb` headlessly. A failure stops
    publishing.
-3. **publish-itch** (processing) — `butler push` the Linux/Windows builds to itch.io
-   (`cookiscuit/on-track-to-grow`, channels `:linux` / `:windows`).
-4. **publish-s3** (processing) — reuse the asset AWS identity to create (if absent) and
+3. **publish-s3** (processing) — reuse the asset AWS identity to create (if absent) and
    upload the archives to the `olve-trains-dist` bucket under `releases/<version>/` and
-   `releases/latest/`, logging a 7-day presigned URL per artifact.
+   `releases/latest/`, logging a 7-day presigned URL per artifact. Runs first so the build is
+   archived to our own storage before any external storefront.
+4. **publish-itch** (processing) — `butler push` the Linux/Windows builds to itch.io
+   (`cookiscuit/on-track-to-grow`, channels `:linux` / `:windows`). Steam (steamcmd) would
+   append here as a fifth step.
 
 Secrets (`GITHUB_TOKEN`, `S3__Key`, `S3__Secret`, `ITCH_API_KEY`) are declared by name in
 `config.yaml`; values live in the pipeline's k8s secret. The S3 bucket/prefix come from the
