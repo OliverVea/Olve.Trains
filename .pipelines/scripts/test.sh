@@ -50,6 +50,12 @@ unzip -q /tmp/awscliv2.zip -d /tmp
 /tmp/aws/install -b /usr/local/bin >/dev/null 2>&1 || true
 export PATH="/usr/local/bin:$PATH"
 export AWS_ACCESS_KEY_ID="$S3__Key" AWS_SECRET_ACCESS_KEY="$S3__Secret" AWS_DEFAULT_REGION="$S3_DIST_REGION"
+# Create the dist bucket if it doesn't exist yet (publish-s3 does the same; the diff
+# export can run before publish-s3 ever has).
+if ! aws s3api head-bucket --bucket "$S3_DIST_BUCKET" 2>/dev/null; then
+  aws s3api create-bucket --bucket "$S3_DIST_BUCKET" --region "$S3_DIST_REGION" \
+    --create-bucket-configuration "LocationConstraint=$S3_DIST_REGION" || true
+fi
 STAMP=$(date -u +%Y%m%d-%H%M%S)
 OUT=/tmp/diffout; mkdir -p "$OUT"
 for d in "$SCREENSHOT_DIFF_DIR"/*/; do
