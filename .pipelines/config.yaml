@@ -57,6 +57,10 @@ processingSteps:
       environmentVariables:
         REPO: OliverVea/Olve.Trains
         BRANCH: master
+        # On failure the step uploads diff/actual/baseline PNGs here (interim, in
+        # lieu of the VR app) and logs presigned URLs to inspect them.
+        S3_DIST_BUCKET: olve-trains-dist
+        S3_DIST_REGION: ap-southeast-2
   - name: publish-s3
     configuration:
       image: debian:stable-slim
