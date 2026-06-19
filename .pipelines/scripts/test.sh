@@ -13,7 +13,7 @@ set -e
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  ca-certificates curl git git-lfs libassimp-dev procps \
+  ca-certificates curl unzip git git-lfs libassimp-dev procps \
   xvfb libglfw3 mesa-utils libgl1-mesa-dri libglx-mesa0 libegl-mesa0
 
 # uv (drives the pytest integration harness).
@@ -45,7 +45,10 @@ bash scripts/integration-test.sh --skip-build --windowing xvfb || rc=$?
 # VR app. Per-test dir holds <name>-diff.png, <name>-actual.txt (path to the render),
 # and <name>-actual.png for missing-reference cases; baselines live in the repo.
 echo "=== test failed (rc=$rc) — exporting screenshot diffs to S3 ==="
-apt-get install -y --no-install-recommends awscli >/dev/null 2>&1 || true
+curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscliv2.zip
+unzip -q /tmp/awscliv2.zip -d /tmp
+/tmp/aws/install -b /usr/local/bin >/dev/null 2>&1 || true
+export PATH="/usr/local/bin:$PATH"
 export AWS_ACCESS_KEY_ID="$S3__Key" AWS_SECRET_ACCESS_KEY="$S3__Secret" AWS_DEFAULT_REGION="$S3_DIST_REGION"
 STAMP=$(date -u +%Y%m%d-%H%M%S)
 OUT=/tmp/diffout; mkdir -p "$OUT"
