@@ -18,12 +18,13 @@
 ## Infrastructure
 
 - [ ] Migrate CD to Olve.Pipelines epic (Tooling):
-  - Description: Move continuous delivery off GitHub Actions onto Olve.Pipelines (GitOps CD). Every push to master builds Linux + Windows in parallel, gates on the screenshot test suite, then publishes to itch.io and a shareable S3 bucket. CI is master-only — no PR checks. Asset pipeline runs inside each build (S3 read). Windows cross-compiles self-contained from the Linux container.
-  - [x] Add `.pipelines/config.yaml` + step scripts (build-linux, build-windows, test, publish-itch, publish-s3)
+  - Description: Move continuous delivery off GitHub Actions onto Olve.Pipelines (GitOps CD). Every push to master runs a single `build` step (asset pipeline + Linux and cross-compiled Windows publishes; a single step because parallel production steps deadlock the controller), gates on the screenshot test, then `publish-s3` (own bucket first) then `publish-itch`. CI is master-only — no PR checks.
+  - [x] Add `.pipelines/config.yaml` + step scripts (build, test, publish-s3, publish-itch)
   - [x] Remove the three GitHub Actions workflows and update CI/CD docs (CLAUDE.md, docs/architecture.md)
-  - [ ] Create the `olve-trains-dist` S3 bucket and bind the pipeline (`POST /api/pipelines/with-repo`), set secret values
-  - [ ] Verify a master push builds, tests, and publishes end to end; check `GET /api/pipelines/{id}/binding/status`
-  - [ ] (Later) Source screenshot references from the VR app instead of git LFS; re-add VR review-on-failure to the test step
+  - [x] Bind the pipeline (`POST /api/pipelines/with-repo`), set secrets; `olve-trains-dist` bucket self-creates in the steps
+  - [x] Verify a master push builds, tests, and publishes — confirmed end to end through `publish-s3` (versioned + `latest/` + presigned URLs)
+  - [ ] Set the `ITCH_API_KEY` secret so `publish-itch` runs (only remaining blocker); rotate the bootstrap `GITHUB_TOKEN` to a fine-grained read-only token
+  - [ ] (Later) Source screenshot references from the VR app instead of git LFS; re-add VR review-on-failure (interim: test step uploads diffs to `s3://olve-trains-dist/diffs/`)
 
 ## Demo
 
