@@ -23,7 +23,8 @@
   - [x] Remove the three GitHub Actions workflows and update CI/CD docs (CLAUDE.md, docs/architecture.md)
   - [x] Bind the pipeline (`POST /api/pipelines/with-repo`), set secrets; `olve-trains-dist` bucket self-creates in the steps
   - [x] Verify a master push builds, tests, and publishes — confirmed end to end through `publish-s3` (versioned + `latest/` + presigned URLs)
-  - [ ] Set the `ITCH_API_KEY` secret so `publish-itch` runs (only remaining blocker); rotate the bootstrap `GITHUB_TOKEN` to a fine-grained read-only token
+  - [x] Set the `ITCH_API_KEY` secret (from OpenBao `external/itch.io`) — full chain green, builds publishing to itch.io `:linux`/`:windows`
+  - [ ] Rotate the bootstrap `GITHUB_TOKEN` (currently the broad `gh` token) to a fine-grained read-only Olve.Trains token
   - [ ] (Later) Source screenshot references from the VR app instead of git LFS; re-add VR review-on-failure (interim: test step uploads diffs to `s3://olve-trains-dist/diffs/`)
 
 ## Demo
