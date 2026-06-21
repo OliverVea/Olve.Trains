@@ -36,6 +36,7 @@
     <PackageVersion Include="Silk.NET.OpenGL" Version="2.23.0" />
     <PackageVersion Include="Silk.NET.Windowing" Version="2.23.0" />
     <PackageVersion Include="StbImageWriteSharp" Version="1.16.7" />
+    <PackageVersion Include="NetArchTest.eNhancedEdition" Version="1.4.5" />
     <PackageVersion Include="TUnit" Version="1.56.0" />
   </ItemGroup>
 </Project>

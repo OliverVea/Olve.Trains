@@ -18,6 +18,20 @@ dotnet run --project src/Olve.Trains/Olve.Trains.csproj
 
 See the `run-game` skill for detached mode, command reference, replay system, and the Game Python class.
 
+## Quality Gate (IMPORTANT!)
+
+**Run `bash scripts/quality.sh` green before raising a CR.** This is a local, agent-runnable self-check — it is *not* wired into the CD pipeline. Running it before you raise a CR catches boundary/quality regressions while the change is still yours to fix.
+
+```bash
+bash scripts/quality.sh            # architecture fitness tests (blocking) + metrics ratchet
+QUALITY_STRICT=1 bash scripts/quality.sh   # also make the metrics ratchet blocking
+```
+
+What it enforces:
+- **Architecture fitness tests** (`tests/Olve.Architecture.Tests/`, NetArchTest) — **blocking**. Encode the layering rules: the engine must not depend on the game; `Scenes/GameLogic` must not depend on `Scenes/GameRendering`/`GameUI`. Add a rule here whenever you introduce a boundary that must hold.
+- **Code-metrics ratchet** (`scripts/metrics-ratchet.py` vs `tools/code-metrics/baseline.json`) — **advisory** for now. Flags a touched file losing >5 Maintainability Index or gaining class coupling, and new files below the MI/complexity bar. Metrics come from the real Roslyn engine (`tools/code-metrics/`); see `docs/architecture-diagram/CODE_METRICS.md`.
+- Assumes a buildable tree (run the asset pipeline first if you changed shaders/layouts). If a metric change is **intentional**, regenerate the baseline with `bash scripts/metrics-refresh.sh` and commit it in the same change.
+
 ## Testing (IMPORTANT!)
 
 **Always run integration tests before committing.** See the `testing` skill for full reference.

@@ -1,0 +1,3 @@
+<Project>
+  <!-- isolates tools/ from the repo root build settings; these are dev utilities, not shipped code -->
+</Project>
