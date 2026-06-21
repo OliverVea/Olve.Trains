@@ -2,6 +2,8 @@
 
 Detailed reference for the Olve.Trains codebase. See [CLAUDE.md](../CLAUDE.md) for build/run instructions and workflow conventions.
 
+> **Interactive map:** open [`architecture-diagram/index.html`](architecture-diagram/index.html) in a browser for a clickable, searchable graph of all 284 components across the engine, game, and tooling layers (single self-contained file). See [architecture-diagram/README.md](architecture-diagram/README.md) to regenerate it.
+
 ## Project Structure
 
 ```
