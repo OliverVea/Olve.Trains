@@ -52,7 +52,7 @@ GameLogicScene (root, LayerOrder 0)
       └── GameUIScene (child, LayerOrder 2)
 ```
 
-**Scene flow:** MainMenu → LoadingScene → GameLogicScene (via async task). LoadingScene shows a loading indicator, runs a background `Task<GameSceneArguments>`, and auto-transitions to the game when complete. Return-to-main-menu goes directly Game → MainMenu (no loading screen).
+**Scene flow:** MainMenu → LoadingScene → GameLogicScene (via async task). LoadingScene shows a loading indicator, runs a background `Task<GameSceneArguments>`, and auto-transitions to the game when complete. The background task also pre-warms the CPU asset caches via `AssetPrewarmService` (loads every `Meshes.All` / `Textures.All` entry into the singleton mesh/texture managers) so the game scene's `Load()` hits cache instead of disk. Return-to-main-menu goes directly Game → MainMenu (no loading screen).
 
 Defined in `src/Olve.Trains/GameServiceRegistration.cs`:
 

@@ -12,6 +12,7 @@ namespace Olve.Trains.Scenes.Loading;
 public class LoadingService(
     IServiceProvider serviceProvider,
     LoadingSceneParameterService parameterService,
+    AssetPrewarmService assetPrewarmService,
     GuiElementService guiElementService,
     GuiAnchorService guiAnchorService,
     ILogger<LoadingService> logger) : ISceneService
@@ -38,7 +39,11 @@ public class LoadingService(
             return problems;
         }
 
-        _loadingTask = Task.Run(() => BuildGameSceneArguments(parameterService.Arguments));
+        _loadingTask = Task.Run(() =>
+        {
+            assetPrewarmService.PrewarmAll();
+            return BuildGameSceneArguments(parameterService.Arguments);
+        });
 
         return Result.Success();
     }

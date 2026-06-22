@@ -24,6 +24,7 @@ public static class LoadingSceneServiceRegistration
 
         services.AddSceneParameterService<LoadingSceneParameterService>(sceneId);
 
+        services.AddScoped<AssetPrewarmService>();
         services.AddSceneService<LoadingService>(sceneId);
 
         return services;

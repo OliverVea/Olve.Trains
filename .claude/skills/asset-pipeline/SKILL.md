@@ -86,6 +86,8 @@ Base namespace from `Build:BaseNamespace` (default: `"Generated"`), with per-ass
 - Fonts: `Generated.Fonts`
 - TextureAtlases: `Generated.TextureAtlases`
 
+The `Meshes` and `Textures` catalogs (generated from `templates/AssetClass.scriban`) expose one `static readonly AssetPath<T>` per asset plus an `All` list (`IReadOnlyList<AssetPath<T>>`) of every entry, used for bulk operations like asset cache pre-warming.
+
 ## Shader Processing (`Shaders/ProcessShaders.cs`)
 
 Reads GLSL files, extracts uniforms and vertex attributes, generates C# wrapper classes via Scriban templates.

@@ -32,9 +32,8 @@ public static class OpenGLServiceRegistration
         // being re-read from disk each time. The GPU-side managers above
         // (Geometry/OpenGLTexture/TextureEntity/TextureSlot) stay scoped: they
         // hold per-scope GL handles and re-upload from these caches each scene.
-        // NOTE: these singletons are main-thread-only — the dictionaries are
-        // plain (not thread-safe). Background pre-warming must add its own
-        // synchronization before populating them off-thread.
+        // These singletons guard their caches with locks, so the loading scene
+        // can pre-warm them from a background thread (see AssetPrewarmService).
         services.TryAddSingleton<TextureManager>();
         services.TryAddScoped<TextureSlotManager>();
         services.TryAddSingleton<AssetLoader>();

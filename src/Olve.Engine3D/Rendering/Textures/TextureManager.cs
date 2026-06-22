@@ -8,6 +8,11 @@ public class TextureManager
 {
     private readonly Dictionary<UntypedTextureId, (ITextureData, Type)> _textures = new();
 
+    // The cache is guarded by _lock so it can be populated from a background
+    // thread (asset pre-warming in the loading scene) while the main thread
+    // reads it. The lock is reentrant, so event subscribers may call back in.
+    private readonly Lock _lock = new();
+
     // TextureManager is a singleton (see OpenGLServiceRegistration). Do NOT
     // subscribe to these events from a scoped service — the singleton would
     // outlive the scope and retain a handler firing into a disposed scope.
@@ -19,20 +24,29 @@ public class TextureManager
     {
         // TODO: perhaps generate id from texture data hash
         var id = TextureId<T>.New();
-        _textures[id] = (textureData, typeof(T));
+        lock (_lock)
+        {
+            _textures[id] = (textureData, typeof(T));
+        }
         OnAdded.Invoke(id);
         return id;
     }
 
     public DeletionResult UnregisterTexture<T>(TextureId<T> textureId)
     {
-        if (!_textures.ContainsKey(textureId))
+        lock (_lock)
         {
-            return DeletionResult.NotFound();
+            if (!_textures.ContainsKey(textureId))
+            {
+                return DeletionResult.NotFound();
+            }
         }
 
         OnRemoved.Invoke(textureId);
-        _textures.Remove(textureId);
+        lock (_lock)
+        {
+            _textures.Remove(textureId);
+        }
         return DeletionResult.Success();
     }
 
@@ -40,18 +54,22 @@ public class TextureManager
         where T : unmanaged
     {
         data = null;
-        if (!_textures.TryGetValue(id, out var textureDataAndType))
+        lock (_lock)
         {
-            return false;
+            if (!_textures.TryGetValue(id, out var textureDataAndType))
+            {
+                return false;
+            }
+
+            var (textureData, textureType) = textureDataAndType;
+            if (textureType != typeof(T))
+            {
+                return false;
+            }
+
+            data = textureData as TextureData<T>;
         }
 
-        var (textureData, textureType) = textureDataAndType;
-        if (textureType != typeof(T))
-        {
-            return false;
-        }
-
-        data = textureData as TextureData<T>;
         return data != null;
     }
 }

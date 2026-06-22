@@ -13,4 +13,10 @@ namespace {{ Namespace }};
 public static class {{ ClassName }}
 { {{ for asset in Assets }}
     public static readonly AssetPath<{{ AssetType }}> {{ asset.Name }} = new("{{ asset.Name }}", "{{ asset.Destination }}");{{end}}
+
+    /// <summary>Every asset in this catalog, for bulk operations like pre-warming.</summary>
+    public static readonly IReadOnlyList<AssetPath<{{ AssetType }}>> All =
+    [{{ for asset in Assets }}
+        {{ asset.Name }},{{end}}
+    ];
 }

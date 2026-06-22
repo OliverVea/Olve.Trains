@@ -10,6 +10,11 @@ public class MeshManager
 {
     private readonly Dictionary<Id<Mesh>, (MeshData Data, AABB LocalAABB)> _meshes = new();
 
+    // The cache is guarded by _lock so it can be populated from a background
+    // thread (asset pre-warming in the loading scene) while the main thread
+    // reads it. The lock is reentrant, so event subscribers may call back in.
+    private readonly Lock _lock = new();
+
     // MeshManager is a singleton (see OpenGLServiceRegistration). Do NOT
     // subscribe to these events from a scoped service — the singleton would
     // outlive the scope and retain a handler firing into a disposed scope.
@@ -24,29 +29,41 @@ public class MeshManager
         }
 
         var id = Id.New<Mesh>();
-        _meshes[id] = (meshData, aabb);
+        lock (_lock)
+        {
+            _meshes[id] = (meshData, aabb);
+        }
         OnAdded.Invoke(id);
         return id;
     }
 
     public DeletionResult Unregister(Id<Mesh> meshId)
     {
-        if (!_meshes.ContainsKey(meshId))
+        lock (_lock)
         {
-            return DeletionResult.NotFound();
+            if (!_meshes.ContainsKey(meshId))
+            {
+                return DeletionResult.NotFound();
+            }
         }
 
         OnRemoved.Invoke(meshId);
-        _meshes.Remove(meshId);
+        lock (_lock)
+        {
+            _meshes.Remove(meshId);
+        }
         return DeletionResult.Success();
     }
 
     public bool TryGetMeshData(Id<Mesh> id, [MaybeNullWhen(false)] out MeshData data)
     {
-        if (_meshes.TryGetValue(id, out var entry))
+        lock (_lock)
         {
-            data = entry.Data;
-            return true;
+            if (_meshes.TryGetValue(id, out var entry))
+            {
+                data = entry.Data;
+                return true;
+            }
         }
 
         data = null;
@@ -55,10 +72,13 @@ public class MeshManager
 
     public bool TryGetLocalAABB(Id<Mesh> id, out AABB aabb)
     {
-        if (_meshes.TryGetValue(id, out var entry))
+        lock (_lock)
         {
-            aabb = entry.LocalAABB;
-            return true;
+            if (_meshes.TryGetValue(id, out var entry))
+            {
+                aabb = entry.LocalAABB;
+                return true;
+            }
         }
 
         aabb = default;
