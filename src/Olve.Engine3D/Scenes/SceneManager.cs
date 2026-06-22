@@ -136,6 +136,90 @@ public class SceneManager(
         return Result.Success();
     }
 
+    /// <summary>
+    /// Performs the thread-safe-on-a-background-thread part of loading a root scene: creates the DI scope,
+    /// resolves the scene's services, applies parameters, and runs each service's <see cref="ISceneService.Load"/>.
+    /// Does NOT touch any shared <see cref="SceneManager"/> state — call <see cref="CommitPreparedScene"/> on the
+    /// main thread to register the result. Only root scenes (no parent) may be prepared this way, because child
+    /// scenes reuse their parent's scope, which only exists once the parent has been committed.
+    /// </summary>
+    public Result<PreparedScene> PrepareScene(Id<IScene> sceneId, object? parameters = null)
+    {
+        if (!_definitions.TryGetValue(sceneId, out var definition))
+        {
+            return new ResultProblem("Scene definition with id '{0}' does not exist", sceneId);
+        }
+
+        if (definition.ParentId is not null)
+        {
+            return new ResultProblem(
+                "Only root scenes can be prepared off-thread, but scene '{0}' has parent '{1}'",
+                sceneId, definition.ParentId);
+        }
+
+        if (_loadedScenes.ContainsKey(sceneId))
+        {
+            return new ResultProblem("Scene with id '{0}' is already loaded", sceneId);
+        }
+
+        var scope = rootProvider.CreateScope();
+        var sp = scope.ServiceProvider;
+        var sceneServices = sp.GetKeyedServices<ISceneService>(sceneId);
+
+        var scene = new Scene(_sceneLogger, sceneServices, sceneId, definition.Name, definition.LayerOrder);
+
+        _logger.LogDebug("Preparing scene '{SceneName}' (id: {SceneId}) off-thread", definition.Name, sceneId);
+
+        // Pass 1: Load parameters (before scene services Load())
+        if (parameters is not null)
+        {
+            var parameterServices = sp.GetKeyedServices<ISceneParameterService>(sceneId);
+            foreach (var parameterService in parameterServices)
+            {
+                if (parameterService.LoadParameters(parameters).TryPickProblems(out var paramProblems))
+                {
+                    scope.Dispose();
+                    return paramProblems.Prepend("Error occurred while loading parameters for scene '{0}'", sceneId);
+                }
+            }
+        }
+
+        // Pass 2: Load scene services
+        if (scene.Load().TryPickProblems(out var problems))
+        {
+            scope.Dispose();
+            return problems.Prepend("Error occurred while loading scene '{0}'", sceneId);
+        }
+
+        scene.State = SceneState.Inactive;
+
+        return new PreparedScene(sceneId, definition, scope, scene);
+    }
+
+    /// <summary>
+    /// Registers a scene produced by <see cref="PrepareScene"/> into the manager's tracking state.
+    /// Must run on the main thread. After this the scene is loaded and inactive; activate it (and load any
+    /// child scenes) via <see cref="LoadAndActivateScene(Id{IScene})"/>.
+    /// </summary>
+    public Result CommitPreparedScene(PreparedScene prepared)
+    {
+        var sceneId = prepared.SceneId;
+
+        if (_loadedScenes.ContainsKey(sceneId))
+        {
+            prepared.Scope.Dispose();
+            return new ResultProblem("Scene with id '{0}' is already loaded", sceneId);
+        }
+
+        // Prepared scenes are always roots: they own their scope.
+        _scopes[sceneId] = prepared.Scope;
+        _scopeOwner[sceneId] = sceneId;
+        _loadedScenes[sceneId] = prepared.Scene;
+        _orderedCache = null;
+
+        return Result.Success();
+    }
+
     public Result UnloadScene(Id<IScene> sceneId)
     {
         if (!_loadedScenes.TryGetValue(sceneId, out var scene))
@@ -425,6 +509,27 @@ public class SceneManager(
         {
             UnloadScene(rootId);
         }
+    }
+}
+
+/// <summary>
+/// An opaque handle to a root scene that has been loaded off the main thread by
+/// <see cref="SceneManager.PrepareScene"/> but not yet registered. Pass it to
+/// <see cref="SceneManager.CommitPreparedScene"/> on the main thread to finish loading.
+/// </summary>
+public sealed class PreparedScene
+{
+    internal Id<IScene> SceneId { get; }
+    internal SceneDefinition Definition { get; }
+    internal IServiceScope Scope { get; }
+    internal Scene Scene { get; }
+
+    internal PreparedScene(Id<IScene> sceneId, SceneDefinition definition, IServiceScope scope, Scene scene)
+    {
+        SceneId = sceneId;
+        Definition = definition;
+        Scope = scope;
+        Scene = scene;
     }
 }
 

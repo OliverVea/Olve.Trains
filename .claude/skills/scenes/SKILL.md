@@ -52,7 +52,7 @@ GameLogicScene (root, LayerOrder 0)
       └── GameUIScene (child, LayerOrder 2)
 ```
 
-**Scene flow:** MainMenu → LoadingScene → GameLogicScene (via async task). LoadingScene shows a loading indicator, runs a background `Task<GameSceneArguments>`, and auto-transitions to the game when complete. The background task also pre-warms the CPU asset caches via `AssetPrewarmService` (loads every `Meshes.All` / `Textures.All` entry into the singleton mesh/texture managers) so the game scene's `Load()` hits cache instead of disk. Return-to-main-menu goes directly Game → MainMenu (no loading screen).
+**Scene flow:** MainMenu → LoadingScene → GameLogicScene (via async task). LoadingScene shows a loading indicator, runs a background task, and auto-transitions to the game when complete. On the background thread the task: (1) pre-warms the CPU asset caches via `AssetPrewarmService` (loads every `Meshes.All` / `Textures.All` entry into the singleton mesh/texture managers); (2) builds the `GameSceneArguments`; (3) calls `SceneManager.PrepareScene(GameLogicScene, args)` — DI scope creation, the parameter service, and every GameLogicScene service `Load()` (all CPU-only, no GPU/GL). When the task completes, the main thread calls `SceneManager.CommitPreparedScene(...)` to register the loaded GameLogicScene, then `LoadAndActivateScene(GameUIScene)` to load the GPU scenes (GameRenderingScene/GameUIScene reuse the GameLogicScene scope and do their shader/framebuffer/buffer work on the main thread where the GL context lives). Return-to-main-menu goes directly Game → MainMenu (no loading screen).
 
 Defined in `src/Olve.Trains/GameServiceRegistration.cs`:
 
@@ -176,5 +176,7 @@ Manages scene loading and the main loop:
 sceneManager.LoadAndActivateScene(SceneIds.GameLogicScene);  // loads full hierarchy
 sceneManager.DeactivateAndUnloadScene(SceneIds.GameLogicScene);  // cascades to children
 ```
+
+**Off-thread loading (root scenes only):** `PrepareScene(sceneId, parameters)` runs scope creation + parameter service + service `Load()` for a root scene without touching any shared `SceneManager` state — safe to call on a background thread (used by `LoadingService`). It returns an opaque `PreparedScene`. On the main thread, `CommitPreparedScene(prepared)` registers it as loaded (inactive); follow with `LoadAndActivateScene(...)` to load child scenes and activate. Only root scenes (no parent) can be prepared this way, since children reuse the parent's not-yet-committed scope.
 
 The main game loop calls `sceneManager.Input()`, `sceneManager.Update()`, `sceneManager.Render()` each frame, which delegates to all active scenes in layer order.

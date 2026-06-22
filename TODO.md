@@ -85,7 +85,7 @@
   - [x] Add LoadingScene with async task infrastructure (MainMenu → LoadingScene → GameLogicScene, no save file yet — just passes default GameSceneArguments, renders a loading indicator)
   - [x] Move CPU-side asset managers (AssetLoader, MeshManager, MeshLoadingManager, TextureManager, TextureLoadingManager) from scoped to singleton so asset caches survive across scene transitions
   - [x] Pre-warm asset caches during LoadingScene — load all assets from generated catalogs on a background thread so game scene Load() hits cache instead of disk
-  - [ ] Background game scene initialization — run GameLogicScene DI scope creation + parameter service + logic service Load() calls on a background thread during LoadingScene, then finalize GPU work (GameRendering/GameUI scene loads) on the main thread
+  - [x] Background game scene initialization — run GameLogicScene DI scope creation + parameter service + logic service Load() calls on a background thread during LoadingScene, then finalize GPU work (GameRendering/GameUI scene loads) on the main thread
   - [ ] Define save file format (versioned JSON schema covering money, time, terrain args, camera state, environmental objects)
   - [ ] Add save game command — serialize current minimal state (money, time, terrain args, environmental objects) to save file
   - [ ] Add load game support in LoadingScene — read save file on background thread, deserialize, populate GameSceneArguments, transition to game
