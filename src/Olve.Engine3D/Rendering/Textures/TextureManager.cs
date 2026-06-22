@@ -8,6 +8,9 @@ public class TextureManager
 {
     private readonly Dictionary<UntypedTextureId, (ITextureData, Type)> _textures = new();
 
+    // TextureManager is a singleton (see OpenGLServiceRegistration). Do NOT
+    // subscribe to these events from a scoped service — the singleton would
+    // outlive the scope and retain a handler firing into a disposed scope.
     public Event<UntypedTextureId> OnAdded { get; } = new();
     public Event<UntypedTextureId> OnRemoved { get; } = new();
 

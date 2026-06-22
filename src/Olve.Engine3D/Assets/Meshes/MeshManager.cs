@@ -10,6 +10,9 @@ public class MeshManager
 {
     private readonly Dictionary<Id<Mesh>, (MeshData Data, AABB LocalAABB)> _meshes = new();
 
+    // MeshManager is a singleton (see OpenGLServiceRegistration). Do NOT
+    // subscribe to these events from a scoped service — the singleton would
+    // outlive the scope and retain a handler firing into a disposed scope.
     public Event<Id<Mesh>> OnAdded { get; } = new();
     public Event<Id<Mesh>> OnRemoved { get; } = new();
 

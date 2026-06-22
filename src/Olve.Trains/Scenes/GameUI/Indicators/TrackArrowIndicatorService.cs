@@ -1,5 +1,6 @@
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
+using Olve.Engine3D.Assets.Meshes;
 using Olve.Engine3D.Math;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Rendering.Geometry;
@@ -16,7 +17,8 @@ using Olve.Trains.Shared.Rendering;
 namespace Olve.Trains.Scenes.GameUI.Indicators;
 
 public class TrackArrowIndicatorService(
-    AssetLoader assetLoader,
+    MeshLoadingManager meshLoadingManager,
+    MeshManager meshManager,
     CameraSceneService cameraSceneService,
     GeometryManager geometryManager,
     RenderingGroupManager renderingGroupManager,
@@ -63,9 +65,16 @@ public class TrackArrowIndicatorService(
             return problems.Prepend("Failed to load shader");
         }
 
-        if (assetLoader.LoadAsset(Meshes.SM_Icon_Arrow_Small_01).TryPickProblems(out problems, out var meshData))
+        // Route through MeshLoadingManager (singleton, path-cached) so the mesh
+        // survives scene transitions instead of being re-read from disk each load.
+        if (meshLoadingManager.LoadMesh(Meshes.SM_Icon_Arrow_Small_01).TryPickProblems(out problems, out var meshId))
         {
             return problems.Prepend("Failed to load mesh");
+        }
+
+        if (!meshManager.TryGetMeshData(meshId, out var meshData))
+        {
+            return new ResultProblem("Mesh data not found after loading '{0}'", Meshes.SM_Icon_Arrow_Small_01.Name);
         }
 
         // Populate typed vertices from mesh data
