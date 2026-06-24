@@ -30,7 +30,8 @@ bash scripts/integration-test.sh --skip-build
 bash scripts/integration-test.sh --windowing native
 
 # Unit tests
-dotnet run --project tests/Olve.Engine3D.Tests/Olve.Engine3D.Tests.csproj
+dotnet run --project tests/Olve.Engine3D.Tests/Olve.Engine3D.Tests.csproj   # engine
+dotnet run --project tests/Olve.Trains.Tests/Olve.Trains.Tests.csproj        # game (save serialization, etc.)
 ```
 
 ## Architecture Reference
