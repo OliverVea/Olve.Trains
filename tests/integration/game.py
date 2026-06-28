@@ -362,6 +362,14 @@ class Game:
     def set_speed(self, scale: float) -> CommandResult:
         return self.send(f"set-speed scale={scale}")
 
+    def save_game(self, kind: str, name: str | None = None) -> str:
+        """Save the current game state. Returns the absolute path of the written save file."""
+        cmd = f"save-game kind={kind}"
+        if name is not None:
+            cmd += f" name={name}"
+        result = self.send(cmd)
+        return json.loads(result.output)["path"]
+
     def query_time(self) -> dict:
         result = self.send("query-time")
         data = json.loads(result.output)

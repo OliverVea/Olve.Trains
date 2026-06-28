@@ -69,6 +69,7 @@ public static class GameServiceRegistration
             services.AddSingleton<ITimeStepper, WindowStepper>();
         }
         services.AddSingleton<ScreenshotManager>();
+        services.AddSingleton<Saves.SaveFileStore>();
         services.AddSingleton<CommandHandlerServiceCollection>();
         services.AddSingleton<EventQueueFactory>();
         services.AddSingleton<DisplayNameResolver>();

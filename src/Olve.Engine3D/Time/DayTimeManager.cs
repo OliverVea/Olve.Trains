@@ -12,6 +12,16 @@ public class DayTimeManager
         set => _totalGameHours = double.Round(_totalGameHours / 24.0) * 24.0 + value.Value % 24;
     }
 
+    /// <summary>
+    /// Total elapsed in-game time, in game-hours. Unlike <see cref="CurrentTime"/> (time of day only),
+    /// this is the full clock and round-trips both the current day and time of day for save/load.
+    /// </summary>
+    public double TotalGameHours
+    {
+        get => _totalGameHours;
+        set => _totalGameHours = value;
+    }
+
     public long AbsoluteDays => AbsoluteHours / 24;
     public long AbsoluteHours => AbsoluteMinutes / 60;
     public long AbsoluteMinutes => (long)double.Floor(_totalGameHours * 60.0);

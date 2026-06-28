@@ -16,6 +16,7 @@ using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Junctions;
 using Olve.Trains.Scenes.GameLogic.Light;
 using Olve.Trains.Scenes.GameLogic.Money;
+using Olve.Trains.Scenes.GameLogic.Saves;
 using Olve.Trains.Scenes.GameLogic.Terrain;
 using Olve.Trains.Scenes.GameLogic.Time;
 using Olve.Trains.Scenes.GameLogic.Tracks;
@@ -73,6 +74,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<QueryTrainHandlerService>(sceneId);
         services.AddSceneService<RaycastHandlerService>(sceneId);
         services.AddSceneService<RemoveWagonHandlerService>(sceneId);
+        services.AddSceneService<SaveGameHandlerService>(sceneId);
         services.AddSceneService<SceneLightService>(sceneId);
         services.AddSceneService<SetCameraHandlerService>(sceneId);
         services.AddSceneService<SetMouseHandlerService>(sceneId);
@@ -108,6 +110,7 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<EnvironmentalObjectBlueprintService>();
         services.TryAddScoped<EnvironmentalObjectCollisionService>();
         services.TryAddScoped<EnvironmentalObjectService>();
+        services.TryAddScoped<GameSaveService>();
         services.TryAddScoped<GridService>();
         services.TryAddScoped<IndustryBlueprintService>();
         services.TryAddScoped<IndustryRecipeService>();

@@ -94,6 +94,12 @@ Directions: `north`, `south`, `east`, `west` (or `n`, `s`, `e`, `w`)
 --send "screenshot path=~/screenshot.png"
 ```
 
+**save-game** — Snapshot the current game state to a save file. `kind` is required (`manual`, `quicksave`, or `autosave`); `name` is required for `manual` and optional for the others (defaults to a single slot per kind). Returns the written path as JSON. Saves live under `<LocalApplicationData>/Olve.Trains/saves/{manual,quicksave,autosave}/`.
+```bash
+--send "save-game kind=manual name=my-save"
+--send "save-game kind=quicksave"
+```
+
 **Other useful commands:** `step`, `set-camera`, `set-time`, `set-speed`, `select-tool`, `place-building`, `list-trains`, `query-train`, `list-junctions`, `query-junction`, `load-scene`, `exit`
 
 ## Example: Creating a 4x4 Circle Track with Train
@@ -187,6 +193,7 @@ game.stop()    # send exit → terminate process
 | `game.set_camera(target, zoom)` | `CommandResult` | Set camera position |
 | `game.set_time(time)` | `CommandResult` | Set game time |
 | `game.set_speed(scale)` | `CommandResult` | Set time scale |
+| `game.save_game(kind, name?)` | `str` | Written save-file path |
 | `game.query_train(train_id)` | `TrainState` | Train state |
 | `game.list_trains()` | `list[TrainState]` | All trains |
 | `game.list_junctions()` | `list[JunctionInfo]` | All junctions |

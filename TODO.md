@@ -87,7 +87,7 @@
   - [x] Pre-warm asset caches during LoadingScene — load all assets from generated catalogs on a background thread so game scene Load() hits cache instead of disk
   - [x] Background game scene initialization — run GameLogicScene DI scope creation + parameter service + logic service Load() calls on a background thread during LoadingScene, then finalize GPU work (GameRendering/GameUI scene loads) on the main thread
   - [x] Define save file format (versioned JSON schema covering money, time, terrain args, camera state, environmental objects)
-  - [ ] Add save game command — serialize current minimal state (money, time, terrain args, environmental objects) to save file
+  - [x] Add save game command — serialize current minimal state (money, time, terrain args, environmental objects) to save file
   - [ ] Add load game support in LoadingScene — read save file on background thread, deserialize, populate GameSceneArguments, transition to game
   - [ ] Expand GameSceneArguments and save format with track data
   - [ ] Expand with building data (type + position — stations, depots, industries, residences auto-created via events)

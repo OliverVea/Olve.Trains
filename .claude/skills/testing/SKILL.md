@@ -145,6 +145,7 @@ In CD (the Olve.Pipelines `test` step) a screenshot mismatch fails the step and 
 | `test_collision_raycast.py` | Functional | Raycast hit detection |
 | `test_signal_routing.py` | Functional | Signal rule logic |
 | `test_time_scale.py` | Functional | Day/time progression at various speeds |
+| `test_save_game.py` | Functional | `save-game` writes a faithful state snapshot to disk |
 | `test_no_warnings.py` | Functional | No warnings/errors during startup |
 
 ## Unit Tests

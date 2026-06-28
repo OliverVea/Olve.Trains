@@ -8,6 +8,9 @@ public class DayTimeSteppingService(DayTimeManager dayTimeManager, DeltaTimeServ
     internal DayTime DayStartOverride { get; set; } = new(5, 30);
     internal TimeSpan DayDurationOverride { get; set; } = TimeSpan.FromMinutes(15);
 
+    /// <summary>The time of day a new game's clock starts at.</summary>
+    public DayTime DayStart => DayStartOverride;
+
     public Result Load()
     {
         dayTimeManager.CurrentTime = DayStartOverride;
