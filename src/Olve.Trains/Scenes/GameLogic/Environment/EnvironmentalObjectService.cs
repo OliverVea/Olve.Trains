@@ -51,6 +51,26 @@ public class EnvironmentalObjectService
         return obj.Id;
     }
 
+    /// <summary>
+    /// Re-adds a fully materialized object from a save, preserving its id (unlike <see cref="AddObject"/>,
+    /// which mints a new one). Used by the load path so derived state keyed on the id stays consistent.
+    /// </summary>
+    public Result<Id<EnvironmentalObject>> RestoreObject(EnvironmentalObject obj)
+    {
+        if (!_blueprintService.TryGetBlueprint(obj.BlueprintId, out _))
+        {
+            return new ResultProblem("Environmental object blueprint '{0}' not found", obj.BlueprintId);
+        }
+
+        if (!_objects.TryAdd(obj))
+        {
+            return new ResultProblem("Failed to restore environmental object '{0}' with blueprint '{1}'", obj.Id, obj.BlueprintId);
+        }
+
+        _logger.LogDebug("Restored environmental object {ObjectId} with blueprint {BlueprintId} at {Position}", obj.Id, obj.BlueprintId, obj.Position);
+        return obj.Id;
+    }
+
     public DeletionResult DeleteObject(Id<EnvironmentalObject> objectId)
     {
         var result = _objects.Remove(objectId);

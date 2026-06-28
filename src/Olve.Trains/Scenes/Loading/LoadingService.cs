@@ -13,6 +13,7 @@ public class LoadingService(
     IServiceProvider serviceProvider,
     LoadingSceneParameterService parameterService,
     AssetPrewarmService assetPrewarmService,
+    GameLoadService gameLoadService,
     GuiElementService guiElementService,
     GuiAnchorService guiAnchorService,
     ILogger<LoadingService> logger) : ISceneService
@@ -48,7 +49,12 @@ public class LoadingService(
             // CPU-only and touches no GPU/OpenGL state. GPU work (rendering/UI scene loads) is finalized on
             // the main thread in TransitionToGame once this completes.
             assetPrewarmService.PrewarmAll();
-            var arguments = BuildGameSceneArguments(parameterService.Arguments);
+
+            if (BuildGameSceneArguments(parameterService.Arguments).TryPickProblems(out var problems, out var arguments))
+            {
+                return problems;
+            }
+
             return sceneManager.PrepareScene(SceneIds.GameLogicScene, arguments);
         });
 
@@ -129,8 +135,14 @@ public class LoadingService(
         return sceneManager.LoadAndActivateScene(SceneIds.MainMenuScene);
     }
 
-    private static GameSceneArguments BuildGameSceneArguments(LoadingSceneArguments args)
+    private Result<GameSceneArguments> BuildGameSceneArguments(LoadingSceneArguments args)
     {
-        return new GameSceneArguments();
+        // No save path: start a fresh game from the default arguments.
+        if (string.IsNullOrWhiteSpace(args.SaveFilePath))
+        {
+            return new GameSceneArguments();
+        }
+
+        return gameLoadService.BuildGameSceneArguments(Path.Create(args.SaveFilePath));
     }
 }

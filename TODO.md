@@ -88,7 +88,7 @@
   - [x] Background game scene initialization — run GameLogicScene DI scope creation + parameter service + logic service Load() calls on a background thread during LoadingScene, then finalize GPU work (GameRendering/GameUI scene loads) on the main thread
   - [x] Define save file format (versioned JSON schema covering money, time, terrain args, camera state, environmental objects)
   - [x] Add save game command — serialize current minimal state (money, time, terrain args, environmental objects) to save file
-  - [ ] Add load game support in LoadingScene — read save file on background thread, deserialize, populate GameSceneArguments, transition to game
+  - [x] Add load game support in LoadingScene — read save file on background thread, deserialize, populate GameSceneArguments, transition to game
   - [ ] Expand GameSceneArguments and save format with track data
   - [ ] Expand with building data (type + position — stations, depots, industries, residences auto-created via events)
   - [ ] Expand with train data (trains, wagons, cargo, positions, motion state, cargo transfer policies, train groups)

@@ -1,5 +1,6 @@
 using Olve.Engine3D.Assets.Entities;
 using Olve.Engine3D.Time;
+using Olve.Trains.Scenes.GameLogic.Environment;
 using Olve.Trains.Scenes.GameLogic.Money;
 
 namespace Olve.Trains.Scenes.GameLogic;
@@ -11,7 +12,9 @@ public sealed record GameSceneArguments(
     double TreeSpawnProbability = 0.08,
     DayTime? DayStart = null,
     TimeSpan? DayDuration = null,
-    float CameraOrthographicSize = 40f)
+    float CameraOrthographicSize = 40f,
+    IReadOnlyList<EnvironmentalObject>? EnvironmentalObjects = null,
+    double? TotalGameHours = null)
 {
     public static HeightmapData DefaultHeightmap()
     {

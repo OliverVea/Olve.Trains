@@ -100,6 +100,12 @@ Directions: `north`, `south`, `east`, `west` (or `n`, `s`, `e`, `w`)
 --send "save-game kind=quicksave"
 ```
 
+**load-game** — Load a save file: tears down the running game and rebuilds it through the loading scene. Same `kind`/`name` rules as `save-game`; the save must exist. Returns the loaded path as JSON. The reload is asynchronous (background prepare + main-thread transition), so after sending it you must step frames until the game scene is active again — `game.load_game(...)` in the Game class handles that wait for you.
+```bash
+--send "load-game kind=manual name=my-save"
+--send "load-game kind=quicksave"
+```
+
 **Other useful commands:** `step`, `set-camera`, `set-time`, `set-speed`, `select-tool`, `place-building`, `list-trains`, `query-train`, `list-junctions`, `query-junction`, `load-scene`, `exit`
 
 ## Example: Creating a 4x4 Circle Track with Train
@@ -194,6 +200,7 @@ game.stop()    # send exit → terminate process
 | `game.set_time(time)` | `CommandResult` | Set game time |
 | `game.set_speed(scale)` | `CommandResult` | Set time scale |
 | `game.save_game(kind, name?)` | `str` | Written save-file path |
+| `game.load_game(kind, name?)` | `str` | Loaded save-file path (waits for the game scene) |
 | `game.query_train(train_id)` | `TrainState` | Train state |
 | `game.list_trains()` | `list[TrainState]` | All trains |
 | `game.list_junctions()` | `list[JunctionInfo]` | All junctions |

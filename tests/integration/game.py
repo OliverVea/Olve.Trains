@@ -370,6 +370,35 @@ class Game:
         result = self.send(cmd)
         return json.loads(result.output)["path"]
 
+    def load_game(self, kind: str, name: str | None = None, *, max_frames: int = 1200) -> str:
+        """Load a save file. Tears down the running game and reloads it through the loading scene,
+        stepping until the game scene is active again. Returns the loaded save file's path."""
+        cmd = f"load-game kind={kind}"
+        if name is not None:
+            cmd += f" name={name}"
+        result = self.send(cmd)
+        path = json.loads(result.output)["path"]
+        self.wait_for_game_scene(max_frames=max_frames)
+        return path
+
+    def wait_for_game_scene(self, *, max_frames: int = 1200) -> None:
+        """Step frames until the loading scene has finished transitioning into the game.
+
+        Readiness is detected by polling `help` (a global command that always succeeds, so it never
+        logs a warning) for the `query-gui` verb. The GameUIScene — and its command handlers — are
+        loaded on the main thread only once TransitionToGame completes, so `query-gui` appears in the
+        command list exactly when the game is fully ready. Game-logic handlers (query-money etc.)
+        register earlier, during the background PrepareScene, so they are NOT a reliable signal."""
+        stepped = 0
+        while stepped < max_frames:
+            self.step(2)
+            stepped += 2
+            if "query-gui" in self.send("help").output:
+                return
+        raise TimeoutError(
+            f"Game scene did not become ready within {max_frames} frames after load"
+        )
+
     def query_time(self) -> dict:
         result = self.send("query-time")
         data = json.loads(result.output)

@@ -25,6 +25,13 @@ public class TerrainService(
     internal int TreeSeed { get; set; } = 42;
     internal double TreeSpawnProbability { get; set; } = 0.08;
 
+    /// <summary>
+    /// Materialized environmental objects from a save. When set (load), they are placed verbatim; when null
+    /// (new game), the world is generated from <see cref="TreeSeed"/>. Seeds are new-game inputs, never save
+    /// state — a loaded world must never be regenerated.
+    /// </summary>
+    internal IReadOnlyList<EnvironmentalObject>? EnvironmentalObjectsOverride { get; set; }
+
     public Result Load()
     {
         var heightmap = HeightmapOverride ?? GameSceneArguments.DefaultHeightmap();
@@ -36,7 +43,25 @@ public class TerrainService(
 
         collisionSystem.RegisterHeightmapCollider(heightmap, ColliderGroups.Terrain);
 
+        if (EnvironmentalObjectsOverride is { } savedObjects)
+        {
+            return RestoreEnvironmentalObjects(savedObjects);
+        }
+
         PlaceEnvironmentalObjects(heightmap);
+
+        return Result.Success();
+    }
+
+    private Result RestoreEnvironmentalObjects(IReadOnlyList<EnvironmentalObject> savedObjects)
+    {
+        foreach (var obj in savedObjects)
+        {
+            if (environmentalObjectService.RestoreObject(obj).TryPickProblems(out var problems))
+            {
+                return problems.Prepend("Failed to restore environmental object '{0}'", obj.Id);
+            }
+        }
 
         return Result.Success();
     }

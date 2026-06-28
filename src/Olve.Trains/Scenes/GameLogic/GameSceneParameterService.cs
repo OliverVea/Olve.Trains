@@ -20,11 +20,13 @@ public class GameSceneParameterService(
         terrainService.HeightmapOverride = parameters.Heightmap ?? GameSceneArguments.DefaultHeightmap();
         terrainService.TreeSeed = parameters.TreeSeed;
         terrainService.TreeSpawnProbability = parameters.TreeSpawnProbability;
+        terrainService.EnvironmentalObjectsOverride = parameters.EnvironmentalObjects;
 
         cameraSceneService.InitialOrthographicSize = parameters.CameraOrthographicSize;
 
         dayTimeSteppingService.DayStartOverride = parameters.DayStart ?? new DayTime(5, 30);
         dayTimeSteppingService.DayDurationOverride = parameters.DayDuration ?? TimeSpan.FromMinutes(15);
+        dayTimeSteppingService.TotalGameHoursOverride = parameters.TotalGameHours;
 
         return Result.Success();
     }

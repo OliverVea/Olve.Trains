@@ -61,6 +61,7 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<ListTracksHandlerService>(sceneId);
         services.AddSceneService<ListTrainsHandlerService>(sceneId);
         services.AddSceneService<ListWagonsHandlerService>(sceneId);
+        services.AddSceneService<LoadGameHandlerService>(sceneId);
         services.AddSceneService<PlaceBuildingHandlerService>(sceneId);
         services.AddSceneService<PlaceTrackHandlerService>(sceneId);
         services.AddSceneService<PlaceTrainHandlerService>(sceneId);
