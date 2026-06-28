@@ -14,7 +14,7 @@
 # every job as an ordinary env var. The S3__* names match the .NET config keys the
 # asset pipeline reads (S3__Key -> S3:Key), so they inject with no extra mapping.
 apiVersion: "0.0"
-name: olve-trains
+name: Olve.Trains
 description: Build (Linux + Windows), screenshot-test, then publish On Track To Grow to itch.io and S3.
 version: "1"
 
