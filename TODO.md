@@ -27,6 +27,23 @@
   - [ ] Rotate the bootstrap `GITHUB_TOKEN` (currently the broad `gh` token) to a fine-grained read-only Olve.Trains token
   - [ ] (Later) Source screenshot references from the VR app instead of git LFS; re-add VR review-on-failure (interim: test step uploads diffs to `s3://olve-trains-dist/diffs/`)
 
+- [ ] Self-host storage epic (Tooling):
+  - Description: Retire AWS S3 entirely. Source art (~4.3 MB fbx/png/ttf/tga/ora) moves into git LFS — pinned to each commit, which kills the stale-cache class of bugs and the committed AKIA read key. Build/release artifacts move to a self-hosted MinIO that the pipeline itself deploys (config stays the full source of truth, secrets excepted): one instance, a `olve-trains-beta` and a `olve-trains-prod` bucket. Part A and Part B are independent; A ships on its own.
+  - Part A — Source assets → git LFS:
+    - [ ] Hydrate source art from S3 one last time and commit it under `src/Olve.Trains/resources/assets/` (next to `resources/shaders`, `resources/layouts`)
+    - [ ] Add scoped `.gitattributes` LFS rules for the source binary types (`resources/assets/**/*.{fbx,png,tga,ora,ttf}`) — scoped so they don't touch the existing reference-PNG rule or compiled outputs
+    - [ ] Repoint the pipeline to read source from the committed dir: drop the `DownloadAssets` S3 path, have `LoadLocalAssets` read `resources/assets/`, remove the asset-read half of `S3Options`/`appsettings.json`
+    - [ ] Switch `.pipelines/scripts/build.sh` from the API-tarball fetch to `git clone --depth 1` + `git lfs install` + `git lfs pull` (mirror `test.sh`, which already does this for reference PNGs)
+    - [ ] Update the `asset-pipeline` skill + `CLAUDE.md`: remove S3 asset-source docs and the entire "Stale Local Asset Cache" section (that bug class is gone)
+  - Part B — Build artifacts → self-hosted MinIO:
+    - [ ] Add MinIO k8s manifests under `deploy/minio/` (StatefulSet + PVC + Service + Traefik IngressRoute), single instance, private (Traefik-internal), creds from a k8s secret
+    - [ ] Add an idempotent bootstrap step to `.pipelines/config.yaml` (`helm upgrade --install` / `kubectl apply`) that ensures MinIO before the publish steps
+    - [ ] Create the `olve-trains-beta` + `olve-trains-prod` buckets; rework `publish-s3.sh` → `publish-minio.sh` pointing awscli at the MinIO endpoint (`AWS_ENDPOINT_URL`, path-style); publish to beta then prod
+    - [ ] Repoint `test.sh` diff export to MinIO; swap `S3__Key`/`S3__Secret` → `MINIO__Key`/`MINIO__Secret` in `config.yaml`
+    - [ ] Retire AWS: delete both buckets, deactivate the AKIA key; add a backup story for the prod MinIO PVC
+  - Later:
+    - [ ] Expose the prod bucket publicly via a CDN with a private bucket origin (fills the existing `S3_DIST_PUBLIC_BASE` placeholder) — MinIO stays private, CDN is the only public read path and holds the origin credential
+
 ## Demo
 
 ### Core infrastructure (build first — other features depend on these)
@@ -132,11 +149,12 @@
   - [ ] Implement all industry types, recipes, and cargo types from the design
   - [ ] Add industry builder tool (toolbar button → select industry type → click to place)
 - [ ] Audio support epic (Feature):
-  - [ ] Add basic support for playing audio
-  - [ ] Add in-game music
-  - [ ] Add GUI sound effects
-  - [ ] Add in-game sound effects
-  - [ ] Add spatial effects for e.g. localized sounds, wind blowing when the camera is zoomed out, and so on
+  - Description: Procedural, code-driven audio — near-zero audio assets. SFX are synthesized at runtime (sfxr-style: oscillator/noise + ADSR envelope + filter, driven by small parameter sets), giving every action its own fun, "colored" sound. Music is a single very simple hand-composed background loop (optionally a lightweight state-driven sequencer in the Mini Metro spirit if it earns it). Output via OpenAL (Silk.NET bindings): generate PCM buffers in C# → stream to OpenAL sources. Keeps the repo free of large audio files — only tiny SFX parameter sets and a minimal music source are committed, so this needs no LFS/object-storage plumbing.
+  - [ ] Add an audio output layer — OpenAL via Silk.NET; play a generated PCM buffer end to end (proves the pipeline)
+  - [ ] Add an SFX synthesis engine — sfxr-style (oscillator/noise + ADSR envelope + filter), parameterized; store SFX as small parameter sets, not audio files
+  - [ ] Design a distinct, "colored" SFX for every action — placement, deletion, tool select, GUI click/hover, money, train events — each with its own characterful tone
+  - [ ] Add a very simple background music track — one short composed loop (or a lightweight state-driven sequencer); commit only the minimal source
+  - [ ] Add spatial/positional audio — localized sounds, distance attenuation, ambience like wind when the camera is zoomed out
 - [ ] Game feel epic (Visual):
   - Description: Juice and polish to make interactions feel satisfying. Placement animations (grow/stretch/plop) for buildings and tracks, synced with audio cues. Depends on audio support.
   - [ ] Add placement animation system (scale/bounce keyframes on newly placed entities)
