@@ -30,6 +30,7 @@ cd "$WORK"
 # Build once (asset pipeline + Release), then run the suite against it (--skip-build).
 export Build__OutputDirectory="$WORK/src/Olve.Trains/assets"
 export Build__BuildDirectory="$WORK/src/Olve.Trains.AssetPipeline/temp"
+export Asset__SourceDirectory="$WORK/src/Olve.Trains/resources/assets"
 export Shader__ShadersDirectory="$WORK/src/Olve.Trains/resources/shaders"
 export Layout__LayoutsDirectory="$WORK/src/Olve.Trains/resources/layouts"
 dotnet run --project src/Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj

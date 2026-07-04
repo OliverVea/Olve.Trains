@@ -21,16 +21,17 @@ version: "1"
 secrets:
   - name: GITHUB_TOKEN
     description: GitHub read token; fetches the repo tarball/clone into each job.
-  # Bucket + prefix come from the committed appsettings.json; only the AWS key/secret
-  # (the asset-download credentials) need injecting. Reused by publish-s3 too.
+  # AWS credentials for the release/dist bucket only (publish-s3 + the test step's diff
+  # upload). The asset pipeline no longer uses these — source art is committed via git LFS
+  # and pulled during clone. (Part B of the self-host storage epic replaces these with
+  # MinIO credentials.)
   - name: S3__Key
-    description: Asset-source AWS access key (read) — consumed by the asset pipeline.
+    description: AWS access key for the release/dist bucket (publish-s3, test diff upload).
   - name: S3__Secret
-    description: Asset-source AWS secret key.
+    description: AWS secret key for the release/dist bucket.
   - name: ITCH_API_KEY
     description: butler API key (BUTLER_API_KEY) for pushing builds to itch.io.
-  # Distribution reuses the asset-pipeline AWS identity (S3__Key/S3__Secret) — the
-  # publish-s3 step creates and writes its own bucket with it. No separate creds.
+  # The publish-s3 step creates and writes its own dist bucket with the AWS identity above.
 
 # One production step builds BOTH platforms (and runs the asset pipeline once). This is
 # intentional: two parallel production steps make the controller promote the bundle twice,

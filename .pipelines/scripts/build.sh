@@ -12,26 +12,26 @@ set -e
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends wget tar gzip zip ca-certificates libassimp-dev
+apt-get install -y --no-install-recommends git git-lfs tar gzip zip ca-certificates libassimp-dev
 
 WORK=/work
-mkdir -p "$WORK"
 
-# No .git in the API tarball, so derive a version from the date + branch-head short SHA.
-SHORT_SHA=$(wget -q --header="Authorization: token $GITHUB_TOKEN" -O - \
-  "https://api.github.com/repos/$REPO/commits/$BRANCH" \
-  | grep -m1 '"sha"' | cut -d'"' -f4 | cut -c1-7)
+# Source art lives in git LFS, so clone + lfs pull (the GitHub tarball API only ships
+# LFS pointers). The asset pipeline reads it from src/Olve.Trains/resources/assets/.
+git lfs install
+git clone --depth 1 --branch "$BRANCH" \
+  "https://x-access-token:$GITHUB_TOKEN@github.com/$REPO.git" "$WORK"
+git -C "$WORK" lfs pull
+cd "$WORK"
+
+SHORT_SHA=$(git rev-parse --short=7 HEAD)
 ASSEMBLY_VERSION=$(date -u +%Y.%m.%d.%H%M)        # valid System.Version (each part <= 65534)
 RELEASE_VERSION="${ASSEMBLY_VERSION}-${SHORT_SHA}" # display / itch userversion / S3 path
 
-wget -q --header="Authorization: token $GITHUB_TOKEN" -O /tmp/repo.tar.gz \
-  "https://api.github.com/repos/$REPO/tarball/$BRANCH"
-tar xzf /tmp/repo.tar.gz -C "$WORK" --strip-components=1
-cd "$WORK"
-
-# Compile assets once (S3__* injected as env; bucket/prefix come from appsettings.json).
+# Compile assets once (source art read from the committed LFS directory).
 export Build__OutputDirectory="$WORK/src/Olve.Trains/assets"
 export Build__BuildDirectory="$WORK/src/Olve.Trains.AssetPipeline/temp"
+export Asset__SourceDirectory="$WORK/src/Olve.Trains/resources/assets"
 export Shader__ShadersDirectory="$WORK/src/Olve.Trains/resources/shaders"
 export Layout__LayoutsDirectory="$WORK/src/Olve.Trains/resources/layouts"
 dotnet run --project src/Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj
