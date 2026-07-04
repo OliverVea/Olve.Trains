@@ -1,6 +1,6 @@
 ---
 name: asset-pipeline
-description: Reference for the asset pipeline — build targets, shader/layout/mesh/texture/font processing, S3 configuration, path layout, and generated code. Use when modifying shaders, layouts, adding new assets, troubleshooting pipeline issues, or when builds fail due to missing generated types or asset references.
+description: Reference for the asset pipeline — build targets, shader/layout/mesh/texture/font processing, source-art configuration, path layout, and generated code. Use when modifying shaders, layouts, adding new assets, troubleshooting pipeline issues, or when builds fail due to missing generated types or asset references.
 user-invocable: false
 ---
 
@@ -12,7 +12,7 @@ The asset pipeline (`src/Olve.Trains.AssetPipeline/`) compiles source resources 
 
 ```
 1. ProcessLayouts ────────────────► assets/Layouts/*.cs
-2. DownloadAssets / LoadLocalAssets ► temp build dir
+2. LoadLocalAssets ───────────────► reads source art from resources/assets/
 3. ProcessShaders ────────────────► assets/Shaders/*.cs
 4. ProcessAssets
    ├─ ProcessMeshAssets ──────────► assets/Meshes/*.mesh + .cs
@@ -40,7 +40,7 @@ Configuration is loaded from (in order, later overrides earlier):
 
 Flags enum controlling which asset types to process:
 
-| Target | Flag | Requires S3 | Description |
+| Target | Flag | Needs source art | Description |
 |---|---|---|---|
 | `Shaders` | `1 << 0` | No | GLSL shaders → generated C# classes |
 | `Meshes` | `1 << 1` | Yes | 3D model files → binary mesh assets |
@@ -52,12 +52,12 @@ Flags enum controlling which asset types to process:
 
 Configured via `Build:Targets` in appsettings (list of target name strings).
 
-Targets requiring S3 will either download from S3 or load from local cache, depending on `S3:UseLocalAssets`.
+Targets in the "Needs source art" column read source files from the committed `Asset:SourceDirectory` (see [Asset Source Configuration](#asset-source-configuration)). `BuildTargets.RequiresSourceAssets()` is the flag check.
 
 ## Pipeline Flow (`RunAssetPipeline.cs`)
 
 1. **Layouts** — process XML layout files (if `Layouts` target enabled)
-2. **S3 assets** — download from S3 or load local cache (if any S3-requiring target enabled)
+2. **Source assets** — load committed source art from `Asset:SourceDirectory` (if any source-art target enabled)
 3. **Shaders** — compile GLSL → C# (if `Shaders` target enabled)
 4. **Assets** — process meshes, textures, terrains, fonts, texture atlases (delegates to sub-processors)
 
@@ -66,6 +66,7 @@ Targets requiring S3 will either download from S3 or load from local cache, depe
 ### Source directories (input)
 - `src/Olve.Trains/resources/shaders/` — GLSL shader source files (`*.glsl`)
 - `src/Olve.Trains/resources/layouts/` — XML layout definitions (`*.xml`)
+- `src/Olve.Trains/resources/assets/` — source art: meshes (`*.fbx`), textures (`*.png`/`*.tga`), fonts (`*.ttf`), terrain (`*.ora`), atlas defs (`*.json`). Binaries are tracked via git LFS.
 
 ### Output directories (generated)
 - `src/Olve.Trains/assets/Shaders/` — generated shader C# classes
@@ -132,19 +133,18 @@ Reads XML layout files and generates C# classes that construct the UI element tr
 ### Template
 Uses `templates/LayoutClass.scriban` to generate the C# source.
 
-## S3 Configuration (`S3Options`)
+<a name="asset-source-configuration"></a>
+## Asset Source Configuration (`AssetOptions`)
+
+Source art is committed to the repo under `src/Olve.Trains/resources/assets/` and tracked via git LFS (binaries are pinned to the commit, so a checkout always has exactly the art that matches the code). `LoadLocalAssets` reads every file in that directory and hands the flat file list to the sub-processors, which filter by extension.
 
 | Option | Default | Description |
 |---|---|---|
-| `Bucket` | — | S3 bucket name |
-| `Prefix` | `"/"` | Object key prefix |
-| `Key` | — | Access key |
-| `Secret` | — | Secret key |
-| `TimeoutMs` | `20000` | Download timeout (ms) |
-| `AllowFailure` | `false` | Continue on S3 errors |
-| `UseLocalAssets` | `false` | Skip S3, use local build dir |
+| `SourceDirectory` | — | Directory of committed source art. Required when any source-art target is enabled. |
 
-Set `UseLocalAssets: true` for offline development (uses whatever is cached in the build directory). Set to `false` for full builds (required for CI and fresh environments).
+Configured via `Asset:SourceDirectory` — set as an absolute path in `appsettings.local.json` for local runs, and via the `Asset__SourceDirectory` env var in the CI build/test scripts (`.pipelines/scripts/`).
+
+**LFS note:** the source binaries are LFS objects, so a plain GitHub tarball fetch yields pointer files, not real art. Anything that runs the pipeline must obtain the working tree via `git clone` + `git lfs pull` (both `build.sh` and `test.sh` do this).
 
 ## Asset Processing Sub-Processors
 
@@ -152,11 +152,11 @@ Each sub-processor follows the same pattern: `Request` → `ExecuteAsync` → `R
 
 | Processor | Input | Output |
 |---|---|---|
-| `ProcessMeshAssets` | S3 mesh files | Binary mesh assets + C# class |
-| `ProcessTextureAssets` | S3 texture files | Binary texture assets + C# class |
-| `ProcessTerrainAssets` | S3 terrain files (OpenRaster) | Binary terrain assets + C# class |
-| `ProcessFonts` | S3 font files | MSDF atlas generation + binary assets + C# class |
-| `ProcessTextureAtlasAssets` | S3 texture files | Packed texture atlases + C# class |
+| `ProcessMeshAssets` | source mesh files | Binary mesh assets + C# class |
+| `ProcessTextureAssets` | source texture files | Binary texture assets + C# class |
+| `ProcessTerrainAssets` | source terrain files (OpenRaster) | Binary terrain assets + C# class |
+| `ProcessFonts` | source font files | MSDF atlas generation + binary assets + C# class |
+| `ProcessTextureAtlasAssets` | source texture files | Packed texture atlases + C# class |
 
 ## Adding a New Shader
 
@@ -172,32 +172,19 @@ Each sub-processor follows the same pattern: `Request` → `ExecuteAsync` → `R
 3. A `<ClassName>.cs` class is generated in `src/Olve.Trains/assets/Layouts/`
 4. Use the generated class to build UI trees
 
-## Stale Local Asset Cache
+## Adding a New Source Asset
 
-Asset references (generated C# code that references binary mesh/texture/terrain files) are committed to git. When another developer adds new S3 assets on their machine, they commit the generated references. After pulling those changes, **your local asset cache is stale** — the generated code references assets that don't exist locally yet.
+1. Drop the source file into `src/Olve.Trains/resources/assets/` (meshes `*.fbx`, textures `*.png`/`*.tga`, fonts `*.ttf`, terrain `*.ora`, atlas defs `*.json`).
+2. Binary types are already matched by the LFS rules in `.gitattributes` (`resources/assets/**/*.{fbx,png,tga,ora,ttf}`) — `git add` stores them as LFS objects automatically. Verify with `git lfs ls-files`.
+3. Run the pipeline: `cd src/Olve.Trains.AssetPipeline && dotnet run`.
+4. Commit the source file **and** the regenerated `src/Olve.Trains/assets/` outputs together, so the committed art and its generated references stay in lockstep.
 
-**Symptoms:**
-- Build fails with missing asset files (e.g., `FileNotFoundException` for `.mesh`, `.texture` files)
-- Runtime errors about missing meshes/textures that exist in the generated C# code
-- Tests fail because assets referenced in code aren't present
-
-**Fix:** Re-run the asset pipeline with S3 download enabled:
-```bash
-# Ensure UseLocalAssets is false in appsettings.local.json
-cd src/Olve.Trains.AssetPipeline && dotnet run
-```
-
-This downloads the new assets from S3 and regenerates any stale references. Then rebuild:
-```bash
-dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release
-```
-
-**Rule of thumb:** After pulling changes that touch `src/Olve.Trains/assets/`, always re-run the asset pipeline with `UseLocalAssets: false`.
+Because the source art is committed and pinned to the commit, a checkout always has exactly the art the code expects — there is no separate download/sync step and no stale-cache class of bugs.
 
 ## Troubleshooting
 
 - **Build fails with missing generated types** → Run the asset pipeline first
-- **Build fails with missing asset files after `git pull`** → Local asset cache is stale; re-run pipeline with `S3:UseLocalAssets: false` (see above)
-- **Missing meshes/textures** → Ensure `S3:UseLocalAssets` is `false` and S3 credentials are configured
+- **Pipeline fails with "Asset source directory does not exist"** → `Asset:SourceDirectory` is unset or wrong; set it in `appsettings.local.json` (see [Asset Source Configuration](#asset-source-configuration))
+- **Source art shows up as tiny text pointer files** → the working tree was fetched without LFS; run `git lfs pull`
 - **Shader compile error** → Check GLSL file naming (`<name>.<frag|vert|geom>.glsl`) and uniform syntax
 - **Layout parse error** → Validate XML; attribute values must be valid C# expressions

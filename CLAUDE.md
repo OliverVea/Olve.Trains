@@ -82,7 +82,7 @@ Stale documentation is worse than no documentation — it causes incorrect code 
 
 ### Asset Pipeline
 
-See the `asset-pipeline` skill for full reference. Short version: after modifying shaders/layouts or when S3 assets change, run `cd src/Olve.Trains.AssetPipeline && dotnet run`, then build, then run tests.
+See the `asset-pipeline` skill for full reference. Short version: after modifying shaders/layouts or the source art in `src/Olve.Trains/resources/assets/`, run `cd src/Olve.Trains.AssetPipeline && dotnet run`, then build, then run tests. Source art is committed via git LFS (no S3/download step).
 
 ## Package Management
 

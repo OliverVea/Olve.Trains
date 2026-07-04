@@ -216,7 +216,7 @@ CD is master-only — there are no PR checks.
 Pipeline shape (the production step produces the ArtifactBundle; processing steps run
 sequentially, list order is the gate):
 
-1. **build** (production) — fetch the repo, run the asset pipeline once (S3 read), `dotnet
+1. **build** (production) — `git clone` + `git lfs pull` the repo (source art lives in LFS), run the asset pipeline once, `dotnet
    publish` self-contained for both `linux-x64` and `win-x64` (`win-x64` cross-compiles from the
    Linux `dotnet/sdk:10.0` image), package a `.tar.gz` + `.zip` into the bundle. A single
    production step is deliberate — two parallel ones make the controller double-promote the
@@ -224,7 +224,7 @@ sequentially, list order is the gate):
 2. **test** (processing, gate) — `git clone` + `git lfs pull` for references, build Release, run
    `scripts/integration-test.sh --skip-build --windowing xvfb` headlessly. A failure stops
    publishing.
-3. **publish-s3** (processing) — reuse the asset AWS identity to create (if absent) and
+3. **publish-s3** (processing) — use the AWS identity to create (if absent) and
    upload the archives to the `olve-trains-dist` bucket under `releases/<version>/` and
    `releases/latest/`, logging a 7-day presigned URL per artifact. Runs first so the build is
    archived to our own storage before any external storefront.
@@ -233,9 +233,9 @@ sequentially, list order is the gate):
    append here as a fifth step.
 
 Secrets (`GITHUB_TOKEN`, `S3__Key`, `S3__Secret`, `ITCH_API_KEY`) are declared by name in
-`config.yaml`; values live in the pipeline's k8s secret. The S3 bucket/prefix come from the
-committed `appsettings.json`, and distribution reuses the asset AWS identity — so there is no
-separate dist credential. See the
+`config.yaml`; values live in the pipeline's k8s secret. Source art is committed via git LFS
+(no S3 asset bucket); `S3__Key`/`S3__Secret` serve only the `olve-trains-dist` release bucket.
+See the
 `ovea-olve-pipelines` skill for the service model and the binding/inspection API.
 
 Headless rendering in the test step uses `LIBGL_ALWAYS_SOFTWARE=1` + Xvfb virtual framebuffer.

@@ -39,7 +39,7 @@ The script ensures `uv` is installed, runs `uv sync` for Python deps, then forwa
 ### Full End-to-End Build & Test
 
 ```bash
-# 1. Run asset pipeline with S3 enabled
+# 1. Run asset pipeline (reads committed source art from resources/assets/)
 cd src/Olve.Trains.AssetPipeline && dotnet run
 
 # 2. Build Release
@@ -49,7 +49,7 @@ dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release
 bash scripts/integration-test.sh --skip-build
 ```
 
-If assets changed (new meshes/textures, S3 updates), regenerate references:
+If assets changed (new/updated source art in `resources/assets/`), regenerate references:
 
 ```bash
 bash scripts/integration-test.sh --skip-build --update-references  # regenerate
@@ -117,7 +117,7 @@ tests/integration/reference/
 
 Platform auto-detected. References are committed to git (LFS-tracked) and are the source of truth. CI validates against them.
 
-**If CI fails but local passes:** most likely cause is missing S3 assets — rerun the asset pipeline with `UseLocalAssets: false`.
+**If CI fails but local passes:** a likely cause is source art not resolved from LFS — ensure the working tree was fetched via `git clone` + `git lfs pull`, then rerun the asset pipeline.
 
 ### Screenshot Diff Artifacts
 
