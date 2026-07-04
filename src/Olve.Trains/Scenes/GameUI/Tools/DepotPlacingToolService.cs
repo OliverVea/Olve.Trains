@@ -48,10 +48,7 @@ public sealed class DepotPlacingToolService(
 
         if (keyboardManager.State.IsKeyPressed(Key.R))
         {
-            base.ToolState = base.ToolState with
-            {
-                CardinalDirection = base.ToolState.CardinalDirection.RotateCounterClockwise(),
-            };
+            ToolState = new PlacingState(CardinalDirection: ToolState.CardinalDirection.RotateCounterClockwise());
         }
 
         return Pass.Pass;
@@ -64,7 +61,7 @@ public sealed class DepotPlacingToolService(
             buildingPlacementToolService.Update(_previewId, s => s with
             {
                 Show = true,
-                Position = new BuildingPosition(tilePosition, base.ToolState.CardinalDirection),
+                Position = new BuildingPosition(tilePosition, ToolState.CardinalDirection),
             });
         }
         else
