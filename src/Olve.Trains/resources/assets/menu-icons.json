@@ -1,0 +1,49 @@
+{
+  "image": "menu-icons.png",
+  "width": 850,
+  "height": 842,
+  "sprites": {
+    "icon_delete": {
+      "x": 0,
+      "y": 0,
+      "w": 280,
+      "h": 280
+    },
+    "icon_forester": {
+      "x": 281,
+      "y": 0,
+      "w": 280,
+      "h": 280
+    },
+    "icon_house": {
+      "x": 562,
+      "y": 0,
+      "w": 280,
+      "h": 280
+    },
+    "icon_lumbermill": {
+      "x": 0,
+      "y": 281,
+      "w": 280,
+      "h": 280
+    },
+    "icon_station": {
+      "x": 281,
+      "y": 281,
+      "w": 288,
+      "h": 280
+    },
+    "icon_track": {
+      "x": 570,
+      "y": 281,
+      "w": 280,
+      "h": 280
+    },
+    "icon_train": {
+      "x": 0,
+      "y": 562,
+      "w": 280,
+      "h": 280
+    }
+  }
+}

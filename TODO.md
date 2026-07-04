@@ -30,8 +30,8 @@
 - [ ] Self-host storage epic (Tooling):
   - Description: Retire AWS S3 entirely. Source art (~4.3 MB fbx/png/ttf/tga/ora) moves into git LFS — pinned to each commit, which kills the stale-cache class of bugs and the committed AKIA read key. Build/release artifacts move to a self-hosted MinIO that the pipeline itself deploys (config stays the full source of truth, secrets excepted): one instance, a `olve-trains-beta` and a `olve-trains-prod` bucket. Part A and Part B are independent; A ships on its own.
   - Part A — Source assets → git LFS:
-    - [ ] Hydrate source art from S3 one last time and commit it under `src/Olve.Trains/resources/assets/` (next to `resources/shaders`, `resources/layouts`)
-    - [ ] Add scoped `.gitattributes` LFS rules for the source binary types (`resources/assets/**/*.{fbx,png,tga,ora,ttf}`) — scoped so they don't touch the existing reference-PNG rule or compiled outputs
+    - [x] Hydrate source art from S3 one last time and commit it under `src/Olve.Trains/resources/assets/` (next to `resources/shaders`, `resources/layouts`)
+    - [x] Add scoped `.gitattributes` LFS rules for the source binary types (`resources/assets/**/*.{fbx,png,tga,ora,ttf}`) — scoped so they don't touch the existing reference-PNG rule or compiled outputs
     - [ ] Repoint the pipeline to read source from the committed dir: drop the `DownloadAssets` S3 path, have `LoadLocalAssets` read `resources/assets/`, remove the asset-read half of `S3Options`/`appsettings.json`
     - [ ] Switch `.pipelines/scripts/build.sh` from the API-tarball fetch to `git clone --depth 1` + `git lfs install` + `git lfs pull` (mirror `test.sh`, which already does this for reference PNGs)
     - [ ] Update the `asset-pipeline` skill + `CLAUDE.md`: remove S3 asset-source docs and the entire "Stale Local Asset Cache" section (that bug class is gone)

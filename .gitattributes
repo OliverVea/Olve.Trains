@@ -1,1 +1,9 @@
 tests/integration/reference/**/*.png filter=lfs diff=lfs merge=lfs -text
+
+# Source art for the asset pipeline (compiled into src/Olve.Trains/assets/ at build time).
+# Committed via LFS and pinned to the commit; the pipeline reads these instead of downloading from S3.
+src/Olve.Trains/resources/assets/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+src/Olve.Trains/resources/assets/**/*.png filter=lfs diff=lfs merge=lfs -text
+src/Olve.Trains/resources/assets/**/*.tga filter=lfs diff=lfs merge=lfs -text
+src/Olve.Trains/resources/assets/**/*.ora filter=lfs diff=lfs merge=lfs -text
+src/Olve.Trains/resources/assets/**/*.ttf filter=lfs diff=lfs merge=lfs -text
