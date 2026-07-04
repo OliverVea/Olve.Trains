@@ -3,6 +3,11 @@
         <TargetFramework>net10.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <!-- TEMPORARY: ORES001 (Olve.Results "must observe result") is being adopted
+             incrementally across ~198 sites. Kept as a visible warning (not fatal) so the
+             tree stays green/runnable between migration batches. REMOVE this exemption once
+             the count hits zero so ORES001 becomes fatal again. -->
+        <WarningsNotAsErrors>$(WarningsNotAsErrors);ORES001</WarningsNotAsErrors>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
