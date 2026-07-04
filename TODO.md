@@ -36,10 +36,10 @@
     - [x] Switch `.pipelines/scripts/build.sh` from the API-tarball fetch to `git clone --depth 1` + `git lfs install` + `git lfs pull` (mirror `test.sh`, which already does this for reference PNGs)
     - [x] Update the `asset-pipeline` skill + `CLAUDE.md`: remove S3 asset-source docs and the entire "Stale Local Asset Cache" section (that bug class is gone)
   - Part B — Build artifacts → self-hosted MinIO:
-    - [ ] Add MinIO k8s manifests under `deploy/minio/` (StatefulSet + PVC + Service + Traefik IngressRoute), single instance, private (Traefik-internal), creds from a k8s secret
-    - [ ] Add an idempotent bootstrap step to `.pipelines/config.yaml` (`helm upgrade --install` / `kubectl apply`) that ensures MinIO before the publish steps
-    - [ ] Create the `olve-trains-beta` + `olve-trains-prod` buckets; rework `publish-s3.sh` → `publish-minio.sh` pointing awscli at the MinIO endpoint (`AWS_ENDPOINT_URL`, path-style); publish to beta then prod
-    - [ ] Repoint `test.sh` diff export to MinIO; swap `S3__Key`/`S3__Secret` → `MINIO__Key`/`MINIO__Secret` in `config.yaml`
+    - [x] Add MinIO k8s manifests under `deploy/minio/` (Deployment + PVC on `bulk` + ClusterIP Service), single instance in `olve-runners`, private (in-cluster only, no ingress), creds from an out-of-band k8s secret
+    - [x] Add an idempotent bootstrap step to `.pipelines/config.yaml` (`kubectl apply` over SSH to bulwark-m2) that ensures MinIO before the publish steps
+    - [x] Create the `olve-trains-beta` + `olve-trains-prod` buckets; rework `publish-s3.sh` → `publish-minio.sh` pointing awscli at the MinIO endpoint (path-style, no `LocationConstraint`); publish to beta then prod
+    - [x] Repoint `test.sh` diff export to MinIO; swap `S3__Key`/`S3__Secret` → `MINIO__Key`/`MINIO__Secret` in `config.yaml`
     - [ ] Retire AWS: delete both buckets, deactivate the AKIA key; add a backup story for the prod MinIO PVC
   - Later:
     - [ ] Expose the prod bucket publicly via a CDN with a private bucket origin (fills the existing `S3_DIST_PUBLIC_BASE` placeholder) — MinIO stays private, CDN is the only public read path and holds the origin credential

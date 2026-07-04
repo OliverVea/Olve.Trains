@@ -7,31 +7,35 @@
 #
 # Shape (example #4 from the Olve.Pipelines docs, adapted for .NET):
 #   production (parallel)  : build-linux | build-windows   -> bundle
-#   processing (sequential): test -> publish-itch -> publish-s3   (list order is the gate)
+#   processing (sequential): bootstrap-minio -> test -> publish-minio -> publish-itch
+#                            (list order is the gate)
 #
 # Secrets are declared by NAME only; values live in the pipeline's k8s secret
 # (olve-pipeline-{id}) and never in the repo. Every declared secret is mounted into
-# every job as an ordinary env var. The S3__* names match the .NET config keys the
-# asset pipeline reads (S3__Key -> S3:Key), so they inject with no extra mapping.
+# every job as an ordinary env var.
 apiVersion: "0.0"
 name: Olve.Trains
-description: Build (Linux + Windows), screenshot-test, then publish On Track To Grow to itch.io and S3.
+description: Build (Linux + Windows), screenshot-test, then publish On Track To Grow to self-hosted MinIO and itch.io.
 version: "1"
 
 secrets:
   - name: GITHUB_TOKEN
     description: GitHub read token; fetches the repo tarball/clone into each job.
-  # AWS credentials for the release/dist bucket only (publish-s3 + the test step's diff
-  # upload). The asset pipeline no longer uses these — source art is committed via git LFS
-  # and pulled during clone. (Part B of the self-host storage epic replaces these with
-  # MinIO credentials.)
-  - name: S3__Key
-    description: AWS access key for the release/dist bucket (publish-s3, test diff upload).
-  - name: S3__Secret
-    description: AWS secret key for the release/dist bucket.
+  # SSH key for oliver@bulwark-m2 — the bootstrap-minio step applies deploy/minio to the
+  # k3s cluster over SSH (the same host-deploy pattern the homelab apps use; kubectl runs
+  # on the host against its admin kubeconfig).
+  - name: SSH_PRIVATE_KEY
+    description: SSH key for bulwark-m2; bootstrap-minio applies deploy/minio via kubectl.
+  # Write credentials for the self-hosted MinIO dist store (publish-minio + the test step's
+  # diff upload). The script maps them to awscli's AWS_ACCESS_KEY_ID/SECRET. (Part B of the
+  # self-host storage epic — replaced the AWS S3__* credentials.)
+  - name: MINIO__Key
+    description: MinIO access key for the release/dist buckets (publish-minio, test diff upload).
+  - name: MINIO__Secret
+    description: MinIO secret key for the release/dist buckets.
   - name: ITCH_API_KEY
     description: butler API key (BUTLER_API_KEY) for pushing builds to itch.io.
-  # The publish-s3 step creates and writes its own dist bucket with the AWS identity above.
+  # The publish-minio step creates and writes its dist buckets with the MinIO identity above.
 
 # One production step builds BOTH platforms (and runs the asset pipeline once). This is
 # intentional: two parallel production steps make the controller promote the bundle twice,
@@ -47,10 +51,19 @@ productionSteps:
 
 # Processing steps run SEQUENTIALLY (list order). A failing step stops the chain, so the
 # screenshot test gates both publishes.
-# Order is the gate chain: archive to our own S3 first (fully automated, no external
-# dependency), then the storefronts. Steam (steamcmd) appends after publish-itch once
-# implemented. A failed step stops everything after it.
+# Order is the gate chain: ensure the MinIO dist store exists, then archive to it first
+# (fully automated, no external dependency), then the storefronts. Steam (steamcmd) appends
+# after publish-itch once implemented. A failed step stops everything after it.
 processingSteps:
+  # Ensure the self-hosted MinIO exists before anything writes to it. Idempotent kubectl
+  # apply of deploy/minio over SSH; NOT a second production step (that deadlocks the bundle).
+  - name: bootstrap-minio
+    configuration:
+      image: alpine:latest
+      scriptFile: scripts/bootstrap-minio.sh
+      environmentVariables:
+        REPO: OliverVea/Olve.Trains
+        BRANCH: master
   - name: test
     configuration:
       image: mcr.microsoft.com/dotnet/sdk:10.0
@@ -58,27 +71,24 @@ processingSteps:
       environmentVariables:
         REPO: OliverVea/Olve.Trains
         BRANCH: master
-        # On failure the step uploads diff/actual/baseline PNGs here (interim, in
-        # lieu of the VR app) and logs presigned URLs to inspect them.
-        S3_DIST_BUCKET: olve-trains-dist
-        S3_DIST_REGION: ap-southeast-2
-  - name: publish-s3
+        # On failure the step uploads diff/actual/baseline PNGs to the MinIO beta bucket
+        # (interim, in lieu of the VR app) so they can be inspected in-cluster.
+        MINIO_ENDPOINT: http://olve-trains-minio.olve-runners.svc.cluster.local:9000
+        MINIO_REGION: us-east-1
+        MINIO_DIFF_BUCKET: olve-trains-beta
+  - name: publish-minio
     configuration:
       image: debian:stable-slim
-      scriptFile: scripts/publish-s3.sh
+      scriptFile: scripts/publish-minio.sh
       environmentVariables:
-        # Bucket is created by the step (idempotent) using the asset AWS identity,
-        # in the same region/account as the asset bucket.
-        S3_DIST_BUCKET: olve-trains-dist
-        S3_DIST_PREFIX: releases
-        S3_DIST_REGION: ap-southeast-2
-        # ACLs are disabled on new AWS buckets by default, so the default share
-        # mechanism is a presigned URL (logged per build). Leave empty unless the
-        # bucket is configured for public objects; then a one-time bucket policy
-        # makes the stable URLs below truly public.
-        S3_DIST_ACL: ""
-        # Optional stable public base URL (e.g. https://dl.example.com); empty = log keys only.
-        S3_DIST_PUBLIC_BASE: ""
+        # In-cluster MinIO endpoint (path-style, region us-east-1). Buckets are created by
+        # the step if absent (idempotent). Release archives land under <prefix>/<version>/
+        # and <prefix>/latest/, in the beta bucket first, then prod.
+        MINIO_ENDPOINT: http://olve-trains-minio.olve-runners.svc.cluster.local:9000
+        MINIO_REGION: us-east-1
+        MINIO_PREFIX: releases
+        MINIO_BETA_BUCKET: olve-trains-beta
+        MINIO_PROD_BUCKET: olve-trains-prod
   - name: publish-itch
     configuration:
       image: debian:stable-slim

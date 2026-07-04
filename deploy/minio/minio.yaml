@@ -1,0 +1,129 @@
+# Olve.Trains release-artifact MinIO — a private, in-cluster, single-instance object
+# store for the distribution bucket(s). Deployed by this repo's own pipeline (the
+# bootstrap-minio processing step) via `kubectl apply` over SSH to bulwark-m2.
+#
+# Model: "per-pipeline storage" — each app that needs object storage runs its own MinIO
+# (Olve.Pipelines runs a separate, internal one for job bundles; the retired shared
+# minio.ovea.pro is gone). This instance is consumed ONLY by the Olve.Trains pipeline
+# jobs, in-cluster over plain HTTP — it is NOT exposed outside the cluster (no Ingress).
+# Public exposure (Cloudflare-fronted) is a deliberately deferred "Later" item.
+#
+# Endpoint (from the runner Jobs, incl. cross-namespace from olve-runners-beta):
+#   http://olve-trains-minio.olve-runners.svc.cluster.local:9000
+#
+# Manifest shape mirrors Olve.Pipelines' own lightweight MinIO (Deployment + PVC +
+# ClusterIP Service, RWO/Recreate) rather than the retired heavy Bitnami infra chart.
+#
+# PREREQUISITE (out-of-band, never committed): the root-credentials Secret must exist
+# before this applies. See deploy/minio/README.md. The buckets themselves are created
+# idempotently by publish-minio.sh, not here.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: olve-trains-minio
+  namespace: olve-runners
+  labels:
+    app: olve-trains-minio
+    olve.pro/owner: olve-trains
+spec:
+  replicas: 1
+  # RWO volume: never run two pods at once during a rollout.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: olve-trains-minio
+  template:
+    metadata:
+      labels:
+        app: olve-trains-minio
+        olve.pro/owner: olve-trains
+    spec:
+      containers:
+        - name: minio
+          # House-vetted pin (same tag Olve.Pipelines' own MinIO runs).
+          image: "minio/minio:RELEASE.2025-09-07T16-13-09Z"
+          imagePullPolicy: IfNotPresent
+          args: ["server", "/data", "--console-address", ":9090"]
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: olve-trains-minio-credentials
+                  key: root-user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: olve-trains-minio-credentials
+                  key: root-password
+          ports:
+            - name: api
+              containerPort: 9000
+            - name: console
+              containerPort: 9090
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: api
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: api
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: olve-trains-minio-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: olve-trains-minio-data
+  namespace: olve-runners
+  labels:
+    app: olve-trains-minio
+    olve.pro/owner: olve-trains
+spec:
+  accessModes: ["ReadWriteOnce"]
+  # `bulk` = the 8 Ti HDD tier (the disk freed by retiring the shared minio). Release
+  # archives accumulate (every version x 2 platforms), so they belong on bulk, not the
+  # system-disk local-path tier the pipeline's internal MinIO uses. `bulk` reclaim policy
+  # is Retain, so the data survives PV deletion.
+  storageClassName: bulk
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: olve-trains-minio
+  namespace: olve-runners
+  labels:
+    app: olve-trains-minio
+    olve.pro/owner: olve-trains
+spec:
+  # ClusterIP only — reachable in-cluster, nothing exposed externally. Only the S3 API
+  # port is published; the console (:9090) is intentionally not exposed (port-forward if
+  # ever needed for debugging).
+  type: ClusterIP
+  selector:
+    app: olve-trains-minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: api

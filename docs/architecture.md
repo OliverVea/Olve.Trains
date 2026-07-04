@@ -221,22 +221,26 @@ sequentially, list order is the gate):
    Linux `dotnet/sdk:10.0` image), package a `.tar.gz` + `.zip` into the bundle. A single
    production step is deliberate — two parallel ones make the controller double-promote the
    bundle and the duplicate test jobs deadlock by mutual supersession.
-2. **test** (processing, gate) — `git clone` + `git lfs pull` for references, build Release, run
+2. **bootstrap-minio** (processing) — idempotent `kubectl apply` of `deploy/minio/` over SSH to
+   `bulwark-m2`, ensuring the self-hosted release-artifact MinIO exists in `olve-runners` before
+   anything writes to it. It is a processing step, not a second production step (that deadlocks
+   the bundle). See `deploy/minio/README.md`.
+3. **test** (processing, gate) — `git clone` + `git lfs pull` for references, build Release, run
    `scripts/integration-test.sh --skip-build --windowing xvfb` headlessly. A failure stops
-   publishing.
-3. **publish-s3** (processing) — use the AWS identity to create (if absent) and
-   upload the archives to the `olve-trains-dist` bucket under `releases/<version>/` and
-   `releases/latest/`, logging a 7-day presigned URL per artifact. Runs first so the build is
-   archived to our own storage before any external storefront.
-4. **publish-itch** (processing) — `butler push` the Linux/Windows builds to itch.io
+   publishing (on failure it exports screenshot diffs to the MinIO `olve-trains-beta` bucket).
+4. **publish-minio** (processing) — point awscli at the in-cluster MinIO endpoint (path-style)
+   to create (if absent) and upload the archives to the `olve-trains-beta` then `olve-trains-prod`
+   buckets under `releases/<version>/` and `releases/latest/`. Runs before the storefronts so the
+   build is archived to our own storage first.
+5. **publish-itch** (processing) — `butler push` the Linux/Windows builds to itch.io
    (`cookiscuit/on-track-to-grow`, channels `:linux` / `:windows`). Steam (steamcmd) would
-   append here as a fifth step.
+   append here as a sixth step.
 
-Secrets (`GITHUB_TOKEN`, `S3__Key`, `S3__Secret`, `ITCH_API_KEY`) are declared by name in
-`config.yaml`; values live in the pipeline's k8s secret. Source art is committed via git LFS
-(no S3 asset bucket); `S3__Key`/`S3__Secret` serve only the `olve-trains-dist` release bucket.
-See the
-`ovea-olve-pipelines` skill for the service model and the binding/inspection API.
+Secrets (`GITHUB_TOKEN`, `SSH_PRIVATE_KEY`, `MINIO__Key`, `MINIO__Secret`, `ITCH_API_KEY`) are
+declared by name in `config.yaml`; values live in the pipeline's k8s secret. Source art is
+committed via git LFS (no S3 asset bucket); release/dist artifacts live in the self-hosted MinIO
+(`deploy/minio/`), an in-cluster, private, single-instance object store this pipeline deploys and
+owns. See the `ovea-olve-pipelines` skill for the service model and the binding/inspection API.
 
 Headless rendering in the test step uses `LIBGL_ALWAYS_SOFTWARE=1` + Xvfb virtual framebuffer.
 Reference screenshots are updated locally (`scripts/integration-test.sh --update-references`,
