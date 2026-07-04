@@ -3,6 +3,9 @@
     <Box id="StartGameButton" Style="ModalButtonStyle" Interactive="true">
         <Text Content='"Start Game"' Style="ModalButtonTextStyle" InheritParentState="true" />
     </Box>
+    <Box id="LoadGameButton" Style="ModalButtonStyle" Interactive="true">
+        <Text Content='"Load Game"' Style="ModalButtonTextStyle" InheritParentState="true" />
+    </Box>
     <Box id="OptionsButton" Style="ModalButtonStyle" Interactive="true">
         <Text Content='"Options"' Style="ModalButtonTextStyle" InheritParentState="true" />
     </Box>

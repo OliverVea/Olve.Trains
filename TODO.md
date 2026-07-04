@@ -93,7 +93,7 @@
   - [ ] Expand with building data (type + position — stations, depots, industries, residences auto-created via events)
   - [ ] Expand with train data (trains, wagons, cargo, positions, motion state, cargo transfer policies, train groups)
   - [ ] Expand with signal rules (OneOf types via JsonDerivedType discriminators; TODO: persist RoundRobin counter if needed)
-  - [ ] Add save/load UI (save button in burger menu, load from main menu)
+  - [x] Add save/load UI (save button in burger menu, load from main menu) — pulled ahead of the data-expansion steps above as an intentional vertical slice; targets the quicksave slot
 - [ ] CLI output epic (Tooling):
   - Description: Command output is currently raw JSON, which wastes tokens in agentic usage and is hard to read for humans. Add a `--nice` flag to all query/list commands that produces brief, scannable plain-text output optimized for both human and AI consumption. JSON remains the default for programmatic use.
   - [ ] Add `--nice` flag support to the command system (opt-in per command)

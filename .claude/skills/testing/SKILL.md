@@ -147,6 +147,7 @@ In CD (the Olve.Pipelines `test` step) a screenshot mismatch fails the step and 
 | `test_time_scale.py` | Functional | Day/time progression at various speeds |
 | `test_save_game.py` | Functional | `save-game` writes a faithful state snapshot to disk |
 | `test_load_game.py` | Functional | `load-game` rebuilds the game from a save (env objects restored by id, not regenerated) |
+| `test_save_load_ui.py` | Functional | Save/load UI: burger-menu Save/Load buttons and the main-menu Load button drive the quicksave slot |
 | `test_no_warnings.py` | Functional | No warnings/errors during startup |
 
 ## Unit Tests

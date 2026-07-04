@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
@@ -6,6 +7,7 @@ using Olve.Engine3D.GUI.Input;
 using Olve.Engine3D.GUI.Layout;
 using Olve.Engine3D.Scenes;
 using Olve.Generated.Layouts;
+using Olve.Trains.Saves;
 using Olve.Trains.Scenes.Loading;
 
 namespace Olve.Trains.Scenes.MainMenu;
@@ -14,7 +16,9 @@ public class MainMenuService(
     IServiceProvider serviceProvider,
     GuiElementService guiElementService,
     GuiActivationService guiActivationService,
-    GuiAnchorService guiAnchorService) : ISceneService
+    GuiAnchorService guiAnchorService,
+    SaveFileStore saveFileStore,
+    ILogger<MainMenuService> logger) : ISceneService
 {
     public int Priority => 100;
 
@@ -51,7 +55,12 @@ public class MainMenuService(
     {
         if (guiElementService.IsElementNodeId(message.NodeId, MainMenu.StartGameButton, _registrationId))
         {
-            TransitionToGame();
+            TransitionToGame(new LoadingSceneArguments());
+        }
+
+        if (guiElementService.IsElementNodeId(message.NodeId, MainMenu.LoadGameButton, _registrationId))
+        {
+            LoadQuicksave();
         }
 
         if (guiElementService.IsElementNodeId(message.NodeId, MainMenu.ExitGameButton, _registrationId))
@@ -61,7 +70,26 @@ public class MainMenuService(
         }
     }
 
-    private Result TransitionToGame()
+    private void LoadQuicksave()
+    {
+        // GameLogicScene (and its load-game command handler) is not loaded at the main menu, so resolve the
+        // quicksave directly and route through the loading scene the same way Start Game does.
+        if (saveFileStore.ResolvePath(SaveKind.Quicksave, "quicksave").TryPickProblems(out var problems, out var path))
+        {
+            logger.LogWarning("Could not resolve quicksave path: {Problems}", problems);
+            return;
+        }
+
+        if (!path.Exists())
+        {
+            logger.LogWarning("No quicksave to load at '{Path}'.", path.Path);
+            return;
+        }
+
+        TransitionToGame(new LoadingSceneArguments(path.Path));
+    }
+
+    private Result TransitionToGame(LoadingSceneArguments arguments)
     {
         var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
 
@@ -71,6 +99,6 @@ public class MainMenuService(
             return problems;
         }
 
-        return sceneManager.LoadAndActivateScene(SceneIds.LoadingScene, SceneIds.LoadingScene, new LoadingSceneArguments());
+        return sceneManager.LoadAndActivateScene(SceneIds.LoadingScene, SceneIds.LoadingScene, arguments);
     }
 }

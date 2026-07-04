@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Commands;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.GUI.Elements;
 using Olve.Engine3D.GUI.Input;
@@ -12,7 +14,8 @@ public class BurgerMenuService(
     IServiceProvider serviceProvider,
     GuiElementService guiElementService,
     GuiActivationService guiActivationService,
-    GuiAnchorService guiAnchorService) : ISceneService
+    GuiAnchorService guiAnchorService,
+    ILogger<BurgerMenuService> logger) : ISceneService
 {
     private static readonly Layouts.BurgerMenu BurgerMenu = Layouts.BuildBurgerMenu();
 
@@ -84,7 +87,30 @@ public class BurgerMenuService(
             CloseMenu();
             TransitionToMainMenu();
         }
-        // SaveGameButton, LoadGameButton, OptionsButton — noop for now
+        else if (NodeIdMatches(BurgerMenu.SaveGameButton, message.NodeId))
+        {
+            // Snapshot the running game into the quicksave slot, then return to gameplay.
+            RunGameCommand("save-game kind=quicksave");
+            CloseMenu();
+        }
+        else if (NodeIdMatches(BurgerMenu.LoadGameButton, message.NodeId))
+        {
+            // Tears down the running game and re-enters through the loading scene. On success this unloads
+            // the GameUIScene (and this menu); on failure (e.g. no quicksave yet) the session stays intact.
+            RunGameCommand("load-game kind=quicksave");
+        }
+        // OptionsButton — noop for now
+    }
+
+    private void RunGameCommand(string command)
+    {
+        // Run through the command system so the save/load handlers execute in the GameLogicScene scope and
+        // the action is logged like any other command.
+        var commandRunner = serviceProvider.GetRequiredService<CommandRunner>();
+        if (commandRunner.Run(new RunCommandRequest(command)).TryPickProblems(out var problems))
+        {
+            logger.LogWarning("Command '{Command}' failed: {Problems}", command, problems);
+        }
     }
 
     private bool NodeIdMatches(GuiElement guiElement, Id<GuiNode> nodeId)
