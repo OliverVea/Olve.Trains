@@ -4,7 +4,7 @@ using Olve.Paths.Glob;
 namespace Olve.Trains.AssetPipeline.Assets;
 
 /// <summary>
-///    Loads assets from the local build directory instead of downloading from S3
+///    Loads source art from the committed asset source directory (tracked via git LFS)
 /// </summary>
 public class LoadLocalAssets(ILogger<LoadLocalAssets> logger, PathProvider pathProvider)
 {
@@ -13,22 +13,20 @@ public class LoadLocalAssets(ILogger<LoadLocalAssets> logger, PathProvider pathP
 
     public async Task<Result<Response>> ExecuteAsync(Request request, CancellationToken ct = default)
     {
-        logger.LogDebug("Loading assets from local build directory");
+        logger.LogDebug("Loading source art from the asset source directory");
 
-        var buildPath = pathProvider.BuildS3CachePath;
+        var sourcePath = pathProvider.AssetsSourceFolder;
 
-        if (!buildPath.Exists())
+        if (!sourcePath.Exists())
         {
-            logger.LogWarning("Build directory does not exist: {BuildPath}. Creating empty directory.", buildPath);
-            buildPath.EnsurePathExists();
-            return new Response([]);
+            return new ResultProblem("Asset source directory does not exist: {0}", sourcePath);
         }
 
-        // Find all files in the build directory
-        var hasFiles = buildPath.TryGlob("**/*", out var paths);
+        // Find all files in the source directory
+        var hasFiles = sourcePath.TryGlob("**/*", out var paths);
         if (!hasFiles)
         {
-            logger.LogWarning("No files found in build directory: {BuildPath}", buildPath);
+            logger.LogWarning("No files found in asset source directory: {SourcePath}", sourcePath);
             return new Response([]);
         }
 
@@ -38,11 +36,11 @@ public class LoadLocalAssets(ILogger<LoadLocalAssets> logger, PathProvider pathP
             .Where(f => f.Exists) ?? [])
             .ToList();
 
-        logger.LogInformation("Loaded {FileCount} file(s) from build directory: {BuildPath}", files.Count, buildPath);
+        logger.LogInformation("Loaded {FileCount} source file(s) from: {SourcePath}", files.Count, sourcePath);
 
         foreach (var file in files)
         {
-            logger.LogDebug("Found local asset: {FileName}", file.Name);
+            logger.LogDebug("Found source asset: {FileName}", file.Name);
         }
 
         return new Response(files);

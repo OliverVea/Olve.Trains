@@ -32,7 +32,7 @@
   - Part A — Source assets → git LFS:
     - [x] Hydrate source art from S3 one last time and commit it under `src/Olve.Trains/resources/assets/` (next to `resources/shaders`, `resources/layouts`)
     - [x] Add scoped `.gitattributes` LFS rules for the source binary types (`resources/assets/**/*.{fbx,png,tga,ora,ttf}`) — scoped so they don't touch the existing reference-PNG rule or compiled outputs
-    - [ ] Repoint the pipeline to read source from the committed dir: drop the `DownloadAssets` S3 path, have `LoadLocalAssets` read `resources/assets/`, remove the asset-read half of `S3Options`/`appsettings.json`
+    - [x] Repoint the pipeline to read source from the committed dir: drop the `DownloadAssets` S3 path, have `LoadLocalAssets` read `resources/assets/`, remove the asset-read half of `S3Options`/`appsettings.json`
     - [ ] Switch `.pipelines/scripts/build.sh` from the API-tarball fetch to `git clone --depth 1` + `git lfs install` + `git lfs pull` (mirror `test.sh`, which already does this for reference PNGs)
     - [ ] Update the `asset-pipeline` skill + `CLAUDE.md`: remove S3 asset-source docs and the entire "Stale Local Asset Cache" section (that bug class is gone)
   - Part B — Build artifacts → self-hosted MinIO:

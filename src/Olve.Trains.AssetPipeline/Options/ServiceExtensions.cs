@@ -8,11 +8,11 @@ public static class ServiceExtensions
     public static IServiceCollection AddAssetPipelineConfiguration(this IServiceCollection services,
         IConfiguration configuration)
     {
+        AddOptions<AssetOptions>(services, configuration);
         AddOptions<BuildOptions>(services, configuration);
         AddOptions<LayoutOptions>(services, configuration);
         AddOptions<FontOptions>(services, configuration);
         AddOptions<MeshOptions>(services, configuration);
-        AddOptions<S3Options>(services, configuration);
         AddOptions<ShaderOptions>(services, configuration);
         AddOptions<TerrainOptions>(services, configuration);
         AddOptions<TextureOptions>(services, configuration);

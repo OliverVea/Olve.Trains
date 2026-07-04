@@ -4,6 +4,7 @@ using Olve.Trains.AssetPipeline.Options;
 namespace Olve.Trains.AssetPipeline;
 
 public class PathProvider(
+    IOptions<AssetOptions> assetOptions,
     IOptions<BuildOptions> buildOptions,
     IOptions<MeshOptions> meshOptions,
     IOptions<TextureOptions> textureOptions,
@@ -15,11 +16,15 @@ public class PathProvider(
 {
     // AKA Temp
     public IPath BuildPath => Paths.Path.Create(buildOptions.Value.BuildDirectory);
-    public IPath BuildS3CachePath => BuildPath / "s3-cache";
     public IPath BuildGeneratedPath => BuildPath / "generated";
     public IPath BuildGeneratedFontsPath => BuildGeneratedPath / "fonts";
 
     public IPath OutputPath => Paths.Path.Create(buildOptions.Value.OutputDirectory ?? throw new InvalidOperationException("Output directory not set"));
+
+    public IPath AssetsSourceFolder => Paths.Path.Create(
+        string.IsNullOrWhiteSpace(assetOptions.Value.SourceDirectory)
+            ? throw new InvalidOperationException("AssetOptions.SourceDirectory must be configured when an asset target is enabled.")
+            : assetOptions.Value.SourceDirectory);
 
     public IPath ShadersSourceFolder => Paths.Path.Create(
         string.IsNullOrWhiteSpace(shaderOptions.Value.ShadersDirectory)

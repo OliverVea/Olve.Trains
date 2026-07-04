@@ -44,7 +44,6 @@ serviceCollection.AddLogging(builder =>
 });
 
 serviceCollection.AddTransient<RunAssetPipeline>();
-serviceCollection.AddTransient<DownloadAssets>();
 serviceCollection.AddTransient<LoadLocalAssets>();
 serviceCollection.AddTransient<PathProvider>();
 serviceCollection.AddTransient<NamespaceProvider>();
@@ -83,14 +82,12 @@ logger.LogInformation("--------------------------------------");
 CancellationTokenSource cts = new();
 
 var buildOptions = serviceProvider.GetRequiredService<IOptions<BuildOptions>>();
-var s3Options = serviceProvider.GetRequiredService<IOptions<S3Options>>();
 
 var targets = buildOptions.Value.Targets
     .Select(Enum.Parse<BuildTargets>)
     .Aggregate(BuildTargets.None, (a,b) => a | b);
-var timeout = TimeSpan.FromMilliseconds(s3Options.Value.TimeoutMs);
 
-var result = await runAssetPipeline.ExecuteAsync(new(targets, timeout, s3Options.Value.AllowFailure), cts.Token);
+var result = await runAssetPipeline.ExecuteAsync(new(targets), cts.Token);
 if (result.TryPickProblems(out var mainProblems))
 {
     logger.Log(mainProblems);
