@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Commands;
+using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Events;
 using Olve.Engine3D.GUI;
 using Olve.Engine3D.Input;
@@ -51,6 +52,7 @@ public static class GameServiceRegistration
         // Engine infrastructure (singletons - shared across all scopes)
         services.AddSingleton<GameManager>();
         services.AddSingleton<SceneManager>();
+        services.AddSingleton<FaultLogger>();
         services.AddSingleton<KeyboardManager>();
         services.AddSingleton<MouseManager>();
         services.AddSingleton<DeltaTimeService>();

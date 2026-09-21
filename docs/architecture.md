@@ -144,7 +144,8 @@ renderingInstanceManager.Remove(groupId, instanceId);
 - **DI scoping**: root scenes create a new `IServiceScope`; child scenes share parent's scope
 - **Lifecycle**: `Unloaded → Inactive → Active → Inactive → Unloaded`
 - **Service ordering**: by `Priority` (ascending). `SceneServicePriority.FromDependencies(...)` / `FromDependents(...)`
-- **State guard**: `Update()` and `Render()` check `State == Active` before each service — if a service unloads the scene mid-iteration, remaining services are skipped
+- **State guard**: `Input()`, `Update()` and `Render()` check `State == Active` before each service — if a service unloads the scene mid-iteration, remaining services are skipped
+- **Problem containment**: a service's non-critical problem from `Input`/`Update`/`Render` is logged once per failure streak (`FaultLogger`) and the other services keep running; only critical problems (`Severity >= ProblemSeverities.Critical`) reach `GameManager`, which logs them and stops the game
 - **`EventSceneService<T>`**: bridges events to scene lifecycle — subscribes on load, queues, processes on update, unsubscribes on unload
 
 **Service registration**: `AddSceneService<T>(sceneId)` / `AddEventSceneService(...)`

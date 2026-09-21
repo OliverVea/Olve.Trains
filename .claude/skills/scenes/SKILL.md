@@ -76,6 +76,8 @@ new SceneDefinition(SceneIds.GameUIScene, "UIScene", LayerOrder: 2,
 
 **Each frame (active scenes only):** `Input()` → `Update()` → `Render()`, all in priority order
 
+**Problems returned during a frame:** a service's non-critical problem is logged and the frame continues — the remaining services still run, and a faulting `Input()` counts as `Pass.Pass`. The fault is logged once when the service starts failing (`FaultLogger`, `Olve.Engine3D/Diagnostics/`); repeats are suppressed until it succeeds again, which logs the number of failed frames. Only problems with `Severity >= ProblemSeverities.Critical` (checked with `problems.AnyCritical()`) propagate to `GameManager`, which logs them at critical level and stops the game. Exceptions are not caught. `Load`/`Unload` call every service and return all of their problems to the caller.
+
 **Unloading:** Call `Unload()` in reverse priority order → dispose scope if root → state becomes `Unloaded`
 
 ### SceneState

@@ -1,18 +1,20 @@
-using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Olve.Engine3D.Diagnostics;
 using Olve.Utilities.Ids;
 
 namespace Olve.Engine3D.Scenes;
 
 public sealed class Scene(
     ILogger<Scene> logger,
-    IEnumerable<ISceneService> sceneServices,
+    FaultLogger faultLogger,
+    IReadOnlyList<ISceneService> sceneServices,
     Id<IScene> sceneId,
     string name,
     int layerOrder = 0) : IScene
 {
-    private readonly ISceneService[] _sceneServices = sceneServices.OrderBy(x => x.Priority).ToArray();
-    private readonly Result[] _serviceResults = new Result[sceneServices.Count()];
+    private const string CriticalProblemMessage = "Critical problem in {0}";
+
+    private readonly ServiceEntry[] _services = CreateEntries(sceneServices, name);
 
     public Id<IScene> Id { get; } = sceneId;
     public int LayerOrder { get; } = layerOrder;
@@ -25,13 +27,7 @@ public sealed class Scene(
     {
         logger.LogDebug("Loading scene: {SceneName}", name);
 
-        for (var i = 0; i < _sceneServices.Length; i++)
-        {
-            logger.LogDebug("Loading service {Service}", _sceneServices[i].GetType().Name);
-            _serviceResults[i] = _sceneServices[i].Load();
-        }
-
-        if (_serviceResults.TryPickProblems(out var problems))
+        if (RunAllServices(nameof(ISceneService.Load), s => s.Load()).TryPickProblems(out var problems))
         {
             return problems;
         }
@@ -41,78 +37,73 @@ public sealed class Scene(
         return Result.Success();
     }
 
-    public Result Unload()
+    public Result Unload() => RunAllServices(nameof(ISceneService.Unload), s => s.Unload());
+
+    public Result<Pass> Input() => RunActiveServices(e => e.InputSource, s => s.Input());
+
+    public Result Update() => RunActiveServices(e => e.UpdateSource, s => s.Update().WithValueOnSuccess(Pass.Pass)).ToEmptyResult();
+
+    public Result Render() => RunActiveServices(e => e.RenderSource, s => s.Render().WithValueOnSuccess(Pass.Pass)).ToEmptyResult();
+
+    private Result RunAllServices(string phase, Func<ISceneService, Result> call)
     {
-        for (var i = 0; i < _sceneServices.Length; i++)
+        var results = _services.Select(entry =>
         {
-            logger.LogDebug("Unloading service {Service}", _sceneServices[i].GetType().Name);
-            _serviceResults[i] = _sceneServices[i].Unload();
-        }
+            logger.LogDebug("{Phase} service {Service}", phase, entry.Service.GetType().Name);
+            return call(entry.Service);
+        }).ToArray();
 
-        if (_serviceResults.TryPickProblems(out var problems))
-        {
-            return problems;
-        }
-
-        return Result.Success();
+        return results.TryPickProblems(out var problems) ? problems : Result.Success();
     }
 
-    public Result<Pass> Input()
+    private Result<Pass> RunActiveServices(Func<ServiceEntry, string> sourceOf, Func<ISceneService, Result<Pass>> call)
     {
-        foreach (var sceneService in _sceneServices)
+        foreach (var entry in _services)
         {
-            var result = sceneService.Input();
-            if (result.TryPickProblems(out var problems, out var pass))
+            if (State != SceneState.Active)
             {
-                return problems;
+                break;
             }
 
-            if (pass != Pass.Pass)
+            var source = sourceOf(entry);
+            if (call(entry.Service).TryPickProblems(out var problems, out var pass))
             {
-                return Result<Pass>.Success(pass);
+                if (problems.AnyCritical())
+                {
+                    return problems.Prepend(CriticalProblemMessage, source);
+                }
+
+                faultLogger.LogFault(source, problems);
+                continue;
+            }
+
+            faultLogger.LogSuccess(source);
+
+            if (pass == Pass.Block)
+            {
+                return Result<Pass>.Success(Pass.Block);
             }
         }
 
         return Result<Pass>.Success(Pass.Pass);
     }
 
-    public Result Update()
-    {
-        for (var i = 0; i < _sceneServices.Length; i++)
-        {
-            if (State != SceneState.Active)
-            {
-                break;
-            }
+    private static ServiceEntry[] CreateEntries(IReadOnlyList<ISceneService> services, string sceneName) =>
+        services
+            .OrderBy(x => x.Priority)
+            .Select(service => new ServiceEntry(
+                service,
+                SourceName(service, sceneName, nameof(ISceneService.Input)),
+                SourceName(service, sceneName, nameof(ISceneService.Update)),
+                SourceName(service, sceneName, nameof(ISceneService.Render))))
+            .ToArray();
 
-            _serviceResults[i] = _sceneServices[i].Update();
-        }
+    private static string SourceName(ISceneService service, string sceneName, string phase) =>
+        $"{service.GetType().Name}.{phase} (scene '{sceneName}')";
 
-        if (_serviceResults.TryPickProblems(out var problems))
-        {
-            return problems;
-        }
-
-        return Result.Success();
-    }
-
-    public Result Render()
-    {
-        for (var i = 0; i < _sceneServices.Length; i++)
-        {
-            if (State != SceneState.Active)
-            {
-                break;
-            }
-
-            _serviceResults[i] = _sceneServices[i].Render();
-        }
-
-        if (_serviceResults.TryPickProblems(out var problems))
-        {
-            return problems;
-        }
-
-        return Result.Success();
-    }
+    private readonly record struct ServiceEntry(
+        ISceneService Service,
+        string InputSource,
+        string UpdateSource,
+        string RenderSource);
 }

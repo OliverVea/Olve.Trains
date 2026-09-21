@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Events;
@@ -25,11 +26,16 @@ public class GameManager(
     DeltaTimeService deltaTimeService,
     AfterRenderEvent afterRenderEvent,
     GameClosingEvent gameClosingEvent,
+    ILogger<GameManager> logger,
+    FaultLogger faultLogger,
     CommandPipeServer? commandPipeServer = null)
 {
     private Result _result = Result.Success();
     private Id<IScene> _initialScene;
     private readonly Stopwatch _frameSw = new();
+    private const string UpdateSource = $"{nameof(GameManager)}.{nameof(Update)}";
+    private const string RenderSource = $"{nameof(GameManager)}.{nameof(Render)}";
+
     private bool MetricsEnabled => EngineMetrics.IsEnabled;
 
     public Result Run(Id<IScene> initialScene)
@@ -97,11 +103,7 @@ public class GameManager(
 
         deltaTimeService.SetFrameDelta(deltaTime);
 
-        if (Update().TryPickProblems(out var problems))
-        {
-            _result = problems;
-            Stop();
-        }
+        ParseFrameResult(Update(), UpdateSource);
     }
 
     private Result Update()
@@ -151,11 +153,7 @@ public class GameManager(
 
     private void OnRender(TimeSpan deltaTime)
     {
-        if (Render().TryPickProblems(out var problems))
-        {
-            _result = problems;
-            Stop();
-        }
+        ParseFrameResult(Render(), RenderSource);
 
         if (MetricsEnabled)
         {
@@ -178,6 +176,31 @@ public class GameManager(
         }
 
         return result;
+    }
+
+    private void ParseFrameResult(Result result, string source)
+    {
+        if (!result.TryPickProblems(out var problems))
+        {
+            faultLogger.LogSuccess(source);
+            return;
+        }
+
+        if (problems.AnyCritical())
+        {
+            StopOnCriticalProblem(problems);
+            return;
+        }
+
+        faultLogger.LogFault(source, problems);
+    }
+
+    private void StopOnCriticalProblem(ResultProblemCollection problems)
+    {
+        logger.LogCritical("Critical problem in the frame loop; stopping the game:{NewLine}{Problems}",
+            Environment.NewLine, string.Join(Environment.NewLine, problems.Select(p => p.ToDebugString())));
+        _result = problems;
+        Stop();
     }
 
     private void OnClose()

@@ -11,6 +11,7 @@ public class SceneManager(
     IServiceProvider rootProvider,
     IEnumerable<SceneDefinition> definitions,
     SceneScopeAccessor sceneScopeAccessor,
+    FaultLogger faultLogger,
     ILoggerFactory loggerFactory)
 {
     private readonly ILogger<SceneManager> _logger = loggerFactory.CreateLogger<SceneManager>();
@@ -19,13 +20,11 @@ public class SceneManager(
     private readonly Dictionary<Id<IScene>, SceneDefinition> _definitions =
         definitions.ToDictionary(d => d.Id);
 
-    // Loaded scene tracking
     private readonly Dictionary<Id<IScene>, IScene> _loadedScenes = new();
     private readonly Dictionary<Id<IScene>, List<Id<IScene>>> _children = new();
 
-    // Scope tracking: root scene ID -> scope
     private readonly Dictionary<Id<IScene>, IServiceScope> _scopes = new();
-    private readonly Dictionary<Id<IScene>, Id<IScene>> _scopeOwner = new(); // scene -> root scene
+    private readonly Dictionary<Id<IScene>, Id<IScene>> _scopeOwner = new();
 
     private readonly Dictionary<Id<IScene>, object> _sceneParameters = new();
 
@@ -40,10 +39,9 @@ public class SceneManager(
 
         if (_loadedScenes.ContainsKey(sceneId))
         {
-            return Result.Success(); // already loaded
+            return Result.Success();
         }
 
-        // If has parent and parent not loaded, load parent first
         if (definition.ParentId is { } parentId && !_loadedScenes.ContainsKey(parentId))
         {
             var parentResult = LoadScene(parentId);
@@ -53,18 +51,15 @@ public class SceneManager(
             }
         }
 
-        // Get or create scope
         IServiceScope scope;
         Id<IScene> rootId;
         if (definition.ParentId is { } pid && _scopeOwner.TryGetValue(pid, out var existingRoot))
         {
-            // Child scene: reuse parent's scope
             rootId = existingRoot;
             scope = _scopes[rootId];
         }
         else if (definition.ParentId is null)
         {
-            // Root scene: create new scope
             rootId = sceneId;
             scope = rootProvider.CreateScope();
             _scopes[rootId] = scope;
@@ -78,9 +73,9 @@ public class SceneManager(
 
         // Resolve scene services from the scope
         var sp = scope.ServiceProvider;
-        var sceneServices = sp.GetKeyedServices<ISceneService>(sceneId);
+        var sceneServices = sp.GetKeyedServices<ISceneService>(sceneId).ToArray();
 
-        var scene = new Scene(_sceneLogger, sceneServices, sceneId, definition.Name, definition.LayerOrder);
+        var scene = new Scene(_sceneLogger, faultLogger, sceneServices, sceneId, definition.Name, definition.LayerOrder);
 
         _logger.LogDebug("Loading scene '{SceneName}' (id: {SceneId})", definition.Name, sceneId);
 
@@ -164,9 +159,9 @@ public class SceneManager(
 
         var scope = rootProvider.CreateScope();
         var sp = scope.ServiceProvider;
-        var sceneServices = sp.GetKeyedServices<ISceneService>(sceneId);
+        var sceneServices = sp.GetKeyedServices<ISceneService>(sceneId).ToArray();
 
-        var scene = new Scene(_sceneLogger, sceneServices, sceneId, definition.Name, definition.LayerOrder);
+        var scene = new Scene(_sceneLogger, faultLogger, sceneServices, sceneId, definition.Name, definition.LayerOrder);
 
         _logger.LogDebug("Preparing scene '{SceneName}' (id: {SceneId}) off-thread", definition.Name, sceneId);
 
@@ -427,7 +422,7 @@ public class SceneManager(
             var inputResult = scene.Input();
             if (inputResult.TryPickProblems(out var problems, out var passInput))
             {
-                return problems.Prepend("Got problem while updating scene input for scene '{0}'", scene.Id);
+                return problems;
             }
 
             if (passInput == Pass.Block)
@@ -453,7 +448,7 @@ public class SceneManager(
             var updateResult = scene.Update();
             if (updateResult.TryPickProblems(out var problems))
             {
-                return problems.Prepend("Got problem while updating scene for scene '{0}'", scene.Id);
+                return problems;
             }
 
             if (sw is not null)
@@ -481,7 +476,7 @@ public class SceneManager(
             var renderResult = scene.Render();
             if (renderResult.TryPickProblems(out var problems))
             {
-                return problems.Prepend("Got problem while rendering scene for scene '{0}'", scene.Id);
+                return problems;
             }
 
             if (sw is not null)
@@ -500,7 +495,6 @@ public class SceneManager(
 
     public void Close()
     {
-        // Unload all root scenes (cascading to children)
         var rootSceneIds = _loadedScenes.Keys
             .Where(id => _definitions.TryGetValue(id, out var def) && def.ParentId is null)
             .ToArray();
