@@ -29,7 +29,10 @@ bash scripts/integration-test.sh --skip-build
 # Windows
 bash scripts/integration-test.sh --windowing native
 
-# Unit tests
+# Unit tests (all projects; global.json opts dotnet test into Microsoft.Testing.Platform)
+dotnet test
+
+# Unit tests (single project)
 dotnet run --project tests/Olve.Engine3D.Tests/Olve.Engine3D.Tests.csproj   # engine
 dotnet run --project tests/Olve.Trains.Tests/Olve.Trains.Tests.csproj        # game (save serialization, etc.)
 ```

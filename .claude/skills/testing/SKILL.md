@@ -155,6 +155,9 @@ In CD (the Olve.Pipelines `test` step) a screenshot mismatch fails the step and 
 **Framework:** TUnit
 
 ```bash
+# All unit test projects
+dotnet test
+
 # Engine tests (GUI, layout, splines)
 dotnet run --project tests/Olve.Engine3D.Tests/Olve.Engine3D.Tests.csproj
 
@@ -162,6 +165,6 @@ dotnet run --project tests/Olve.Engine3D.Tests/Olve.Engine3D.Tests.csproj
 dotnet run --project tests/Olve.Trains.Tests/Olve.Trains.Tests.csproj
 ```
 
-`tests/Olve.Engine3D.Tests/` covers the engine, organized by component (Animation, Checkbox, Layout, RadioButton, Slider). `tests/Olve.Trains.Tests/` covers game-specific logic that needs the `Olve.Trains` assembly. Both use standard TUnit assertions with DI (ServiceCollection).
+`tests/Olve.Engine3D.Tests/` covers the engine, organized by component (Animation, Checkbox, Layout, RadioButton, Slider). `tests/Olve.Trains.Tests/` covers game-specific logic that needs the `Olve.Trains` assembly. Both use standard TUnit assertions with DI (ServiceCollection). TUnit runs on Microsoft.Testing.Platform; the root `global.json` sets `test.runner` to `Microsoft.Testing.Platform`, which `dotnet test` requires on the .NET 10 SDK.
 
 **Golden-file tests** (e.g. save serialization): a checked-in golden JSON is the breaking-change alarm. `ReadGolden()` seeds the file on first run (test fails with a "seeded, re-run" message), then compares on every run after. To intentionally change a serialization format, delete the golden, re-run to reseed, inspect the diff, and bump the schema version if the wire format changed.
