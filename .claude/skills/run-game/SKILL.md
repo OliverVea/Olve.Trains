@@ -212,6 +212,15 @@ game.stop()    # send exit → terminate process
 | `game.click(x, y)` | `CommandResult` | Simulate click at screen position |
 | `game.raycast(x, y)` | `list[RaycastHit]` | Raycast from screen position |
 
+### Driving placement tools via clicks (headless gotchas)
+
+Placing through a tool (e.g. "Place Tracks") with `click`/`set-mouse` is finicky in headless/stepped mode:
+
+- **Settle the mouse before clicking.** A bare `click pos=x,y` reads a *stale* terrain ray, so the placement lands on the wrong (or a repeated) tile. Do `set-mouse pos=x,y` → `step(3)` → `click pos=x,y` → `step(3)` so the raycast resolves to the intended tile first.
+- **Positions are normalized screen coords (-1..1), the camera is 45° isometric.** World axes run diagonally on screen, so screen-x/-y each move *both* world X and Z. Don't assume screen-vertical == world North.
+- **The track tool has a fixed direction (default North/+Z).** Two clicks only form a valid track when their tiles align with that direction; an unaligned pair is silently rejected (curvature too high) and nothing places. There is no command to rotate the tool (the `R` key isn't scriptable), so pick click coords whose tiles are North–South aligned. `scripts/replays/verify-cant-afford-crashfix.py` is a worked example (finds tiles `(14,4)`→`(14,44)`).
+- **Debug logs go to a file forced to Information** by the test harness. To see `dbug:` lines (e.g. the tool's "Set start of track placement"), set `os.environ["Logging__Console__LogLevel__Default"]="Debug"` before `game.start()` and read `game._read_log_since_mark()`.
+
 ### Log assertions (for testing)
 
 ```python

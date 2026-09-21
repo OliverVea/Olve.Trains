@@ -131,7 +131,15 @@ public sealed class TrackPlacingToolService(ILogger<TrackPlacingToolService> log
         UnregisterGhost();
         clearancePreviewService.ClearPreview();
         ToolState = ToolState with { From = null };
-        return trackPlacingService.PlaceTrack(f, trackEndpoint).ToEmptyResult();
+
+        // A failed placement (e.g. can't afford, invalid) is a normal player outcome — log at
+        // info and move on. Never propagate a discretionary player action into the frame loop.
+        if (trackPlacingService.PlaceTrack(f, trackEndpoint).TryPickProblems(out var problems))
+        {
+            logger.LogInformation("Could not place track: {Problems}", problems);
+        }
+
+        return Result.Success();
     }
 
     private Result UpdateGhost(Vector3D<float> mousePosition)
