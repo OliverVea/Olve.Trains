@@ -52,7 +52,7 @@ GameLogicScene (root, LayerOrder 0)
       └── GameUIScene (child, LayerOrder 2)
 ```
 
-**Scene flow:** MainMenu → LoadingScene → GameLogicScene (via async task). LoadingScene shows a loading indicator, runs a background task, and auto-transitions to the game when complete. On the background thread the task: (1) pre-warms the CPU asset caches via `AssetPrewarmService` (loads every `Meshes.All` / `Textures.All` entry into the singleton mesh/texture managers); (2) builds the `GameSceneArguments`; (3) calls `SceneManager.PrepareScene(GameLogicScene, args)` — DI scope creation, the parameter service, and every GameLogicScene service `Load()` (all CPU-only, no GPU/GL). When the task completes, the main thread calls `SceneManager.CommitPreparedScene(...)` to register the loaded GameLogicScene, then `LoadAndActivateScene(GameUIScene)` to load the GPU scenes (GameRenderingScene/GameUIScene reuse the GameLogicScene scope and do their shader/framebuffer/buffer work on the main thread where the GL context lives). Return-to-main-menu goes directly Game → MainMenu (no loading screen).
+**Scene flow:** MainMenu → LoadingScene → GameLogicScene. LoadingScene shows a loading indicator while a background task pre-warms the CPU asset caches via `AssetPrewarmService` (loads every `Meshes.All` / `Textures.All` entry into the singleton mesh/texture managers) and builds the `GameSceneArguments` (reading the save file when loading a game). When the task completes, the main thread unloads LoadingScene and calls `LoadAndActivateScene(SceneIds.GameUIScene, SceneIds.GameLogicScene.With(arguments))`, which loads and activates GameLogicScene → GameRenderingScene → GameUIScene. All scene loading happens on the main thread, where the GL context lives. Return-to-main-menu goes directly Game → MainMenu (no loading screen).
 
 Defined in `src/Olve.Trains/GameServiceRegistration.cs`:
 
@@ -66,8 +66,10 @@ new SceneDefinition(SceneIds.GameUIScene, "UIScene", LayerOrder: 2,
 
 **Key behaviors:**
 - Child scenes share their parent's DI scope (GameRenderingScene and GameUIScene share GameLogicScene's scope)
-- Loading a child automatically loads parents first
-- Unloading a parent cascades to children (depth-first)
+- Loading or activating a scene first loads/activates its ancestors
+- Unloading or deactivating a scene first unloads/deactivates its descendants
+- Unloading is best effort: the whole tree is deactivated, then unloaded, and every problem is collected rather than stopping at the first
+- `LoadAndActivateScene` rolls back on failure: if any scene fails to load or activate, the part of the lineage it loaded is unloaded again
 - Scenes are updated/rendered in `LayerOrder` order
 
 ## Scene Lifecycle
@@ -78,7 +80,7 @@ new SceneDefinition(SceneIds.GameUIScene, "UIScene", LayerOrder: 2,
 
 **Problems returned during a frame:** a service's non-critical problem is logged and the frame continues — the remaining services still run, and a faulting `Input()` counts as `Pass.Pass`. The fault is logged once when the service starts failing (`FaultLogger`, `Olve.Engine3D/Diagnostics/`); repeats are suppressed until it succeeds again, which logs the number of failed frames. Only problems with `Severity >= ProblemSeverities.Critical` (checked with `problems.AnyCritical()`) propagate to `GameManager`, which logs them at critical level and stops the game. Exceptions are not caught. `Load`/`Unload` call every service and return all of their problems to the caller.
 
-**Unloading:** Call `Unload()` in reverse priority order → dispose scope if root → state becomes `Unloaded`
+**Unloading:** Deactivate the tree → unload children → call `Unload()` on each service → state becomes `Unloaded` → remove from the store → dispose scope if root
 
 ### SceneState
 
@@ -133,7 +135,7 @@ sceneManager.LoadAndActivateScene(SceneIds.LoadingScene.Id, SceneIds.LoadingScen
 sceneManager.LoadAndActivateScene(SceneIds.GameUIScene, SceneIds.GameLogicScene.With(new GameSceneArguments()));  // arguments for a parent scene
 ```
 
-Each `SceneArguments` carries its target scene ID, so arguments can target any scene in the loaded hierarchy; they are applied when that scene loads. `LoadScene`, `LoadAndActivateScene` and `PrepareScene` all take `params SceneArguments[]`. The parameter service distributes values to other services (e.g., `MoneyService.Balance`), keeping those services decoupled from the parameter system.
+Each `SceneArguments` carries its target scene ID, so arguments can target any scene in the loaded hierarchy; they are applied when that scene loads. `LoadAndActivateScene` takes `params SceneArguments[]`. The parameter service distributes values to other services (e.g., `MoneyService.Balance`), keeping those services decoupled from the parameter system.
 
 ### When to use which
 
@@ -180,10 +182,11 @@ public static class SceneIds
 Manages scene loading and the main loop:
 
 ```csharp
-sceneManager.LoadAndActivateScene(SceneIds.GameUIScene);  // loads full hierarchy
-sceneManager.DeactivateAndUnloadScene(SceneIds.GameLogicScene.Id);  // cascades to children
+sceneManager.LoadAndActivateScene(SceneIds.GameUIScene);  // loads and activates the full lineage
+sceneManager.UnloadScene(SceneIds.GameLogicScene.Id);      // deactivates, then unloads, the whole tree
+sceneManager.Close();                                     // unloads every root scene
 ```
 
-**Off-thread loading (root scenes only):** `PrepareScene(sceneId, arguments)` runs scope creation + parameter service + service `Load()` for a root scene without touching any shared `SceneManager` state — safe to call on a background thread (used by `LoadingService`). It returns an opaque `PreparedScene`. On the main thread, `CommitPreparedScene(prepared)` registers it as loaded (inactive); follow with `LoadAndActivateScene(...)` to load child scenes and activate. Only root scenes (no parent) can be prepared this way, since children reuse the parent's not-yet-committed scope.
+The public API is `LoadAndActivateScene`, `UnloadScene`, `Close` and the frame methods; loading, activation and deactivation of individual scenes are private. Each loaded scene is one `LoadedScene` (scene, service scope, parent ID) in an `EntityStore` keyed by scene ID; children are found by `ParentId`, and a scene owns its scope exactly when it has no parent. The frame loop iterates an `OrderedEntityStoreValueCache` (`Olve.Engine3D/Stores/`) sorted by `LayerOrder`, then `Layer`, which rebuilds when scenes are added or removed. `SceneScopeAccessor.ActiveScopeProviders` (used by log display-name resolution) reads the active scopes from `SceneManager`.
 
 The main game loop calls `sceneManager.Input()`, `sceneManager.Update()`, `sceneManager.Render()` each frame, which delegates to all active scenes in layer order.

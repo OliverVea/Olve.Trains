@@ -82,7 +82,7 @@ public class SceneManager
         return new LoadedScene(scene, scope, definition.ParentId);
     }
 
-    public Result LoadScene(Id<IScene> sceneId, params SceneArguments[] arguments)
+    private Result LoadScene(Id<IScene> sceneId, SceneArguments[] arguments)
     {
         if (_loadedScenes.Contains(sceneId))
         {
@@ -138,12 +138,12 @@ public class SceneManager
 
         ResultProblemCollection teardownProblems = [];
 
-        if (loadedScene.Scene.State == SceneState.Active && DeactivateScene(sceneId).TryPickProblems(out var problems))
+        if (DeactivateScene(sceneId).TryPickProblems(out var problems))
         {
             teardownProblems = teardownProblems.Append(problems);
         }
 
-        if (UpdateChildren(sceneId, UnloadScene).TryPickProblems(out problems))
+        if (ForEachChild(sceneId, UnloadScene).TryPickProblems(out problems))
         {
             teardownProblems = teardownProblems.Append(problems);
         }
@@ -165,39 +165,36 @@ public class SceneManager
         return teardownProblems.Any() ? teardownProblems.Prepend("Failed while unloading scene '{0}'", sceneId) : Result.Success();
     }
 
-    private Result UpdateChildren(Id<IScene> sceneId, Func<Id<IScene>, Result> action)
+    private Result ForEachChild(Id<IScene> sceneId, Func<Id<IScene>, Result> action)
     {
         ResultProblemCollection problems = [];
-        var children = _loadedScenes.Where(x => x.ParentId == sceneId);
-        foreach (var child in children)
+
+        foreach (var child in _loadedScenes.Where(x => x.ParentId == sceneId))
         {
-            var childResult = action(child.Id);
-            
-            if (childResult.TryPickProblems(out var childProblems))
+            if (action(child.Id).TryPickProblems(out var childProblems))
             {
-                problems = problems.Append(
-                    childProblems.Prepend("Got problem while unloading child '{0}' of scene '{1}'", child.Id, sceneId));
+                problems = problems.Append(childProblems);
             }
         }
 
-        if (problems.Any())
-        {
-            return problems;
-        }
-
-        return Result.Success();
+        return problems.Any() ? problems : Result.Success();
     }
 
-    public Result ActivateScene(Id<IScene> sceneId)
+    private Result ActivateScene(Id<IScene> sceneId)
     {
         if (!_loadedScenes.TryGet(sceneId, out var loadedScene))
         {
             return new ResultProblem("Scene with id '{0}' is not loaded", sceneId);
         }
 
-        if (loadedScene.Scene.State != SceneState.Inactive)
+        if (loadedScene.Scene.State == SceneState.Active)
         {
-            return new ResultProblem("Scene with id '{0}' is not inactive (state: {1})", sceneId, loadedScene.Scene.State);
+            return Result.Success();
+        }
+
+        if (loadedScene.ParentId is { } parentId && ActivateScene(parentId).TryPickProblems(out var problems))
+        {
+            return problems.Prepend("Failed to activate parent '{0}' of scene '{1}'", parentId, sceneId);
         }
 
         loadedScene.Scene.State = SceneState.Active;
@@ -206,7 +203,7 @@ public class SceneManager
         return Result.Success();
     }
 
-    public Result DeactivateScene(Id<IScene> sceneId)
+    private Result DeactivateScene(Id<IScene> sceneId)
     {
         if (!_loadedScenes.TryGet(sceneId, out var loadedScene))
         {
@@ -215,47 +212,51 @@ public class SceneManager
 
         if (loadedScene.Scene.State != SceneState.Active)
         {
-            return new ResultProblem("Scene with id '{0}' is not active (state: {1})", sceneId, loadedScene.Scene.State);
+            return Result.Success();
         }
 
-        if (UpdateChildren(sceneId, DeactivateScene).TryPickProblems(out var problems))
-        {
-            return problems.Prepend("Failed to deactivate children of scene '{0}'", sceneId);
-        }
+        var childProblems = ForEachChild(sceneId, DeactivateScene);
 
         loadedScene.Scene.State = SceneState.Inactive;
         EngineMetrics.ActiveScenes.Add(-1);
 
-        return Result.Success();
+        return childProblems.TryPickProblems(out var problems)
+            ? problems.Prepend("Failed while deactivating scene '{0}'", sceneId)
+            : Result.Success();
     }
 
     public Result LoadAndActivateScene(Id<IScene> sceneId, params SceneArguments[] arguments)
     {
-        var loadedInOrder = new List<Id<IScene>>();
-        CollectLoadOrder(sceneId, loadedInOrder);
+        var branchRoot = TopmostUnloadedInLineage(sceneId);
 
-        foreach (var id in loadedInOrder)
+        if (!LoadScene(sceneId, arguments).TryPickProblems(out var problems) &&
+            !ActivateScene(sceneId).TryPickProblems(out problems))
         {
-            var loadResult = LoadScene(id, arguments);
-            if (loadResult.TryPickProblems(out var problems))
-            {
-                return problems.Prepend("Failed to load scene '{0}'", id);
-            }
+            return Result.Success();
         }
 
-        foreach (var id in loadedInOrder)
+        if (branchRoot is { } rootId && _loadedScenes.Contains(rootId) &&
+            UnloadScene(rootId).TryPickProblems(out var rollbackProblems))
         {
-            if (_loadedScenes.TryGetValue(id, out var scene) && scene.State == SceneState.Inactive)
-            {
-                var activateResult = ActivateScene(id);
-                if (activateResult.TryPickProblems(out var problems))
-                {
-                    return problems.Prepend("Failed to activate scene '{0}'", id);
-                }
-            }
+            problems = ResultProblemCollection.Merge(problems,
+                rollbackProblems.Prepend("Failed to roll back scene '{0}'", rootId));
         }
 
-        return Result.Success();
+        return problems;
+    }
+
+    private Id<IScene>? TopmostUnloadedInLineage(Id<IScene> sceneId)
+    {
+        Id<IScene>? topmost = null;
+
+        for (Id<IScene>? id = sceneId;
+             id is { } current && !_loadedScenes.Contains(current);
+             id = _definitions.TryGetValue(current, out var definition) ? definition.ParentId : null)
+        {
+            topmost = current;
+        }
+
+        return topmost;
     }
 
     private static Result ApplyArguments(Id<IScene> sceneId, IServiceProvider provider, SceneArguments[] arguments)
@@ -271,21 +272,9 @@ public class SceneManager
         return Result.Success();
     }
 
-    private void CollectLoadOrder(Id<IScene> sceneId, List<Id<IScene>> result)
-    {
-        if (result.Contains(sceneId)) return;
-
-        if (_definitions.TryGetValue(sceneId, out var definition) && definition.ParentId is { } parentId)
-        {
-            CollectLoadOrder(parentId, result);
-        }
-
-        result.Add(sceneId);
-    }
-
     public Result Input()
     {
-        foreach (var scene in GetOrderedScenes())
+        foreach (var scene in _orderedLoadedScenes.Select(loadedScene => loadedScene.Scene))
         {
             if (scene.State != SceneState.Active)
             {
@@ -309,7 +298,7 @@ public class SceneManager
 
     public Result Update()
     {
-        foreach (var scene in GetOrderedScenes())
+        foreach (var scene in _orderedLoadedScenes.Select(loadedScene => loadedScene.Scene))
         {
             if (scene.State != SceneState.Active)
             {
@@ -337,7 +326,7 @@ public class SceneManager
 
     public Result Render()
     {
-        foreach (var scene in GetOrderedScenes())
+        foreach (var scene in _orderedLoadedScenes.Select(loadedScene => loadedScene.Scene))
         {
             if (scene.State != SceneState.Active)
             {
@@ -368,17 +357,22 @@ public class SceneManager
 
     public void Close()
     {
-        var rootSceneIds = _loadedScenes.Keys
-            .Where(id => _definitions.TryGetValue(id, out var def) && def.ParentId is null)
+        var rootSceneIds = _loadedScenes
+            .Where(loadedScene => loadedScene.ParentId is null)
+            .Select(loadedScene => loadedScene.Id)
             .ToArray();
 
         foreach (var rootId in rootSceneIds)
         {
-            UnloadScene(rootId);
+            if (UnloadScene(rootId).TryPickProblems(out var problems))
+            {
+                _logger.LogError("Problems while closing scene '{SceneId}':{NewLine}{Problems}",
+                    rootId, Environment.NewLine, string.Join(Environment.NewLine, problems.Select(p => p.ToDebugString())));
+            }
         }
     }
     
-    public record LoadedScene(
+    private sealed record LoadedScene(
         IScene Scene,
         IServiceScope ServiceScope,
         Id<IScene>? ParentId)

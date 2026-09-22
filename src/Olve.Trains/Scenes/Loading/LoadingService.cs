@@ -24,7 +24,7 @@ public class LoadingService(
 
     private Id<GuiAnchor> _anchorId;
     private Id<GuiElementRegistrations> _registrationId;
-    private Task<Result<PreparedScene>>? _loadingTask;
+    private Task<Result<GameSceneArguments>>? _loadingTask;
 
     public Result Load()
     {
@@ -40,22 +40,13 @@ public class LoadingService(
             return problems;
         }
 
-        var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
-
         _loadingTask = Task.Run(() =>
         {
-            // Background thread: warm CPU asset caches, then build the game scene arguments and run the
-            // GameLogicScene's DI scope creation + parameter service + service Load() calls. All of this is
-            // CPU-only and touches no GPU/OpenGL state. GPU work (rendering/UI scene loads) is finalized on
-            // the main thread in TransitionToGame once this completes.
+            // Background thread: warm the CPU asset caches and build the game scene arguments (including reading
+            // a save). The game scenes themselves load on the main thread in TransitionToGame.
             assetPrewarmService.PrewarmAll();
 
-            if (BuildGameSceneArguments(parameterService.Arguments).TryPickProblems(out var problems, out var arguments))
-            {
-                return problems;
-            }
-
-            return sceneManager.PrepareScene(SceneIds.GameLogicScene.Id, SceneIds.GameLogicScene.With(arguments));
+            return BuildGameSceneArguments(parameterService.Arguments);
         });
 
         return Result.Success();
@@ -73,13 +64,13 @@ public class LoadingService(
             var result = _loadingTask.Result;
             _loadingTask = null;
 
-            if (result.TryPickProblems(out var problems, out var prepared))
+            if (result.TryPickProblems(out var problems, out var arguments))
             {
                 logger.LogError("Loading failed: {Problems}", problems);
                 return TransitionToMainMenu();
             }
 
-            return TransitionToGame(prepared);
+            return TransitionToGame(arguments);
         }
 
         if (_loadingTask.IsFaulted)
@@ -101,32 +92,24 @@ public class LoadingService(
         return Result.Success();
     }
 
-    private Result TransitionToGame(PreparedScene preparedGameLogic)
+    private Result TransitionToGame(GameSceneArguments arguments)
     {
         var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
 
-        if (sceneManager.DeactivateAndUnloadScene(SceneIds.LoadingScene.Id)
+        if (sceneManager.UnloadScene(SceneIds.LoadingScene.Id)
             .TryPickProblems(out var problems))
         {
             return problems;
         }
 
-        // Register the GameLogicScene loaded on the background thread, then load + activate the remaining
-        // scenes on the main thread. GameRenderingScene/GameUIScene reuse the GameLogicScene scope and perform
-        // their GPU work (shader/framebuffer/buffer creation) here, where the GL context lives.
-        if (sceneManager.CommitPreparedScene(preparedGameLogic).TryPickProblems(out problems))
-        {
-            return problems;
-        }
-
-        return sceneManager.LoadAndActivateScene(SceneIds.GameUIScene);
+        return sceneManager.LoadAndActivateScene(SceneIds.GameUIScene, SceneIds.GameLogicScene.With(arguments));
     }
 
     private Result TransitionToMainMenu()
     {
         var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
 
-        if (sceneManager.DeactivateAndUnloadScene(SceneIds.LoadingScene.Id)
+        if (sceneManager.UnloadScene(SceneIds.LoadingScene.Id)
             .TryPickProblems(out var problems))
         {
             return problems;

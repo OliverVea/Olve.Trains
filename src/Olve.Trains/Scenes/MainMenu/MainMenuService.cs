@@ -93,7 +93,7 @@ public class MainMenuService(
     {
         var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
 
-        if (sceneManager.DeactivateAndUnloadScene(SceneIds.MainMenuScene)
+        if (sceneManager.UnloadScene(SceneIds.MainMenuScene)
             .TryPickProblems(out var problems))
         {
             return problems;

@@ -150,7 +150,7 @@ renderingInstanceManager.Remove(groupId, instanceId);
 
 **Service registration**: `AddSceneService<T>(sceneId)` / `AddEventSceneService(...)`
 
-**Loading**: `LoadAndActivateScene(sceneId)` walks parent chain, loads parent-first. Child scenes loaded via parent automatically get the parent's scope.
+**Loading**: `LoadAndActivateScene(sceneId, arguments)` loads and activates the scene's lineage parent-first; child scenes get the parent's scope. `UnloadScene(sceneId)` deactivates, then unloads, the scene and its descendants. Scene parameters are typed: a scene that takes parameters is identified by a `SceneKey<T>`, and arguments are passed as `key.With(parameters)`. All scene loading runs on the main thread.
 
 ## GUI System
 
