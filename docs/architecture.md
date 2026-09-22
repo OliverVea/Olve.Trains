@@ -257,6 +257,6 @@ then commit) — there is no longer an `accept_screenshots` CI job.
 
 **`scripts/integration-test.sh`** — thin wrapper around pytest (`tests/integration/`). Test scenarios live in `tests/integration/scenarios/` and use a game instance pool with per-instance Xvfb displays for parallel execution. Screenshots are compared against reference images in `tests/integration/reference/`.
 
-Options: `--s3` (upload screenshots to S3), `--windowing native|xvfb` (default: xvfb; Windows must use native), `--skip-build`, `--update-references` (save current screenshots as new references), `--resolution WxH`.
+Options: `--windowing native|xvfb` (default: xvfb; Windows must use native), `--skip-build`, `--update-references` (save current screenshots as new references), `--resolution WxH`.
 
 Tests use the named pipe command system to control the game.

@@ -46,6 +46,22 @@ The Olve.Trains pipeline secret (`olve-pipeline-<id>`) must also carry:
   MinIO (set these to the MinIO root user/password above, or to a dedicated MinIO access
   key created against this instance).
 
+## Backup / durability
+
+**There is no backup of the `olve-trains-minio-data` PVC, by design.** The buckets hold
+release archives and CI screenshot-diff exports — both are *reproducible*, not source of
+truth:
+
+- Release archives are build artifacts. Any version can be rebuilt from its git tag by
+  re-running the pipeline; the game source (including asset source art, committed via git
+  LFS) is the durable record.
+- Screenshot diffs are transient debugging output for a single failed run.
+
+So the PVC is treated as a cache, not a vault. The `bulk` PV uses reclaim policy `Retain`
+(a `kubectl delete pvc` won't wipe the disk), which is the only durability guarantee we
+rely on. If the disk itself is lost, the cost is re-publishing from tags, not lost data.
+Revisit this only if MinIO ever holds something that *can't* be regenerated from git.
+
 ## Apply / validate manually (do this before wiring the bootstrap step into master)
 
 Every push to `master` is a live deploy, so prove the manifests out-of-band first:
