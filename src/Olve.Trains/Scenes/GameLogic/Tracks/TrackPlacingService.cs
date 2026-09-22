@@ -16,6 +16,9 @@ public class TrackPlacingService(ILogger<TrackPlacingService> logger, TrackServi
 
         var estimatedLength = delta.Length;
         var cost = (int)MathF.Ceiling(estimatedLength * MoneyConstants.TrackCostPerMeter);
+        // TODO: The cost is charged before any track is placed. If a sub-track fails below, the charge is kept and
+        // the tracks already placed stay. Refund on failure (single segment: full refund; several sub-tracks: decide
+        // between rolling back the placed tracks and a partial refund). See the result-handling epic in TODO.md.
         if (!moneyService.TryCharge(cost, $"place track ({estimatedLength:F1}m)"))
         {
             return new ResultProblem("Cannot afford track: need {0}, have {1}", cost, moneyService.Balance);
