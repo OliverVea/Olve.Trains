@@ -12,7 +12,7 @@ public static class LoadingSceneServiceRegistration
 {
     public static IServiceCollection AddLoadingSceneServices(this IServiceCollection services)
     {
-        var sceneId = SceneIds.LoadingScene;
+        var sceneId = SceneIds.LoadingScene.Id;
 
         services.AddSceneService<GLService>(sceneId);
         services.AddSceneService<RenderingManagerSceneService>(sceneId);
@@ -22,7 +22,7 @@ public static class LoadingSceneServiceRegistration
 
         services.AddSceneService<CommandProcessingService>(sceneId);
 
-        services.AddSceneParameterService<LoadingSceneParameterService>(sceneId);
+        services.AddSceneParameterService<LoadingSceneParameterService, LoadingSceneArguments>(SceneIds.LoadingScene);
 
         services.AddScoped<AssetPrewarmService>();
         services.AddScoped<GameLoadService>();

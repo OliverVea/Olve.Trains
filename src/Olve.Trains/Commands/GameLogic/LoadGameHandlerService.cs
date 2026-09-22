@@ -47,7 +47,7 @@ public class LoadGameHandlerService(
         // The loading scene re-reads and deserializes the save on a background thread, then transitions to game.
         sceneManager.Close();
         if (sceneManager.LoadAndActivateScene(
-                SceneIds.LoadingScene, SceneIds.LoadingScene, new LoadingSceneArguments(path.Path))
+                SceneIds.LoadingScene.Id, SceneIds.LoadingScene.With(new LoadingSceneArguments(path.Path)))
             .TryPickProblems(out problems))
         {
             return problems;

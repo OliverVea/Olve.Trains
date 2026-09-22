@@ -30,10 +30,10 @@ public static class GameLogicSceneServiceRegistration
 {
     public static IServiceCollection AddGameLogicSceneServices(this IServiceCollection services)
     {
-        var sceneId = SceneIds.GameLogicScene;
+        var sceneId = SceneIds.GameLogicScene.Id;
 
         // Scene parameter services
-        services.AddSceneParameterService<GameSceneParameterService>(sceneId);
+        services.AddSceneParameterService<GameSceneParameterService, GameSceneArguments>(SceneIds.GameLogicScene);
 
         // Command processing
         services.AddSceneService<CommandProcessingService>(sceneId);

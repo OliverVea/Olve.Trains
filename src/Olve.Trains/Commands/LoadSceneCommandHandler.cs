@@ -11,7 +11,7 @@ public class LoadSceneCommandHandler(SceneManager sceneManager) : ICommandHandle
     {
         ["game"] = SceneIds.GameUIScene,
         ["menu"] = SceneIds.MainMenuScene,
-        ["loading"] = SceneIds.LoadingScene,
+        ["loading"] = SceneIds.LoadingScene.Id,
     };
 
     public string Verb => "load-scene";

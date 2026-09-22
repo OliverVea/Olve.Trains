@@ -52,11 +52,11 @@ public static class SceneServiceRegistration
             return services;
         }
 
-        public IServiceCollection AddSceneParameterService<T>(Id<IScene> sceneId)
-            where T : class, ISceneParameterService
+        public IServiceCollection AddSceneParameterService<TService, TParameters>(SceneKey<TParameters> sceneKey)
+            where TService : class, ISceneParameterService<TParameters>
         {
-            services.TryAddScoped<T>();
-            services.AddKeyedScoped<ISceneParameterService>(sceneId, (sp, _) => sp.GetRequiredService<T>());
+            services.TryAddScoped<TService>();
+            services.AddKeyedScoped<ISceneParameterService<TParameters>>(sceneKey.Id, (sp, _) => sp.GetRequiredService<TService>());
             return services;
         }
 

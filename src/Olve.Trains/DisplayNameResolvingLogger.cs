@@ -70,18 +70,11 @@ public class DisplayNameResolver(SceneScopeAccessor sceneScopeAccessor)
     {
         foreach (var sp in sceneScopeAccessor.ActiveScopeProviders)
         {
-            try
+            var service = sp.GetService<TService>();
+            if (service != null)
             {
-                var service = sp.GetService<TService>();
-                if (service != null)
-                {
-                    var result = nameResolver(service);
-                    if (result != null) return result;
-                }
-            }
-            catch (ObjectDisposedException)
-            {
-                // Scope was disposed during shutdown — skip it
+                var result = nameResolver(service);
+                if (result != null) return result;
             }
         }
 

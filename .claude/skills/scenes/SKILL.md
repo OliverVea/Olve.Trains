@@ -57,9 +57,9 @@ GameLogicScene (root, LayerOrder 0)
 Defined in `src/Olve.Trains/GameServiceRegistration.cs`:
 
 ```csharp
-new SceneDefinition(SceneIds.GameLogicScene, "GameScene", LayerOrder: 0),
+new SceneDefinition(SceneIds.GameLogicScene.Id, "GameScene", LayerOrder: 0),
 new SceneDefinition(SceneIds.GameRenderingScene, "RenderingScene", LayerOrder: 1,
-    ParentId: SceneIds.GameLogicScene),
+    ParentId: SceneIds.GameLogicScene.Id),
 new SceneDefinition(SceneIds.GameUIScene, "UIScene", LayerOrder: 2,
     ParentId: SceneIds.GameRenderingScene),
 ```
@@ -110,27 +110,30 @@ Use this for services that hold state or provide logic but don't need `Load`/`Up
 
 ### Adding a scene parameter service
 
+A scene that takes parameters is identified by a `SceneKey<TParameters>` instead of a plain `Id<IScene>` (see Scene IDs below). The key ties the scene to its parameter type, so parameters are checked at compile time.
+
 ```csharp
 // Receives typed parameters before Load() runs on any scene service
-services.AddSceneParameterService<GameSceneParameterService>(sceneId);
+services.AddSceneParameterService<GameSceneParameterService, GameSceneArguments>(SceneIds.GameLogicScene);
 ```
 
-Registers the type as scoped and keys it as `ISceneParameterService` for the scene. During scene loading, `LoadParameters(args)` is called on all parameter services **before** any `ISceneService.Load()` runs.
+Registers the service as scoped and keys it as `ISceneParameterService<GameSceneArguments>` for the scene. The service must implement `ISceneParameterService<TParameters>` for the key's parameter type. During scene loading, `LoadParameters(args)` is called on all parameter services **before** any `ISceneService.Load()` runs.
 
 ```csharp
-public interface ISceneParameterService<in T> : ISceneParameterService
+public interface ISceneParameterService<in T>
 {
     Result LoadParameters(T parameters);
 }
 ```
 
-Pass parameters when loading a scene:
+Pass parameters when loading a scene as `SceneArguments`, built with `key.With(parameters)`:
 
 ```csharp
-sceneManager.LoadAndActivateScene(SceneIds.GameUIScene, SceneIds.GameLogicScene, new GameSceneArguments());
+sceneManager.LoadAndActivateScene(SceneIds.LoadingScene.Id, SceneIds.LoadingScene.With(new LoadingSceneArguments()));
+sceneManager.LoadAndActivateScene(SceneIds.GameUIScene, SceneIds.GameLogicScene.With(new GameSceneArguments()));  // arguments for a parent scene
 ```
 
-The second argument is the target scene ID where the parameter service is registered. The parameter service distributes values to other services (e.g., `MoneyService.Balance`), keeping those services decoupled from the parameter system.
+Each `SceneArguments` carries its target scene ID, so arguments can target any scene in the loaded hierarchy; they are applied when that scene loads. `LoadScene`, `LoadAndActivateScene` and `PrepareScene` all take `params SceneArguments[]`. The parameter service distributes values to other services (e.g., `MoneyService.Balance`), keeping those services decoupled from the parameter system.
 
 ### When to use which
 
@@ -153,12 +156,14 @@ See the `/events` skill for `AddEventSceneService` and `AddImmediateEventSceneSe
 public static class SceneIds
 {
     public static readonly Id<IScene> MainMenuScene = Id.New<IScene>();
-    public static readonly Id<IScene> GameLogicScene = Id.New<IScene>();
+    public static readonly SceneKey<GameSceneArguments> GameLogicScene = new(Id.New<IScene>());
     public static readonly Id<IScene> GameUIScene = Id.New<IScene>();
     public static readonly Id<IScene> GameRenderingScene = Id.New<IScene>();
-    public static readonly Id<IScene> LoadingScene = Id.New<IScene>();
+    public static readonly SceneKey<LoadingSceneArguments> LoadingScene = new(Id.New<IScene>());
 }
 ```
+
+`SceneKey<T>` has no implicit conversion; use `.Id` where a plain `Id<IScene>` is needed (definitions, unloading, lookups).
 
 ## Where services are registered
 
@@ -175,10 +180,10 @@ public static class SceneIds
 Manages scene loading and the main loop:
 
 ```csharp
-sceneManager.LoadAndActivateScene(SceneIds.GameLogicScene);  // loads full hierarchy
-sceneManager.DeactivateAndUnloadScene(SceneIds.GameLogicScene);  // cascades to children
+sceneManager.LoadAndActivateScene(SceneIds.GameUIScene);  // loads full hierarchy
+sceneManager.DeactivateAndUnloadScene(SceneIds.GameLogicScene.Id);  // cascades to children
 ```
 
-**Off-thread loading (root scenes only):** `PrepareScene(sceneId, parameters)` runs scope creation + parameter service + service `Load()` for a root scene without touching any shared `SceneManager` state — safe to call on a background thread (used by `LoadingService`). It returns an opaque `PreparedScene`. On the main thread, `CommitPreparedScene(prepared)` registers it as loaded (inactive); follow with `LoadAndActivateScene(...)` to load child scenes and activate. Only root scenes (no parent) can be prepared this way, since children reuse the parent's not-yet-committed scope.
+**Off-thread loading (root scenes only):** `PrepareScene(sceneId, arguments)` runs scope creation + parameter service + service `Load()` for a root scene without touching any shared `SceneManager` state — safe to call on a background thread (used by `LoadingService`). It returns an opaque `PreparedScene`. On the main thread, `CommitPreparedScene(prepared)` registers it as loaded (inactive); follow with `LoadAndActivateScene(...)` to load child scenes and activate. Only root scenes (no parent) can be prepared this way, since children reuse the parent's not-yet-committed scope.
 
 The main game loop calls `sceneManager.Input()`, `sceneManager.Update()`, `sceneManager.Render()` each frame, which delegates to all active scenes in layer order.

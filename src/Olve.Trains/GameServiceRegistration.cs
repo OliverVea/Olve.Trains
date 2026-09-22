@@ -107,10 +107,10 @@ public static class GameServiceRegistration
         services.AddSingleton<IEnumerable<SceneDefinition>>(_ =>
         [
             new(SceneIds.MainMenuScene, "MainMenuScene", LayerOrder: 0),
-            new(SceneIds.LoadingScene, "LoadingScene", LayerOrder: 0),
-            new(SceneIds.GameLogicScene, "GameScene"),
+            new(SceneIds.LoadingScene.Id, "LoadingScene", LayerOrder: 0),
+            new(SceneIds.GameLogicScene.Id, "GameScene"),
             new(SceneIds.GameRenderingScene, "RenderingScene", LayerOrder: 1,
-                ParentId: SceneIds.GameLogicScene),
+                ParentId: SceneIds.GameLogicScene.Id),
             new(SceneIds.GameUIScene, "UIScene", LayerOrder: 2,
                 ParentId: SceneIds.GameRenderingScene),
         ]);

@@ -127,7 +127,7 @@ public class BurgerMenuService(
     {
         var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
 
-        if (sceneManager.DeactivateAndUnloadScene(SceneIds.GameLogicScene)
+        if (sceneManager.DeactivateAndUnloadScene(SceneIds.GameLogicScene.Id)
             .TryPickProblems(out var problems))
         {
             return problems;

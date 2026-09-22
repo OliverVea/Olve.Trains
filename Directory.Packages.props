@@ -19,12 +19,12 @@
     <PackageVersion Include="NReco.Logging.File" Version="1.4.0" />
     <!-- Olve.* packages: https://olivervea.github.io/Olve.Utilities/ -->
     <PackageVersion Include="Olve.MsdfAtlasGen" Version="1.0.2" />
-    <PackageVersion Include="Olve.OpenRaster" Version="0.48.0" />
-    <PackageVersion Include="Olve.Paths" Version="0.48.0" />
-    <PackageVersion Include="Olve.Paths.Glob" Version="0.48.0" />
-    <PackageVersion Include="Olve.Results" Version="0.48.0" />
-    <PackageVersion Include="Olve.Results.TUnit" Version="0.48.0" />
-    <PackageVersion Include="Olve.Utilities" Version="0.48.0" />
+    <PackageVersion Include="Olve.OpenRaster" Version="0.50.0" />
+    <PackageVersion Include="Olve.Paths" Version="0.50.0" />
+    <PackageVersion Include="Olve.Paths.Glob" Version="0.50.0" />
+    <PackageVersion Include="Olve.Results" Version="0.50.0" />
+    <PackageVersion Include="Olve.Results.TUnit" Version="0.50.0" />
+    <PackageVersion Include="Olve.Utilities" Version="0.50.0" />
     <PackageVersion Include="OneOf" Version="3.0.271" />
     <PackageVersion Include="OneOf.SourceGenerator" Version="3.0.271" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />

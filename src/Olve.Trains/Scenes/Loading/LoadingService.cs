@@ -55,7 +55,7 @@ public class LoadingService(
                 return problems;
             }
 
-            return sceneManager.PrepareScene(SceneIds.GameLogicScene, arguments);
+            return sceneManager.PrepareScene(SceneIds.GameLogicScene.Id, SceneIds.GameLogicScene.With(arguments));
         });
 
         return Result.Success();
@@ -105,7 +105,7 @@ public class LoadingService(
     {
         var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
 
-        if (sceneManager.DeactivateAndUnloadScene(SceneIds.LoadingScene)
+        if (sceneManager.DeactivateAndUnloadScene(SceneIds.LoadingScene.Id)
             .TryPickProblems(out var problems))
         {
             return problems;
@@ -126,7 +126,7 @@ public class LoadingService(
     {
         var sceneManager = serviceProvider.GetRequiredService<SceneManager>();
 
-        if (sceneManager.DeactivateAndUnloadScene(SceneIds.LoadingScene)
+        if (sceneManager.DeactivateAndUnloadScene(SceneIds.LoadingScene.Id)
             .TryPickProblems(out var problems))
         {
             return problems;

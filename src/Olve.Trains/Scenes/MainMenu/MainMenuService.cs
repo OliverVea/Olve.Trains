@@ -99,6 +99,6 @@ public class MainMenuService(
             return problems;
         }
 
-        return sceneManager.LoadAndActivateScene(SceneIds.LoadingScene, SceneIds.LoadingScene, arguments);
+        return sceneManager.LoadAndActivateScene(SceneIds.LoadingScene.Id, SceneIds.LoadingScene.With(arguments));
     }
 }
