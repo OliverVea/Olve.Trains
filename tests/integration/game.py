@@ -573,7 +573,7 @@ class Game:
             )
         else:
             subprocess.run(
-                ["pkill", "-f", "On Track To Grow"],
+                ["pkill", "-f", r"^dotnet .*On Track To Grow\.dll --listen"],
                 capture_output=True,
             )
         time.sleep(1)
@@ -585,7 +585,7 @@ class Game:
         display = f":{self._display}"
 
         if os.name != "nt":
-            subprocess.run(["pkill", "-f", f"Xvfb {display}"], capture_output=True)
+            subprocess.run(["pkill", "-f", f"^Xvfb {display} "], capture_output=True)
         lock = Path(f"/tmp/.X{self._display}-lock")
         if lock.exists():
             lock.unlink()
