@@ -22,7 +22,7 @@ public static class LoadingSceneServiceRegistration
 
         services.AddSceneService<CommandProcessingService>(sceneId);
 
-        services.AddSceneParameterService<LoadingSceneParameterService, LoadingSceneArguments>(SceneIds.LoadingScene);
+        services.AddSceneParameters(SceneIds.LoadingScene, () => new LoadingSceneArguments());
 
         services.AddScoped<AssetPrewarmService>();
         services.AddScoped<GameLoadService>();

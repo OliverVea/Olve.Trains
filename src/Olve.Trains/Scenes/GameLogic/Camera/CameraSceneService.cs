@@ -14,13 +14,11 @@ using Silk.NET.Windowing;
 
 namespace Olve.Trains.Scenes.GameLogic.Camera;
 
-public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent, DeltaTimeService deltaTimeService) : ISceneService
+public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManager keyboardManager, ScreenResizedEvent screenResizedEvent, DeltaTimeService deltaTimeService, GameSceneArguments arguments) : ISceneService
 {
     private IsometricOrthographicCameraController _cameraController = null!;
 
     private readonly List<ICameraScheme> _cameraSchemes = [new WasdMovement(keyboardManager)];
-
-    internal float InitialOrthographicSize { get; set; } = 40f;
 
     public Camera<IsometricView, OrthographicProjection> Camera => _cameraController.Camera;
 
@@ -40,7 +38,7 @@ public class CameraSceneService(Provider<IWindow> windowProvider, KeyboardManage
             windowSize,
             new Vector3D<float>(0, 0, 0),
             new Vector3D<float>(0.701f, -1, 0.701f),
-            InitialOrthographicSize);
+            arguments.CameraOrthographicSize);
 
         // Guard against NaN AspectRatio when window size is (0, 0) during scene reload
         if (float.IsNaN(_cameraController.Camera.Projection.AspectRatio)

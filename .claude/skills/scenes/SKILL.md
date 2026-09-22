@@ -74,7 +74,7 @@ new SceneDefinition(SceneIds.GameUIScene, "UIScene", LayerOrder: 2,
 
 ## Scene Lifecycle
 
-**Loading:** Resolve keyed services from DI → sort by Priority → call `Load()` on each → state becomes `Inactive`
+**Loading:** Create the scope (root) or borrow the parent's → set scene parameters → resolve keyed services from DI → sort by Priority → call `Load()` on each → state becomes `Inactive`
 
 **Each frame (active scenes only):** `Input()` → `Update()` → `Render()`, all in priority order
 
@@ -110,22 +110,19 @@ services.TryAddScoped<TrackService>();
 
 Use this for services that hold state or provide logic but don't need `Load`/`Update`/`Render` callbacks. They live in the scene's DI scope and are shared across all services in that scope.
 
-### Adding a scene parameter service
+### Scene parameters
 
 A scene that takes parameters is identified by a `SceneKey<TParameters>` instead of a plain `Id<IScene>` (see Scene IDs below). The key ties the scene to its parameter type, so parameters are checked at compile time.
 
 ```csharp
-// Receives typed parameters before Load() runs on any scene service
-services.AddSceneParameterService<GameSceneParameterService, GameSceneArguments>(SceneIds.GameLogicScene);
+// Register the scene's parameters with the defaults used when it loads without arguments
+services.AddSceneParameters(SceneIds.GameLogicScene, () => new GameSceneArguments());
 ```
 
-Registers the service as scoped and keys it as `ISceneParameterService<GameSceneArguments>` for the scene. The service must implement `ISceneParameterService<TParameters>` for the key's parameter type. During scene loading, `LoadParameters(args)` is called on all parameter services **before** any `ISceneService.Load()` runs.
+This registers a scoped `SceneParameters<GameSceneArguments>` holder and a scoped `GameSceneArguments` resolved from it. Services take the arguments through their constructor:
 
 ```csharp
-public interface ISceneParameterService<in T>
-{
-    Result LoadParameters(T parameters);
-}
+public class TerrainService(..., GameSceneArguments arguments) : ISceneService
 ```
 
 Pass parameters when loading a scene as `SceneArguments`, built with `key.With(parameters)`:
@@ -135,7 +132,11 @@ sceneManager.LoadAndActivateScene(SceneIds.LoadingScene.Id, SceneIds.LoadingScen
 sceneManager.LoadAndActivateScene(SceneIds.GameUIScene, SceneIds.GameLogicScene.With(new GameSceneArguments()));  // arguments for a parent scene
 ```
 
-Each `SceneArguments` carries its target scene ID, so arguments can target any scene in the loaded hierarchy; they are applied when that scene loads. `LoadAndActivateScene` takes `params SceneArguments[]`. The parameter service distributes values to other services (e.g., `MoneyService.Balance`), keeping those services decoupled from the parameter system.
+Each `SceneArguments` carries its target scene ID, so arguments can target any scene in the loaded lineage. When a scene loads, `SceneManager` creates (or borrows) its scope, sets the arguments targeting that scene, fills in the registered defaults for any parameters not provided, and only then resolves the scene's services — so constructors receive the final values. Arguments of a type the scene didn't register fail the load.
+
+Rules:
+- A scene's parameters can be injected into services resolved while that scene or its descendants load. Reading them earlier (e.g. resolving from the scope before the scene loads) throws `InvalidOperationException`.
+- Defaults live in the arguments record (e.g. `GameSceneArguments.DefaultHeightmap()`, `DefaultDayStart`, `DefaultDayDuration`), not in the services.
 
 ### When to use which
 
@@ -144,7 +145,7 @@ Each `SceneArguments` carries its target scene ID, so arguments can target any s
 | Service needs `Update()` each frame | `AddSceneService` |
 | Service needs `Load()`/`Unload()` for setup/teardown | `AddSceneService` |
 | Service needs `Render()` | `AddSceneService` |
-| Service needs typed initialization parameters | `AddSceneParameterService` |
+| Service needs typed initialization parameters | `AddSceneParameters` on the scene, then inject the arguments into the constructor |
 | Service is pure state/logic, no lifecycle | `TryAddScoped` |
 | Service reacts to events only | `TryAddScoped` + event registration (see `/events` skill) |
 

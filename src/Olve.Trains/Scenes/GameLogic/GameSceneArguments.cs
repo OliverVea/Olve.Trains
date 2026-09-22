@@ -16,6 +16,10 @@ public sealed record GameSceneArguments(
     IReadOnlyList<EnvironmentalObject>? EnvironmentalObjects = null,
     double? TotalGameHours = null)
 {
+    public static DayTime DefaultDayStart => new(5, 30);
+
+    public static TimeSpan DefaultDayDuration => TimeSpan.FromMinutes(15);
+
     public static HeightmapData DefaultHeightmap()
     {
         const int length = 50;

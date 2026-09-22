@@ -11,7 +11,7 @@ namespace Olve.Trains.Scenes.Loading;
 
 public class LoadingService(
     IServiceProvider serviceProvider,
-    LoadingSceneParameterService parameterService,
+    LoadingSceneArguments loadingArguments,
     AssetPrewarmService assetPrewarmService,
     GameLoadService gameLoadService,
     GuiElementService guiElementService,
@@ -46,7 +46,7 @@ public class LoadingService(
             // a save). The game scenes themselves load on the main thread in TransitionToGame.
             assetPrewarmService.PrewarmAll();
 
-            return BuildGameSceneArguments(parameterService.Arguments);
+            return BuildGameSceneArguments(loadingArguments);
         });
 
         return Result.Success();
@@ -86,10 +86,10 @@ public class LoadingService(
 
     public Result Unload()
     {
-        guiElementService.UnregisterElementAndChildren(_registrationId);
+        var result = guiElementService.UnregisterElementAndChildren(_registrationId);
         guiAnchorService.UnregisterAnchor(_anchorId);
 
-        return Result.Success();
+        return result;
     }
 
     private Result TransitionToGame(GameSceneArguments arguments)

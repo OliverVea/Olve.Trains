@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Olve.Engine3D;
 using Olve.Engine3D.Assets;
 using Olve.Engine3D.Assets.Entities;
@@ -14,27 +15,18 @@ namespace Olve.Trains.Scenes.GameLogic.Terrain;
 
 public class TerrainService(
     CollisionSystem collisionSystem,
-    EnvironmentalObjectService environmentalObjectService) : ISceneService
+    EnvironmentalObjectService environmentalObjectService,
+    ILogger<TerrainService> logger,
+    GameSceneArguments arguments) : ISceneService
 {
     private TerrainData? _terrain;
     public TerrainData Terrain => _terrain ?? throw new NotInitializedException<TerrainData>();
     public float TileStepHeight => _terrain?.Heightmap.Step ?? 1f;
     public int TilesPerMeterHeight => (int)float.Round(1 /  TileStepHeight);
 
-    internal HeightmapData? HeightmapOverride { get; set; }
-    internal int TreeSeed { get; set; } = 42;
-    internal double TreeSpawnProbability { get; set; } = 0.08;
-
-    /// <summary>
-    /// Materialized environmental objects from a save. When set (load), they are placed verbatim; when null
-    /// (new game), the world is generated from <see cref="TreeSeed"/>. Seeds are new-game inputs, never save
-    /// state — a loaded world must never be regenerated.
-    /// </summary>
-    internal IReadOnlyList<EnvironmentalObject>? EnvironmentalObjectsOverride { get; set; }
-
     public Result Load()
     {
-        var heightmap = HeightmapOverride ?? GameSceneArguments.DefaultHeightmap();
+        var heightmap = arguments.Heightmap ?? GameSceneArguments.DefaultHeightmap();
 
         _terrain = new TerrainData
         {
@@ -43,7 +35,9 @@ public class TerrainService(
 
         collisionSystem.RegisterHeightmapCollider(heightmap, ColliderGroups.Terrain);
 
-        if (EnvironmentalObjectsOverride is { } savedObjects)
+        // Materialized environmental objects from a save are placed verbatim; a new game generates the world from
+        // the tree seed. Seeds are new-game inputs, never save state — a loaded world must never be regenerated.
+        if (arguments.EnvironmentalObjects is { } savedObjects)
         {
             return RestoreEnvironmentalObjects(savedObjects);
         }
@@ -82,13 +76,13 @@ public class TerrainService(
 
     private void PlaceEnvironmentalObjects(HeightmapData heightmap)
     {
-        var random = new Random(TreeSeed);
+        var random = new Random(arguments.TreeSeed);
 
         for (var z = 0; z < heightmap.Length; z++)
         {
             for (var x = 0; x < heightmap.Width; x++)
             {
-                if (random.NextDouble() > TreeSpawnProbability) continue;
+                if (random.NextDouble() > arguments.TreeSpawnProbability) continue;
 
                 var height = heightmap.Heights[z * heightmap.Width + x];
                 var y = height * heightmap.Step;
@@ -103,7 +97,12 @@ public class TerrainService(
                     new Vector3D<float>(offsetX, y, offsetZ),
                     rotation);
 
-                environmentalObjectService.AddObject(EnvironmentalObjectBlueprintCatalog.Tree, position, meshPath, texturePath);
+                if (environmentalObjectService
+                    .AddObject(EnvironmentalObjectBlueprintCatalog.Tree, position, meshPath, texturePath)
+                    .TryPickProblems(out var problems))
+                {
+                    logger.LogWarning("Could not place tree at {Position}: {Problems}", position, problems);
+                }
             }
         }
     }

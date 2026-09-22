@@ -2,9 +2,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Olve.Trains.Scenes.GameLogic.Money;
 
-public class MoneyService(ILogger<MoneyService> logger)
+public class MoneyService(ILogger<MoneyService> logger, GameSceneArguments arguments)
 {
-    public int Balance { get; internal set; } = MoneyConstants.StartingBalance;
+    public int Balance { get; private set; } = arguments.StartingMoney;
 
     public void Add(int amount, string reason)
     {

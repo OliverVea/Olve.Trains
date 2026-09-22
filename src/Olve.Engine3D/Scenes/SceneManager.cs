@@ -74,7 +74,17 @@ public class SceneManager
         
         scope ??= _rootProvider.CreateScope();
         var sp = scope.ServiceProvider;
-        
+
+        if (SetParameters(sceneId, sp, arguments).TryPickProblems(out var parameterProblems))
+        {
+            if (definition.ParentId is null)
+            {
+                scope.Dispose();
+            }
+
+            return parameterProblems;
+        }
+
         var sceneServices = sp.GetKeyedServices<ISceneService>(sceneId).ToArray();
 
         var scene = new Scene(_sceneLogger, _faultLogger, sceneServices, sceneId, definition.Name, definition.LayerOrder);
@@ -91,18 +101,11 @@ public class SceneManager
 
         if (CreateLoadedScene(sceneId, arguments).TryPickProblems(out var creationProblems, out var loadedScene))
         {
-            return creationProblems;
+            return creationProblems.Prepend("Error occurred while loading scene '{0}'", sceneId);
         }
 
         loadedScene.Scene.State = SceneState.Inactive;
 
-        if (ApplyArguments(sceneId, loadedScene.ServiceScope.ServiceProvider, arguments)
-            .TryPickProblems(out var argumentProblems))
-        {
-            ReleaseScope(loadedScene);
-            return argumentProblems.Prepend("Error occurred while loading scene '{0}'", sceneId);
-        }
-        
         if (loadedScene.Scene.Load().TryPickProblems(out var loadProblems))
         {
             if (loadedScene.Scene.Unload().TryPickProblems(out var unloadProblems))
@@ -259,14 +262,19 @@ public class SceneManager
         return topmost;
     }
 
-    private static Result ApplyArguments(Id<IScene> sceneId, IServiceProvider provider, SceneArguments[] arguments)
+    private static Result SetParameters(Id<IScene> sceneId, IServiceProvider provider, SceneArguments[] arguments)
     {
         foreach (var argument in arguments.Where(argument => argument.SceneId == sceneId))
         {
             if (argument.Apply(provider).TryPickProblems(out var problems))
             {
-                return problems.Prepend("Error occurred while loading parameters for scene '{0}'", sceneId);
+                return problems.Prepend("Error occurred while setting parameters for scene '{0}'", sceneId);
             }
+        }
+
+        foreach (var sceneParameters in provider.GetKeyedServices<ISceneParameters>(sceneId))
+        {
+            sceneParameters.Complete();
         }
 
         return Result.Success();

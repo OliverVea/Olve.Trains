@@ -4,10 +4,16 @@ namespace Olve.Engine3D.Scenes;
 
 public static class SceneArgumentsExtensions
 {
-    public static SceneArguments With<TParameters>(this SceneKey<TParameters> sceneKey, TParameters parameters) =>
-        new(sceneKey.Id, provider => provider
-            .GetKeyedServices<ISceneParameterService<TParameters>>(sceneKey.Id)
-            .Select(service => service.LoadParameters(parameters))
-            .ToArray()
-            .TryPickProblems(out var problems) ? problems : Result.Success());
+    public static SceneArguments With<TParameters>(this SceneKey<TParameters> sceneKey, TParameters parameters)
+        where TParameters : class =>
+        new(sceneKey.Id, provider =>
+        {
+            if (provider.GetService<SceneParameters<TParameters>>() is not { } sceneParameters)
+            {
+                return new ResultProblem("Scene '{0}' does not take parameters of type {1}", sceneKey.Id, typeof(TParameters).Name);
+            }
+
+            sceneParameters.Set(parameters);
+            return Result.Success();
+        });
 }

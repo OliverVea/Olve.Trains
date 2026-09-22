@@ -52,11 +52,12 @@ public static class SceneServiceRegistration
             return services;
         }
 
-        public IServiceCollection AddSceneParameterService<TService, TParameters>(SceneKey<TParameters> sceneKey)
-            where TService : class, ISceneParameterService<TParameters>
+        public IServiceCollection AddSceneParameters<TParameters>(SceneKey<TParameters> sceneKey, Func<TParameters> defaults)
+            where TParameters : class
         {
-            services.TryAddScoped<TService>();
-            services.AddKeyedScoped<ISceneParameterService<TParameters>>(sceneKey.Id, (sp, _) => sp.GetRequiredService<TService>());
+            services.TryAddScoped(_ => new SceneParameters<TParameters>(sceneKey.Id, defaults));
+            services.AddKeyedScoped<ISceneParameters>(sceneKey.Id, (sp, _) => sp.GetRequiredService<SceneParameters<TParameters>>());
+            services.TryAddScoped(sp => sp.GetRequiredService<SceneParameters<TParameters>>().Value);
             return services;
         }
 
