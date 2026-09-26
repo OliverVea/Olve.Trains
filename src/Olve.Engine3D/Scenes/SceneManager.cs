@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Diagnostics;
-using Olve.Engine3D.Stores;
 using Olve.Utilities.Ids;
 using Olve.Utilities.Lookup;
 using Olve.Utilities.Stores;
@@ -23,7 +22,7 @@ public class SceneManager
     private readonly IServiceProvider _rootProvider;
     private readonly FaultLogger _faultLogger;
     private readonly EntityStore<LoadedScene, Id<IScene>> _loadedScenes;
-    private readonly OrderedEntityStoreValueCache<LoadedScene, Id<IScene>> _orderedLoadedScenes;
+    private readonly EntityStoreOrderedView<LoadedScene, Id<IScene>> _orderedLoadedScenes;
 
     public SceneManager(IServiceProvider rootProvider,
         IEnumerable<SceneDefinition> definitions,
@@ -37,7 +36,7 @@ public class SceneManager
         _sceneLogger = loggerFactory.CreateLogger<Scene>();
         _definitions = definitions.ToDictionary(x => x.Id);
         _loadedScenes = [];
-        _orderedLoadedScenes = _loadedScenes.BuildOrderedValueCache(LoadedSceneComparer);
+        _orderedLoadedScenes = _loadedScenes.CreateOrderedView(LoadedSceneComparer);
 
         sceneScopeAccessor.Source = () => _loadedScenes.List()
             .Where(loadedScene => loadedScene.Scene.State == SceneState.Active)
