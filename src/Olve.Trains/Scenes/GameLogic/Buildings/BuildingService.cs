@@ -4,6 +4,7 @@ using Olve.Engine3D.Systems;
 using Olve.Engine3D.Utilities;
 using Olve.Trains.Scenes.GameLogic.Money;
 using Olve.Trains.Shared.Telemetry;
+using Olve.Trains.Scenes.GameLogic.Ordering;
 
 namespace Olve.Trains.Scenes.GameLogic.Buildings;
 
@@ -13,19 +14,23 @@ public class BuildingService
     private readonly BuildingBlueprintService _blueprintService;
     private readonly MoneyService _moneyService;
     private readonly EntityStore<Building> _buildings;
+    private readonly EntityStoreOrderedView<Building, Id<Building>> _buildingsInCreationOrder;
+    private readonly SequenceService _sequences;
     private readonly EntityStoreIndex<Building, Id<BuildingBlueprint>> _buildingsByBlueprint;
 
-    public BuildingService(ILogger<BuildingService> logger, BuildingBlueprintService blueprintService, MoneyService moneyService, EntityStoreFactory entityStoreFactory)
+    public BuildingService(ILogger<BuildingService> logger, BuildingBlueprintService blueprintService, MoneyService moneyService, SequenceService sequences, EntityStoreFactory entityStoreFactory)
     {
         _logger = logger;
         _blueprintService = blueprintService;
         _moneyService = moneyService;
+        _sequences = sequences;
         _buildings = entityStoreFactory.Create<Building>();
+        _buildingsInCreationOrder = _buildings.CreateOrderedView(CreationOrder.Of<Building>());
         _buildingsByBlueprint = _buildings.CreateIndex(x => x.BlueprintId);
     }
 
-    public Event<Id<Building>> OnBuildingAdded => _buildings.OnAdded;
-    public Event<Id<Building>> OnBuildingRemoved => _buildings.OnRemoved;
+    public Event<EntityAdded<Building, Id<Building>>> OnBuildingAdded => _buildings.OnAdded;
+    public Event<EntityDeleted<Building, Id<Building>>> OnBuildingRemoved => _buildings.OnDeleted;
 
     public Result<Id<Building>> AddBuilding(Id<BuildingBlueprint> blueprintId, BuildingPosition position)
     {
@@ -40,7 +45,7 @@ public class BuildingService
             return new ResultProblem("Cannot afford {0}: need {1}, have {2}", blueprint.Description, cost, _moneyService.Balance);
         }
 
-        Building building = new(Id.New<Building>(), blueprintId, position);
+        Building building = new(Id.New<Building>(), blueprintId, position, _sequences.Next());
 
         if (!_buildings.TryAdd(building))
         {
@@ -61,7 +66,7 @@ public class BuildingService
 
     public DeletionResult DeleteBuilding(Id<Building> buildingId)
     {
-        var result = _buildings.Remove(buildingId);
+        var result = _buildings.Delete(buildingId);
         if (result.WasNotFound)
         {
             _logger.LogWarning("Tried to delete building {BuildingId} but it was not found", buildingId);
@@ -96,8 +101,8 @@ public class BuildingService
 
     public bool TryGetBuilding(Id<Building> buildingId, out Building building)
         => _buildings.TryGet(buildingId, out building);
-    public IEnumerable<Id<Building>> BuildingIds => _buildings.Keys;
-    public IEnumerable<Building> Buildings => _buildings.Values;
+    public IEnumerable<Id<Building>> BuildingIds => _buildingsInCreationOrder.Select(x => x.Id);
+    public IEnumerable<Building> Buildings => _buildingsInCreationOrder;
     public IReadOnlyCollection<Id<Building>> GetBuildingsWithBlueprint(Id<BuildingBlueprint> blueprintId) =>
         _buildingsByBlueprint.GetForKey(blueprintId);
 }

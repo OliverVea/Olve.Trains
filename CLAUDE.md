@@ -182,6 +182,12 @@ Data classes and structs (e.g. `MeshData`, `LineStripData`, `BuildingPosition`) 
 - **Data classes/structs** for holding data (properties, validation at most)
 - **Static helpers and extension methods** for mapping, conversion, and cross-cutting utilities (e.g. `MeshData` → vertex buffer population belongs in a rendering extension method, not on `MeshData` itself)
 
+### Ordering
+Store enumeration order is arbitrary and differs between runs (entity ids are random), so anything whose outcome depends on order sorts explicitly. Game entities carry a `CreatedSequence` from `SequenceService` (`Olve.Trains.Scenes.GameLogic.Ordering`); services expose their entities in creation order (`BuildingService.Buildings`, `TrackService.Tracks`, ...).
+- **Order makes no difference:** don't sort.
+- **Needs a stable order** (simulation, saves, command output): sequence, then id (`CreationOrder.Of<T>()`).
+- **User-facing lists:** the order the player expects. That's a meaningful field first (e.g. name), then sequence, then id, or an order of its own, such as trains on a track in arrival order (`TrainPositionService.GetTrainsOnTrack`).
+
 ## Notes
 
 ### OpenGL State Management

@@ -14,5 +14,5 @@ public class IndustryRecipeService(EntityStoreFactory entityStoreFactory)
 
     public bool TryGetRecipe(Id<IndustryRecipe> id, out IndustryRecipe recipe) => _recipes.TryGet(id, out recipe);
 
-    public IEnumerable<IndustryRecipe> Recipes => _recipes.Values;
+    public IEnumerable<IndustryRecipe> Recipes => _recipes;
 }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Rendering;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Systems;
 using Olve.Trains.Commands.GameRendering;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Environment;
@@ -32,26 +33,26 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<MeshRenderingService>(sceneId);
         services.AddImmediateEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
-            (TrackRenderingService trs, Id<Track> trackId) =>
+            (TrackRenderingService trs, EntityAdded<Track, Id<Track>> added) =>
             {
-                trs.Unregister(trackId);
-                return trs.Register(trackId);
+                trs.Unregister(added.Id);
+                return trs.Register(added.Id);
             },
-            prefill: ts => ts.TrackIds,
+            prefill: ts => ts.Tracks.AsAdded(),
             before: BeforeTrackRendering);
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackRemoved,
-            (TrackRenderingService trs, Id<Track> trackId) => trs.Unregister(trackId),
+            (TrackRenderingService trs, EntityDeleted<Track, Id<Track>> deleted) => trs.Unregister(deleted.Id),
             before: BeforeTrackRendering);
         services.AddSceneService<TrackRenderingService>(sceneId);
         services.AddSceneService<TrackGhostRenderingService>(sceneId);
         services.AddEventSceneService(sceneId,
             (TrainService ts) => ts.OnTrainAdded,
-            (TrainRenderingService trs, Id<Train> id) => trs.AddTrain(id),
+            (TrainRenderingService trs, EntityAdded<Train, Id<Train>> added) => trs.AddTrain(added.Id),
             before: BeforeTrainRendering);
         services.AddEventSceneService(sceneId,
             (TrainService ts) => ts.OnTrainRemoved,
-            (TrainRenderingService trs, Id<Train> id) => trs.RemoveTrain(id),
+            (TrainRenderingService trs, EntityDeleted<Train, Id<Train>> deleted) => trs.RemoveTrain(deleted.Id),
             before: BeforeTrainRendering);
         services.AddSceneService<TrainRenderingService>(sceneId);
         services.AddEventSceneService(sceneId,
@@ -66,24 +67,24 @@ public static class GameRenderingSceneServiceRegistration
         services.AddSceneService<JunctionSignalRenderingService>(sceneId);
         services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (BuildingRenderingService brs, Id<Building> id) => brs.Register(id),
-            prefill: bs => bs.BuildingIds,
+            (BuildingRenderingService brs, EntityAdded<Building, Id<Building>> added) => brs.Register(added.Id),
+            prefill: bs => bs.Buildings.AsAdded(),
             before: BeforeBuildingRendering);
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
-            (BuildingRenderingService brs, Id<Building> id) => brs.Unregister(id),
+            (BuildingRenderingService brs, EntityDeleted<Building, Id<Building>> deleted) => brs.Unregister(deleted.Id),
             before: BeforeBuildingRendering);
         services.AddSceneService<FootprintRenderingService>(sceneId);
         services.AddSceneService<BuildingRenderingService>(sceneId);
         services.AddSceneService<BuildingGhostPreviewService>(sceneId);
         services.AddImmediateEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectAdded,
-            (EnvironmentalObjectRenderingService eors, Id<EnvironmentalObject> id) => eors.Register(id),
-            prefill: eos => eos.ObjectIds,
+            (EnvironmentalObjectRenderingService eors, EntityAdded<EnvironmentalObject, Id<EnvironmentalObject>> added) => eors.Register(added.Id),
+            prefill: eos => eos.Objects.AsAdded(),
             before: BeforeEnvironmentalObjectRendering);
         services.AddEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectRemoved,
-            (EnvironmentalObjectRenderingService eors, Id<EnvironmentalObject> id) => eors.Unregister(id),
+            (EnvironmentalObjectRenderingService eors, EntityDeleted<EnvironmentalObject, Id<EnvironmentalObject>> deleted) => eors.Unregister(deleted.Id),
             before: BeforeEnvironmentalObjectRendering);
         services.AddSceneService<EnvironmentalObjectRenderingService>(sceneId);
         services.AddSceneService<ColliderDebugRenderingService>(sceneId);

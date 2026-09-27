@@ -12,20 +12,22 @@ Event handlers return `Olve.Results.Result` — see the `/olve-results` skill fo
 
 ## Core Types
 
-### Event<T> (`src/Olve.Engine3D/Systems/Event.cs`)
+### Event<T> (`Olve.Utilities.Stores`, from the Olve.Utilities package)
 
-Simple delegate-chain wrapper. Synchronous — all handlers run inline when `Invoke` is called.
+Synchronous multicast event: all handlers run inline, in subscription order, when `Invoke` is called. `Olve.Utilities.Stores` is a global using in the engine and game projects.
 
 ```csharp
 public class Event<T>
 {
-    public void Invoke(T message);
+    public void Invoke(T message);   // never throws
     public void Subscribe(Action<T> handler);
     public void Unsubscribe(Action<T> handler);
 }
 ```
 
 There is also a non-generic `Event` (no parameter).
+
+Handlers are isolated: a handler that throws does not stop the others, and the exception does not reach the code that called `Invoke`. It goes to `EventDispatch.OnHandlerException`, which `Program.cs` routes to an error-level log (category `EventDispatch`), so integration tests' no-errors check still catches it.
 
 ### EventQueue<T> (`src/Olve.Engine3D/Systems/EventQueue.cs`)
 
@@ -73,8 +75,8 @@ Extension methods in `SceneServiceRegistration.cs` (see `/scenes` skill for the 
 ```csharp
 services.AddImmediateEventSceneService(sceneId,
     (BuildingService bs) => bs.OnBuildingAdded,              // event source
-    (BuildingCollisionService bcs, Id<Building> id) => bcs.Register(id),  // handler
-    prefill: bs => bs.BuildingIds);                          // optional prefill
+    (BuildingCollisionService bcs, EntityAdded<Building, Id<Building>> added) => bcs.Register(added.Id),  // handler
+    prefill: bs => bs.Buildings.AsAdded());                  // optional prefill
 ```
 
 ### AddEventSceneService
@@ -82,14 +84,14 @@ services.AddImmediateEventSceneService(sceneId,
 ```csharp
 services.AddEventSceneService(sceneId,
     (BuildingService bs) => bs.OnBuildingRemoved,            // event source
-    (StationService ss, Id<Building> id) => ss.DeleteStationForBuilding(id));  // handler
+    (StationService ss, EntityDeleted<Building, Id<Building>> deleted) => ss.DeleteStationForBuilding(deleted.Id));  // handler
 ```
 
 ### Parameters
 
 - **`eventSelector`**: Extracts the `Event<T>` from the source service (e.g., `bs => bs.OnBuildingAdded`)
 - **`handler`**: Callback receiving the event payload. Must return `Olve.Results.Result` (see `/olve-results` skill).
-- **`prefill`**: Optional. Returns existing entity IDs to process on scene load. Use this to initialize dependent state for entities that already exist (e.g., register colliders for all buildings that were loaded before this service started).
+- **`prefill`**: Optional. Returns existing items to process on scene load, as event payloads. Use this to initialize dependent state for entities that already exist (e.g., register colliders for all buildings that were loaded before this service started). For store events, `entities.AsAdded()` (`Olve.Engine3D.Systems.EntityEvents`) turns entities into `EntityAdded` payloads.
 - **`before`**: Array of `ISceneServiceType`. This event service runs before the named services. Sets priority to `min(before_priorities) - 1024`.
 - **`after`**: Array of `ISceneServiceType`. This event service runs after the named services. Sets priority to `max(after_priorities) + 1024`.
 - **`propagateFailedUpdate`**: (Deferred only) If true, a failed handler propagates the error up the scene update. Default false.
@@ -121,13 +123,13 @@ Always register both sides to keep state symmetric:
 // Add
 services.AddImmediateEventSceneService(sceneId,
     (BuildingService bs) => bs.OnBuildingAdded,
-    (BuildingCollisionService bcs, Id<Building> id) => bcs.Register(id),
-    prefill: bs => bs.BuildingIds);
+    (BuildingCollisionService bcs, EntityAdded<Building, Id<Building>> added) => bcs.Register(added.Id),
+    prefill: bs => bs.Buildings.AsAdded());
 
 // Remove
 services.AddEventSceneService(sceneId,
     (BuildingService bs) => bs.OnBuildingRemoved,
-    (BuildingCollisionService bcs, Id<Building> id) => bcs.Unregister(id));
+    (BuildingCollisionService bcs, EntityDeleted<Building, Id<Building>> deleted) => bcs.Unregister(deleted.Id));
 ```
 
 Note: add handlers typically use Immediate + prefill. Remove handlers typically use deferred (no prefill needed).
@@ -140,13 +142,13 @@ Multiple services can subscribe to the same event. Each gets its own registratio
 // All fire when a building is added:
 services.AddImmediateEventSceneService(sceneId,
     (BuildingService bs) => bs.OnBuildingAdded,
-    (StationService ss, Id<Building> id) => ss.CreateStationForBuilding(id).ToEmptyResult(),
-    prefill: bs => bs.BuildingIds);
+    (StationService ss, EntityAdded<Building, Id<Building>> added) => ss.CreateStationForBuilding(added.Id).ToEmptyResult(),
+    prefill: bs => bs.Buildings.AsAdded());
 
 services.AddImmediateEventSceneService(sceneId,
     (BuildingService bs) => bs.OnBuildingAdded,
-    (DepotService ds, Id<Building> id) => ds.CreateDepotForBuilding(id).ToEmptyResult(),
-    prefill: bs => bs.BuildingIds);
+    (DepotService ds, EntityAdded<Building, Id<Building>> added) => ds.CreateDepotForBuilding(added.Id).ToEmptyResult(),
+    prefill: bs => bs.Buildings.AsAdded());
 ```
 
 ### Cascade deletion via blueprint events
@@ -155,16 +157,19 @@ services.AddImmediateEventSceneService(sceneId,
 // When a blueprint is removed, delete all entities using that blueprint
 services.AddEventSceneService(sceneId,
     (BuildingBlueprintService bbs) => bbs.OnBlueprintRemoved,
-    (BuildingService bs, Id<BuildingBlueprint> id) => bs.DeleteBuildingsWithBlueprint(id));
+    (BuildingService bs, EntityDeleted<BuildingBlueprint, Id<BuildingBlueprint>> deleted) => bs.DeleteBuildingsWithBlueprint(deleted.Id));
 ```
 
 ### Event sources
 
-Events originate from `EntityStore<T>`:
-- `OnAdded` — fires after `TryAdd()` succeeds
-- `OnRemoved` — fires after `Remove()` succeeds
+Events originate from `EntityStore<T>` (Olve.Utilities package) and carry the committed entity:
+- `OnAdded` — `EntityAdded<T, Id<T>>(Id, Entity)`, fires after `TryAdd()` (or `Set()` of a new id) succeeds
+- `OnUpdated` — `EntityUpdated<T, Id<T>>(Id, Before, After)`, fires after `Set()` replaces a different value
+- `OnDeleted` — `EntityDeleted<T, Id<T>>(Id, Entity)`, fires after `Delete()` succeeds
 
-Services expose these as public properties (e.g., `BuildingService.OnBuildingAdded`).
+Services expose these as public properties with domain names (e.g., `BuildingService.OnBuildingAdded`, `BuildingService.OnBuildingRemoved` for `OnDeleted`).
+
+Removal events fire **after** the entity has left the store, so a handler can't look the entity up by id any more. Read what you need from the payload's `Entity` instead (e.g., `JunctionService.OnTrackRemoved` takes the removed track's endpoints from it). Entities are immutable records: never mutate a payload.
 
 ## Where events are registered
 

@@ -2,24 +2,28 @@ using Olve.Engine3D.Diagnostics;
 using Olve.Engine3D.Systems;
 using Olve.Trains.Scenes.GameLogic.Trains;
 using Olve.Trains.Shared.Telemetry;
+using Olve.Trains.Scenes.GameLogic.Ordering;
 
 namespace Olve.Trains.Scenes.GameLogic.Tracks;
 
 public class TrackService(
     EntityStoreFactory entityStoreFactory,
+    SequenceService sequences,
     TrainPositionService trainPositionService,
     TrainService trainService,
     TrainTrackHistoryService trainTrackHistoryService)
 {
     private readonly EntityStore<Track> _tracks = entityStoreFactory.Create<Track>();
+    private EntityStoreOrderedView<Track, Id<Track>>? _tracksInCreationOrder;
+    private EntityStoreOrderedView<Track, Id<Track>> TracksInCreationOrder => _tracksInCreationOrder ??= _tracks.CreateOrderedView(CreationOrder.Of<Track>());
 
-    public Event<Id<Track>> OnTrackAdded => _tracks.OnAdded;
-    public Event<Id<Track>> OnTrackRemoved => _tracks.OnRemoved;
+    public Event<EntityAdded<Track, Id<Track>>> OnTrackAdded => _tracks.OnAdded;
+    public Event<EntityDeleted<Track, Id<Track>>> OnTrackRemoved => _tracks.OnDeleted;
 
     public Result<Id<Track>> AddTrack(TrackEndpoint start, TrackEndpoint end)
     {
         var trackId = Id.New<Track>();
-        Track track = new(trackId, start, end);
+        Track track = new(trackId, start, end, sequences.Next());
         if (!_tracks.TryAdd(track))
         {
             return new ResultProblem("Track already exists: '{0}'", trackId);
@@ -38,7 +42,7 @@ public class TrackService(
             return DeletionResult.Error(new ResultProblem("Cannot delete track '{0}': a train or wagon is on it", trackId));
         }
 
-        var result = _tracks.Remove(trackId);
+        var result = _tracks.Delete(trackId);
         if (EngineMetrics.IsEnabled && !result.WasNotFound) GameMetrics.TrackCount.Add(-1);
         return result;
     }
@@ -67,10 +71,10 @@ public class TrackService(
         return false;
     }
 
-    public bool TrackExists(Id<Track> trackId) => _tracks.Exists(trackId);
+    public bool TrackExists(Id<Track> trackId) => _tracks.Contains(trackId);
 
-    public IEnumerable<Id<Track>> TrackIds => _tracks.Keys;
-    public IEnumerable<Track> Tracks => _tracks.Values;
+    public IEnumerable<Id<Track>> TrackIds => TracksInCreationOrder.Select(x => x.Id);
+    public IEnumerable<Track> Tracks => TracksInCreationOrder;
 
     public bool TryGetTrack(Id<Track> trackId, out Track track) =>
         _tracks.TryGet(trackId, out track);

@@ -91,6 +91,11 @@ public static class Program
         var gameManager = serviceProvider.GetRequiredService<GameManager>();
         var logger = serviceProvider.GetRequiredService<ILogger<GameManager>>();
 
+        // Event handlers are isolated: a throwing handler doesn't stop the others or the write that raised the
+        // event, so log it at error level where the integration tests' no-errors check sees it.
+        var eventLogger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(nameof(EventDispatch));
+        EventDispatch.OnHandlerException = ex => eventLogger.LogError(ex, "Unhandled exception in an event handler; other handlers still ran");
+
         logger.LogInformation("""
 
 

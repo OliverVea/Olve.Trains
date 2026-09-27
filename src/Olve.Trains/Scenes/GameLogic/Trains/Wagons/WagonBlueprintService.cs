@@ -6,8 +6,8 @@ public class WagonBlueprintService(EntityStoreFactory entityStoreFactory)
 {
     private readonly EntityStore<WagonBlueprint> _blueprints = entityStoreFactory.Create<WagonBlueprint>();
 
-    public Event<Id<WagonBlueprint>> OnBlueprintAdded => _blueprints.OnAdded;
-    public Event<Id<WagonBlueprint>> OnBlueprintRemoved => _blueprints.OnRemoved;
+    public Event<EntityAdded<WagonBlueprint, Id<WagonBlueprint>>> OnBlueprintAdded => _blueprints.OnAdded;
+    public Event<EntityDeleted<WagonBlueprint, Id<WagonBlueprint>>> OnBlueprintRemoved => _blueprints.OnDeleted;
 
     public Result Register(WagonBlueprint blueprint)
     {
@@ -21,5 +21,5 @@ public class WagonBlueprintService(EntityStoreFactory entityStoreFactory)
 
     public bool TryGet(Id<WagonBlueprint> id, out WagonBlueprint blueprint) => _blueprints.TryGet(id, out blueprint);
 
-    public DeletionResult Remove(Id<WagonBlueprint> id) => _blueprints.Remove(id);
+    public DeletionResult Remove(Id<WagonBlueprint> id) => _blueprints.Delete(id);
 }

@@ -40,16 +40,18 @@ public class GuiLayoutService(
         return Result.Success();
     }
 
-    private void OnAdded(Id<GuiNode> id)
+    private void OnAdded(EntityAdded<GuiNode, Id<GuiNode>> added)
     {
+        var id = added.Id;
         var index = _layoutData.Count;
         _nodeIndexById.Add(id, index);
         _layoutData.Add(new LayoutData(id));
         SetDirty();
     }
 
-    private void OnRemoved(Id<GuiNode> id)
+    private void OnRemoved(EntityDeleted<GuiNode, Id<GuiNode>> deleted)
     {
+        var id = deleted.Id;
         if (!_nodeIndexById.Remove(id, out var index))
         {
             logger.LogWarning("GUI node with id '{Id}' and no layout entry was removed", id);

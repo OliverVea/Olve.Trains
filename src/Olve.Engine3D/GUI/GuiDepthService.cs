@@ -24,8 +24,9 @@ public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService gui
         return Result.Success();
     }
 
-    private void OnAdded(Id<GuiNode> nodeId)
+    private void OnAdded(EntityAdded<GuiNode, Id<GuiNode>> added)
     {
+        var nodeId = added.Id;
         if (guiNodeService.TryGetParent(nodeId, out var parent))
         {
             if (parent.TryGetT2(out var guiNodeParent, out var anchorParent))
@@ -52,7 +53,7 @@ public class GuiDepthService(ILogger<GuiDepthService> logger, GuiNodeService gui
         _depths[nodeId] = 0;
     }
 
-    private void OnRemoved(Id<GuiNode> nodeId) => _depths.Remove(nodeId);
+    private void OnRemoved(EntityDeleted<GuiNode, Id<GuiNode>> deleted) => _depths.Remove(deleted.Id);
 
     public int GetDepth(Id<GuiNode> nodeId)
     {

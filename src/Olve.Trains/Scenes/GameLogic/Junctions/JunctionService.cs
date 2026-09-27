@@ -54,7 +54,7 @@ public class JunctionService(ILogger<JunctionService> logger, EntityStoreFactory
         if (connections is null)
         {
             _junctionPositions.Remove(tilePosition);
-            if (_junctions.Remove(junctionId).TryPickProblems(out var problems))
+            if (_junctions.Delete(junctionId).TryPickProblems(out var problems))
             {
                 return DeletionResult.Error(problems);
             }
@@ -65,25 +65,16 @@ public class JunctionService(ILogger<JunctionService> logger, EntityStoreFactory
         return DeletionResult.Success();
     }
 
-    public Result OnTrackAdded(Id<Track> trackId, TrackService trackService)
+    public Result OnTrackAdded(Track track)
     {
-        if (!trackService.TryGetTrack(trackId, out var track))
-        {
-            return new ResultProblem("Track not found: '{0}'", trackId);
-        }
-
         return Result.Concat(
             AddJunctionConnection(track.Id, track.Start).ToEmptyResult(),
             AddJunctionConnection(track.Id, track.End).ToEmptyResult());
     }
 
-    public Result OnTrackRemoved(Id<Track> trackId, TrackService trackService)
+    // Runs after the track left the store, so it takes the removed track from the event rather than looking it up.
+    public Result OnTrackRemoved(Track track)
     {
-        if (!trackService.TryGetTrack(trackId, out var track))
-        {
-            return new ResultProblem("Track not found: '{0}'", trackId);
-        }
-
         return Result.Concat(
             RemoveJunctionConnection(track.Id, track.Start).MapToResult(),
             RemoveJunctionConnection(track.Id, track.End).MapToResult());
@@ -127,7 +118,7 @@ public class JunctionService(ILogger<JunctionService> logger, EntityStoreFactory
                && connections.Any(x => x.TrackId == trackId);
     }
 
-    public bool JunctionExists(Id<Junction> junctionId) => _junctions.Exists(junctionId);
+    public bool JunctionExists(Id<Junction> junctionId) => _junctions.Contains(junctionId);
 
     public bool TryGetJunction(Id<Junction> junctionId, out Junction junction) =>
         _junctions.TryGet(junctionId, out junction);

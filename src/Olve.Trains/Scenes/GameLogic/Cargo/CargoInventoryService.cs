@@ -22,7 +22,7 @@ public class CargoInventoryService(EntityStoreFactory entityStoreFactory)
 
     public void RemoveInventory(Id<CargoInventory> id)
     {
-        _inventories.Remove(id);
+        _inventories.Delete(id);
         _containers.Remove(id);
     }
 

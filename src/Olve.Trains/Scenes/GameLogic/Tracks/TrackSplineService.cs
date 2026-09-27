@@ -28,8 +28,8 @@ public class TrackSplineService(TrackService trackService) : ISceneService
         return Result.Success();
     }
 
-    private void OnAdded(Id<Track> id) => GetOrAddSpline(id);
-    private void OnRemoved(Id<Track> id) => _trackSplines.Remove(id);
+    private void OnAdded(EntityAdded<Track, Id<Track>> added) => GetOrAddSpline(added.Id);
+    private void OnRemoved(EntityDeleted<Track, Id<Track>> deleted) => _trackSplines.Remove(deleted.Id);
 
     public Result<Vector3D<float>> GetPoint(Id<Track> trackId, float time)
         => WithTrackSpline(trackId, spline => spline.GetPoint(time));

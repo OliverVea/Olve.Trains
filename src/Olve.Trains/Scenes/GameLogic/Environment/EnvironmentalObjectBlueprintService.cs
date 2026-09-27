@@ -9,8 +9,8 @@ public class EnvironmentalObjectBlueprintService(ILogger<EnvironmentalObjectBlue
 {
     private readonly EntityStore<EnvironmentalObjectBlueprint> _blueprints = entityStoreFactory.Create<EnvironmentalObjectBlueprint>();
 
-    public Event<Id<EnvironmentalObjectBlueprint>> OnBlueprintAdded => _blueprints.OnAdded;
-    public Event<Id<EnvironmentalObjectBlueprint>> OnBlueprintRemoved => _blueprints.OnRemoved;
+    public Event<EntityAdded<EnvironmentalObjectBlueprint, Id<EnvironmentalObjectBlueprint>>> OnBlueprintAdded => _blueprints.OnAdded;
+    public Event<EntityDeleted<EnvironmentalObjectBlueprint, Id<EnvironmentalObjectBlueprint>>> OnBlueprintRemoved => _blueprints.OnDeleted;
 
     public Result AddBlueprint(Id<EnvironmentalObjectBlueprint> id, string description, AssetPath<MeshData>? meshPath = null)
     {
@@ -27,7 +27,7 @@ public class EnvironmentalObjectBlueprintService(ILogger<EnvironmentalObjectBlue
 
     public DeletionResult DeleteBlueprint(Id<EnvironmentalObjectBlueprint> blueprintId)
     {
-        var result = _blueprints.Remove(blueprintId);
+        var result = _blueprints.Delete(blueprintId);
         logger.LogDebug("Deleted environmental object blueprint {BlueprintId}", blueprintId);
         return result;
     }

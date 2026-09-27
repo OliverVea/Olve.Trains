@@ -61,7 +61,8 @@ public static class SaveFileMapping
 
     /// <summary>
     /// Materializes a saved environmental object back into its domain form. Mesh/texture are intentionally
-    /// not persisted — the renderer resolves them from the blueprint on load.
+    /// not persisted — the renderer resolves them from the blueprint on load. Neither is the creation sequence:
+    /// objects are saved in creation order, and restoring them numbers them afresh in that order.
     /// </summary>
     public static Result<EnvironmentalObject> ToEnvironmentalObject(this SaveEnvironmentalObject obj)
     {
@@ -75,6 +76,6 @@ public static class SaveFileMapping
             return new ResultProblem("Save environmental object '{0}' has invalid blueprint id '{1}'.", obj.Id, obj.BlueprintId);
         }
 
-        return new EnvironmentalObject(id, blueprintId, obj.Position.ToPosition3D(obj.Rotation));
+        return new EnvironmentalObject(id, blueprintId, obj.Position.ToPosition3D(obj.Rotation), CreatedSequence: 0);
     }
 }

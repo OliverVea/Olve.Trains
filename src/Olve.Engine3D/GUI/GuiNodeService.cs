@@ -18,8 +18,8 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
     private readonly Dictionary<Id<GuiNode>, UnionId<GuiAnchor, GuiNode>> _parent = [];
     private readonly Dictionary<Id<GuiNode>, List<Id<GuiNode>>> _children = [];
 
-    public Event<Id<GuiNode>> OnNodeAdded => _guiNodes.OnAdded;
-    public Event<Id<GuiNode>> OnNodeRemoved => _guiNodes.OnRemoved;
+    public Event<EntityAdded<GuiNode, Id<GuiNode>>> OnNodeAdded => _guiNodes.OnAdded;
+    public Event<EntityDeleted<GuiNode, Id<GuiNode>>> OnNodeRemoved => _guiNodes.OnDeleted;
     public Event<Id<GuiNode>> OnEnabled { get; } = new();
     public Event<Id<GuiNode>> OnDisabled { get; } = new();
 
@@ -29,7 +29,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
         GuiNode node = new(nodeId, name);
 
         var parentIsNode = parentId.TryGetT2(out var parentNodeId, out var parentGuiAnchor);
-        if (parentIsNode && !_guiNodes.Exists(parentNodeId))
+        if (parentIsNode && !_guiNodes.Contains(parentNodeId))
         {
             return new ResultProblem("GUI node with id '{0}' cannot be an ancestor because it does not exist", parentNodeId);
         }
@@ -50,7 +50,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
 
     public DeletionResult RemoveNode(Id<GuiNode> nodeId)
     {
-        if (!_guiNodes.Exists(nodeId))
+        if (!_guiNodes.Contains(nodeId))
         {
             return DeletionResult.NotFound();
         }
@@ -71,7 +71,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
         _children.Remove(nodeId);
 
         // Delete the entity
-        if (_guiNodes.Remove(nodeId).MapToResult(allowNotFound: false).TryPickProblems(out var baseProblems))
+        if (_guiNodes.Delete(nodeId).MapToResult(allowNotFound: false).TryPickProblems(out var baseProblems))
         {
             return baseProblems;
         }
@@ -121,7 +121,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
             return true;
         }
 
-        if (_guiNodes.Exists(nodeId))
+        if (_guiNodes.Contains(nodeId))
         {
             children = [];
             return true;
@@ -138,7 +138,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
 
     public Result SetEnabled(Id<GuiNode> nodeId, bool enabled)
     {
-        if (!_guiNodes.Exists(nodeId))
+        if (!_guiNodes.Contains(nodeId))
         {
             return new ResultProblem("Could not find GUI node with id '{0}' while trying to set enabled state to '{1}'",
                 nodeId, enabled);
@@ -154,7 +154,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
 
     public Result<bool> IsEnabled(Id<GuiNode> nodeId)
     {
-        if (!_guiNodes.Exists(nodeId))
+        if (!_guiNodes.Contains(nodeId))
         {
             return new ResultProblem("Could not find GUI node with id '{0}' while trying to get enabled state", nodeId);
         }
@@ -174,7 +174,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
 
     public IEnumerable<Result<Id<GuiNode>>> GetNodeAndAncestors(Id<GuiNode> nodeId)
     {
-        if (!_guiNodes.Exists(nodeId))
+        if (!_guiNodes.Contains(nodeId))
         {
             yield return new ResultProblem("No node with id '{0}' exists", nodeId);
             yield break;
@@ -222,7 +222,7 @@ public class GuiNodeService(ILogger<GuiNodeService> logger)
 
     public IEnumerable<Result<Id<GuiNode>>> GetNodeAndDescendants(Id<GuiNode> nodeId)
     {
-        if (!_guiNodes.Exists(nodeId))
+        if (!_guiNodes.Contains(nodeId))
         {
             yield return new ResultProblem("No node with id '{0}' exists", nodeId);
             yield break;

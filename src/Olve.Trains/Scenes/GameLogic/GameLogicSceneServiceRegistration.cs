@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Olve.Engine3D.Commands;
 using Olve.Engine3D.Scenes;
+using Olve.Engine3D.Systems;
 using Olve.Trains.Scenes.GameLogic.Buildings;
 using Olve.Trains.Scenes.GameLogic.Buildings.Industries;
 using Olve.Trains.Scenes.GameLogic.Buildings.Residences;
@@ -11,6 +12,7 @@ using Olve.Trains.Scenes.GameLogic.Buildings.Stations;
 using Olve.Trains.Scenes.GameLogic.Cargo;
 using Olve.Trains.Commands.GameLogic;
 using Olve.Trains.Scenes.GameLogic.Camera;
+using Olve.Trains.Scenes.GameLogic.Ordering;
 using Olve.Trains.Scenes.GameLogic.Environment;
 using Olve.Trains.Scenes.GameLogic.Collision;
 using Olve.Trains.Scenes.GameLogic.Junctions;
@@ -92,10 +94,12 @@ public static class GameLogicSceneServiceRegistration
         services.AddSceneService<IndustryProductionService>(sceneId);
         services.AddSceneService<StationCargoTransferService>(sceneId);
         services.AddSceneService<TrainMovementService>(sceneId);
+        services.AddSceneService<TrainPositionService>(sceneId);
         services.AddSceneService<WagonBlueprintLibraryService>(sceneId);
         services.AddSceneService<WagonInventoryService>(sceneId);
 
         // Non-scene singletons (dependencies only, not in scene lifecycle)
+        services.TryAddScoped<SequenceService>();
         services.TryAddScoped<BuildingBlueprintService>();
         services.TryAddScoped<BuildingCollisionService>();
         services.TryAddScoped<BuildingMeshBlueprintService>();
@@ -141,7 +145,6 @@ public static class GameLogicSceneServiceRegistration
         services.TryAddScoped<TrainGroupService>();
         services.TryAddScoped<TrainTrackHistoryService>();
         services.TryAddScoped<TrainJunctionService>();
-        services.TryAddScoped<TrainPositionService>();
         services.TryAddScoped<TrainService>();
         services.TryAddScoped<TrainWagonService>();
         services.TryAddScoped<WagonBlueprintService>();
@@ -150,11 +153,11 @@ public static class GameLogicSceneServiceRegistration
         // Scene Events
         services.AddImmediateEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
-            (JunctionService js, TrackService ts, Id<Track> trackId) => js.OnTrackAdded(trackId, ts),
-            prefill: ts => ts.TrackIds);
+            (JunctionService js, EntityAdded<Track, Id<Track>> added) => js.OnTrackAdded(added.Entity),
+            prefill: ts => ts.Tracks.AsAdded());
         services.AddImmediateEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackRemoved,
-            (JunctionService js, TrackService ts, Id<Track> trackId) => js.OnTrackRemoved(trackId, ts));
+            (JunctionService js, EntityDeleted<Track, Id<Track>> deleted) => js.OnTrackRemoved(deleted.Entity));
         services.AddEventSceneService(sceneId,
             (JunctionService js) => js.OnJunctionConnectionsUpdated,
             (JunctionSignalService jss, Id<Junction> id) => jss.EvaluateSignal(id));
@@ -167,94 +170,94 @@ public static class GameLogicSceneServiceRegistration
             (JunctionSignalCollisionService jscs, Id<Junction> id) => jscs.Unregister(id));
         services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (StationService ss, Id<Building> id) => ss.CreateStationForBuilding(id).ToEmptyResult(),
-            prefill: bs => bs.BuildingIds);
+            (StationService ss, EntityAdded<Building, Id<Building>> added) => ss.CreateStationForBuilding(added.Id).ToEmptyResult(),
+            prefill: bs => bs.Buildings.AsAdded());
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
-            (StationService ss, Id<Building> id) => ss.DeleteStationForBuilding(id));
+            (StationService ss, EntityDeleted<Building, Id<Building>> deleted) => ss.DeleteStationForBuilding(deleted.Id));
         services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (DepotService ds, Id<Building> id) => ds.CreateDepotForBuilding(id).ToEmptyResult(),
-            prefill: bs => bs.BuildingIds);
+            (DepotService ds, EntityAdded<Building, Id<Building>> added) => ds.CreateDepotForBuilding(added.Id).ToEmptyResult(),
+            prefill: bs => bs.Buildings.AsAdded());
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
-            (DepotService ds, Id<Building> id) => ds.DeleteDepotForBuilding(id));
+            (DepotService ds, EntityDeleted<Building, Id<Building>> deleted) => ds.DeleteDepotForBuilding(deleted.Id));
         services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (IndustryService ist, Id<Building> id) => ist.CreateIndustryForBuilding(id).ToEmptyResult(),
-            prefill: bs => bs.BuildingIds);
+            (IndustryService ist, EntityAdded<Building, Id<Building>> added) => ist.CreateIndustryForBuilding(added.Id).ToEmptyResult(),
+            prefill: bs => bs.Buildings.AsAdded());
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
-            (IndustryService ist, Id<Building> id) => ist.RemoveIndustryForBuilding(id));
+            (IndustryService ist, EntityDeleted<Building, Id<Building>> deleted) => ist.RemoveIndustryForBuilding(deleted.Id));
         services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (CityService cs, Id<Building> id) => cs.CreateResidenceForBuilding(id).ToEmptyResult(),
-            prefill: bs => bs.BuildingIds);
+            (CityService cs, EntityAdded<Building, Id<Building>> added) => cs.CreateResidenceForBuilding(added.Id).ToEmptyResult(),
+            prefill: bs => bs.Buildings.AsAdded());
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
-            (CityService cs, Id<Building> id) => cs.RemoveResidenceForBuilding(id));
+            (CityService cs, EntityDeleted<Building, Id<Building>> deleted) => cs.RemoveResidenceForBuilding(deleted.Id));
         services.AddImmediateEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (BuildingCollisionService bcs, Id<Building> id) => bcs.Register(id),
-            prefill: bs => bs.BuildingIds);
+            (BuildingCollisionService bcs, EntityAdded<Building, Id<Building>> added) => bcs.Register(added.Id),
+            prefill: bs => bs.Buildings.AsAdded());
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
-            (BuildingCollisionService bcs, Id<Building> id) => bcs.Unregister(id));
+            (BuildingCollisionService bcs, EntityDeleted<Building, Id<Building>> deleted) => bcs.Unregister(deleted.Id));
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (PlacementClearanceService pcs, Id<Building> id) => pcs.ClearForBuilding(id));
+            (PlacementClearanceService pcs, EntityAdded<Building, Id<Building>> added) => pcs.ClearForBuilding(added.Id));
         services.AddEventSceneService(sceneId,
             (BuildingBlueprintService blueprintService) => blueprintService.OnBlueprintRemoved,
-            (BuildingService buildingService, Id<BuildingBlueprint> id) => buildingService.DeleteBuildingsWithBlueprint(id));
+            (BuildingService buildingService, EntityDeleted<BuildingBlueprint, Id<BuildingBlueprint>> deleted) => buildingService.DeleteBuildingsWithBlueprint(deleted.Id));
         services.AddEventSceneService(sceneId,
             (EnvironmentalObjectBlueprintService ebs) => ebs.OnBlueprintRemoved,
-            (EnvironmentalObjectService eos, Id<EnvironmentalObjectBlueprint> id) => eos.DeleteObjectsWithBlueprint(id));
+            (EnvironmentalObjectService eos, EntityDeleted<EnvironmentalObjectBlueprint, Id<EnvironmentalObjectBlueprint>> deleted) => eos.DeleteObjectsWithBlueprint(deleted.Id));
         services.AddImmediateEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectAdded,
-            (EnvironmentalObjectCollisionService eocs, Id<EnvironmentalObject> id) => eocs.Register(id),
-            prefill: eos => eos.ObjectIds);
+            (EnvironmentalObjectCollisionService eocs, EntityAdded<EnvironmentalObject, Id<EnvironmentalObject>> added) => eocs.Register(added.Id),
+            prefill: eos => eos.Objects.AsAdded());
         services.AddEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectRemoved,
-            (EnvironmentalObjectCollisionService eocs, Id<EnvironmentalObject> id) => eocs.Unregister(id));
+            (EnvironmentalObjectCollisionService eocs, EntityDeleted<EnvironmentalObject, Id<EnvironmentalObject>> deleted) => eocs.Unregister(deleted.Id));
         services.AddImmediateEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectAdded,
-            (ResourceService rs, Id<EnvironmentalObject> id) => rs.CreateResourceForEnvironmentalObject(id),
-            prefill: eos => eos.ObjectIds);
+            (ResourceService rs, EntityAdded<EnvironmentalObject, Id<EnvironmentalObject>> added) => rs.CreateResourceForEnvironmentalObject(added.Id),
+            prefill: eos => eos.Objects.AsAdded());
         services.AddEventSceneService(sceneId,
             (EnvironmentalObjectService eos) => eos.OnObjectRemoved,
-            (ResourceService rs, Id<EnvironmentalObject> id) => rs.RemoveResourceForEnvironmentalObject(id));
+            (ResourceService rs, EntityDeleted<EnvironmentalObject, Id<EnvironmentalObject>> deleted) => rs.RemoveResourceForEnvironmentalObject(deleted.Id));
 
         // Mark resource ownership dirty when buildings or resources change
         // TODO: Optimize — only mark dirty when the entity is relevant (extractive building, matching resource type/position)
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingAdded,
-            (ResourceOwnershipService ros, Id<Building> _) => { ros.MarkDirty(); return Result.Success(); });
+            (ResourceOwnershipService ros, EntityAdded<Building, Id<Building>> _) => { ros.MarkDirty(); return Result.Success(); });
         services.AddEventSceneService(sceneId,
             (BuildingService bs) => bs.OnBuildingRemoved,
-            (ResourceOwnershipService ros, Id<Building> _) => { ros.MarkDirty(); return Result.Success(); });
+            (ResourceOwnershipService ros, EntityDeleted<Building, Id<Building>> _) => { ros.MarkDirty(); return Result.Success(); });
         services.AddEventSceneService(sceneId,
             (ResourceService rs) => rs.OnResourceAdded,
-            (ResourceOwnershipService ros, Id<Resource> _) => { ros.MarkDirty(); return Result.Success(); });
+            (ResourceOwnershipService ros, EntityAdded<Resource, Id<Resource>> _) => { ros.MarkDirty(); return Result.Success(); });
         services.AddEventSceneService(sceneId,
             (ResourceService rs) => rs.OnResourceRemoved,
-            (ResourceOwnershipService ros, Id<Resource> _) => { ros.MarkDirty(); return Result.Success(); });
+            (ResourceOwnershipService ros, EntityDeleted<Resource, Id<Resource>> _) => { ros.MarkDirty(); return Result.Success(); });
         services.AddImmediateEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
-            (TrackCollisionService tcs, Id<Track> id) => tcs.Register(id),
-            prefill: ts => ts.TrackIds);
+            (TrackCollisionService tcs, EntityAdded<Track, Id<Track>> added) => tcs.Register(added.Id),
+            prefill: ts => ts.Tracks.AsAdded());
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackRemoved,
-            (TrackCollisionService tcs, Id<Track> id) => tcs.Unregister(id));
+            (TrackCollisionService tcs, EntityDeleted<Track, Id<Track>> deleted) => tcs.Unregister(deleted.Id));
         services.AddEventSceneService(sceneId,
             (TrackService ts) => ts.OnTrackAdded,
-            (PlacementClearanceService pcs, Id<Track> id) => pcs.ClearForTrack(id));
+            (PlacementClearanceService pcs, EntityAdded<Track, Id<Track>> added) => pcs.ClearForTrack(added.Id));
         services.AddEventSceneService(sceneId,
             (TrainService vs) => vs.OnTrainAdded,
-            (TrainCollisionService vcs, Id<Train> id) => vcs.Register(id),
-            prefill: vs => vs.TrainIds);
+            (TrainCollisionService vcs, EntityAdded<Train, Id<Train>> added) => vcs.Register(added.Id),
+            prefill: vs => vs.Trains.AsAdded());
         services.AddEventSceneService(sceneId,
             (TrainService vs) => vs.OnTrainRemoved,
-            (TrainCollisionService vcs, Id<Train> id) => vcs.Unregister(id));
+            (TrainCollisionService vcs, EntityDeleted<Train, Id<Train>> deleted) => vcs.Unregister(deleted.Id));
         services.AddEventSceneService(sceneId,
             (TrainMovementService vms) => vms.OnTrainReachedTrackEnd,
             (TrainJunctionCrossingService vjcs, Id<Train> id) => vjcs.OnTrainReachedEnd(id),
@@ -263,10 +266,10 @@ public static class GameLogicSceneServiceRegistration
 
         services.AddEventSceneService(sceneId,
             (TrainService ts) => ts.OnTrainRemoved,
-            (TrainWagonService tws, Id<Train> trainId) => tws.RemoveAllWagons(trainId));
+            (TrainWagonService tws, EntityDeleted<Train, Id<Train>> deleted) => tws.RemoveAllWagons(deleted.Id));
         services.AddEventSceneService(sceneId,
             (TrainService ts) => ts.OnTrainRemoved,
-            (TrainTrackHistoryService tths, Id<Train> trainId) => tths.RemoveHistory(trainId));
+            (TrainTrackHistoryService tths, EntityDeleted<Train, Id<Train>> deleted) => tths.RemoveHistory(deleted.Id));
 
         return services;
     }

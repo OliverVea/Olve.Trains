@@ -126,7 +126,7 @@ renderingInstanceManager.Remove(groupId, instanceId);
 
 ## Entity Management
 
-**`EntityStore<T>`** (composition pattern): wraps `IdDictionary<T>` with `TryAdd`, `Set`, `Remove`, `TryGet`, `Exists`, `Where`. Exposes `OnAdded`/`OnRemoved` events. Services compose this directly and expose domain-specific event names (e.g., `OnTrackAdded`).
+**`EntityStore<T>`** (from the Olve.Utilities package, composition pattern): `TryAdd`, `Set`, `Delete`, `TryGet`, `Contains`, enumeration. Its `OnAdded`/`OnUpdated`/`OnDeleted` events carry the committed entity (`EntityAdded`, `EntityUpdated`, `EntityDeleted`) and fire after the write. Services create stores through `EntityStoreFactory`, compose them directly and expose domain-specific event names (e.g., `OnTrackAdded`, `OnTrackRemoved`). Secondary indexes come from `store.CreateIndex(...)`; keep them in a field. Per-frame per-entity values live in `EntityStoreColumns` (e.g., `TrainPositionService` keeps train track positions and motion in columns and syncs them once per frame). Store enumeration order differs between runs, so services expose their entities in creation order (`CreatedSequence`, see Ordering in CLAUDE.md).
 
 ## Scene System
 

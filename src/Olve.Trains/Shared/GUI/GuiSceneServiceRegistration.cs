@@ -79,16 +79,16 @@ public static class GuiSceneServiceRegistration
         // Clean up animation and state entries when nodes are removed
         services.AddImmediateEventSceneService(sceneId,
             (GuiNodeService ns) => ns.OnNodeRemoved,
-            (GuiAnimationService gas, Id<GuiNode> id) =>
+            (GuiAnimationService gas, EntityDeleted<GuiNode, Id<GuiNode>> deleted) =>
             {
-                gas.RemoveAnimationsForNode(id);
+                gas.RemoveAnimationsForNode(deleted.Id);
                 return Result.Success();
             });
         services.AddImmediateEventSceneService(sceneId,
             (GuiNodeService ns) => ns.OnNodeRemoved,
-            (GuiNodeStateService ss, Id<GuiNode> id) =>
+            (GuiNodeStateService ss, EntityDeleted<GuiNode, Id<GuiNode>> deleted) =>
             {
-                ss.RemoveState(id);
+                ss.RemoveState(deleted.Id);
                 return Result.Success();
             });
 

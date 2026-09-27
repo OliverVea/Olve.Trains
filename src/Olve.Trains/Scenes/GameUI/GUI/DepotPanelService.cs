@@ -235,10 +235,8 @@ public class DepotPanelService(
             return;
         }
 
-        foreach (var (trainId, trackPosition) in trainPositionService.TrackPositions)
+        foreach (var trainId in trainPositionService.GetTrainsOnTrack(_depot.TrackId))
         {
-            if (trackPosition.TrackId != _depot.TrackId) continue;
-
             var section = Layouts.BuildDepotTrainSection();
             section.TrainName.Content = $"Train {trainId}";
 

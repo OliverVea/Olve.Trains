@@ -8,6 +8,6 @@ public class EntityStoreFactory
     public EntityStore<T> Create<T>()
         where T : IHasId<Id<T>>
     {
-        return new EntityStore<T>();
+        return [];
     }
 }

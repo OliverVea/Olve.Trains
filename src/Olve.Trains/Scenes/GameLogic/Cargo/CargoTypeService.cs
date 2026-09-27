@@ -14,5 +14,5 @@ public class CargoTypeService(EntityStoreFactory entityStoreFactory)
 
     public bool TryGetCargoType(Id<CargoType> id, out CargoType cargoType) => _cargoTypes.TryGet(id, out cargoType);
 
-    public IEnumerable<CargoType> CargoTypes => _cargoTypes.Values;
+    public IEnumerable<CargoType> CargoTypes => _cargoTypes;
 }

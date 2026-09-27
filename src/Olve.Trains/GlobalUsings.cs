@@ -2,4 +2,4 @@
 global using Olve.Results;
 global using Silk.NET.Maths;
 global using Result = Olve.Results.Result;
-global using Path = Olve.Paths.Path;
+global using Path = Olve.Paths.Path;global using Olve.Utilities.Stores;

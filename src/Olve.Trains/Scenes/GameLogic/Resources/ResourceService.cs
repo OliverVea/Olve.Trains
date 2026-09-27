@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Olve.Engine3D.Systems;
 using Olve.Trains.Scenes.GameLogic.Environment;
 using Silk.NET.Maths;
+using Olve.Trains.Scenes.GameLogic.Ordering;
 
 namespace Olve.Trains.Scenes.GameLogic.Resources;
 
@@ -10,6 +11,8 @@ public class ResourceService
     private readonly ILogger<ResourceService> _logger;
     private readonly EnvironmentalObjectService _environmentalObjectService;
     private readonly EntityStore<Resource> _resources;
+    private readonly EntityStoreOrderedView<Resource, Id<Resource>> _resourcesInCreationOrder;
+    private readonly SequenceService _sequences;
     private readonly EntityStoreIndex<Resource, Id<ResourceType>> _byType;
     private readonly Dictionary<Id<EnvironmentalObject>, Id<Resource>> _byEnvironmentalObject = new();
 
@@ -21,18 +24,21 @@ public class ResourceService
     public ResourceService(
         ILogger<ResourceService> logger,
         EnvironmentalObjectService environmentalObjectService,
+        SequenceService sequences,
         EntityStoreFactory entityStoreFactory)
     {
         _logger = logger;
         _environmentalObjectService = environmentalObjectService;
+        _sequences = sequences;
         _resources = entityStoreFactory.Create<Resource>();
+        _resourcesInCreationOrder = _resources.CreateOrderedView(CreationOrder.Of<Resource>());
         _byType = _resources.CreateIndex(r => r.ResourceTypeId);
     }
 
-    public Event<Id<Resource>> OnResourceAdded => _resources.OnAdded;
-    public Event<Id<Resource>> OnResourceRemoved => _resources.OnRemoved;
+    public Event<EntityAdded<Resource, Id<Resource>>> OnResourceAdded => _resources.OnAdded;
+    public Event<EntityDeleted<Resource, Id<Resource>>> OnResourceRemoved => _resources.OnDeleted;
 
-    public IEnumerable<Resource> Resources => _resources.Values;
+    public IEnumerable<Resource> Resources => _resourcesInCreationOrder;
 
     public IReadOnlyCollection<Id<Resource>> GetResourcesOfType(Id<ResourceType> typeId)
         => _byType.GetForKey(typeId);
@@ -52,7 +58,7 @@ public class ResourceService
             return Result.Success();
         }
 
-        Resource resource = new(Id.New<Resource>(), resourceTypeId, envObjId, obj.Position.Position);
+        Resource resource = new(Id.New<Resource>(), resourceTypeId, envObjId, obj.Position.Position, _sequences.Next());
 
         if (!_resources.TryAdd(resource))
         {
@@ -74,7 +80,7 @@ public class ResourceService
             return Result.Success();
         }
 
-        var result = _resources.Remove(resourceId);
+        var result = _resources.Delete(resourceId);
         if (result.WasNotFound)
         {
             _logger.LogWarning("Resource {ResourceId} for environmental object {EnvObjId} was not found during removal",

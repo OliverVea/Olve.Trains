@@ -6,8 +6,8 @@ namespace Olve.Trains.Scenes.GameLogic.Buildings;
 public class BuildingBlueprintService(ILogger<BuildingBlueprintService> logger, EntityStoreFactory entityStoreFactory)
 {
     private readonly EntityStore<BuildingBlueprint> _blueprints = entityStoreFactory.Create<BuildingBlueprint>();
-    public Event<Id<BuildingBlueprint>> OnBlueprintAdded => _blueprints.OnAdded;
-    public Event<Id<BuildingBlueprint>> OnBlueprintRemoved => _blueprints.OnRemoved;
+    public Event<EntityAdded<BuildingBlueprint, Id<BuildingBlueprint>>> OnBlueprintAdded => _blueprints.OnAdded;
+    public Event<EntityDeleted<BuildingBlueprint, Id<BuildingBlueprint>>> OnBlueprintRemoved => _blueprints.OnDeleted;
 
     public Result AddBlueprint(Id<BuildingBlueprint> id, string description, TileFootprint footprint)
     {
@@ -24,7 +24,7 @@ public class BuildingBlueprintService(ILogger<BuildingBlueprintService> logger, 
 
     public DeletionResult DeleteBlueprint(Id<BuildingBlueprint> blueprintId)
     {
-        var result = _blueprints.Remove(blueprintId);
+        var result = _blueprints.Delete(blueprintId);
         logger.LogDebug("Deleted blueprint {BlueprintId}", blueprintId);
         return result;
     }

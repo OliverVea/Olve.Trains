@@ -167,9 +167,14 @@ public class StationInfoPanelService(
             return;
         }
 
-        foreach (var industry in stationService.GetNearbyIndustries(_buildingId))
+        // By recipe name; industries with the same recipe keep the station service's creation order.
+        var industries = stationService.GetNearbyIndustries(_buildingId)
+            .Select(industry => (Industry: industry, Found: industryRecipeService.TryGetRecipe(industry.RecipeId, out var recipe), Recipe: recipe))
+            .Where(x => x.Found)
+            .OrderBy(x => x.Recipe.Name, StringComparer.Ordinal);
+
+        foreach (var (industry, _, recipe) in industries)
         {
-            if (!industryRecipeService.TryGetRecipe(industry.RecipeId, out var recipe)) continue;
 
             foreach (var (cargoTypeId, direction) in cargoTransferPolicyService.GetPolicies(industry.InventoryId))
             {
