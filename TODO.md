@@ -49,7 +49,7 @@
   - [x] Verify a master push builds, tests, and publishes — confirmed end to end through `publish-s3` (versioned + `latest/` + presigned URLs)
   - [x] Set the `ITCH_API_KEY` secret (from OpenBao `external/itch.io`) — full chain green, builds publishing to itch.io `:linux`/`:windows`
   - [ ] Rotate the bootstrap `GITHUB_TOKEN` (currently the broad `gh` token) to a fine-grained read-only Olve.Trains token
-  - [ ] (Later) Source screenshot references from the VR app instead of git LFS; re-add VR review-on-failure (interim: test step uploads diffs to the MinIO `olve-trains-beta` bucket under `diffs/`)
+  - [ ] (Later) Source screenshot references from the VR app instead of git LFS; re-add VR review-on-failure (interim: the diffs are the failed test attempt's files, `pl step files "Olve.Trains#<n>/test@<attempt>"`)
 
 - [ ] Self-host storage epic (Tooling):
   - Description: Retire AWS S3 entirely. Source art (~4.3 MB fbx/png/ttf/tga/ora) moves into git LFS — pinned to each commit, which kills the stale-cache class of bugs and the committed AKIA read key. Build/release artifacts move to a self-hosted MinIO that the pipeline itself deploys (config stays the full source of truth, secrets excepted): one instance, a `olve-trains-beta` and a `olve-trains-prod` bucket. Part A and Part B are independent; A ships on its own.
@@ -64,9 +64,10 @@
     - [x] Add an idempotent bootstrap step to `.pipelines/config.yaml` (`kubectl apply` over SSH to bulwark-m2) that ensures MinIO before the publish steps
     - [x] Create the `olve-trains-beta` + `olve-trains-prod` buckets; rework `publish-s3.sh` → `publish-minio.sh` pointing awscli at the MinIO endpoint (path-style, no `LocationConstraint`); publish to beta then prod
     - [x] Repoint `test.sh` diff export to MinIO; swap `S3__Key`/`S3__Secret` → `MINIO__Key`/`MINIO__Secret` in `config.yaml`
-    - [ ] Retire AWS: delete both buckets, deactivate the AKIA key; add a backup story for the prod MinIO PVC
+    - [ ] Retire AWS: delete both buckets, deactivate the AKIA key
+    - [x] ~~Add a backup story for the prod MinIO PVC~~ — dropped: there is no bucket; release archives are the v2 build step's files
   - Later:
-    - [ ] Expose the prod bucket publicly via a CDN with a private bucket origin (fills the existing `S3_DIST_PUBLIC_BASE` placeholder) — MinIO stays private, CDN is the only public read path and holds the origin credential
+    - [x] ~~Expose the prod bucket publicly via a CDN with a private bucket origin (fills the existing `S3_DIST_PUBLIC_BASE` placeholder)~~ — dropped: there is no bucket; release archives are the v2 build step's files
 
 ## Demo
 

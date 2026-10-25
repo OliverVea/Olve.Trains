@@ -1,4 +1,4 @@
-// Every push builds, tests and publishes to itch.io. config.yaml beside it is the old v1 config.
+// Every push builds, tests and publishes to itch.io.
 import { pipeline, secret, step, Source, z } from "@olivervea/pipelines";
 import * as M from "./models";
 

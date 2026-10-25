@@ -142,9 +142,9 @@ Source art is committed to the repo under `src/Olve.Trains/resources/assets/` an
 |---|---|---|
 | `SourceDirectory` | — | Directory of committed source art. Required when any source-art target is enabled. |
 
-Configured via `Asset:SourceDirectory` — set as an absolute path in `appsettings.local.json` for local runs, and via the `Asset__SourceDirectory` env var in the CI build/test scripts (`.pipelines/scripts/`).
+Configured via `Asset:SourceDirectory` — set as an absolute path in `appsettings.local.json` for local runs, and via the `Asset__SourceDirectory` env var in CI (`.pipelines/handlers/lib/dotnet.ts`).
 
-**LFS note:** the source binaries are LFS objects, so a plain GitHub tarball fetch yields pointer files, not real art. Anything that runs the pipeline must obtain the working tree via `git clone` + `git lfs pull` (both `build.sh` and `test.sh` do this).
+**LFS note:** the source binaries are LFS objects, so a plain GitHub tarball fetch yields pointer files, not real art. Anything that runs the pipeline must obtain the working tree via `git clone` + `git lfs pull` (the pipeline's `source` step does this, `.pipelines/scripts/checkout.sh`).
 
 ## Asset Processing Sub-Processors
 
