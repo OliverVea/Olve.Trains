@@ -461,3 +461,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Olve.Pipelines v2 local state
+.pipelines/.olve/
+.pipelines/node_modules/
