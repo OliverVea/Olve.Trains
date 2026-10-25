@@ -38,6 +38,9 @@ ASSET_PIPELINE_PROJECT = (
 )
 GAME_PROJECT = PROJECT_DIR / "src" / "Olve.Trains" / "Olve.Trains.csproj"
 GAME_DLL = BIN_DIR / "On Track To Grow.dll"
+# TRAINS_GAME_DIR points at a published build, which runs as its own executable.
+_GAME_DIR = os.environ.get("TRAINS_GAME_DIR")
+GAME_CMD = [str(Path(_GAME_DIR) / "On Track To Grow")] if _GAME_DIR else ["dotnet", str(GAME_DLL)]
 
 UUID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
@@ -227,7 +230,7 @@ class Game:
         logger.debug("send: %s", command)
         try:
             proc = subprocess.run(
-                ["dotnet", str(GAME_DLL), "--send", command, "--instance", self.pipe_id],
+                [*GAME_CMD, "--send", command, "--instance", self.pipe_id],
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -573,7 +576,7 @@ class Game:
             )
         else:
             subprocess.run(
-                ["pkill", "-f", r"^dotnet .*On Track To Grow\.dll --listen"],
+                ["pkill", "-f", r"On Track To Grow(\.dll)? --listen"],
                 capture_output=True,
             )
         time.sleep(1)
@@ -602,8 +605,7 @@ class Game:
     def _launch_game(self) -> None:
         logger.info("Launching game (manual=%s, scene=%s, pipe=%s)", self.manual, self.scene or "default", self.pipe_id)
         cmd = [
-            "dotnet",
-            str(GAME_DLL),
+            *GAME_CMD,
             "--listen",
             "--instance",
             self.pipe_id,

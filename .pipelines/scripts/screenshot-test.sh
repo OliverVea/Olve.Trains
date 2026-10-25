@@ -9,12 +9,11 @@ apt-get install -y -qq --no-install-recommends \
 curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 
-mkdir -p "$(dirname "$WORK")"
+mkdir -p "$(dirname "$WORK")" /work/game
 cp -a "$TREE" "$WORK"
+tar xzf "$LINUX_TGZ" -C /work/game
+export TRAINS_GAME_DIR=/work/game/linux-x64
 cd "$WORK"
-
-dotnet run --project src/Olve.Trains.AssetPipeline/Olve.Trains.AssetPipeline.csproj
-dotnet build src/Olve.Trains/Olve.Trains.csproj --configuration Release
 
 export LIBGL_ALWAYS_SOFTWARE=1
 export SCREENSHOT_DIFF_DIR=/work/screenshot-runs

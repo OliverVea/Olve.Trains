@@ -26,9 +26,9 @@ export const build = step({
 
 export const test = step({
   name: "test",
-  description: "Runs the screenshot integration suite under xvfb. On failure its files hold the diff, actual and baseline PNGs.",
-  image: "mcr.microsoft.com/dotnet/sdk:10.0",
-  input: { source: Source },
+  description: "Runs the screenshot integration suite under xvfb against the published linux build. On failure its files hold the diff, actual and baseline PNGs.",
+  image: "mcr.microsoft.com/dotnet/runtime-deps:10.0",
+  input: { source: Source, release: M.Release },
   timeoutSeconds: 1800,
 });
 
@@ -48,5 +48,6 @@ export default pipeline({
 })
   .onPush(e => ({ repo: e.repository.full_name, sha: e.after, publish: true }))
   .stage([source, from => ({ repo: from.input.repo, sha: from.input.sha })])
-  .stage(build, test)
+  .stage(build)
+  .stage(test)
   .when({ publish: true }, p => p.stage(publishItch));
