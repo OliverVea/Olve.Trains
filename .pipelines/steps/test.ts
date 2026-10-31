@@ -1,12 +1,18 @@
 import { existsSync, readdirSync } from "node:fs";
-import { implement } from "@olivervea/pipelines";
-import { test } from "../pipeline";
+import { implement, step, Source } from "@olivervea/pipelines";
+import * as M from "../models";
 import screenshotTest from "../scripts/screenshot-test.sh" with { type: "file" };
-import { WORK } from "./lib/dotnet";
+import { WORK } from "../lib/dotnet";
 
 const DIFFS = "/work/screenshot-diffs";
 
-export default implement(test, async ({ source, release }, ctx) => {
+export const test = implement(step({
+  name: "test",
+  description: "Runs the screenshot integration suite under xvfb against the published linux build. On failure its files hold the diff, actual and baseline PNGs.",
+  image: "mcr.microsoft.com/dotnet/runtime-deps:10.0",
+  input: { source: Source, release: M.Release },
+  timeoutSeconds: 1800,
+}), async ({ source, release }, ctx) => {
   const env = {
     TREE: await ctx.files.fetch(source.tree),
     LINUX_TGZ: await ctx.files.fetch(release.linux),
